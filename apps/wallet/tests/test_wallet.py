@@ -1,9 +1,10 @@
 """Фаза 2 — кошелёк: атомарность, инварианты, эскроу, вывод (ARCHITECTURE.md §5)."""
+import unittest
 from decimal import Decimal
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.db import close_old_connections
+from django.db import close_old_connections, connection
 from django.test import TransactionTestCase
 
 from apps.wallet import services
@@ -65,11 +66,15 @@ def test_ledger_consistency(alice):
     assert services.balance_of(alice) == credits - debits == Decimal(360000)
 
 
+@unittest.skipIf(
+    connection.vendor == 'sqlite',
+    'Гонка проверяется на PostgreSQL (прод-БД): в SQLite select_for_update — no-op',
+)
 class ConcurrentDebitTest(TransactionTestCase):
     """Гонка: параллельные списания не должны уводить баланс в минус.
 
-    На SQLite select_for_update частично no-op, но инвариант «не в минус»
-    проверяется функционально; на PostgreSQL (прод) блокировка полная.
+    Два потока одновременно списывают по 800 при балансе 1000 — пройти должен
+    ровно один (блокировка select_for_update), второй — InsufficientFunds.
     """
 
     def test_parallel_debits(self):

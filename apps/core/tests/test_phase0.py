@@ -72,6 +72,7 @@ def test_seeded_themes():
     assert Theme.objects.count() == 6
 
 
-def test_seeded_modules_all_soon():
-    assert ModuleConfig.objects.exclude(status=ModuleConfig.SOON).count() == 0
+def test_seeded_modules_no_disabled():
+    # на старте ни один раздел не выключен; включаются по фазам (первый — prayer)
+    assert ModuleConfig.objects.filter(status='off').count() == 0
     assert ModuleConfig.objects.count() >= 18

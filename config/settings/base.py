@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'apps.core',
     'apps.accounts',
     'apps.wallet',
+    'apps.prayer',
 ]
 
 MIDDLEWARE = [
@@ -72,6 +73,10 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': env.db('DATABASE_URL'),
 }
+# SQLite (дев-запас без Docker): ждём блокировку, а не падаем сразу
+if DATABASES['default']['ENGINE'].endswith('sqlite3'):
+    DATABASES['default'].setdefault('OPTIONS', {})
+    DATABASES['default']['OPTIONS'].setdefault('timeout', 20)
 
 # Единый пользователь платформы (PASSPORT §7.2). Кастомная модель — с первого дня.
 AUTH_USER_MODEL = 'accounts.User'

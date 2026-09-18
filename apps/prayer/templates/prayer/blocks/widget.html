@@ -1,0 +1,16 @@
+{% load prayer_tags %}{% prayer_widget as w %}
+<section class="sec">
+  <div class="sec__h">
+    <div class="sec__t">Время намаза — {{ w.city }}</div>
+    <a class="sec__l" href="/prayer/">Все города и GPS →</a>
+  </div>
+  <div class="prayer">
+    {% for it in w.items %}
+      <div class="prayer__item{% if it.soon %} on{% endif %}">
+        <span class="prayer__n">{{ it.label }}</span>
+        <span class="prayer__t">{{ it.time }}</span>
+      </div>
+    {% endfor %}
+  </div>
+  <p class="prayer__next">Ближайший намаз: <b>{{ w.next_name }}</b> — через {{ w.next_left }}</p>
+</section>

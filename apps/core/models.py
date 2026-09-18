@@ -70,6 +70,10 @@ class SiteSettings(SingletonModel):
     )
     news_ticker = models.BooleanField('бегущая строка новостей', default=False)
     min_payout = models.PositiveIntegerField('минимальная сумма вывода, сум', default=100_000)
+    prayer_method = models.CharField(
+        'метод расчёта намаза', max_length=10, default='Karachi',
+        help_text='Karachi (СНГ/Азия), MWL, ISNA, Makkah, Egypt',
+    )
     support_text = models.TextField(
         'текст «Поддержать проект»',
         default='ilm4 живёт на пожертвования уммы — садака джария, '

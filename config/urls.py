@@ -11,6 +11,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('apps.accounts.urls')),
     path('wallet/', include('apps.wallet.urls')),
+    path('prayer/', include('apps.prayer.urls')),
     path('', include('apps.core.urls')),
 ]
 

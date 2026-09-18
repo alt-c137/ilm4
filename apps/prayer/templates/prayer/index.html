@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Время намаза — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h1>Время намаза</h1>
+
+  <form method="get" class="prayer__form">
+    <label for="city">Город</label>
+    <select name="city" id="city">
+      {% for key, name in cities.items %}
+        <option value="{{ key }}"{% if key == city_key %} selected{% endif %}>{{ name }}</option>
+      {% endfor %}
+    </select>
+    <label for="method">Метод расчёта</label>
+    <select name="method" id="method">
+      {% for key, name in methods.items %}
+        <option value="{{ key }}"{% if key == method %} selected{% endif %}>{{ name }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn--p">Показать</button>
+    <button type="button" class="btn btn--g" id="gps-btn">📍 Определить по GPS</button>
+  </form>
+
+  <h2 class="page__h2">{{ place }}</h2>
+  <div class="prayer prayer--page">
+    {% for it in items %}
+      <div class="prayer__item{% if it.soon %} on{% endif %}">
+        <span class="prayer__n">{{ it.label }}</span>
+        <span class="prayer__t">{{ it.time }}</span>
+      </div>
+    {% endfor %}
+  </div>
+  <p class="prayer__next">Ближайший намаз: <b>{{ next_name }}</b> — через {{ next_left }}</p>
+  <p class="page__hint">Расчёт идёт локально на сервере по координатам и дате —
+    интернет-сервисы не используются. В мобильном приложении будет считаться
+    прямо на телефоне, без сети.</p>
+</div>
+
+<script>
+// GPS: берём координаты браузера и часовой пояс, перезагружаем страницу с ними
+document.getElementById('gps-btn').addEventListener('click', function () {
+  if (!navigator.geolocation) { alert('Геолокация недоступна'); return; }
+  navigator.geolocation.getCurrentPosition(function (pos) {
+    var tz = -new Date().getTimezoneOffset() / 60;
+    var q = '?lat=' + pos.coords.latitude.toFixed(4) +
+            '&lon=' + pos.coords.longitude.toFixed(4) +
+            '&tz=' + tz + '&label=' + encodeURIComponent('Моё местоположение');
+    window.location.search = q;
+  }, function () { alert('Не удалось получить координаты — разреши доступ к геолокации'); });
+});
+</script>
+{% endblock %}
