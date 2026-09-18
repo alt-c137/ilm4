@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Здоровье — {{ block.super }}{% endblock %}
+
+{% block content %}
+<section class="sec">
+  <div class="sec__h">
+    <div class="sec__t">Врачи платформы</div>
+    {% if user.is_authenticated %}<a class="sec__l" href="{% url 'health:add' %}">+ Публикация врача{% if price %} (платно){% endif %}</a>{% endif %}
+  </div>
+
+  <form method="get" class="map__form">
+    <input type="text" name="city" value="{{ city }}" placeholder="Город">
+    <select name="spec">
+      <option value="">Все специализации</option>
+      {% for key, label in specializations %}
+        <option value="{{ key }}"{% if key == spec %} selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn--p">Найти</button>
+  </form>
+
+  <div class="grid g3" style="margin-top:16px">
+    {% for d in doctors %}
+    <a class="card" href="{% url 'health:detail' d.pk %}">
+      <div class="card__b">
+        <div class="card__c">{{ d.specialization|upper }}</div>
+        <div class="card__t">{{ d.name }}</div>
+        <div class="card__d">{{ d.city }}{% if d.clinic %} · {{ d.clinic }}{% endif %}</div>
+        {% if d.experience %}<div class="meta">опыт {{ d.experience }} лет</div>{% endif %}
+      </div>
+    </a>
+    {% empty %}
+    <p>Врачей пока нет — <a class="link" href="{% url 'health:add' %}">опубликуйте первого</a>.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

@@ -3,6 +3,13 @@ from django.db import models
 from solo.models import SingletonModel
 
 
+class Moderation:
+    """Общий статус модерации контента (объявления, места, врачи, анкеты, темы)."""
+
+    PENDING, APPROVED, REJECTED = 'pending', 'approved', 'rejected'
+    CHOICES = [(PENDING, 'На модерации'), (APPROVED, 'Опубликован'), (REJECTED, 'Отклонён')]
+
+
 class Theme(models.Model):
     """Палитра оформления «Апп»: три акцента перекрашивают весь сайт (§3.3).
 
@@ -73,6 +80,9 @@ class SiteSettings(SingletonModel):
     prayer_method = models.CharField(
         'метод расчёта намаза', max_length=10, default='Karachi',
         help_text='Karachi (СНГ/Азия), MWL, ISNA, Makkah, Egypt',
+    )
+    doctor_publish_price = models.PositiveIntegerField(
+        'цена публикации врача, сум (0 — бесплатно)', default=0,
     )
     support_text = models.TextField(
         'текст «Поддержать проект»',

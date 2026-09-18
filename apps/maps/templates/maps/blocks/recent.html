@@ -1,0 +1,29 @@
+{% load maps_tags %}{% recent_places as r %}
+{% if r.total %}
+<section class="sec">
+  <div class="sec__h">
+    <div class="sec__t">Халяль рядом</div>
+    <a class="sec__l" href="/map/">Вся карта →</a>
+  </div>
+  <div class="grid g4">
+    {% for p in r.places %}
+    <a class="card" href="/map/?q={{ p.name|urlencode }}">
+      <div class="card__b">
+        <div class="card__c">{{ p.get_category_display|upper }}</div>
+        <div class="card__t">{{ p.name }}</div>
+        <div class="card__d">{{ p.city }}</div>
+      </div>
+    </a>
+    {% endfor %}
+    {% for d in r.doctors %}
+    <a class="card" href="/health/{{ d.pk }}/">
+      <div class="card__b">
+        <div class="card__c">ВРАЧ · {{ d.specialization|upper }}</div>
+        <div class="card__t">{{ d.name }}</div>
+        <div class="card__d">{{ d.city }}{% if d.experience %} · опыт {{ d.experience }} лет{% endif %}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}

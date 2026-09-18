@@ -34,6 +34,8 @@ INSTALLED_APPS = [
     'apps.accounts',
     'apps.wallet',
     'apps.prayer',
+    'apps.maps',
+    'apps.health',
 ]
 
 MIDDLEWARE = [

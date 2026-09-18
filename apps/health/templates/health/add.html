@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Публикация врача — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h1>Публикация врача</h1>
+  {% if price %}
+  <p>Публикация платная: <b>{{ price|intcomma }} сум</b> спишется с баланса кошелька.
+     После отправки анкета пройдёт модерацию.</p>
+  {% else %}
+  <p>Опубликуйте себя или врача, которому доверяете. Анкета появится после модерации.</p>
+  {% endif %}
+  <form method="post" enctype="multipart/form-data" class="form form--wide">{% csrf_token %}
+    {% for field in form %}
+      <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span class="req">*</span>{% endif %}</label>
+      {{ field }}
+      {% if field.errors %}<span class="err">{{ field.errors.0 }}</span>{% endif %}
+    {% endfor %}
+    <button type="submit" class="btn btn--p">Отправить</button>
+  </form>
+</div>
+{% endblock %}

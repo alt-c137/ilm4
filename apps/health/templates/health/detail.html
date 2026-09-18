@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}{{ doctor.name }} — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h1>{{ doctor.name }}</h1>
+  <p><b>{{ doctor.specialization }}</b> · {{ doctor.city }}{% if doctor.clinic %} · {{ doctor.clinic }}{% endif %}
+     {% if doctor.experience %} · опыт {{ doctor.experience }} лет{% endif %}</p>
+  {% if doctor.address %}<p>Адрес: {{ doctor.address }}</p>{% endif %}
+  {% if doctor.phone %}<p>Телефон: <b>{{ doctor.phone }}</b></p>{% endif %}
+  {% if doctor.url %}<p><a class="link" href="{{ doctor.url }}" target="_blank" rel="noopener">{{ doctor.url }}</a></p>{% endif %}
+  {% if doctor.description %}<p>{{ doctor.description|linebreaks }}</p>{% endif %}
+  <p class="page__hint">Платформа не даёт медицинских заключений — связывайтесь с врачом напрямую.</p>
+  <a class="btn btn--g" href="{% url 'health:index' %}">← Все врачи</a>
+</div>
+{% endblock %}
