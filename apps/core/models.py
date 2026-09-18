@@ -84,6 +84,12 @@ class SiteSettings(SingletonModel):
     doctor_publish_price = models.PositiveIntegerField(
         'цена публикации врача, сум (0 — бесплатно)', default=0,
     )
+    market_moderation = models.BooleanField(
+        'модерация объявлений ilmbuy', default=True,
+        help_text='Выключи, если объявлений слишком много для ручной проверки',
+    )
+    boost_price = models.PositiveIntegerField('цена буста объявления (7 дней), сум',
+                                              default=20_000)
     support_text = models.TextField(
         'текст «Поддержать проект»',
         default='ilm4 живёт на пожертвования уммы — садака джария, '

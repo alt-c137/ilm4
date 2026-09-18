@@ -1,0 +1,29 @@
+{% load market_tags %}{% recent_listings as recent %}
+{% if recent %}
+<section class="sec">
+  <div class="sec__h">
+    <div class="sec__t">Купля-продажа</div>
+    <a class="sec__l" href="/buy/">Все объявления →</a>
+  </div>
+  <div class="grid g4">
+    {% for l in recent %}
+    <a class="card" href="/buy/{{ l.pk }}/">
+      {% if l.photo %}
+      <div class="card__i" style="background-image:url('{{ l.photo.url }}')"></div>
+      {% else %}
+      <div class="card__i" style="background:linear-gradient(135deg,var(--accent-soft),var(--line))"></div>
+      {% endif %}
+      <div class="card__b">
+        {% if l.is_boosted %}<div class="card__c">ТОП</div>{% endif %}
+        <div class="card__t">{{ l.title }}</div>
+        <div class="card__d">{{ l.city }} · {{ l.category.name }}</div>
+        <div class="card__f">
+          <span class="price">{% if l.price == 0 %}Даром{% else %}{{ l.price }} {{ l.get_currency_display }}{% endif %}</span>
+          <span class="meta">{{ l.created_at|date:"d.m" }}</span>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}

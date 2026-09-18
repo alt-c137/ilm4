@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Мои объявления — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h1>Мои объявления</h1>
+  <p><a class="btn btn--p" href="{% url 'market:create' %}">+ Подать объявление</a></p>
+  {% if listings %}
+  <div class="tbl-wrap">
+  <table class="tbl">
+    <tr><th>Объявление</th><th>Статус</th><th>Буст</th><th>Просмотры</th><th></th></tr>
+    {% for l in listings %}
+    <tr>
+      <td><a class="link" href="{% url 'market:detail' l.pk %}">{{ l.title }}</a><br>
+          <span class="meta">{{ l.city }} · {{ l.created_at|date:"d.m" }}</span></td>
+      <td>{{ l.get_status_display }}{% if not l.is_active %} (снято){% endif %}</td>
+      <td>{% if l.is_boosted %}до {{ l.boosted_until|date:"d.m H:i" }}{% else %}—{% endif %}</td>
+      <td>{{ l.views }}</td>
+      <td>
+        {% if l.is_approved %}
+        <form method="post" action="{% url 'market:boost' l.pk %}">{% csrf_token %}
+          <button class="btn btn--s" title="Поднять в поиске на 7 дней за {{ boost_price|intcomma }} сум">⬆ Буст</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+  {% else %}
+  <p>Объявлений пока нет.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -14,6 +14,7 @@ urlpatterns = [
     path('prayer/', include('apps.prayer.urls')),
     path('map/', include('apps.maps.urls')),
     path('health/', include('apps.health.urls')),
+    path('buy/', include('apps.market.urls')),
     path('', include('apps.core.urls')),
 ]
 

@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}ilmbuy — купля-продажа — {{ block.super }}{% endblock %}
+
+{% block content %}
+<section class="sec">
+  <div class="sec__h">
+    <div class="sec__t">ilmbuy — купля-продажа</div>
+    {% if user.is_authenticated %}
+      <a class="sec__l" href="{% url 'market:create' %}">+ Подать объявление</a>
+      <a class="sec__l" href="{% url 'market:my' %}">Мои объявления</a>
+    {% else %}
+      <a class="sec__l" href="{% url 'accounts:login' %}?next=/buy/add/">Войти, чтобы подать</a>
+    {% endif %}
+  </div>
+
+  <form method="get" class="map__form">
+    <input type="text" name="q" value="{{ q }}" placeholder="Что ищете?">
+    <select name="cat">
+      <option value="">Все категории</option>
+      {% for c in categories %}
+        <option value="{{ c.slug }}"{% if c.slug == cat %} selected{% endif %}>{{ c.icon }} {{ c.name }}</option>
+      {% endfor %}
+    </select>
+    <input type="text" name="city" value="{{ city }}" placeholder="Город">
+    <button type="submit" class="btn btn--p">Найти</button>
+  </form>
+
+  <div class="grid g4" style="margin-top:16px">
+    {% for l in listings %}
+    <a class="card" href="{% url 'market:detail' l.pk %}">
+      {% if l.photo %}
+      <div class="card__i" style="background-image:url('{{ l.photo.url }}')"></div>
+      {% else %}
+      <div class="card__i" style="background:linear-gradient(135deg,var(--accent-soft),var(--line))"></div>
+      {% endif %}
+      <div class="card__b">
+        {% if l.is_boosted %}<div class="card__c">ТОП · поднято</div>{% else %}<div class="card__c">{{ l.category.icon }} {{ l.category.name|upper }}</div>{% endif %}
+        <div class="card__t">{{ l.title }}</div>
+        <div class="card__d">{{ l.city }}</div>
+        <div class="card__f">
+          <span class="price">{% if l.price == 0 %}Даром{% else %}{{ l.price }} {{ l.get_currency_display }}{% endif %}</span>
+          <span class="meta">👁 {{ l.views }}</span>
+        </div>
+      </div>
+    </a>
+    {% empty %}
+    <p>Объявлений пока нет. Станьте первым — <a class="link" href="{% url 'market:create' %}">подайте объявление</a>.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

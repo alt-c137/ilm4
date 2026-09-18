@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'solo',
     'django_otp',
     'django_otp.plugins.otp_totp',
+    'taggit',
     # ilm4
     'apps.core',
     'apps.accounts',
@@ -36,6 +37,7 @@ INSTALLED_APPS = [
     'apps.prayer',
     'apps.maps',
     'apps.health',
+    'apps.market',
 ]
 
 MIDDLEWARE = [
