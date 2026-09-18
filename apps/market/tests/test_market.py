@@ -59,8 +59,9 @@ def test_create_with_moderation(client, user, cat):
 
 
 def test_create_without_moderation(client, user, cat):
-    SiteSettings.get_solo().market_moderation = False
-    SiteSettings.get_solo().save()
+    settings_obj = SiteSettings.get_solo()
+    settings_obj.market_moderation = False
+    settings_obj.save()
     client.force_login(user)
     client.post('/buy/add/', {
         'title': 'Финики', 'description': 'Аджва',
