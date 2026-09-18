@@ -69,6 +69,7 @@ class SiteSettings(SingletonModel):
         'хадис дня — источник', max_length=200, default='аль-Бухари, Муслим',
     )
     news_ticker = models.BooleanField('бегущая строка новостей', default=False)
+    min_payout = models.PositiveIntegerField('минимальная сумма вывода, сум', default=100_000)
     support_text = models.TextField(
         'текст «Поддержать проект»',
         default='ilm4 живёт на пожертвования уммы — садака джария, '

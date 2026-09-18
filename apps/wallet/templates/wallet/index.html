@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Кошелёк — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h1>Кошелёк</h1>
+  <div class="balance">
+    <span class="balance__label">Баланс</span>
+    <span class="balance__sum">{{ balance|intcomma }} <small>сум</small></span>
+    <a class="btn btn--p" href="{% url 'wallet:payout' %}">Вывести средства</a>
+  </div>
+
+  <h2 class="page__h2">История операций</h2>
+  {% if transactions %}
+  <table class="tbl">
+    <tr><th>Когда</th><th>Операция</th><th>Сумма</th><th>Баланс после</th><th>Заметка</th></tr>
+    {% for t in transactions %}
+    <tr>
+      <td>{{ t.created_at|date:"d.m H:i" }}</td>
+      <td>{{ t.get_kind_display }}</td>
+      <td class="{% if t.is_debit %}down{% else %}up{% endif %}">{% if t.is_debit %}−{% else %}+{% endif %}{{ t.amount|intcomma }}</td>
+      <td>{{ t.balance_after|intcomma }}</td>
+      <td class="meta">{{ t.note }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p>Операций пока нет. Пополнение откроется вместе с платёжными методами.</p>
+  {% endif %}
+</div>
+{% endblock %}

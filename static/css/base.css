@@ -111,6 +111,19 @@ a{color:inherit;text-decoration:none}
 .form .req{color:#dc2626}
 .form .btn{align-self:flex-start;margin-top:6px}
 .form__code{letter-spacing:6px;font-size:20px!important;text-align:center;max-width:220px}
+
+/* кошелёк и таблицы (фаза 2) */
+.balance{display:flex;align-items:center;gap:18px;flex-wrap:wrap;background:linear-gradient(135deg,var(--accent),var(--accent-d));color:#fff;border-radius:18px;padding:20px 24px;margin:6px 0 18px}
+.balance__label{font-size:13px;font-weight:700;letter-spacing:.4px;opacity:.85}
+.balance__sum{font-size:30px;font-weight:800}
+.balance__sum small{font-size:14px;font-weight:600;opacity:.85}
+.balance .btn{background:#fff;color:var(--accent-d)}
+.page__h2{font-size:18px;font-weight:800;margin:20px 0 10px}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{text-align:left;font-size:12px;color:var(--ink-soft);padding:8px 10px;border-bottom:1px solid var(--line)}
+.tbl td{padding:9px 10px;border-bottom:1px solid var(--line)}
+.tbl .up{color:#16a34a;font-weight:700}.tbl .down{color:#dc2626;font-weight:700}
+.tbl-wrap{overflow-x:auto}
 .flash{list-style:none;display:flex;flex-direction:column;gap:8px;padding:12px 0 0;max-width:1240px;margin:0 auto;width:100%;padding-left:22px;padding-right:22px}
 .flash__item{background:var(--card);border-radius:14px;padding:11px 16px;font-size:14px;box-shadow:var(--shadow)}
 .flash__item--success{border-left:4px solid #16a34a}

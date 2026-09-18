@@ -10,6 +10,7 @@ admin.site.site_title = 'ilm4 админ'
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('apps.accounts.urls')),
+    path('wallet/', include('apps.wallet.urls')),
     path('', include('apps.core.urls')),
 ]
 

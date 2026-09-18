@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     # сторонние
     'solo',
     'django_otp',
@@ -31,6 +32,7 @@ INSTALLED_APPS = [
     # ilm4
     'apps.core',
     'apps.accounts',
+    'apps.wallet',
 ]
 
 MIDDLEWARE = [
