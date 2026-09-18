@@ -15,6 +15,12 @@ urlpatterns = [
     path('map/', include('apps.maps.urls')),
     path('health/', include('apps.health.urls')),
     path('buy/', include('apps.market.urls')),
+    path('news/', include('apps.news.urls')),
+    path('forum/', include('apps.forum.urls')),
+    path('jobs/', include('apps.jobs.urls')),
+    path('migration/', include('apps.migration.urls')),
+    path('services/', include('apps.services.urls')),
+    path('library/', include('apps.library.urls')),
     path('', include('apps.core.urls')),
 ]
 

@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Миграция — {{ block.super }}{% endblock %}
+
+{% block content %}
+<section class="sec">
+  <div class="sec__h">
+    <div class="sec__t">Истории переезда</div>
+    {% if user.is_authenticated %}<a class="sec__l" href="{% url 'migration:create' %}">+ Рассказать свою</a>{% endif %}
+  </div>
+  <div class="grid g3">
+    {% for s in stories %}
+    <a class="card" href="{% url 'migration:detail' s.pk %}">
+      <div class="card__i" style="background:linear-gradient(135deg,var(--accent-soft),var(--line))">✈️</div>
+      <div class="card__b">
+        <div class="card__t">{{ s.title }}</div>
+        <div class="card__d">{{ s.country_from }} → {{ s.country_to }}</div>
+        <div class="meta">{{ s.created_at|date:"d.m.Y" }}</div>
+      </div>
+    </a>
+    {% empty %}<p>Историй пока нет — расскажите свою!</p>{% endfor %}
+  </div>
+</section>
+{% endblock %}

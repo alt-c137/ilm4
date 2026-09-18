@@ -1,0 +1,20 @@
+{% load news_tags %}{% recent_news as recent %}
+{% if recent %}
+<section class="sec">
+  <div class="sec__h">
+    <div class="sec__t">Новости</div>
+    <a class="sec__l" href="/news/">Все новости →</a>
+  </div>
+  <div class="panel">
+    {% for p in recent %}
+    <div class="ni">
+      <div class="ni__i" style="background:linear-gradient(135deg,var(--accent-soft),var(--line))"></div>
+      <div>
+        <a class="ni__t link" href="/news/{{ p.slug }}/">{{ p.title }}</a>
+        <div class="ni__m">{{ p.created_at|date:"d.m H:i" }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}

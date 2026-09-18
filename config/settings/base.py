@@ -38,6 +38,12 @@ INSTALLED_APPS = [
     'apps.maps',
     'apps.health',
     'apps.market',
+    'apps.news',
+    'apps.forum',
+    'apps.jobs',
+    'apps.migration',
+    'apps.services',
+    'apps.library',
 ]
 
 MIDDLEWARE = [

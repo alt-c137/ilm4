@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}{{ post.title }} — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h1>{{ post.title }}</h1>
+  <p class="meta">{{ post.created_at|date:"d.m.Y H:i" }}</p>
+  {{ post.body|linebreaks }}
+  <a class="btn btn--g" href="{% url 'news:list' %}">← Все новости</a>
+</div>
+{% endblock %}

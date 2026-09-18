@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}{{ story.title }} — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h1>{{ story.title }}</h1>
+  <p class="meta">{{ story.country_from }} → {{ story.country_to }} ·
+     {{ story.author.get_display_name }} · {{ story.created_at|date:"d.m.Y" }}</p>
+  <div>{{ story.body|linebreaks }}</div>
+  <a class="btn btn--g" href="{% url 'migration:list' %}">← Все истории</a>
+</div>
+{% endblock %}

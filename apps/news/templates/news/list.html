@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Новости — {{ block.super }}{% endblock %}
+
+{% block content %}
+<section class="sec">
+  <div class="sec__h"><div class="sec__t">Новости исламского мира</div></div>
+  <div class="cols">
+    <div class="panel">
+      {% for p in posts %}
+      <div class="ni">
+        {% if p.cover %}<div class="ni__i" style="background-image:url('{{ p.cover.url }}')"></div>
+        {% else %}<div class="ni__i" style="background:linear-gradient(135deg,var(--accent-soft),var(--line))"></div>{% endif %}
+        <div>
+          <a class="ni__t link" href="{% url 'news:detail' p.slug %}">{{ p.title }}</a>
+          <div class="ni__m">{{ p.created_at|date:"d.m.Y H:i" }}</div>
+        </div>
+      </div>
+      {% empty %}
+      <p>Новостей пока нет.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

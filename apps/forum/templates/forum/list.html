@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Форум — {{ block.super }}{% endblock %}
+
+{% block content %}
+<section class="sec">
+  <div class="sec__h">
+    <div class="sec__t">Форум — вопрос-ответ</div>
+    {% if user.is_authenticated %}<a class="sec__l" href="{% url 'forum:create' %}">+ Задать вопрос</a>{% endif %}
+  </div>
+  <div class="panel">
+    {% for t in topics %}
+    <div class="ni">
+      <div class="ni__i" style="background:linear-gradient(135deg,var(--accent-soft),var(--line))">💬</div>
+      <div>
+        <a class="ni__t link" href="{% url 'forum:detail' t.pk %}">{{ t.title }}</a>
+        <div class="ni__m">{{ t.author.get_display_name }} · {{ t.created_at|date:"d.m H:i" }} · {{ t.replies.count }} ответов</div>
+      </div>
+    </div>
+    {% empty %}
+    <p>Вопросов пока нет — задайте первый!</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

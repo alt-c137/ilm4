@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Задать вопрос — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h1>Задать вопрос</h1>
+  <form method="post" class="form form--wide">{% csrf_token %}
+    {% for field in form %}
+      <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span class="req">*</span>{% endif %}</label>
+      {{ field }}
+      {% if field.errors %}<span class="err">{{ field.errors.0 }}</span>{% endif %}
+    {% endfor %}
+    <button type="submit" class="btn btn--p">Отправить на модерацию</button>
+  </form>
+</div>
+{% endblock %}

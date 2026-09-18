@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Услуги — {{ block.super }}{% endblock %}
+
+{% block content %}
+<section class="sec">
+  <div class="sec__h">
+    <div class="sec__t">Услуги: переводы, юристы, туры</div>
+    {% if user.is_authenticated %}<a class="sec__l" href="{% url 'services:create' %}">+ Предложить услугу</a>{% endif %}
+  </div>
+  <form method="get" class="map__form">
+    <select name="kind">
+      <option value="">Все виды</option>
+      {% for key, label in kinds %}<option value="{{ key }}"{% if key == kind %} selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <button type="submit" class="btn btn--p">Показать</button>
+  </form>
+  <div class="grid g3" style="margin-top:16px">
+    {% for s in services %}
+    <div class="card">
+      <div class="card__b">
+        <div class="card__c">{{ s.get_kind_display|upper }}</div>
+        <div class="card__t">{{ s.name }}</div>
+        <div class="card__d">{{ s.description|truncatechars:120 }}</div>
+        <div class="card__f"><span class="price">{{ s.price_text|default:'по договорённости' }}</span>
+          <span class="meta">{{ s.city|default:'онлайн' }}</span></div>
+        <div class="meta">📞 {{ s.contact }}</div>
+      </div>
+    </div>
+    {% empty %}<p>Услуг пока нет.</p>{% endfor %}
+  </div>
+</section>
+{% endblock %}

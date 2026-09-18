@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}{{ topic.title }} — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h1>{{ topic.title }}</h1>
+  <p class="meta">{{ topic.author.get_display_name }} · {{ topic.created_at|date:"d.m.Y H:i" }}</p>
+  {% if topic.body %}<div>{{ topic.body|linebreaks }}</div>{% endif %}
+
+  <h2 class="page__h2">Ответы ({{ replies|length }})</h2>
+  {% for r in replies %}
+  <div class="reply">
+    <b>{{ r.author.get_display_name }}</b> <span class="meta">{{ r.created_at|date:"d.m H:i" }}</span>
+    <div>{{ r.body|linebreaks }}</div>
+  </div>
+  {% empty %}<p>Ответов пока нет.</p>{% endfor %}
+
+  {% if user.is_authenticated %}
+  <form method="post" action="{% url 'forum:reply' topic.pk %}" class="form">{% csrf_token %}
+    <label for="id_body">Ваш ответ</label>
+    <textarea name="body" id="id_body" rows="3" required></textarea>
+    <button type="submit" class="btn btn--p">Ответить</button>
+  </form>
+  {% else %}
+  <p><a class="link" href="{% url 'accounts:login' %}?next={{ request.path }}">Войдите</a>, чтобы ответить.</p>
+  {% endif %}
+  <a class="btn btn--g" href="{% url 'forum:list' %}">← Все вопросы</a>
+</div>
+{% endblock %}

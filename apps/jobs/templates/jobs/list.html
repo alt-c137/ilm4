@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Работа — {{ block.super }}{% endblock %}
+
+{% block content %}
+<section class="sec">
+  <div class="sec__h">
+    <div class="sec__t">Вакансии</div>
+    {% if user.is_authenticated %}<a class="sec__l" href="{% url 'jobs:create' %}">+ Добавить вакансию</a>{% endif %}
+  </div>
+  <form method="get" class="map__form">
+    <input type="text" name="q" value="{{ q }}" placeholder="Должность">
+    <input type="text" name="city" value="{{ city }}" placeholder="Город">
+    <button type="submit" class="btn btn--p">Найти</button>
+  </form>
+  <div class="grid g3" style="margin-top:16px">
+    {% for v in vacancies %}
+    <a class="card" href="{% url 'jobs:detail' v.pk %}">
+      <div class="card__b">
+        <div class="card__t">{{ v.title }}</div>
+        <div class="card__d">{{ v.company }} · {{ v.city }}</div>
+        <div class="card__f"><span class="price">{{ v.salary|default:'договорная' }}</span>
+          <span class="meta">{{ v.created_at|date:"d.m" }}</span></div>
+      </div>
+    </a>
+    {% empty %}<p>Вакансий пока нет.</p>{% endfor %}
+  </div>
+</section>
+{% endblock %}
