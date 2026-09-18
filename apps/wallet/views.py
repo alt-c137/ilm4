@@ -6,7 +6,6 @@ from django.shortcuts import redirect, render
 from apps.core.models import SiteSettings
 
 from . import services
-from .models import Transaction
 
 
 @login_required
