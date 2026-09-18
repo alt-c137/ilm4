@@ -1,0 +1,63 @@
+{% load static %}<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}{{ site_settings.site_name }} — знания · жизнь · дело{% endblock %}</title>
+<link rel="icon" type="image/png" href="{% static 'img/logo.png' %}">
+<link rel="stylesheet" href="{% static 'css/tokens.css' %}">
+<link rel="stylesheet" href="{% static 'css/base.css' %}">
+{% if current_theme %}<style>:root{--accent:{{ current_theme.accent }};--accent-d:{{ current_theme.accent_d }};--accent-soft:{{ current_theme.accent_soft }}}</style>{% endif %}
+</head>
+<body>
+{% include 'includes/messages.html' %}
+<div class="wrap">
+  <header class="top"><div class="top__row">
+    <a class="logo" href="{% url 'core:home' %}"><img src="{% static 'img/logo.png' %}" alt="ilm4"><b>ilm<span>4</span></b></a>
+    <form class="search" onsubmit="return false">{# единый поиск — фаза 5 #}
+      <input placeholder="Искать курсы, объявления, услуги…" aria-label="Поиск">
+      <button type="submit">Найти</button>
+    </form>
+    <div class="top__act">
+      <a class="btn btn--s" href="{% url 'core:support' %}">♥ Поддержать</a>
+      <a class="btn btn--g" href="{% url 'core:soon' %}">Войти</a>
+    </div>
+  </div></header>
+  <nav class="nav"><div class="nav__row">
+    <a class="on" href="{% url 'core:home' %}">Главная</a>
+    {% for m in menu_modules %}<a href="/{{ m.key }}/">{{ m.name }}</a>{% endfor %}
+  </div></nav>
+  {% block content %}{% endblock %}
+</div>
+<footer class="foot"><div class="wrap">
+  <div class="foot__g">
+    <div>
+      <div class="foot__l"><img src="{% static 'img/logo.png' %}" alt=""><b>ilm4</b></div>
+      <p class="foot__about">Платформа знаний, жизни и дела — для мусульман и всех, кому это полезно.</p>
+    </div>
+    <div><h4>Разделы</h4>
+      {% for m in menu_modules|slice:":5" %}<a href="/{{ m.key }}/">{{ m.name }}</a>{% endfor %}
+      {% if not menu_modules %}<a href="{% url 'core:soon' %}">Открываются по фазам →</a>{% endif %}
+    </div>
+    <div><h4>Платформа</h4>
+      <a href="{% url 'core:rules' %}">Правила</a>
+      <a href="{% url 'core:privacy' %}">Политика и куки</a>
+      <a href="{% url 'core:support' %}">Поддержать</a>
+    </div>
+    <div><h4>Статус</h4>
+      <a href="{% url 'core:soon' %}">Что откроется дальше</a>
+      <a href="/admin/">Управление</a>
+    </div>
+  </div>
+  <div class="foot__bot">© 2026 ilm4 · بارك الله فيكم</div>
+</div></footer>
+{% if themes %}
+<div id="swwrap"><span class="swlbl">Тема</span><div id="swbar">
+  {% for t in themes %}<button type="button" class="sw{% if current_theme and t.id == current_theme.id %} on{% endif %}" data-id="{{ t.id }}" data-accent="{{ t.accent }}" data-accent-d="{{ t.accent_d }}" data-accent-soft="{{ t.accent_soft }}" style="background:{{ t.accent }}" title="{{ t.name }}" aria-label="Тема {{ t.name }}"></button>{% endfor %}
+</div></div>
+{% endif %}
+{% include 'includes/cookie_banner.html' %}
+<script src="{% static 'js/theme.js' %}"></script>
+<script src="{% static 'js/app.js' %}"></script>
+</body>
+</html>

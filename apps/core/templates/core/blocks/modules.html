@@ -1,0 +1,20 @@
+<section class="sec" id="modules">
+  <div class="sec__h"><div class="sec__t">Разделы платформы</div></div>
+  <div class="cats">
+    {% for m in modules %}
+      {% if m.status == 'on' %}
+        <a class="cat" href="/{{ m.key }}/">
+          <div class="cat__i">{{ m.icon }}</div>
+          <div class="cat__n">{{ m.name }}</div>
+          <div class="cat__c">открыт</div>
+        </a>
+      {% else %}
+        <div class="cat soon">
+          <div class="cat__i">{{ m.icon }}</div>
+          <div class="cat__n">{{ m.name }}</div>
+          <div class="cat__c">скоро</div>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+</section>

@@ -1,0 +1,31 @@
+# Дев-инфраструктура ilm4: сервисы в контейнерах, код Django — на хосте (WSL).
+# Подъём: docker compose up -d   (meilisearch — позже: --profile search up -d)
+services:
+  db:
+    image: postgis/postgis:16-3.4        # PostgreSQL 16 + PostGIS одним образом
+    environment:
+      POSTGRES_DB: ilm4
+      POSTGRES_USER: ilm4
+      POSTGRES_PASSWORD: ilm4            # дев-пароль; прод-секреты — только в .env
+    ports: ["5432:5432"]
+    volumes: [ilm4_db:/var/lib/postgresql/data]   # данные переживают перезапуск
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ilm4"]
+      interval: 5s
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    volumes: [ilm4_redis:/data]
+
+  meilisearch:                            # поиск, фаза 5 (тег v1.x уточнить при подключении)
+    image: getmeili/meilisearch:v1.12
+    ports: ["7700:7700"]
+    volumes: [ilm4_meili:/meili_data]
+    environment: { MEILI_MASTER_KEY: dev-meili-key }
+    profiles: ["search"]                  # поднимается только по явному флагу
+
+volumes:
+  ilm4_db: {}
+  ilm4_redis: {}
+  ilm4_meili: {}

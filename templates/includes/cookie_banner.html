@@ -1,0 +1,6 @@
+{% if not request.COOKIES.ilm4_cookie %}
+<div class="ckbar" id="ckbar">
+  <span>Мы используем технические куки (сессия, тема). Подробнее — <a href="{% url 'core:privacy' %}">в политике</a>.</span>
+  <button type="button" class="btn btn--p" id="ckok">Хорошо</button>
+</div>
+{% endif %}

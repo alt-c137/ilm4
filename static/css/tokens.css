@@ -1,0 +1,18 @@
+/* Дизайн-токены «Апп» — из :root дизайн-макета ilm4-design-C-app.html.
+   ЕДИНСТВЕННОЕ место с цветами: компоненты ссылаются только на var(--…).
+   Первые три переменные подменяются темой (палитрой) оформления. */
+:root{
+  --accent:#6d5efc;      /* акцент — меняется темой */
+  --accent-d:#5646e8;    /* акцент тёмный — меняется темой */
+  --accent-soft:#ece9ff; /* акцент мягкий — меняется темой */
+
+  --bg:#f4f5fb;
+  --card:#ffffff;
+  --ink:#1b1d2b;
+  --ink-soft:#6a6d80;
+  --line:#eceef4;
+
+  --radius:20px;
+  --shadow:0 10px 34px rgba(30,34,60,.08);
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+}

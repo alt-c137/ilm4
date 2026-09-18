@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}{{ module.name|default:'Скоро' }} — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h1>{{ module.name|default:'Скоро' }}</h1>
+  <p>{% if module %}Раздел «{{ module.name }}» открывается в ближайших фазах.{% else %}Эта функция открывается в ближайших фазах — платформа строится по шагам.{% endif %}</p>
+  <p>Вход и регистрация появятся сразу после запуска аккаунтов (ближайшая фаза).</p>
+  <a class="btn btn--p" href="{% url 'core:home' %}">На главную</a>
+</div>
+{% endblock %}
