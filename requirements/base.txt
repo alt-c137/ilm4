@@ -1,4 +1,10 @@
-# Фаза 0 — каркас. Список растёт по фазам (полный план — ARCHITECTURE.md §8).
+# Зависимости ilm4 (растут по фазам, полный план — ARCHITECTURE.md §8).
 Django>=5.2,<5.3
 django-environ
 django-solo
+psycopg[binary]
+Pillow                     # изображения (аватары, фазы с фото)
+whitenoise                 # статики в проде
+gunicorn                   # прод-сервер (unix)
+django-otp                 # 2FA (TOTP) для админов — PASSPORT §3 (плагин otp_totp встроен)
+qrcode                     # QR-код для подключения 2FA

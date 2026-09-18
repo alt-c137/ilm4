@@ -5,9 +5,14 @@ from .models import ModuleConfig, SiteSettings, Theme
 def site(request):
     settings_obj = SiteSettings.get_solo()
     themes = Theme.objects.all()
-    # Активная тема: кука → дефолт из настроек (выбор в профиле — фаза 1).
-    theme_id = request.COOKIES.get('ilm4_theme')
-    current = themes.filter(id=theme_id).first() or settings_obj.default_theme or themes.first()
+    # Активная тема: профиль → кука → дефолт из настроек
+    current = None
+    user = getattr(request, 'user', None)
+    if user is not None and user.is_authenticated and user.theme_id:
+        current = user.theme
+    if current is None:
+        theme_id = request.COOKIES.get('ilm4_theme')
+        current = themes.filter(id=theme_id).first() or settings_obj.default_theme or themes.first()
     return {
         'site_settings': settings_obj,
         'themes': themes,

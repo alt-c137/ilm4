@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Профиль — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h1>Профиль</h1>
+  <form method="post" enctype="multipart/form-data" class="form">{% csrf_token %}
+    {% for field in form %}
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {% if field.errors %}<span class="err">{{ field.errors.0 }}</span>{% endif %}
+    {% endfor %}
+    <button type="submit" class="btn btn--p">Сохранить</button>
+  </form>
+  {% if user.is_staff %}
+  <p class="page__hint">Вы администратор: <a class="link" href="/admin/">админка</a> ·
+    <a class="link" href="{% url 'accounts:two_factor_setup' %}">настроить 2FA</a></p>
+  {% endif %}
+</div>
+{% endblock %}

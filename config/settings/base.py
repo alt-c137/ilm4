@@ -15,6 +15,7 @@ environ.Env.read_env(BASE_DIR / '.env')
 SECRET_KEY = env('SECRET_KEY', default='dev-insecure-key')  # прод — обязательно из .env
 DEBUG = env('DEBUG')
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
+CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[])
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -25,6 +26,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # сторонние
     'solo',
+    'django_otp',
+    'django_otp.plugins.otp_totp',
     # ilm4
     'apps.core',
     'apps.accounts',
@@ -32,10 +35,13 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django_otp.middleware.OTPMiddleware',
+    'apps.accounts.middleware.Staff2FARequired',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -67,6 +73,18 @@ DATABASES = {
 
 # Единый пользователь платформы (PASSPORT §7.2). Кастомная модель — с первого дня.
 AUTH_USER_MODEL = 'accounts.User'
+
+# Вход по email (основной) + стандартный бэкенд (админка по логину)
+AUTHENTICATION_BACKENDS = [
+    'apps.accounts.backends.EmailBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+LOGIN_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+
+# 2FA (TOTP): название в приложении-аутентификаторе
+OTP_TOTP_ISSUER = 'ilm4'
 
 LANGUAGE_CODE = 'ru'
 TIME_ZONE = 'Asia/Tashkent'

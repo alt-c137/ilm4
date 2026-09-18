@@ -1,0 +1,60 @@
+# Прод ilm4 на VPS: приложение + PostgreSQL/PostGIS + Redis + Nginx.
+# Установка на сервере (ARCHITECTURE.md §9 «Деплой»):
+#   git clone <репо> ilm4 && cd ilm4
+#   cp .env.example .env        # вписать SECRET_KEY, POSTGRES_PASSWORD, ALLOWED_HOSTS
+#   docker compose -f docker-compose.prod.yml up -d --build
+#   docker compose -f docker-compose.prod.yml exec app python manage.py createsuperuser
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ilm4}
+      POSTGRES_USER: ${POSTGRES_USER:-ilm4}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?задай POSTGRES_PASSWORD в .env}
+    volumes:
+      - ilm4_db_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ilm4}"]
+      interval: 5s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - ilm4_redis_prod:/data
+
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+      DATABASE_URL: postgis://${POSTGRES_USER:-ilm4}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-ilm4}
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - ilm4_media_prod:/app/media
+      - ilm4_static_prod:/app/staticfiles
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/ilm4.conf:/etc/nginx/conf.d/default.conf:ro
+      - ilm4_static_prod:/staticfiles:ro
+      - ilm4_media_prod:/media:ro
+    depends_on:
+      - app
+
+volumes:
+  ilm4_db_prod: {}
+  ilm4_redis_prod: {}
+  ilm4_media_prod: {}
+  ilm4_static_prod: {}

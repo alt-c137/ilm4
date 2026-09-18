@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}Регистрация — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h1>Регистрация</h1>
+  <form method="post" class="form">{% csrf_token %}
+    {% for field in form %}
+      <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span class="req">*</span>{% endif %}</label>
+      {{ field }}
+      {% if field.errors %}<span class="err">{{ field.errors.0 }}</span>{% endif %}
+      {% if field.help_text %}<span class="hint">{{ field.help_text }}</span>{% endif %}
+    {% endfor %}
+    {% if form.non_field_errors %}<span class="err">{{ form.non_field_errors.0 }}</span>{% endif %}
+    <button type="submit" class="btn btn--p">Создать аккаунт</button>
+  </form>
+  <p class="page__hint">Уже есть аккаунт? <a href="{% url 'accounts:login' %}" class="link">Войти</a></p>
+</div>
+{% endblock %}

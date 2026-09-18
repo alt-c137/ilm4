@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}Вход — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h1>Вход</h1>
+  <form method="post" class="form">{% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    {% for field in form %}
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {% if field.errors %}<span class="err">{{ field.errors.0 }}</span>{% endif %}
+    {% endfor %}
+    {% if form.non_field_errors %}<span class="err">{{ form.non_field_errors.0 }}</span>{% endif %}
+    <button type="submit" class="btn btn--p">Войти</button>
+  </form>
+  <p class="page__hint">Нет аккаунта? <a href="{% url 'accounts:register' %}" class="link">Зарегистрироваться</a></p>
+</div>
+{% endblock %}

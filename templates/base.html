@@ -20,7 +20,15 @@
     </form>
     <div class="top__act">
       <a class="btn btn--s" href="{% url 'core:support' %}">♥ Поддержать</a>
-      <a class="btn btn--g" href="{% url 'core:soon' %}">Войти</a>
+      {% if user.is_authenticated %}
+        <a class="btn btn--g" href="{% url 'accounts:profile' %}">{{ user.get_display_name }}</a>
+        <form class="top__exit" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
+          <button type="submit" class="btn btn--g">Выйти</button>
+        </form>
+      {% else %}
+        <a class="btn btn--g" href="{% url 'accounts:login' %}">Войти</a>
+        <a class="btn btn--p" href="{% url 'accounts:register' %}">Регистрация</a>
+      {% endif %}
     </div>
   </div></header>
   <nav class="nav"><div class="nav__row">
