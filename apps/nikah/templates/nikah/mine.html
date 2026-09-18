@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Моя анкета — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h1>Моя анкета</h1>
+  <p>Статус: <b>{{ profile.get_status_display }}</b>
+     {% if profile.is_boosted %} · поднята до {{ profile.boosted_until|date:"d.m H:i" }}{% endif %}</p>
+  <form method="post" action="{% url 'nikah:boost' %}">{% csrf_token %}
+    <button type="submit" class="btn btn--s">⬆ Поднять на 7 дней — {{ boost_price|intcomma }} сум</button>
+  </form>
+
+  <h2 class="page__h2">Открыли ваш контакт ({{ contacts|length }})</h2>
+  {% for c in contacts %}
+  <p>📩 {{ c.from_user.get_display_name }} · {{ c.created_at|date:"d.m H:i" }}</p>
+  {% empty %}<p>Пока никто.</p>{% endfor %}
+</div>
+{% endblock %}

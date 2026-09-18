@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'apps.migration',
     'apps.services',
     'apps.library',
+    'apps.nikah',
 ]
 
 MIDDLEWARE = [

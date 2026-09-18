@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Анкета для брака — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h1>Создать анкету</h1>
+  <p>Анкета появится после модерации. Пожалуйста, серьёзные намерения — цель раздела никах.</p>
+  <form method="post" enctype="multipart/form-data" class="form form--wide">{% csrf_token %}
+    <label>Кто вы <span class="req">*</span></label>
+    <select name="gender">
+      <option value="M">Брат</option>
+      <option value="F">Сестра</option>
+    </select>
+    <label>Возраст <span class="req">*</span></label>
+    <input type="number" name="age" min="18" max="99" required>
+    <label>Город</label>
+    <input type="text" name="city" maxlength="80">
+    <label>О себе <span class="req">*</span></label>
+    <textarea name="about" rows="5" required></textarea>
+    <label>Кого ищете</label>
+    <textarea name="partner_expectations" rows="3"></textarea>
+    <label>Контакт (показывается после оплаты)</label>
+    <input type="text" name="contact_hint" maxlength="200" placeholder="telegram @ник / email / телефон">
+    <label>Фото</label>
+    <input type="file" name="photo" accept="image/*">
+    <button type="submit" class="btn btn--p">Отправить на модерацию</button>
+  </form>
+</div>
+{% endblock %}

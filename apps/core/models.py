@@ -90,6 +90,10 @@ class SiteSettings(SingletonModel):
     )
     boost_price = models.PositiveIntegerField('цена буста объявления (7 дней), сум',
                                               default=20_000)
+    nikah_chat_price = models.PositiveIntegerField(
+        'никах: цена «написать» для мужчин, сум', default=10_000)
+    nikah_boost_price = models.PositiveIntegerField(
+        'никах: цена буста анкеты (7 дней), сум', default=15_000)
     support_text = models.TextField(
         'текст «Поддержать проект»',
         default='ilm4 живёт на пожертвования уммы — садака джария, '

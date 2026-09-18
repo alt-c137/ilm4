@@ -21,6 +21,7 @@ urlpatterns = [
     path('migration/', include('apps.migration.urls')),
     path('services/', include('apps.services.urls')),
     path('library/', include('apps.library.urls')),
+    path('nikah/', include('apps.nikah.urls')),
     path('', include('apps.core.urls')),
 ]
 

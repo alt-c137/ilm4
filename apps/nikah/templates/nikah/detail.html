@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Анкета — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h1>{{ profile.get_gender_display }}, {{ profile.age}} · {{ profile.city }}</h1>
+  <h2 class="page__h2">О себе</h2>
+  <p>{{ profile.about|linebreaks }}</p>
+  {% if profile.partner_expectations %}
+  <h2 class="page__h2">Кого ищет</h2>
+  <p>{{ profile.partner_expectations|linebreaks }}</p>
+  {% endif %}
+
+  {% if profile.user == request.user %}
+    <p><a class="btn btn--g" href="{% url 'nikah:mine' %}">Моя анкета</a></p>
+  {% elif has_contact %}
+    <div class="contact-open">
+      <b>Контакт открыт:</b> {{ profile.contact_hint|default:profile.user.email }}
+    </div>
+    <p class="page__hint">Дальше — по шариату: предложите встречу с вали (опекуном),
+      не оставайтесь наедине. БаракаЛлаху фикум.</p>
+  {% elif user.is_authenticated %}
+    <form method="post" action="{% url 'nikah:contact' profile.pk %}">{% csrf_token %}
+      <button type="submit" class="btn btn--p">
+        {% if profile.gender == 'F' %}Открыть контакт{% else %}Открыть контакт — {{ chat_price }} сум{% endif %}
+      </button>
+    </form>
+    <p class="page__hint">Для братьев открытие контакта платное (разово на анкету);
+       для сестёр — бесплатно.</p>
+  {% else %}
+    <p><a class="link" href="{% url 'accounts:login' %}?next={{ request.path }}">Войдите</a>, чтобы открыть контакт.</p>
+  {% endif %}
+  <a class="btn btn--g" href="{% url 'nikah:list' %}">← Все анкеты</a>
+</div>
+{% endblock %}

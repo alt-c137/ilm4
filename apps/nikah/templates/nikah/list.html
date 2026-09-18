@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Никах — {{ block.super }}{% endblock %}
+
+{% block content %}
+<section class="sec">
+  <div class="sec__h">
+    <div class="sec__t">Знакомства для брака</div>
+    {% if user.is_authenticated and not user.nikah_profile %}
+      <a class="sec__l" href="{% url 'nikah:create' %}">+ Создать анкету</a>
+    {% elif user.is_authenticated %}
+      <a class="sec__l" href="{% url 'nikah:mine' %}">Моя анкета</a>
+    {% endif %}
+  </div>
+  <p class="meta" style="margin-bottom:10px">Просмотр анкет бесплатный. Написать — платно для братьев, сёстрам бесплатно. Цель — только никах.</p>
+  <form method="get" class="map__form">
+    <select name="gender">
+      <option value="">Все</option>
+      <option value="M"{% if gender == 'M' %} selected{% endif %}>Братья</option>
+      <option value="F"{% if gender == 'F' %} selected{% endif %}>Сёстры</option>
+    </select>
+    <input type="text" name="city" value="{{ city }}" placeholder="Город">
+    <button type="submit" class="btn btn--p">Показать</button>
+  </form>
+  <div class="grid g4" style="margin-top:16px">
+    {% for p in profiles %}
+    <a class="card" href="{% url 'nikah:detail' p.pk %}">
+      {% if p.photo %}
+      <div class="card__i" style="background-image:url('{{ p.photo.url }}')"></div>
+      {% else %}
+      <div class="card__i" style="background:linear-gradient(135deg,var(--accent-soft),var(--line))">💍</div>
+      {% endif %}
+      <div class="card__b">
+        {% if p.is_boosted %}<div class="card__c">ТОП</div>{% endif %}
+        <div class="card__t">{{ p.get_gender_display }}, {{ p.age }}</div>
+        <div class="card__d">{{ p.city }}</div>
+      </div>
+    </a>
+    {% empty %}<p>Анкет пока нет.</p>{% endfor %}
+  </div>
+</section>
+{% endblock %}
