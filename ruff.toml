@@ -1,0 +1,7 @@
+# Ruff — линтер/форматтер ilm4.
+# RUF012 отключён: Meta.ordering и choices в Django — легитимные
+# изменяемые атрибуты класса, ложное срабатывание для Django-проектов.
+line-length = 120
+
+[lint]
+ignore = ["RUF012"]
