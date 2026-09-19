@@ -2,9 +2,9 @@
 {% block title %}ilmbuy — купля-продажа — {{ block.super }}{% endblock %}
 
 {% block content %}
+{% include 'includes/section_hero.html' with icon="🛒" title="ilmbuy — купля-продажа" desc="Халяль-маркетплейс уммы: от телефонов до фиников, от своих — для своих" class="buy" cta="Подать объявление" cta_url="/buy/add/" %}
 <section class="sec">
   <div class="sec__h">
-    <div class="sec__t">ilmbuy — купля-продажа</div>
     {% if user.is_authenticated %}
       <a class="sec__l" href="{% url 'market:create' %}">+ Подать объявление</a>
       <a class="sec__l" href="{% url 'market:my' %}">Мои объявления</a>

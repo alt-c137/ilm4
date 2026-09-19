@@ -2,8 +2,8 @@
 {% block title %}Чат — {{ block.super }}{% endblock %}
 
 {% block content %}
+{% include 'includes/section_hero.html' with icon="💬" title="Сообщения" desc="Диалоги по объявлениям и услугам — в реальном времени" class="chat" cta="Новый диалог" cta_url="/chat/start/" %}
 <div class="page">
-  <h1>Сообщения</h1>
   <p><a class="btn btn--p" href="{% url 'chat:start' %}">+ Новый диалог</a></p>
   {% for row in rows %}
   <a class="ni link" href="{% url 'chat:thread' row.thread.pk %}" style="align-items:center">

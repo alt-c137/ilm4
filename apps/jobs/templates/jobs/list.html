@@ -2,9 +2,9 @@
 {% block title %}Работа — {{ block.super }}{% endblock %}
 
 {% block content %}
+{% include 'includes/section_hero.html' with icon="💼" title="Работа" desc="Вакансии от своих: честные работодатели, без серых схем" class="jobs" cta="Добавить вакансию" cta_url="/jobs/add/" %}
 <section class="sec">
   <div class="sec__h">
-    <div class="sec__t">Вакансии</div>
     {% if user.is_authenticated %}<a class="sec__l" href="{% url 'jobs:create' %}">+ Добавить вакансию</a>{% endif %}
   </div>
   <form method="get" class="map__form">

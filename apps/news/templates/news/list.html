@@ -2,8 +2,8 @@
 {% block title %}Новости — {{ block.super }}{% endblock %}
 
 {% block content %}
+{% include 'includes/section_hero.html' with icon="📰" title="Новости" desc="Главное из исламского мира — коротко и по делу" class="news" %}
 <section class="sec">
-  <div class="sec__h"><div class="sec__t">Новости исламского мира</div></div>
   <div class="cols">
     <div class="panel">
       {% for p in posts %}

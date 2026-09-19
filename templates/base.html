@@ -36,7 +36,15 @@
   </div></header>
   <nav class="nav"><div class="nav__row">
     <a class="on" href="{% url 'core:home' %}">Главная</a>
-    {% for m in menu_modules %}<a href="/{{ m.key }}/">{{ m.name }}</a>{% endfor %}
+    {% for m in menu_top %}<a href="/{{ m.key }}/">{{ m.name }}</a>{% endfor %}
+    {% if menu_more %}
+    <div class="nav__more" tabindex="0">
+      <a class="nav__drop">Ещё ▾</a>
+      <div class="nav__menu">
+        {% for m in menu_more %}<a href="/{{ m.key }}/">{{ m.icon }} {{ m.name }}</a>{% endfor %}
+      </div>
+    </div>
+    {% endif %}
   </div></nav>
   {% block content %}{% endblock %}
 </div>

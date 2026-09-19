@@ -2,9 +2,9 @@
 {% block title %}Карта халяль — {{ block.super }}{% endblock %}
 
 {% block content %}
+{% include 'includes/section_hero.html' with icon="🗺️" title="Карта халяль" desc="Кафе, магазины, отели и врачи — на одной карте, рядом с вами" class="map" cta="Добавить место" cta_url="/map/add/" %}
 <section class="sec">
   <div class="sec__h">
-    <div class="sec__t">Карта халяль-мест</div>
     <a class="sec__l" href="{% url 'maps:add' %}">+ Добавить место</a>
   </div>
 

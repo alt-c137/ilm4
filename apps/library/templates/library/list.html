@@ -2,9 +2,9 @@
 {% block title %}Библиотека — {{ block.super }}{% endblock %}
 
 {% block content %}
+{% include 'includes/section_hero.html' with icon="📚" title="Библиотека" desc="Книги для роста: бесплатные и платные, с мгновенным доступом" class="library" cta="Добавить книгу" cta_url="/library/add/" %}
 <section class="sec">
   <div class="sec__h">
-    <div class="sec__t">Библиотека</div>
     {% if user.is_authenticated %}<a class="sec__l" href="{% url 'library:add' %}">+ Добавить книгу</a>{% endif %}
   </div>
   <div class="grid g4">

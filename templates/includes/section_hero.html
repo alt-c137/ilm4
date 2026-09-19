@@ -1,0 +1,14 @@
+{% comment %}
+Шапка раздела: у каждого раздела свой цвет, иконка, слоган и действие —
+разделы читаются как отдельные сервисы, а не «та же страница».
+Параметры: icon, title, desc, class, cta (текст), cta_url (путь)
+{% endcomment %}
+<div class="shero shero--{{ class }}">
+  <div class="shero__icon">{{ icon }}</div>
+  <div class="shero__text">
+    <div class="shero__crumb"><a href="/">ilm4</a> · {{ title }}</div>
+    <h1 class="shero__title">{{ title }}</h1>
+    <p class="shero__desc">{{ desc }}</p>
+  </div>
+  {% if cta %}<a class="btn shero__cta" href="{{ cta_url }}">{{ cta }}</a>{% endif %}
+</div>

@@ -2,9 +2,9 @@
 {% block title %}Услуги — {{ block.super }}{% endblock %}
 
 {% block content %}
+{% include 'includes/section_hero.html' with icon="📄" title="Услуги" desc="Нотариальные переводы, исламские юристы, туры хадж и умра" class="services" cta="Предложить услугу" cta_url="/services/add/" %}
 <section class="sec">
   <div class="sec__h">
-    <div class="sec__t">Услуги: переводы, юристы, туры</div>
     {% if user.is_authenticated %}<a class="sec__l" href="{% url 'services:create' %}">+ Предложить услугу</a>{% endif %}
   </div>
   <form method="get" class="map__form">

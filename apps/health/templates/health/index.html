@@ -2,9 +2,9 @@
 {% block title %}Здоровье — {{ block.super }}{% endblock %}
 
 {% block content %}
+{% include 'includes/section_hero.html' with icon="🩺" title="Здоровье" desc="Врачи нашей уммы по городам — контакты, опыт, специализации" class="health" cta="Публикация врача" cta_url="/health/add/" %}
 <section class="sec">
   <div class="sec__h">
-    <div class="sec__t">Врачи платформы</div>
     {% if user.is_authenticated %}<a class="sec__l" href="{% url 'health:add' %}">+ Публикация врача{% if price %} (платно){% endif %}</a>{% endif %}
   </div>
 

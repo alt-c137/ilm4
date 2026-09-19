@@ -2,9 +2,9 @@
 {% block title %}Никах — {{ block.super }}{% endblock %}
 
 {% block content %}
+{% include 'includes/section_hero.html' with icon="💍" title="Никах" desc="Знакомства для брака — серьёзно, с модерацией анкет" class="nikah" cta="Создать анкету" cta_url="/nikah/create/" %}
 <section class="sec">
   <div class="sec__h">
-    <div class="sec__t">Знакомства для брака</div>
     {% if user.is_authenticated and not user.nikah_profile %}
       <a class="sec__l" href="{% url 'nikah:create' %}">+ Создать анкету</a>
     {% elif user.is_authenticated %}

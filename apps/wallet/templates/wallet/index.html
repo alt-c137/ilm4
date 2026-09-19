@@ -3,8 +3,8 @@
 {% block title %}Кошелёк — {{ block.super }}{% endblock %}
 
 {% block content %}
+{% include 'includes/section_hero.html' with icon="💰" title="Кошелёк" desc="Ваш баланс и история операций платформы" class="wallet" %}
 <div class="page">
-  <h1>Кошелёк</h1>
   <div class="balance">
     <span class="balance__label">Баланс</span>
     <span class="balance__sum">{{ balance|intcomma }} <small>сум</small></span>
