@@ -10,12 +10,12 @@
 
   <form method="get" class="map__form">
     <input type="text" name="q" value="{{ q }}" placeholder="Поиск по названию">
-    <select name="category">
-      <option value="">Все категории</option>
+    <div class="chips" style="width:100%;margin-bottom:10px">
+      <a class="chip{% if not category %} chip--on{% endif %}" href="/map/?q={{ q|urlencode }}&city={{ city|urlencode }}">Все категории</a>
       {% for key, label in categories %}
-        <option value="{{ key }}"{% if key == category %} selected{% endif %}>{{ label }}</option>
+      <a class="chip{% if key == category %} chip--on{% endif %}" href="?{% if q %}q={{ q|urlencode }}&{% endif %}{% if city %}city={{ city|urlencode }}&{% endif %}category={{ key }}">{{ label }}</a>
       {% endfor %}
-    </select>
+    </div>
     <input type="text" name="city" value="{{ city }}" placeholder="Город">
     <button type="submit" class="btn btn--p">Найти</button>
     <button type="button" class="btn btn--g" id="near-btn">📍 Рядом со мной</button>

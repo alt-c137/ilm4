@@ -5,6 +5,7 @@
 """
 from datetime import date, datetime
 
+from django.utils import timezone as dj_tz
 from praytimes import PrayTimes
 
 from .cities import CITIES, DEFAULT_CITY
@@ -49,7 +50,7 @@ def next_prayer(times: dict[str, str], now: datetime | None = None, tz_offset: i
 
     now — текущее время в зоне координат (по умолчанию зона проекта).
     """
-    now = now or datetime.now()
+    now = now or _now_naive()
     prayer_times = [(k, datetime.strptime(times[k], '%H:%M')) for k in PRAYER_ONLY]
     for key, moment in prayer_times:
         if moment > now:
@@ -57,6 +58,15 @@ def next_prayer(times: dict[str, str], now: datetime | None = None, tz_offset: i
             hours, rest = divmod(int(delta.total_seconds()), 3600)
             return key, NAMES[key], f'{hours}:{rest % 3600 // 60:02d}'
     return 'fajr', NAMES['fajr'], 'завтра'
+
+
+def _now_naive() -> datetime:
+    """Текущее время в зоне проекта (Asia/Tashkent), наивное.
+
+    Нельзя брать datetime.now() напрямую: системные часы WSL могут стоять
+    в другой зоне — и подсветка намаза поедет на часы.
+    """
+    return dj_tz.localtime().replace(tzinfo=None)
 
 
 def _minutes(hhmm: str) -> int:
@@ -78,7 +88,7 @@ def until_next(times: dict[str, str], now: datetime | None = None) -> dict:
     Возвращает {'key','name','time','human','tomorrow'}:
     human — «2 ч 14 мин», tomorrow — True, если следующий намаз завтра.
     """
-    now = now or datetime.now()
+    now = now or _now_naive()
     now_m = now.hour * 60 + now.minute
     marks = [(k, _minutes(times[k])) for k in PRAYER_ONLY]
     for key, moment in marks:
@@ -92,7 +102,7 @@ def until_next(times: dict[str, str], now: datetime | None = None) -> dict:
 
 def prayer_progress(times: dict[str, str], now: datetime | None = None) -> int:
     """Процент (0–100) пути от предыдущего намаза к следующему — для полосы."""
-    now = now or datetime.now()
+    now = now or _now_naive()
     now_m = now.hour * 60 + now.minute
     marks = [(k, _minutes(times[k])) for k in PRAYER_ONLY]
 

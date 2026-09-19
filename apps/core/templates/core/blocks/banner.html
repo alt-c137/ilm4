@@ -1,0 +1,43 @@
+{% comment %}Баннер-карусель главной: три больших слайда-раздела с автопрокруткой.{% endcomment %}
+<div class="banner" id="banner">
+  <div class="banner__window" id="banner-window">
+    <a class="banner__slide banner__slide--buy" href="/buy/">
+      <div class="banner__k">ilmbuy</div>
+      <div class="banner__t">Халяль-маркетплейс уммы</div>
+      <div class="banner__d">От телефонов до фиников — покупай и продавай у своих, в своём городе.</div>
+    </a>
+    <a class="banner__slide banner__slide--prayer" href="/prayer/">
+      <div class="banner__k">Время намаза</div>
+      <div class="banner__t">Ни одна молитва не пропустится</div>
+      <div class="banner__d">Точный расчёт по твоему городу или GPS — быстро и без лишнего.</div>
+    </a>
+    <a class="banner__slide banner__slide--nikah" href="/nikah/">
+      <div class="banner__k">Никах</div>
+      <div class="banner__t">Знакомства для брака — серьёзно</div>
+      <div class="banner__d">Проверенные анкеты, уважение и цель — только никах.</div>
+    </a>
+  </div>
+  <div class="banner__dots" id="banner-dots">
+    <button type="button" class="banner__dot on" aria-label="Слайд 1"></button>
+    <button type="button" class="banner__dot" aria-label="Слайд 2"></button>
+    <button type="button" class="banner__dot" aria-label="Слайд 3"></button>
+  </div>
+</div>
+<script>
+(function () {
+  var win = document.getElementById('banner-window');
+  if (!win) return;
+  var dots = document.querySelectorAll('#banner-dots .banner__dot');
+  var i = 0, total = win.children.length, timer;
+  function go(n) {
+    i = (n + total) % total;
+    win.style.transform = 'translateX(-' + i * 100 + '%)';
+    dots.forEach(function (d, k) { d.classList.toggle('on', k === i); });
+  }
+  function auto() { timer = setInterval(function () { go(i + 1); }, 5000); }
+  dots.forEach(function (d, k) {
+    d.addEventListener('click', function () { clearInterval(timer); go(k); auto(); });
+  });
+  auto();
+})();
+</script>

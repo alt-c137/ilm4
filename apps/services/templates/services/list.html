@@ -7,13 +7,14 @@
   <div class="sec__h">
     {% if user.is_authenticated %}<a class="sec__l" href="{% url 'services:create' %}">+ Предложить услугу</a>{% endif %}
   </div>
-  <form method="get" class="map__form">
-    <select name="kind">
-      <option value="">Все виды</option>
-      {% for key, label in kinds %}<option value="{{ key }}"{% if key == kind %} selected{% endif %}>{{ label }}</option>{% endfor %}
-    </select>
-    <button type="submit" class="btn btn--p">Показать</button>
-  </form>
+  <div class="toolbar">
+    <div class="chips">
+      <a class="chip{% if not kind %} chip--on{% endif %}" href="/services/">Все виды</a>
+      {% for key, label in kinds %}
+      <a class="chip{% if key == kind %} chip--on{% endif %}" href="?kind={{ key }}">{{ label }}</a>
+      {% endfor %}
+    </div>
+  </div>
   <div class="grid g3" style="margin-top:16px">
     {% for s in services %}
     <div class="card">

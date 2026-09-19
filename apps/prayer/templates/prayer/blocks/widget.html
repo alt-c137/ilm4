@@ -6,11 +6,13 @@
   </div>
   <div class="prayer">
     {% for it in w.items %}
-      <div class="prayer__item{% if it.soon %} on{% endif %}">
+      <div class="prayer__item{% if it.soon %} on{% elif it.passed %} passed{% endif %}">
         <span class="prayer__n">{{ it.label }}</span>
         <span class="prayer__t">{{ it.time }}</span>
+        {% if it.soon %}<span class="prayer__next-mark">→ сейчас ждём</span>
+        {% elif it.passed %}<span class="prayer__next-mark">✓</span>{% endif %}
       </div>
     {% endfor %}
   </div>
-  <p class="prayer__next">Ближайший намаз: <b>{{ w.next_name }}</b> — через {{ w.next_left }}</p>
+  <p class="prayer__next">Ближайший намаз: <b>{{ w.next_name }}</b> — {{ w.countdown }}</p>
 </section>
