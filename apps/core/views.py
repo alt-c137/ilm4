@@ -1,13 +1,15 @@
 from django.shortcuts import render
 
 from .blocks import get_blocks
-from .models import ModuleConfig, Rate
+from .models import Banner, ModuleConfig, Rate
 
 
 def home(request):
     """Главная: блоки реестра по порядку + витрина разделов (§3.2)."""
     rates = Rate.objects.all()
+    db_banners = list(Banner.objects.filter(is_active=True).order_by('order', 'id'))
     return render(request, 'core/home.html', {
+        'db_banners': db_banners,
         'rates': rates,
         'rates_updated': rates.first().updated if rates else None,
         'blocks': get_blocks(),

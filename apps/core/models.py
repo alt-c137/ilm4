@@ -76,6 +76,10 @@ class SiteSettings(SingletonModel):
     hadis_source = models.CharField(
         'хадис дня — источник', max_length=200, default='аль-Бухари, Муслим',
     )
+    hadis_details = models.TextField(
+        'хадис дня — разбор (кнопка «i»)', blank=True,
+        help_text='Кто передал, откуда хадис, пояснение. Показывается по кнопке «i»',
+    )
     hadis_image = models.ImageField(
         'хадис — фоновая картинка', upload_to='settings/', blank=True, null=True,
         help_text='Фон карточки хадиса на главной; без неё — фирменный градиент',
@@ -128,6 +132,9 @@ class Banner(models.Model):
     subtitle = models.CharField('подпись', max_length=200, blank=True)
     cta_text = models.CharField('надпись кнопки', max_length=40, default='Подробнее')
     cta_url = models.CharField('ссылка кнопки', max_length=300, default='/')
+    duration_seconds = models.PositiveSmallIntegerField(
+        'секунд показа', default=6,
+        help_text='Сколько секунд слайд висит + сколько секунд заполняется линия')
     order = models.PositiveSmallIntegerField('порядок', default=0)
     is_active = models.BooleanField('активен', default=True)
 

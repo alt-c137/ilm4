@@ -1,55 +1,105 @@
-{% load icons %}{% comment %}Баннер-карусель главной: три больших слайда-раздела с автопрокруткой.{% endcomment %}
+{% load icons %}{% comment %}Рекламная карусель главной.
+Если в админке есть активные баннеры (Core → Баннеры) — показываются они:
+у каждого своя картинка, текст, кнопка и СВОЯ длительность показа.
+Линии-таймеры внизу заполняются за время показа слайда.
+Пусто — три фирменных слайда-приглашения.{% endcomment %}
 <div class="banner" id="banner">
   <div class="banner__window" id="banner-window">
-    <a class="banner__slide banner__slide--buy" style="{% banner_bg 'buy' %}" href="/buy/">
-      <div class="banner__k">ilmbuy</div>
-      <div class="banner__t">Халяль-маркетплейс уммы</div>
-      <div class="banner__d">От телефонов до фиников — покупай и продавай у своих, в своём городе.</div>
-    </a>
-    <a class="banner__slide banner__slide--prayer" style="{% banner_bg 'prayer' %}" href="/prayer/">
-      <div class="banner__k">Время намаза</div>
-      <div class="banner__t">Ни одна молитва не пропустится</div>
-      <div class="banner__d">Точный расчёт по твоему городу или GPS — быстро и без лишнего.</div>
-    </a>
-    <a class="banner__slide banner__slide--nikah" style="{% banner_bg 'nikah' %}" href="/nikah/">
-      <div class="banner__k">Никах</div>
-      <div class="banner__t">Знакомства для брака — серьёзно</div>
-      <div class="banner__d">Проверенные анкеты, уважение и цель — только никах.</div>
-    </a>
+    {% if db_banners %}
+      {% for b in db_banners %}
+      <a class="banner__slide" style="background-image:url('{{ b.image.url }}')"
+         data-duration="{% widthratio b.duration_seconds 1 1000 %}" href="{{ b.cta_url }}">
+        <div class="banner__k">{{ b.subtitle }}</div>
+        <div class="banner__t">{{ b.title }}</div>
+        {% if b.cta_text %}<span class="banner__cta">{{ b.cta_text }} →</span>{% endif %}
+      </a>
+      {% endfor %}
+    {% else %}
+      <a class="banner__slide banner__slide--buy" style="{% banner_bg 'buy' %}" href="/buy/" data-duration="6000">
+        <div class="banner__k">ILMBUY</div>
+        <div class="banner__t">Халяль-маркетплейс уммы</div>
+        <div class="banner__d">От телефонов до фиников — покупай и продавай у своих, в своём городе.</div>
+      </a>
+      <a class="banner__slide banner__slide--prayer" style="{% banner_bg 'prayer' %}" href="/prayer/" data-duration="6000">
+        <div class="banner__k">Время намаза</div>
+        <div class="banner__t">Ни одна молитва не пропустится</div>
+        <div class="banner__d">Точный расчёт по твоему городу или GPS — быстро и без лишнего.</div>
+      </a>
+      <a class="banner__slide banner__slide--nikah" style="{% banner_bg 'nikah' %}" href="/nikah/" data-duration="6000">
+        <div class="banner__k">Никах</div>
+        <div class="banner__t">Знакомства для брака — серьёзно</div>
+        <div class="banner__d">Проверенные анкеты, уважение и цель — только никах.</div>
+      </a>
+    {% endif %}
   </div>
   <button type="button" class="banner__arrow banner__arrow--l" id="banner-prev" aria-label="Назад">‹</button>
   <button type="button" class="banner__arrow banner__arrow--r" id="banner-next" aria-label="Вперёд">›</button>
-  <div class="banner__dots" id="banner-dots">
-    <button type="button" class="banner__dot on" aria-label="Слайд 1"></button>
-    <button type="button" class="banner__dot" aria-label="Слайд 2"></button>
-    <button type="button" class="banner__dot" aria-label="Слайд 3"></button>
+  <div class="banner__lines" id="banner-lines">
+    {% if db_banners %}
+      {% for b in db_banners %}<span class="banner__line" data-duration="{% widthratio b.duration_seconds 1 1000 %}"></span>{% endfor %}
+    {% else %}
+      <span class="banner__line" data-duration="6000"></span><span class="banner__line" data-duration="6000"></span><span class="banner__line" data-duration="6000"></span>
+    {% endif %}
   </div>
 </div>
 <script>
 (function () {
   var win = document.getElementById('banner-window');
   if (!win) return;
-  var dots = document.querySelectorAll('#banner-dots .banner__dot');
-  var i = 0, total = win.children.length, timer;
+  var lines = document.querySelectorAll('#banner-lines .banner__line');
+  var i = 0, total = win.children.length, timer = null;
+
+  function drawLine(idx) {
+    lines.forEach(function (ln, k) {
+      ln.classList.remove('fill');
+      ln.style.width = '';
+      if (k === idx) {
+        var dur = parseInt(ln.dataset.duration || '6000', 10);
+        void ln.offsetWidth; /* сброс, чтобы анимация перезапустилась */
+        ln.classList.add('fill');
+        ln.style.transition = 'width ' + dur + 'ms linear';
+        ln.style.width = '100%';
+      }
+    });
+  }
   function go(n) {
     i = (n + total) % total;
     win.style.transform = 'translateX(-' + i * 100 + '%)';
-    dots.forEach(function (d, k) { d.classList.toggle('on', k === i); });
+    lines.forEach(function (ln, k) { ln.classList.toggle('on', k === i); });
+    drawLine(i);
   }
-  function auto() { timer = setInterval(function () { go(i + 1); }, 5000); }
-  document.getElementById('banner-prev').addEventListener('click', function () { clearInterval(timer); go(i - 1); auto(); });
-  document.getElementById('banner-next').addEventListener('click', function () { clearInterval(timer); go(i + 1); auto(); });
+  function auto() {
+    var slide = win.children[i];
+    var dur = parseInt((slide && slide.dataset.duration) || '6000', 10);
+    timer = setInterval(function () { go(i + 1); }, dur);
+  }
+  function restart() { clearInterval(timer); auto(); drawLine(i); }
+
+  document.getElementById('banner-prev').addEventListener('click', function () { clearInterval(timer); go(i - 1); restart(); });
+  document.getElementById('banner-next').addEventListener('click', function () { clearInterval(timer); go(i + 1); restart(); });
+  lines.forEach(function (ln, k) {
+    ln.addEventListener('click', function () { clearInterval(timer); go(k); restart(); });
+  });
   var x0 = null;
-  win.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; clearInterval(timer); }, {passive: true});
+  win.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; clearInterval(timer); }, { passive: true });
   win.addEventListener('touchend', function (e) {
     if (x0 === null) return;
     var dx = e.changedTouches[0].clientX - x0;
     if (Math.abs(dx) > 40) go(dx < 0 ? i + 1 : i - 1);
-    x0 = null; auto();
-  }, {passive: true});
-  dots.forEach(function (d, k) {
-    d.addEventListener('click', function () { clearInterval(timer); go(k); auto(); });
-  });
-  auto();
+    x0 = null; restart();
+  }, { passive: true });
+
+  go(0); auto();
+})();
+
+/* хадис дня: кнопка «i» открывает разбор */
+(function () {
+  var btn = document.getElementById('hadis-info-btn');
+  var modal = document.getElementById('hadis-modal');
+  if (!btn || !modal) return;
+  btn.addEventListener('click', function () { modal.hidden = false; });
+  document.getElementById('hadis-modal-close').addEventListener('click', function () { modal.hidden = true; });
+  modal.addEventListener('click', function (e) { if (e.target === modal) modal.hidden = true; });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') modal.hidden = true; });
 })();
 </script>

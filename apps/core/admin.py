@@ -1,7 +1,7 @@
 from django.contrib import admin
 from solo.admin import SingletonModelAdmin
 
-from .models import ModuleConfig, Notification, SiteSettings, Theme
+from .models import Banner, ModuleConfig, Notification, Rate, SiteSettings, Theme
 
 
 @admin.register(ModuleConfig)
@@ -24,4 +24,11 @@ class NotificationAdmin(admin.ModelAdmin):
     list_filter = ('read',)
 
 
+@admin.register(Banner)
+class BannerAdmin(admin.ModelAdmin):
+    list_display = ('title', 'subtitle', 'cta_url', 'duration_seconds', 'order', 'is_active')
+    list_editable = ('order', 'is_active', 'duration_seconds')
+
+
+admin.site.register(Rate)
 admin.site.register(SiteSettings, SingletonModelAdmin)
