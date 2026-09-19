@@ -54,4 +54,5 @@ def site(request):
         'active_section': active_section,
         'menu_more_keys': [m.key for m in more],
         'is_home': is_home,
+        'is_dark': request.COOKIES.get('ilm4_dark') == '1',
     }

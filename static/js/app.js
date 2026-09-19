@@ -57,3 +57,14 @@ document.querySelectorAll('.railnav').forEach(function (nav) {
     });
   });
 });
+
+// тёмная тема: переключатель у лого, состояние в куке ilm4_dark
+var dt = document.getElementById('darktoggle');
+if (dt) {
+  dt.addEventListener('click', function () {
+    var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    var next = dark ? '0' : '1';
+    document.documentElement.setAttribute('data-theme', next === '1' ? 'dark' : 'light');
+    document.cookie = 'ilm4_dark=' + next + ';path=/;max-age=31536000;samesite=lax';
+  });
+}
