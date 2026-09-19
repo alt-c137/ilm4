@@ -6,7 +6,7 @@
 from .models import ModuleConfig, SiteSettings, Theme
 
 # Порядок важности для верхней навигации
-TOP_MENU_KEYS = ['prayer', 'buy', 'map', 'health', 'nikah', 'forum']
+TOP_MENU_KEYS = ['prayer', 'buy', 'map', 'health', 'nikah', 'forum', 'chat', 'news', 'jobs', 'library']
 
 # namespace приложения → ключ раздела (для подсветки активной пилюли)
 NS_TO_KEY = {
