@@ -23,7 +23,7 @@
       <div class="tstrip__cell{% if it.soon %} on{% elif it.passed %} passed{% endif %}">
         <span class="tstrip__n">{{ it.label }}</span>
         <span class="tstrip__t">{{ it.time }}</span>
-        {% if it.soon %}<span class="tstrip__mark">→ сейчас</span>{% elif it.passed %}<span class="tstrip__mark">✓</span>{% endif %}
+        {% if it.soon %}<span class="tstrip__mark">→ следующий</span>{% elif it.passed %}<span class="tstrip__mark">✓</span>{% endif %}
       </div>
       {% endfor %}
     </div>
