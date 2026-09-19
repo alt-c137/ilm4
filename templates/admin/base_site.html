@@ -1,0 +1,53 @@
+{% extends "admin/base.html" %}
+{% comment %}
+Фирменная тема админки ilm4: переопределяем CSS-переменные Django-admin
+на палитру «Апп» + шрифт Inter. Стандартный Django-вид исчезает.
+{% endcomment %}
+
+{% block extrastyle %}{{ block.super }}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --primary:#6d5efc; --primary-fg:#ffffff; --secondary:#ece9ff; --accent:#5646e8;
+    --body-fg:#1b1d2b; --body-medium-color:#4b4e63; --body-quiet-color:#6a6d80;
+    --body-loud-color:#1b1d2b;
+    --header-color:#ffffff; --header-branding-color:#ffffff;
+    --header-bg:#5646e8; --header-link-color:#ffffff;
+    --link-fg:#5646e8; --link-hover-color:#5646e8; --link-selected-fg:#6d5efc;
+    --hairline-color:#e5e7f0; --border-color:#eceef4; --error-fg:#dc2626;
+    --message-success-bg:#e8f8f0; --message-warning-bg:#fdf3e0; --message-error-bg:#fdecec;
+    --button-fg:#5646e8; --button-hover-bg:#ece9ff; --button-bg:#fff;
+    --default-button-bg:#6d5efc; --default-button-hover-bg:#5646e8; --default-button-fg:#fff;
+    --cancel-button-bg:#f4f5fb; --cancel-button-hover-bg:#e9ebf5; --cancel-button-fg:#4b4e63;
+    --close-button-bg:#f4f5fb; --close-button-hover-bg:#e9ebf5; --close-button-fg:#4b4e63;
+    --delete-button-bg:#dc2626; --delete-button-hover-bg:#b91c1c;
+    --object-tools-fg:#5646e8; --object-tools-hover-bg:#ece9ff;
+    --font-family:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    --border-radius:12px;
+    font-family:var(--font-family);
+  }
+  #header{padding:14px 20px;box-shadow:0 10px 30px -14px rgba(30,34,60,.45)}
+  #branding h1{font-weight:800;letter-spacing:-.3px;font-size:19px}
+  #branding h1 a{color:#fff}
+  .module h2,.module caption,.inline-group h2{
+    background:#ece9ff;color:#5646e8;font-weight:700;border-radius:10px 10px 0 0}
+  .module{border-radius:10px;overflow:hidden}
+  #changelist table tbody tr:hover{background:#f7f6ff}
+  .button,a.button,.submit-row input,.object-tools a{
+    border-radius:10px!important;font-weight:600;transition:.15s}
+  .submit-row input.default{box-shadow:0 8px 18px -8px rgba(109,94,252,.6)}
+  input[type=text],input[type=password],input[type=email],input[type=url],
+  input[type=number],textarea,select,vLargeTextField,vTextField{
+    border-radius:10px!important;border-color:#dcdfeb!important}
+  input:focus,textarea:focus,select:focus{
+    border-color:#6d5efc!important;box-shadow:0 0 0 3px rgba(109,94,252,.15)!important}
+  #nav-sidebar{border-color:#eceef4}
+  .toggle-nav-sidebar{border-radius:0 12px 12px 0}
+  .selector-chosen h2{background:#5646e8!important;color:#fff!important}
+  .breadcrumbs{background:transparent;padding:10px 0}
+</style>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
