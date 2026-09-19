@@ -59,17 +59,52 @@ def next_prayer(times: dict[str, str], now: datetime | None = None, tz_offset: i
     return 'fajr', NAMES['fajr'], 'завтра'
 
 
-def prayer_progress(times: dict[str, str]) -> int:
+def _minutes(hhmm: str) -> int:
+    h, m = hhmm.split(':')
+    return int(h) * 60 + int(m)
+
+
+def _fmt_delta(minutes: int) -> str:
+    minutes = max(1, minutes)
+    if minutes < 60:
+        return f'{minutes} мин'
+    h, m = divmod(minutes, 60)
+    return f'{h} ч {m:02d} мин'
+
+
+def until_next(times: dict[str, str], now: datetime | None = None) -> dict:
+    """Сколько осталось до следующего намаза (сегодня или завтра — честно).
+
+    Возвращает {'key','name','time','human','tomorrow'}:
+    human — «2 ч 14 мин», tomorrow — True, если следующий намаз завтра.
+    """
+    now = now or datetime.now()
+    now_m = now.hour * 60 + now.minute
+    marks = [(k, _minutes(times[k])) for k in PRAYER_ONLY]
+    for key, moment in marks:
+        if moment > now_m:
+            return {'key': key, 'name': NAMES[key], 'time': times[key],
+                    'human': _fmt_delta(moment - now_m), 'tomorrow': False}
+    fajr = _minutes(times['fajr'])
+    return {'key': 'fajr', 'name': NAMES['fajr'], 'time': times['fajr'],
+            'human': _fmt_delta((1440 - now_m) + fajr), 'tomorrow': True}
+
+
+def prayer_progress(times: dict[str, str], now: datetime | None = None) -> int:
     """Процент (0–100) пути от предыдущего намаза к следующему — для полосы."""
-    now = datetime.now()
-    marks = [(k, datetime.strptime(times[k], '%H:%M')) for k in PRAYER_ONLY]
+    now = now or datetime.now()
+    now_m = now.hour * 60 + now.minute
+    marks = [(k, _minutes(times[k])) for k in PRAYER_ONLY]
+
     for i, (key, moment) in enumerate(marks):
-        if moment > now:
-            prev = marks[i - 1][1] if i else marks[-1][1]  # до Фаджра — от Иши
-            span = (moment - prev).total_seconds() or 1
-            done = (now - prev).total_seconds()
-            if done < 0:  # после полуночи: от вчерашней Иши до Фаджра
-                done += 24 * 3600
-                span = 24 * 3600 - span + (24 * 3600)  # приближение достаточно для полосы
-            return max(0, min(100, round(done / span * 100)))
-    return 100
+        if moment > now_m:
+            if i == 0:  # до Фаджра: интервал «вчера Иша → сегодня Фаджр»
+                prev = marks[-1][1] - 1440
+            else:
+                prev = marks[i - 1][1]
+            span = moment - prev
+            return max(0, min(100, round((now_m - prev) / span * 100)))
+    # после Иши: интервал «Иша → завтрашний Фаджр»
+    isha, fajr = marks[-1][1], marks[0][1]
+    span = (fajr + 1440) - isha
+    return max(0, min(100, round((now_m - isha) / span * 100)))

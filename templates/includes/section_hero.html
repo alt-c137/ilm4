@@ -1,10 +1,10 @@
+{% load icons %}
 {% comment %}
-Шапка раздела: у каждого раздела свой цвет, иконка, слоган и действие —
-разделы читаются как отдельные сервисы, а не «та же страница».
-Параметры: icon, title, desc, class, cta (текст), cta_url (путь)
+Шапка раздела: свой цвет, иконка, слоган и действие — разделы как отдельные
+сервисы. Иконку можно заменить своей: static/img/icons/<class>.svg (или .png).
 {% endcomment %}
 <div class="shero shero--{{ class }}">
-  <div class="shero__icon">{{ icon }}</div>
+  {% svc_icon class icon %}
   <div class="shero__text">
     <div class="shero__crumb"><a href="/">ilm4</a> · {{ title }}</div>
     <h1 class="shero__title">{{ title }}</h1>

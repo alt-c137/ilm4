@@ -30,6 +30,28 @@ def test_next_prayer():
     assert key == 'fajr' and left == 'завтра'
 
 
+def test_until_next_today_and_tomorrow():
+    times = services.compute(41.3111, 69.2797, 5)
+    # днём — следующий намаз сегодня
+    info = services.until_next(times, now=datetime(2026, 9, 19, 10, 0))
+    assert info['key'] == 'dhuhr' and not info['tomorrow']
+    assert 'ч' in info['human'] and info['time'] == times['dhuhr']
+    # после Иши — завтрашний Фаджр, и остаток считается честно
+    info = services.until_next(times, now=datetime(2026, 9, 19, 23, 30))
+    assert info['key'] == 'fajr' and info['tomorrow']
+    assert info['human'] == '5 ч 04 мин'  # 23:30 → 04:34
+
+
+def test_progress_between_prayers():
+    times = services.compute(41.3111, 69.2797, 5)
+    # 10:00 — между Фаджром (04:34) и Зухром (12:17) — где-то посередине, не 0 и не 100
+    pct = services.prayer_progress(times, now=datetime(2026, 9, 19, 10, 0))
+    assert 0 < pct < 100
+    # после Иши (20:00) прогресс идёт к завтрашнему Фаджру и не упирается в 100% сразу
+    pct_night = services.prayer_progress(times, now=datetime(2026, 9, 19, 21, 0))
+    assert 0 < pct_night < 100
+
+
 def test_prayer_page_available(client):
     assert ModuleConfig.objects.filter(key='prayer', status='on').exists()
     response = client.get('/prayer/')

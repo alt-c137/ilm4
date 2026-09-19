@@ -11,37 +11,38 @@
       <div class="prayer__hero-kicker">🕌 {{ place }}</div>
       <div class="prayer__hero-next">Ближайший намаз</div>
       <div class="prayer__hero-name">{{ next_name }}</div>
-      <div class="prayer__hero-left">через {{ next_left }}</div>
+      <div class="prayer__hero-left">
+        {% if until.tomorrow %}завтра, в {{ until.time }} — через {{ until.human }}
+        {% else %}через {{ until.human }}{% endif %}
+      </div>
       <div class="prayer__bar"><span style="width: {{ progress }}%"></span></div>
-      <div class="prayer__bar-meta"><span>{{ progress }}% времени прошло</span><span>метод: {{ method }}</span></div>
+      <div class="prayer__bar-meta"><span>между намазами: {{ progress }}%</span><span>метод: {{ method }}</span></div>
     </div>
     <div class="prayer__tiles">
       {% for it in items %}
       <div class="ptile{% if it.soon %} ptile--next{% elif it.passed %} ptile--passed{% endif %}">
         <div class="ptile__name">{{ it.label }}</div>
         <div class="ptile__time">{{ it.time }}</div>
-        {% if it.soon %}<div class="ptile__mark">→ следующий</div>{% elif it.passed %}<div class="ptile__mark">✓</div>{% endif %}
+        {% if it.soon %}<div class="ptile__mark">→ следующий</div>{% elif it.passed %}<div class="ptile__mark">✓ прошёл</div>{% endif %}
       </div>
       {% endfor %}
     </div>
   </div>
 
   <div class="prayer__panel">
+    <div class="prayer__lbl">Город</div>
     <div class="prayer__chips">
-      {% for ck in top_cities %}
-      <a class="chip{% if ck == city_key %} chip--on{% endif %}" href="?city={{ ck }}">{{ cities|get_item:ck }}</a>
+      {% for key, name in cities.items %}
+      <a class="chip{% if key == city_key %} chip--on{% endif %}" href="?city={{ key }}&method={{ method }}">{{ name }}</a>
       {% endfor %}
-      <a class="chip" href="#" id="gps-btn2">📍 GPS</a>
+      <a class="chip chip--gps" href="#" id="gps-btn2">📍 GPS</a>
     </div>
-    <form method="get" class="prayer__row">
-      <select name="city" aria-label="Город">
-        {% for key, name in cities.items %}<option value="{{ key }}"{% if key == city_key %} selected{% endif %}>{{ name }}</option>{% endfor %}
-      </select>
-      <select name="method" aria-label="Метод расчёта">
-        {% for key, name in methods.items %}<option value="{{ key }}"{% if key == method %} selected{% endif %}>{{ name }}</option>{% endfor %}
-      </select>
-      <button type="submit" class="btn btn--p">Показать</button>
-    </form>
+    <div class="prayer__lbl">Метод расчёта</div>
+    <div class="prayer__chips">
+      {% for key, name in methods.items %}
+      <a class="chip{% if key == method %} chip--on{% endif %}" href="?city={{ city_key }}&method={{ key }}">{{ key }}</a>
+      {% endfor %}
+    </div>
     <p class="prayer__note">Расчёт идёт на сервере по координатам и дате — без внешних сервисов.
        В приложении будет считаться прямо на телефоне, даже без интернета.</p>
   </div>

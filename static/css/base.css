@@ -203,7 +203,7 @@ body.s-wallet{background:#eff9f4}
 /* --- НАМАЗ: дашборд-сервис --- */
 .svc{padding:6px 0 30px}
 .prayer__hero{display:grid;grid-template-columns:1.1fr 1fr;gap:16px;margin:10px 0 16px}
-.prayer__hero-main{background:linear-gradient(140deg,#0e9f5d,#0b7d49);border-radius:24px;color:#fff;padding:28px 30px;box-shadow:0 18px 44px -18px rgba(14,159,93,.55);display:flex;flex-direction:column;justify-content:center}
+.prayer__hero-main{background:linear-gradient(140deg,#0e9f5d,#0b7d49);border-radius:24px;color:#fff;padding:28px 30px;box-shadow:0 18px 44px -18px rgba(14,159,93,.55);display:flex;flex-direction:column;justify-content:center;cursor:default;user-select:none}
 .prayer__hero-kicker{font-size:14px;font-weight:700;opacity:.9;margin-bottom:10px}
 .prayer__hero-next{font-size:13px;letter-spacing:.8px;text-transform:uppercase;opacity:.75;font-weight:700}
 .prayer__hero-name{font-size:52px;font-weight:800;letter-spacing:-1.5px;line-height:1.05;margin:2px 0 4px}
@@ -212,13 +212,16 @@ body.s-wallet{background:#eff9f4}
 .prayer__bar span{display:block;height:100%;border-radius:8px;background:#fff;transition:width 1s ease}
 .prayer__bar-meta{display:flex;justify-content:space-between;font-size:12.5px;opacity:.8;margin-top:8px}
 .prayer__tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-.ptile{background:var(--card);border-radius:18px;padding:16px 18px;box-shadow:var(--shadow);border:1.5px solid transparent;transition:.2s}
+.ptile{background:var(--card);border-radius:18px;padding:16px 18px;box-shadow:var(--shadow);border:1.5px solid transparent;transition:.2s;text-align:center;cursor:default;user-select:none}
 .ptile:hover{transform:translateY(-2px)}
 .ptile--next{background:linear-gradient(140deg,#12b268,#0e9f5d);color:#fff;box-shadow:0 14px 30px -14px rgba(14,159,93,.6)}
 .ptile--passed{opacity:.62}
 .ptile__name{font-size:13px;font-weight:700;opacity:.8}
 .ptile__time{font-size:27px;font-weight:800;letter-spacing:.5px;margin-top:2px}
 .ptile__mark{font-size:11.5px;font-weight:700;margin-top:4px;opacity:.85}
+.prayer__hero-main{cursor:default;user-select:none}
+.prayer__lbl{font-size:12px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-soft);margin:4px 0 8px}
+.chip--gps{background:var(--bg);color:var(--ink);font-weight:600}
 .prayer__panel{background:var(--card);border-radius:22px;padding:20px 22px;box-shadow:var(--shadow)}
 .prayer__chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
 .chip{padding:8px 16px;border-radius:30px;background:#eef8f2;color:#0b7d49;font-size:13.5px;font-weight:700;transition:.15s;border:1.5px solid transparent}
@@ -274,6 +277,9 @@ body.s-wallet{background:#eff9f4}
 .mside a:hover{background:#eceaff;color:#5646e8}
 .mside a.on{background:var(--accent);color:#fff;box-shadow:0 8px 18px -8px rgba(109,94,252,.6)}
 @media(max-width:900px){.market{grid-template-columns:1fr}.mside{position:static;display:flex;flex-wrap:wrap;gap:6px}.mside__h{width:100%}}
+
+/* курсор: текст-каретка только там, где реально редактируют */
+.hero,.hcard,.balance,.ptile,.qa__count,.panel,.sec__t,.foot,.prayer__bar-meta{cursor:default}
 
 /* шапка раздела — у каждого сервиса свой характер (редизайн v2) */
 .shero{--sh-bg1:var(--accent-soft);--sh-bg2:var(--card);--sh-ink:var(--accent-d);
