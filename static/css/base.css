@@ -611,3 +611,17 @@ html[data-theme=dark] .darktoggle::before{content:"☀️";left:29px}
 .ride__price{font-size:16px;font-weight:800;color:var(--accent-d)}
 .ride__desc{font-size:13.5px;color:var(--ink-soft)}
 .ride__meta{font-size:13px;color:var(--ink-soft);border-top:1px dashed var(--line);padding-top:8px}
+
+/* пилюли с SVG-иконками (как на референсе) */
+.nav a{display:inline-flex;align-items:center;gap:7px}
+.navic{width:18px;height:18px;flex:none;display:grid;place-items:center}
+.navic img{width:100%;height:100%;object-fit:contain}
+.navic.e{font-size:14px}
+.nav a.on .navic{filter:brightness(0) invert(1)}
+
+/* времена намаза: положение солнца на лёгком кружке */
+.tsun{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;margin:0 auto 8px;background:#fff4d6}
+.tsun svg{width:24px;height:24px}
+.tstrip__cell.on .tsun{background:rgba(255,255,255,.92)}
+.tstrip__cell.passed .tsun{background:var(--bg)}
+.tstrip__cell.passed .tsun svg{stroke:#9aa2b8}

@@ -1,4 +1,4 @@
-{% load static %}<!DOCTYPE html>
+{% load static %}{% load icons %}<!DOCTYPE html>
 <html lang="ru"{% if is_dark %} data-theme="dark"{% endif %}>
 <head>
 <meta charset="UTF-8">
@@ -75,7 +75,7 @@
   </div></header>
   <nav class="nav railnav"><div class="nav__row">
     <a class="{% if is_home %}on{% endif %}" href="{% url 'core:home' %}">Главная</a>
-    {% for m in menu_modules %}<a class="{% if m.key == active_section %}on{% endif %}" href="/{{ m.key }}/">{{ m.name }}</a>{% endfor %}
+    {% for m in menu_modules %}<a class="{% if m.key == active_section %}on{% endif %}" href="/{{ m.key }}/">{% svc_icon m.key m.icon 'navic' %}<span>{{ m.name }}</span></a>{% endfor %}
   </div>
   <button type="button" class="rail-arrow l" aria-label="Назад">‹</button>
   <button type="button" class="rail-arrow r" aria-label="Вперёд">›</button>
