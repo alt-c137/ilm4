@@ -5,6 +5,7 @@
     <div class="sec__t">Халяль рядом</div>
     <a class="sec__l" href="/map/">Открыть карту →</a>
   </div>
+  <div class="railnav">
   <div class="rail">
     {% for p in r.places %}
     <a class="card hcard--mini" href="/map/?q={{ p.name|urlencode }}">
@@ -24,6 +25,9 @@
       </div>
     </a>
     {% endfor %}
+  </div>
+  <button type="button" class="rail-arrow l" aria-label="Назад">‹</button>
+  <button type="button" class="rail-arrow r" aria-label="Вперёд">›</button>
   </div>
 </section>
 {% endif %}

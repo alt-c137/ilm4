@@ -5,6 +5,7 @@
     <div class="sec__t">Новости</div>
     <a class="sec__l" href="/news/">Все новости →</a>
   </div>
+  <div class="railnav">
   <div class="rail">
     {% for p in recent %}
     <a class="card rcard--news" href="/news/{{ p.slug }}/">
@@ -17,6 +18,9 @@
       </div>
     </a>
     {% endfor %}
+  </div>
+  <button type="button" class="rail-arrow l" aria-label="Назад">‹</button>
+  <button type="button" class="rail-arrow r" aria-label="Вперёд">›</button>
   </div>
 </section>
 {% endif %}

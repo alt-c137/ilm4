@@ -45,3 +45,15 @@ function tickCd() {
 }
 setInterval(tickCd, 1000);
 tickCd();
+
+// стрелки строк-каруселей: появляются при наведении, листают с прокруткой
+document.querySelectorAll('.railnav').forEach(function (nav) {
+  var row = nav.querySelector('.rail, .apps');
+  if (!row) return;
+  nav.querySelectorAll('.rail-arrow').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var step = Math.max(320, row.clientWidth * 0.8);
+      row.scrollBy({ left: btn.classList.contains('l') ? -step : step, behavior: 'smooth' });
+    });
+  });
+});

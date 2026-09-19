@@ -34,9 +34,7 @@
         {% if unread_notifications %}<span class="ibtn__badge">{{ unread_notifications }}</span>{% endif %}
         <span class="ibtn__n">Колокольчик</span>
       </a>
-      <a class="ibtn" href="{% url 'core:support' %}" title="Поддержать проект">
-        <span class="ibtn__ic">❤️</span><span class="ibtn__n">Поддержать</span>
-      </a>
+      <a class="btn btn--s supp-wide" href="{% url 'core:support' %}">♥ Поддержать</a>
       <div class="usermenu" tabindex="0">
         <button type="button" class="uchip">
           {% if user.avatar %}<img class="uchip__ava" src="{{ user.avatar.url }}" alt="">{% else %}<span class="uchip__ava uchip__ava--txt">{{ user.get_display_name|slice:":1"|upper }}</span>{% endif %}

@@ -1,5 +1,6 @@
 {% load icons %}
 <section class="sec" id="modules">
+  <div class="railnav">
   <div class="apps">
     {% for m in modules %}
     <a class="app{% if m.status == 'soon' %} soon{% endif %}"
@@ -9,5 +10,8 @@
       {% if m.status == 'soon' %}<div class="app__soon">скоро</div>{% endif %}
     </a>
     {% endfor %}
+  </div>
+  <button type="button" class="rail-arrow l" aria-label="Назад">‹</button>
+  <button type="button" class="rail-arrow r" aria-label="Вперёд">›</button>
   </div>
 </section>

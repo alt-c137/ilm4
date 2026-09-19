@@ -5,6 +5,7 @@
     <div class="sec__t">Продажа рядом</div>
     <a class="sec__l" href="/buy/">Смотреть все →</a>
   </div>
+  <div class="railnav">
   <div class="rail">
     {% for l in recent %}
     <a class="card rcard" href="/buy/{{ l.pk }}/">
@@ -24,6 +25,9 @@
     </a>
     {% endfor %}
     <a class="rail__more" href="/buy/">Всё<br>→</a>
+  </div>
+  <button type="button" class="rail-arrow l" aria-label="Назад">‹</button>
+  <button type="button" class="rail-arrow r" aria-label="Вперёд">›</button>
   </div>
 </section>
 {% endif %}

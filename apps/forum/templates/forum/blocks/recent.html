@@ -5,6 +5,7 @@
     <div class="sec__t">Вопросы и ответы</div>
     <a class="sec__l" href="/forum/">Весь форум →</a>
   </div>
+  <div class="railnav">
   <div class="rail">
     {% for t in recent %}
     <a class="qa" href="{% url 'forum:detail' t.pk %}">
@@ -16,6 +17,9 @@
       <div class="qa__count"><b>{{ t.replies.count }}</b><span>ответ{{ t.replies.count|pluralize:"а,ов" }}</span></div>
     </a>
     {% endfor %}
+  </div>
+  <button type="button" class="rail-arrow l" aria-label="Назад">‹</button>
+  <button type="button" class="rail-arrow r" aria-label="Вперёд">›</button>
   </div>
 </section>
 {% endif %}
