@@ -55,7 +55,7 @@ def profile(request):
 @login_required
 def two_factor_setup(request):
     """Подключение TOTP: QR + подтверждение кодом. Обязательно для staff."""
-    from otp.plugins.otp_totp.models import TOTPDevice
+    from django_otp.plugins.otp_totp.models import TOTPDevice
 
     device = (request.user.totpdevice_set.filter(confirmed=False).first()
               or TOTPDevice.objects.create(user=request.user, name='Основной', confirmed=False))

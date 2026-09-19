@@ -97,6 +97,23 @@ def test_staff_without_2fa_redirected(client, settings):
     assert '/accounts/2fa' in response.url
 
 
+def test_2fa_setup_page_renders(client):
+    """Страница подключения 2FA отдаёт QR (регресс: неверный импорт otp).* """
+    staff = User.objects.create_user('staff2', 'staff2@x.com', 'x', is_staff=True)
+    client.force_login(staff)
+    response = client.get('/accounts/2fa/')
+    assert response.status_code == 200
+    html = response.content.decode()
+    assert 'Подключение 2FA' in html
+    assert 'data:image/png;base64' in html
+
+
+def test_2fa_verify_page_renders(client):
+    staff = User.objects.create_user('staff3', 'staff3@x.com', 'x', is_staff=True)
+    client.force_login(staff)
+    assert client.get('/accounts/2fa/verify/').status_code == 200
+
+
 def test_normal_user_not_redirected(client):
     user = User.objects.create_user('plain', 'plain@x.com', 'x')
     client.force_login(user)
