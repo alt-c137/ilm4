@@ -52,7 +52,8 @@ document.querySelectorAll('.railnav').forEach(function (nav) {
   if (!row) return;
   nav.querySelectorAll('.rail-arrow').forEach(function (btn) {
     btn.addEventListener('click', function () {
-      var step = Math.max(320, row.clientWidth * 0.8);
+      var first = row.querySelector('.app, .card, .qa, .rcard--news, .hcard--mini');
+      var step = first ? first.offsetWidth + 14 : Math.max(320, row.clientWidth * 0.8);
       row.scrollBy({ left: btn.classList.contains('l') ? -step : step, behavior: 'smooth' });
     });
   });
