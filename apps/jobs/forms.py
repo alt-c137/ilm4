@@ -6,8 +6,11 @@ from .models import Vacancy, VacancyResponse
 class VacancyForm(forms.ModelForm):
     class Meta:
         model = Vacancy
-        fields = ['title', 'company', 'city', 'salary', 'description', 'contact']
-        widgets = {'description': forms.Textarea(attrs={'rows': 5})}
+        fields = ['title', 'category', 'company', 'city', 'salary', 'description', 'contact']
+        widgets = {'description': forms.Textarea(attrs={'rows': 5})},
+        labels = {'category': 'Раздел', 'title': 'Должность', 'company': 'Компания',
+                  'city': 'Город', 'salary': 'Зарплата', 'description': 'Описание',
+                  'contact': 'Контакт'}
 
 
 class VacancyResponseForm(forms.ModelForm):

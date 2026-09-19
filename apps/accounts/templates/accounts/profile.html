@@ -3,14 +3,19 @@
 {% block title %}Профиль — {{ block.super }}{% endblock %}
 
 {% block content %}
+<form method="post" enctype="multipart/form-data">{% csrf_token %}
 <div class="profile">
   <aside class="idcard">
     <div class="idcard__band"></div>
-    {% if user.avatar %}
-    <img class="idcard__ava" src="{{ user.avatar.url }}" alt="Аватар">
-    {% else %}
-    <div class="idcard__ava idcard__ava--txt">{{ user.get_display_name|slice:":1"|upper }}</div>
-    {% endif %}
+    <label class="idcard__ava-wrap" for="id_avatar" title="Поменять фото">
+      {% if user.avatar %}
+      <img class="idcard__ava" src="{{ user.avatar.url }}" alt="Аватар">
+      {% else %}
+      <div class="idcard__ava idcard__ava--txt">{{ user.get_display_name|slice:":1"|upper }}</div>
+      {% endif %}
+      <span class="idcard__cam">📸 Поменять фото</span>
+    </label>
+    {{ form.avatar }}
     <div class="idcard__name">{{ user.get_display_name }}</div>
     <div class="idcard__mail">{{ user.email }}</div>
     {% if user.is_super_admin %}<span class="idcard__role idcard__role--su">Супер-админ</span>
@@ -30,29 +35,24 @@
 
   <section class="pset">
     <h1 class="pset__h">Настройки профиля</h1>
-    <form method="post" enctype="multipart/form-data" class="form form--wide">{% csrf_token %}
-      <div class="pset__grid">
-        <div>
-          <label for="{{ form.nickname.id_for_label }}">{{ form.nickname.label }}</label>
-          {{ form.nickname }}
-        </div>
-        <div>
-          <label for="{{ form.first_name.id_for_label }}">{{ form.first_name.label }}</label>
-          {{ form.first_name }}
-        </div>
+    <div class="pset__grid">
+      <div>
+        <label for="{{ form.nickname.id_for_label }}">{{ form.nickname.label }}</label>
+        {{ form.nickname }}
       </div>
       <div>
-        <label for="{{ form.city.id_for_label }}">{{ form.city.label }}</label>
-        {{ form.city }}
+        <label for="{{ form.first_name.id_for_label }}">{{ form.first_name.label }}</label>
+        {{ form.first_name }}
       </div>
-      <div>
-        <label for="{{ form.avatar.id_for_label }}">{{ form.avatar.label }}</label>
-        {{ form.avatar }}
-        {% if user.avatar %}<span class="hint">уже загружен — можно заменить</span>{% endif %}
-      </div>
-      {% for err in form.non_field_errors %}<span class="err">{{ err }}</span>{% endfor %}
-      <button type="submit" class="btn btn--p">Сохранить</button>
-    </form>
+    </div>
+    <div>
+      <label for="{{ form.city.id_for_label }}">{{ form.city.label }}</label>
+      {{ form.city }}
+    </div>
+    {% for err in form.non_field_errors %}<span class="err">{{ err }}</span>{% endfor %}
+    <button type="submit" class="btn btn--p">Сохранить изменения</button>
+    <p class="hint">Фото меняется кликом по аватарке слева. Тема оформления — в меню под аватаром в шапке.</p>
   </section>
 </div>
+</form>
 {% endblock %}

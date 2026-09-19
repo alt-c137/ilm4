@@ -5,9 +5,17 @@ from apps.core.models import Moderation
 
 
 class Book(models.Model):
-    """Книга библиотеки: бесплатная (price=0) или платная (покупка с баланса)."""
+    """Книга библиотеки: разделы, бесплатная (price=0) или платная."""
+
+    CATEGORIES = [
+        ('akida', 'Акыда'), ('fiqh', 'Фикх'), ('quran', 'Коран и таджвид'),
+        ('arabic', 'Арабский язык'), ('history', 'История Ислама'),
+        ('family', 'Семья и воспитание'), ('other', 'Другое'),
+    ]
 
     title = models.CharField('название', max_length=200)
+    category = models.CharField('раздел', max_length=20, choices=CATEGORIES,
+                                default='other')
     author = models.CharField('автор', max_length=160, blank=True)
     description = models.TextField('описание', blank=True)
     cover = models.ImageField('обложка', upload_to='books/%Y/%m/', blank=True, null=True)

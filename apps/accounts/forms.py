@@ -107,3 +107,7 @@ class ProfileForm(forms.ModelForm):
             'nickname': 'Ник', 'first_name': 'Имя', 'city': 'Город',
             'avatar': 'Аватар',
         }
+        widgets = {
+            # аву меняем кликом по фото в карточке — стандартная кнопка не нужна
+            'avatar': forms.ClearableFileInput(attrs={'data-skip': '1'}),
+        }

@@ -7,6 +7,12 @@
 {% include 'includes/section_hero.html' with icon="💼" title="Работа" desc="Вакансии от своих: честные работодатели, без серых схем" class="jobs" cta="Добавить вакансию" cta_url="/jobs/add/" %}
 
 <div class="toolbar">
+    <div class="chips" style="margin-bottom:12px">
+      <a class="chip{% if not cat %} chip--on{% endif %}" href="/jobs/">Все разделы</a>
+      {% for key, label in categories %}
+      <a class="chip{% if key == cat %} chip--on{% endif %}" href="?cat={{ key }}">{{ label }}</a>
+      {% endfor %}
+    </div>
   <form method="get" class="map__form">
     <input type="text" name="q" value="{{ q }}" placeholder="Должность: программист, водитель…">
     <input type="text" name="city" value="{{ city }}" placeholder="Город">
@@ -19,6 +25,7 @@
   <a class="card" href="{% url 'jobs:detail' v.pk %}">
     <div class="card__i" style="background:linear-gradient(135deg,#fdf3e0,#fefaf3);display:grid;place-items:center;font-size:34px">💼</div>
     <div class="card__b">
+      <div class="card__c">{{ v.get_category_display|upper }}</div>
       <div class="card__t">{{ v.title }}</div>
       <div class="card__d">{{ v.company }} · {{ v.city }}</div>
       <div class="card__f">

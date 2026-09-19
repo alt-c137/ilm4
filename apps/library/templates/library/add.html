@@ -6,6 +6,10 @@
   <h1>Добавить книгу</h1>
   <p>Форматы: {{ allowed }}. Бесплатные скачивают все, платные — после покупки с баланса.</p>
   <form method="post" enctype="multipart/form-data" class="form form--wide">{% csrf_token %}
+    <label>Раздел</label>
+    <select name="category">
+      {% for key, label in categories %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+    </select>
     <label>Название <span class="req">*</span></label>
     <input type="text" name="title" maxlength="200" required>
     <label>Автор</label>

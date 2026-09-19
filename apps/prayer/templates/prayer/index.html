@@ -32,9 +32,17 @@
   <div class="prayer__panel">
     <div class="prayer__lbl">Город</div>
     <div class="prayer__chips">
-      {% for key, name in cities.items %}
-      <a class="chip{% if key == city_key %} chip--on{% endif %}" href="?city={{ key }}&method={{ method }}">{{ name }}</a>
-      {% endfor %}
+      <div class="citypick" id="citypick">
+        <button type="button" class="citypick__btn">📍 {{ place }} <span>▾</span></button>
+        <div class="citypick__drop">
+          <input type="text" id="citypick-q" placeholder="Найти город…" autocomplete="off">
+          <div class="citypick__list">
+            {% for key, name in cities.items %}
+            <a class="citypick__item{% if key == city_key %} on{% endif %}" data-name="{{ name|lower }}" href="?city={{ key }}&method={{ method }}">{{ name }}</a>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
       <a class="chip chip--gps" href="#" id="gps-btn2">📍 GPS</a>
     </div>
     <div class="prayer__lbl">Метод расчёта</div>
@@ -50,6 +58,29 @@
 </div>
 
 <script>
+// пилюля выбора города: открыть/искать/закрыть
+(function () {
+  var pick = document.getElementById('citypick');
+  if (!pick) return;
+  var btn = pick.querySelector('.citypick__btn');
+  var q = pick.querySelector('#citypick-q');
+  var items = pick.querySelectorAll('.citypick__item');
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    pick.classList.toggle('open');
+    if (pick.classList.contains('open')) { q.value = ''; q.focus();
+      items.forEach(function (i) { i.style.display = ''; }); }
+  });
+  q.addEventListener('input', function () {
+    var v = q.value.trim().toLowerCase();
+    items.forEach(function (i) {
+      i.style.display = i.dataset.name.indexOf(v) !== -1 ? '' : 'none';
+    });
+  });
+  document.addEventListener('click', function (e) {
+    if (!pick.contains(e.target)) pick.classList.remove('open');
+  });
+})();
 document.getElementById('gps-btn2').addEventListener('click', function (e) {
   e.preventDefault();
   if (!navigator.geolocation) { alert('Геолокация недоступна'); return; }

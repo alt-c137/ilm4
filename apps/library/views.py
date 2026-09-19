@@ -17,8 +17,12 @@ MAX_FILE_MB = 50
 
 @module_required('library')
 def book_list(request):
+    books = Book.objects.filter(status=Moderation.APPROVED)
+    cat = request.GET.get('cat', '').strip()
+    if cat in dict(Book.CATEGORIES):
+        books = books.filter(category=cat)
     return render(request, 'library/list.html', {
-        'books': Book.objects.filter(status=Moderation.APPROVED)[:60],
+        'books': books[:60], 'categories': Book.CATEGORIES, 'cat': cat,
     })
 
 
@@ -72,8 +76,12 @@ def book_add(request):
             for e in errors:
                 messages.error(request, e)
         else:
+            cat = request.POST.get('category', 'other')
+            if cat not in dict(Book.CATEGORIES):
+                cat = 'other'
             Book.objects.create(
                 title=title,
+                category=cat,
                 author=request.POST.get('author', '').strip()[:160],
                 description=request.POST.get('description', ''),
                 cover=request.FILES.get('cover'),

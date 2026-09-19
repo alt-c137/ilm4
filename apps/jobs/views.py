@@ -14,12 +14,16 @@ def vacancy_list(request):
     qs = Vacancy.objects.filter(status=Moderation.APPROVED)
     city = request.GET.get('city', '').strip()
     q = request.GET.get('q', '').strip()
+    cat = request.GET.get('cat', '').strip()
+    if cat in dict(Vacancy.CATEGORIES):
+        qs = qs.filter(category=cat)
     if city:
         qs = qs.filter(city__icontains=city)
     if q:
         qs = qs.filter(title__icontains=q)
     return render(request, 'jobs/list.html', {
         'vacancies': qs.select_related('owner')[:50],
+        'categories': Vacancy.CATEGORIES, 'cat': cat,
         'city': city, 'q': q,
     })
 

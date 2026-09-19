@@ -7,8 +7,9 @@ if (ckbar) {
   });
 }
 
-// input[type=file] -> кнопка «📎 Выбрать файл» + имя выбранного файла
+// input[type=file] -> кнопка «📎 Выбрать файл» (кроме авы профиля — там клик по фото)
 document.querySelectorAll('input[type=file]').forEach(function (input) {
+  if (input.dataset.skip) return;
   var btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'filebtn';

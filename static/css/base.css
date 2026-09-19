@@ -445,3 +445,38 @@ input[type=file]{position:absolute!important;width:1px!important;height:1px!impo
 .pset__grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .pset__grid div,.pset .form>div{display:flex;flex-direction:column;gap:6px}
 @media(max-width:900px){.profile{grid-template-columns:1fr}}
+
+/* переливы-пятна на фоне всего сайта */
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:
+ radial-gradient(640px 420px at 10% 6%, rgba(109,94,252,.09), transparent 62%),
+ radial-gradient(760px 520px at 90% 94%, rgba(16,185,129,.08), transparent 62%),
+ radial-gradient(520px 360px at 82% 10%, rgba(236,72,153,.06), transparent 60%)}
+
+/* блик, пробегающий по карточке при наведении */
+.card{position:relative;overflow:hidden}
+.card::after{content:"";position:absolute;top:0;left:-90%;width:55%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.4),transparent);transform:skewX(-18deg);transition:left .55s ease;pointer-events:none}
+.card:hover::after{left:140%}
+
+/* баннер: медленный перелив градиента */
+.banner__slide{background-size:180% 180%;animation:bannshift 9s ease infinite alternate}
+@keyframes bannshift{from{background-position:0% 30%}to{background-position:100% 70%}}
+
+/* пилюля-поиск города (вместо россыпи чипсов) */
+.citypick{position:relative;display:inline-block}
+.citypick__btn{display:flex;align-items:center;gap:8px;padding:9px 18px;border-radius:30px;background:#0e9f5d;color:#fff;font-size:14px;font-weight:700;border:0;cursor:pointer;font-family:inherit;box-shadow:0 8px 18px -8px rgba(14,159,93,.6);transition:.15s}
+.citypick__btn:hover{filter:brightness(1.06)}
+.citypick__btn span{font-size:10px;opacity:.9}
+.citypick__drop{display:none;position:absolute;top:calc(100% + 8px);left:0;width:270px;background:var(--card);border-radius:18px;box-shadow:var(--shadow-lg);padding:10px;z-index:150}
+.citypick.open .citypick__drop{display:block}
+.citypick__drop input{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:9px 12px;font-size:14px;outline:none;background:var(--bg);font-family:inherit}
+.citypick__drop input:focus{border-color:#0e9f5d}
+.citypick__list{max-height:250px;overflow:auto;display:flex;flex-direction:column;margin-top:8px}
+.citypick__item{padding:8px 12px;border-radius:10px;font-size:14px;font-weight:600;color:var(--ink)}
+.citypick__item:hover{background:#eef8f2}
+.citypick__item.on{color:#0b7d49;font-weight:800;background:#eef8f2}
+
+/* ава профиля: оверлей «поменять фото» при наведении */
+.idcard__ava-wrap{position:relative;display:block;width:96px;height:96px;margin:-48px auto 8px;cursor:pointer;border-radius:50%}
+.idcard__ava{transition:.2s}
+.idcard__cam{position:absolute;inset:0;border-radius:50%;background:rgba(20,22,35,.55);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;text-align:center;padding:8px;opacity:0;transition:.2s}
+.idcard__ava-wrap:hover .idcard__cam{opacity:1}

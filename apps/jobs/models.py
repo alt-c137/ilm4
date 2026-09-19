@@ -7,7 +7,15 @@ from apps.core.models import Moderation
 class Vacancy(models.Model):
     """Вакансия. Публикуется после модерации."""
 
+    CATEGORIES = [
+        ('it', 'IT и интернет'), ('drive', 'Вождение и доставка'),
+        ('build', 'Строительство'), ('med', 'Медицина'),
+        ('edu', 'Образование'), ('trade', 'Торговля'), ('other', 'Другое'),
+    ]
+
     title = models.CharField('должность', max_length=160)
+    category = models.CharField('раздел', max_length=20, choices=CATEGORIES,
+                                default='other')
     company = models.CharField('компания', max_length=160)
     city = models.CharField('город', max_length=80)
     salary = models.CharField('зарплата', max_length=80, blank=True,
