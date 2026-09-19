@@ -73,18 +73,13 @@
       {% endif %}
     </div>
   </div></header>
-  <nav class="nav"><div class="nav__row">
+  <nav class="nav railnav"><div class="nav__row">
     <a class="{% if is_home %}on{% endif %}" href="{% url 'core:home' %}">Главная</a>
-    {% for m in menu_top %}<a class="{% if m.key == active_section %}on{% endif %}" href="/{{ m.key }}/">{{ m.name }}</a>{% endfor %}
-    {% if menu_more %}
-    <div class="nav__more{% if active_section in menu_more_keys %} open-here{% endif %}" tabindex="0">
-      <a class="nav__drop{% if active_section in menu_more_keys %} on{% endif %}">Ещё ▾</a>
-      <div class="nav__menu">
-        {% for m in menu_more %}<a class="{% if m.key == active_section %}on{% endif %}" href="/{{ m.key }}/">{{ m.icon }} {{ m.name }}</a>{% endfor %}
-      </div>
-    </div>
-    {% endif %}
-  </div></nav>
+    {% for m in menu_modules %}<a class="{% if m.key == active_section %}on{% endif %}" href="/{{ m.key }}/">{{ m.name }}</a>{% endfor %}
+  </div>
+  <button type="button" class="rail-arrow l" aria-label="Назад">‹</button>
+  <button type="button" class="rail-arrow r" aria-label="Вперёд">›</button>
+  </nav>
   {% block content %}{% endblock %}
 </div>
 <footer class="foot"><div class="wrap">

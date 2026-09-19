@@ -29,7 +29,7 @@ a{color:inherit;text-decoration:none}
 
 /* навигация: топ-пилюли + выпадающее «Ещё» */
 .nav{padding:4px 0 8px}
-.nav__row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.nav__row{display:flex;gap:8px;align-items:center;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;scroll-snap-type:x proximity;padding-bottom:2px}
 .nav a{padding:8px 15px;font-size:14px;font-weight:600;color:var(--ink-soft);background:var(--card);border-radius:40px;transition:.15s}
 .nav a:hover,.nav a.on{background:var(--accent);color:#fff}
 .nav__more{position:relative}
@@ -508,8 +508,8 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 /* стрелки баннера: всегда видны (и на тач-экранах) */
 .banner__arrow{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;background:#fff;box-shadow:0 8px 22px rgba(30,34,60,.28);border:0;cursor:pointer;font-size:20px;line-height:1;color:var(--ink);display:grid;place-items:center;z-index:3;transition:.15s}
 .banner__arrow:hover{transform:translateY(-50%) scale(1.08);color:var(--accent-d)}
-.banner__arrow--l{left:6px}
-.banner__arrow--r{right:6px}
+.banner__arrow--l{left:2px}
+.banner__arrow--r{right:2px}
 
 /* шапка: прижать правый кластер к краю, без пустот */
 .top__act{margin-left:auto}
@@ -556,10 +556,15 @@ html[data-theme=dark] .darktoggle::before{content:"☀️";left:29px}
 /* баннер на узких экранах: стрелки меньше, текст не под ними */
 @media(max-width:760px){
   .banner__arrow{width:36px;height:36px;font-size:17px}
-  .banner__arrow--l{left:5px}
-  .banner__arrow--r{right:5px}
+  .banner__arrow--l{left:2px}
+  .banner__arrow--r{right:2px}
 }
 
 @media(max-width:1100px){.apps{--n:7}}
 @media(max-width:900px){.apps{--n:5}}
 @media(max-width:560px){.apps{--n:4}}
+
+.nav__row::-webkit-scrollbar{display:none}
+.nav a{scroll-snap-align:start;white-space:nowrap}
+.nav.railnav .rail-arrow{top:50%;transform:translateY(-50%)}
+.nav.railnav .rail-arrow:hover{transform:translateY(-50%) scale(1.08)}
