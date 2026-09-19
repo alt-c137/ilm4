@@ -351,3 +351,19 @@ n/* новости-журнал */
 
 @media(max-width:980px){.hero{grid-template-columns:1fr}.hero__r{display:none}.cols{grid-template-columns:1fr}.cats{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:1fr}.foot__g{grid-template-columns:1fr 1fr}.search{display:none}.shero__cta{margin-left:0}}
 @media(max-width:560px){.cats{grid-template-columns:repeat(2,1fr)}.g4{grid-template-columns:1fr}.hero__l h1{font-size:30px}#swwrap{display:none}}
+
+/* ленты-карусели на главной (Playerok-стиль) */
+.rail{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 14px;scrollbar-width:none;scroll-snap-type:x proximity}
+.rail::-webkit-scrollbar{display:none}
+.rail>*{flex:0 0 auto;scroll-snap-align:start}
+.rail .card{flex-basis:230px}
+.rail .rcard__img{height:120px;border-radius:14px;margin:8px;background-size:cover;background-position:center}
+.rail .rcard--news{flex-basis:290px}
+.rail .rcard--news .ncard__cover{height:120px;margin:8px 8px 0}
+.rail .qa{flex-basis:340px}
+.rail__more{flex:0 0 auto;width:64px;border-radius:18px;background:var(--accent-soft);color:var(--accent-d);display:grid;place-items:center;font-weight:800;font-size:15px;text-align:center;line-height:1.3;transition:.15s}
+.rail__more:hover{background:var(--accent);color:#fff}
+.hcard--mini{display:flex;flex-direction:row;align-items:center;gap:12px;padding:12px 14px;flex-basis:250px}
+.hcard--mini .card__b{padding:0}
+.hmini__ic{width:48px;height:48px;border-radius:14px;background:#eef8f2;display:grid;place-items:center;font-size:22px;flex:none}
+.hmini__ic--doc{background:#fdeaec}
