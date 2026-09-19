@@ -13,9 +13,21 @@ def test_home(client):
     response = client.get('/')
     assert response.status_code == 200
     html = response.content.decode()
-    assert 'Разделы платформы' in html
-    assert 'скоро' in html          # все модули на старте — «скоро»
-    assert 'Время намаза' in html   # модуль из сидинга присутствует на витрине
+    assert 'app__ic' in html        # витрина — ряд иконок-приложений
+    assert 'скоро' in html          # не включённые разделы помечены
+    assert 'Время намаза' in html   # модуль из сидинга присутствует
+
+
+def test_active_nav_pill(client):
+    """Активная пилюля меню следует за разделом, а не прибита к «Главной»."""
+    home_html = client.get('/').content.decode()
+    prayer_html = client.get('/prayer/').content.decode()
+    # на главной «Главная» активна, на намазе — нет
+    assert 'class="on" href=' in home_html or 'class="on"' in home_html
+    nav_home = '<a class="on" href="/">Главная</a>'
+    assert nav_home in home_html
+    assert nav_home not in prayer_html
+    assert 'href="/prayer/"' in prayer_html
 
 
 def test_static_pages(client):
