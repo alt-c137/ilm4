@@ -1,8 +1,7 @@
 from django.shortcuts import render
 
-from .models import Rate
 from .blocks import get_blocks
-from .models import ModuleConfig
+from .models import ModuleConfig, Rate
 
 
 def home(request):
