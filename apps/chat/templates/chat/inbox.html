@@ -1,20 +1,29 @@
 {% extends 'base.html' %}
-{% block title %}Чат — {{ block.super }}{% endblock %}
+{% block title %}Сообщения — {{ block.super }}{% endblock %}
+{% block body_class %}s-chat{% endblock %}
 
 {% block content %}
+<div class="svc">
 {% include 'includes/section_hero.html' with icon="💬" title="Сообщения" desc="Диалоги по объявлениям и услугам — в реальном времени" class="chat" cta="Новый диалог" cta_url="/chat/start/" %}
-<div class="page">
-  <p><a class="btn btn--p" href="{% url 'chat:start' %}">+ Новый диалог</a></p>
+
+<div class="feed">
   {% for row in rows %}
-  <a class="ni link" href="{% url 'chat:thread' row.thread.pk %}" style="align-items:center">
-    <div class="ni__i" style="background:linear-gradient(135deg,var(--accent-soft),var(--line));display:grid;place-items:center">💬</div>
-    <div>
-      <div class="ni__t">{{ row.other.get_display_name }}{% if row.thread.subject %} · {{ row.thread.subject }}{% endif %}</div>
-      <div class="ni__m">{% if row.last %}{{ row.last.body|truncatechars:60 }} · {{ row.thread.updated_at|date:"d.m H:i" }}{% else %}нет сообщений{% endif %}</div>
+  <a class="qa" href="{% url 'chat:thread' row.thread.pk %}">
+    <div class="qa__ava">{{ row.other.get_display_name|slice:":1"|upper }}</div>
+    <div class="qa__body">
+      <div class="qa__t">{{ row.other.get_display_name }}{% if row.thread.subject %} <span class="meta">· {{ row.thread.subject }}</span>{% endif %}</div>
+      <div class="qa__meta">{% if row.last %}{{ row.last.body|truncatechars:70 }}{% else %}нет сообщений — напишите первым{% endif %}</div>
     </div>
+    <span class="meta" style="align-self:center">{{ row.thread.updated_at|date:"d.m H:i" }}</span>
   </a>
   {% empty %}
-  <p>Диалогов пока нет.</p>
+  <div class="empty">
+    <div style="font-size:44px;margin-bottom:8px">💬</div>
+    <h3 style="font-size:18px;font-weight:800">Диалогов пока нет</h3>
+    <p style="color:var(--ink-soft)">Начните диалог с кем-то из уммы — например, по объявлению.</p>
+    <a class="btn btn--p" href="{% url 'chat:start' %}">Новый диалог</a>
+  </div>
   {% endfor %}
+</div>
 </div>
 {% endblock %}

@@ -3,7 +3,7 @@
 {% block title %}Профиль — {{ block.super }}{% endblock %}
 
 {% block content %}
-<form method="post" enctype="multipart/form-data">{% csrf_token %}
+<form method="post" enctype="multipart/form-data" class="form form--wide">{% csrf_token %}
 <div class="profile">
   <aside class="idcard">
     <div class="idcard__band"></div>

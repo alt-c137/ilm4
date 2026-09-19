@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
 {% block title %}Диалог — {{ block.super }}{% endblock %}
+{% block body_class %}s-chat{% endblock %}
 
 {% block content %}
 <div class="page chat">
-  <h1>Диалог{% if thread.subject %}: {{ thread.subject }}{% endif %}</h1>
+  <div class='chat__who'>💬 {{ other.get_display_name }}{% if thread.subject %} · {{ thread.subject }}{% endif %}</div>
   <div class="chat__log" id="chat-log">
     {% for m in messages %}
     <div class="chat__msg{% if m.sender == user %} mine{% endif %}">

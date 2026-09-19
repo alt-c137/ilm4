@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}Миграция — {{ block.super }}{% endblock %}
+{% block body_class %}s-migration{% endblock %}
 
 {% block content %}
 {% include 'includes/section_hero.html' with icon="✈️" title="Миграция" desc="Реальные истории переезда: визы, работа, жильё, ошибки и находки" class="migration" cta="Рассказать свою" cta_url="/migration/add/" %}
@@ -17,7 +18,13 @@
         <div class="meta">{{ s.created_at|date:"d.m.Y" }}</div>
       </div>
     </a>
-    {% empty %}<p>Историй пока нет — расскажите свою!</p>{% endfor %}
+    {% empty %}
+    <div class="empty" style="grid-column:1/-1">
+      <div style="font-size:44px;margin-bottom:8px">✈️</div>
+      <h3 style="font-size:18px;font-weight:800">Историй пока нет</h3>
+      <p style="color:var(--ink-soft)">Расскажите свою — визы, работа, жильё. Кому-то это очень поможет.</p>
+      <a class="btn btn--p" href="{% url 'migration:create' %}">Рассказать свою</a>
+    </div>{% endfor %}
   </div>
 </section>
 {% endblock %}

@@ -37,6 +37,7 @@ def thread_detail(request, pk):
         return redirect('chat:thread', pk=pk)
     return render(request, 'chat/thread.html', {
         'thread': thread,
+        'other': thread.other_participant(request.user),
         'messages': thread.messages.select_related('sender'),
     })
 
