@@ -23,15 +23,15 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
     'django.contrib.humanize',
+    'daphne',   # ASGI-runserver (WebSocket чата); обязан стоять до staticfiles
+    'django.contrib.staticfiles',
     # сторонние
     'solo',
     'django_otp',
     'django_otp.plugins.otp_totp',
     'taggit',
     'channels',
-    'daphne',   # runserver в ASGI-режиме — обслуживает и WebSocket чата
     # ilm4
     'apps.core',
     'apps.accounts',
