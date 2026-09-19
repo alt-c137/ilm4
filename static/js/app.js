@@ -48,7 +48,7 @@ tickCd();
 
 // стрелки строк-каруселей: появляются при наведении, листают с прокруткой
 document.querySelectorAll('.railnav').forEach(function (nav) {
-  var row = nav.querySelector('.rail, .apps');
+  var row = nav.querySelector('.rail, .apps, .nav__row');
   if (!row) return;
   nav.querySelectorAll('.rail-arrow').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -76,8 +76,12 @@ function refreshArrows(nav, row) {
   var r = nav.querySelector('.rail-arrow.r');
   if (!l || !r) return;
   var max = row.scrollWidth - row.clientWidth - 4;
-  l.classList.toggle('hid', row.scrollLeft <= 4);
-  r.classList.toggle('hid', row.scrollLeft >= max);
+  var atStart = row.scrollLeft <= 4;
+  var atEnd = row.scrollLeft >= max;
+  l.classList.toggle('hid', atStart);
+  r.classList.toggle('hid', atEnd);
+  row.classList.toggle('at-start', atStart);
+  row.classList.toggle('at-end', atEnd);
 }
 document.querySelectorAll('.railnav').forEach(function (nav) {
   var row = nav.querySelector('.rail, .apps, .nav__row');
