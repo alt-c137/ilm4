@@ -36,9 +36,9 @@
   <button type="button" class="banner__arrow banner__arrow--r" id="banner-next" aria-label="Вперёд">›</button>
   <div class="banner__lines" id="banner-lines">
     {% if db_banners %}
-      {% for b in db_banners %}<span class="banner__line" data-duration="{% widthratio b.duration_seconds 1 1000 %}"></span>{% endfor %}
+      {% for b in db_banners %}<span class="banner__line" data-duration="{% widthratio b.duration_seconds 1 1000 %}"><span class="banner__line-fill"></span></span>{% endfor %}
     {% else %}
-      <span class="banner__line" data-duration="6000"></span><span class="banner__line" data-duration="6000"></span><span class="banner__line" data-duration="6000"></span>
+      <span class="banner__line" data-duration="6000"><span class="banner__line-fill"></span></span><span class="banner__line" data-duration="6000"><span class="banner__line-fill"></span></span><span class="banner__line" data-duration="6000"><span class="banner__line-fill"></span></span>
     {% endif %}
   </div>
 </div>
@@ -51,14 +51,15 @@
 
   function drawLine(idx) {
     lines.forEach(function (ln, k) {
-      ln.classList.remove('fill');
-      ln.style.width = '';
+      var fill = ln.querySelector('.banner__line-fill');
+      if (!fill) return;
+      fill.style.transition = 'none';
+      fill.style.width = '0%';
       if (k === idx) {
         var dur = parseInt(ln.dataset.duration || '6000', 10);
-        void ln.offsetWidth; /* сброс, чтобы анимация перезапустилась */
-        ln.classList.add('fill');
-        ln.style.transition = 'width ' + dur + 'ms linear';
-        ln.style.width = '100%';
+        void fill.offsetWidth; /* сброс, чтобы анимация перезапустилась */
+        fill.style.transition = 'width ' + dur + 'ms linear';
+        fill.style.width = '100%';
       }
     });
   }
