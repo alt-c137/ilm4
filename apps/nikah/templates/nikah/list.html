@@ -1,41 +1,47 @@
 {% extends 'base.html' %}
 {% block title %}Никах — {{ block.super }}{% endblock %}
+{% block body_class %}s-nikah{% endblock %}
 
 {% block content %}
-{% include 'includes/section_hero.html' with icon="💍" title="Никах" desc="Знакомства для брака — серьёзно, с модерацией анкет" class="nikah" cta="Создать анкету" cta_url="/nikah/create/" %}
-<section class="sec">
-  <div class="sec__h">
-    {% if user.is_authenticated and not user.nikah_profile %}
-      <a class="sec__l" href="{% url 'nikah:create' %}">+ Создать анкету</a>
-    {% elif user.is_authenticated %}
-      <a class="sec__l" href="{% url 'nikah:mine' %}">Моя анкета</a>
-    {% endif %}
+<div class="svc">
+{% include 'includes/section_hero.html' with icon="💍" title="Никах" desc="Знакомства для брака — серьёзно, по рукъю, с модерацией анкет" class="nikah" cta="Создать анкету" cta_url="/nikah/create/" %}
+
+<div class="nikah__bar">
+  <div class="nikah__chips">
+    <a class="nchip" href="/nikah/">Все</a>
+    <a class="nchip{% if gender == 'M' %} nchip--on-m{% endif %}" href="?gender=M">Братья</a>
+    <a class="nchip{% if gender == 'F' %} nchip--on-f{% endif %}" href="?gender=F">Сёстры</a>
   </div>
-  <p class="meta" style="margin-bottom:10px">Просмотр анкет бесплатный. Написать — платно для братьев, сёстрам бесплатно. Цель — только никах.</p>
-  <form method="get" class="map__form">
-    <select name="gender">
-      <option value="">Все</option>
-      <option value="M"{% if gender == 'M' %} selected{% endif %}>Братья</option>
-      <option value="F"{% if gender == 'F' %} selected{% endif %}>Сёстры</option>
-    </select>
-    <input type="text" name="city" value="{{ city }}" placeholder="Город">
-    <button type="submit" class="btn btn--p">Показать</button>
+  <form method="get" class="nikah__search" onsubmit="return true">
+    <input type="hidden" name="gender" value="{{ gender }}">
+    <input type="text" name="city" value="{{ city }}" placeholder="Город: Ташкент, Казань…">
+    <button type="submit" class="btn btn--p">Найти</button>
   </form>
-  <div class="grid g4" style="margin-top:16px">
-    {% for p in profiles %}
-    <a class="card" href="{% url 'nikah:detail' p.pk %}">
-      {% if p.photo %}
-      <div class="card__i" style="background-image:url('{{ p.photo.url }}')"></div>
-      {% else %}
-      <div class="card__i" style="background:linear-gradient(135deg,var(--accent-soft),var(--line))">💍</div>
-      {% endif %}
-      <div class="card__b">
-        {% if p.is_boosted %}<div class="card__c">ТОП</div>{% endif %}
-        <div class="card__t">{{ p.get_gender_display }}, {{ p.age }}</div>
-        <div class="card__d">{{ p.city }}</div>
-      </div>
-    </a>
-    {% empty %}<p>Анкет пока нет.</p>{% endfor %}
+</div>
+
+<div class="gal">
+  {% for p in profiles %}
+  <a class="prof" href="{% url 'nikah:detail' p.pk %}">
+    <div class="prof__ava{% if p.gender == 'M' %} prof__ava--m{% else %} prof__ava--f{% endif %}">
+      {% if p.photo %}<img src="{{ p.photo.url }}" alt="">{% else %}{{ p.age }}{% endif %}
+    </div>
+    {% if p.is_boosted %}<span class="prof__top">⬆ в топе</span>{% endif %}
+    <div class="prof__name">{{ p.get_gender_display }}</div>
+    <div class="prof__age">{{ p.age }} лет</div>
+    <div class="prof__city">📍 {{ p.city }}</div>
+    <div class="prof__about">{{ p.about|truncatechars:80 }}</div>
+    <span class="prof__open">Смотреть анкету →</span>
+  </a>
+  {% empty %}
+  <div class="page" style="grid-column:1/-1;text-align:center;padding:46px">
+    <div style="font-size:44px;margin-bottom:8px">💍</div>
+    <h3 style="font-size:18px;font-weight:800">Анкет пока нет</h3>
+    <p style="color:var(--ink-soft)">Создайте первую — просмотр бесплатный, модерация бережная.</p>
+    <a class="btn btn--p" href="{% url 'nikah:create' %}">Создать анкету</a>
   </div>
-</section>
+  {% endfor %}
+</div>
+<p class="nikah__rule">Просмотр анкет — бесплатный. Открыть контакт: для братьев — платно (разово),
+   для сестёр — бесплатно. Цель раздела — только никах.</p>
+</div>
 {% endblock %}
