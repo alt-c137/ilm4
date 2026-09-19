@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     'apps.library',
     'apps.nikah',
     'apps.chat',
+    'apps.refugee',
+    'apps.transport',
 ]
 
 MIDDLEWARE = [

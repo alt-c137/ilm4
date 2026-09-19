@@ -590,3 +590,24 @@ html[data-theme=dark] .darktoggle::before{content:"☀️";left:29px}
 /* иконка категории на карточке-заглушке */
 .rcard__emoji{width:56%;height:56%;object-fit:contain;font-size:32px}
 .rail .rcard__emoji{width:44px;height:44px}
+
+/* фото-слайды баннера: затемнение слева под текст */
+.banner__slide[style*="background-image"]::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,12,20,.72) 0%,rgba(10,12,20,.45) 45%,transparent 75%)}
+.banner__slide[style*="background-image"] .banner__k,.banner__slide[style*="background-image"] .banner__t,.banner__slide[style*="background-image"] .banner__d{position:relative;z-index:1;text-shadow:0 2px 12px rgba(0,0,0,.5)}
+
+/* Помощь беженцам и Перевозки */
+.org{display:flex;flex-direction:column;gap:8px}
+.org__head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.org__kind{background:var(--accent-soft);color:var(--accent-d);font-size:11.5px;font-weight:800;border-radius:14px;padding:3px 12px}
+.org__name{font-size:17px;font-weight:800;line-height:1.3}
+.org__row{font-size:13.5px;color:var(--ink-soft)}
+.org__phones{display:flex;gap:10px;flex-wrap:wrap}
+.org__phones .btn{padding:8px 16px;font-size:13.5px}
+.org__notes{font-size:12.5px;color:var(--ink-soft);border-top:1px dashed var(--line);padding-top:8px}
+.ride{display:flex;flex-direction:column;gap:8px}
+.ride__route{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ride__city{font-size:19px;font-weight:800}
+.ride__arrow{color:var(--accent);font-size:20px;font-weight:800}
+.ride__price{font-size:16px;font-weight:800;color:var(--accent-d)}
+.ride__desc{font-size:13.5px;color:var(--ink-soft)}
+.ride__meta{font-size:13px;color:var(--ink-soft);border-top:1px dashed var(--line);padding-top:8px}

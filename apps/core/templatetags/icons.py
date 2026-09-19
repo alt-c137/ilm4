@@ -16,6 +16,7 @@ from django.utils.html import format_html
 register = template.Library()
 
 ICONS_DIR = Path(settings.BASE_DIR) / 'static' / 'img' / 'icons'
+BANNERS_DIR = Path(settings.BASE_DIR) / 'static' / 'img' / 'banner'
 
 
 @cache
@@ -38,3 +39,24 @@ def svc_icon(slug: str, emoji: str = '✦', css: str = 'shero__icon') -> str:
         url = staticfiles_storage.url(rel) if staticfiles_storage.exists(rel) else static_url(rel)
         return format_html('<div class="{}"><img src="{}" alt=""></div>', css, url)
     return format_html('<div class="{}">{}</div>', css, emoji)
+
+
+@cache
+def banner_file(slug):
+    """Баннер слайда: banner/<slug>.webp|jpg|png, если загружен."""
+    for ext in ('webp', 'jpg', 'png'):
+        if (BANNERS_DIR / (slug + '.' + ext)).exists():
+            return 'img/banner/' + slug + '.' + ext
+        collected = Path(settings.STATIC_ROOT or '') / 'img' / 'banner' / (slug + '.' + ext)
+        if collected.exists():
+            return 'img/banner/' + slug + '.' + ext
+    return None
+
+
+@register.simple_tag
+def banner_bg(slug):
+    """style с фото-фоном для слайда, если картинка загружена."""
+    rel = banner_file(slug)
+    if rel:
+        return 'background-image:url(' + static_url(rel) + ')'
+    return ''

@@ -23,6 +23,8 @@ urlpatterns = [
     path('library/', include('apps.library.urls')),
     path('nikah/', include('apps.nikah.urls')),
     path('chat/', include('apps.chat.urls')),
+    path('refugee/', include('apps.refugee.urls')),
+    path('transport/', include('apps.transport.urls')),
     path('notifications/', include('apps.core.notification_urls')),
     path('', include('apps.core.urls')),
 ]

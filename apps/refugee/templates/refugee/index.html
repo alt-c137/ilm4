@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Помощь беженцам — {{ block.super }}{% endblock %}
+{% block body_class %}s-migration{% endblock %}
+
+{% block content %}
+<div class="svc">
+{% include 'includes/section_hero.html' with icon="🕊️" title="Помощь беженцам" desc="Контакты УВКБ ООН, посольств и организаций по странам — телефоны, адреса, сайты" class="migration" %}
+
+  <div class="toolbar">
+    <div class="chips">
+      <a class="chip{% if not country %} chip--on{% endif %}" href="/refugee/">Все страны</a>
+      {% for c in countries %}
+      <a class="chip{% if c == country %} chip--on{% endif %}" href="?country={{ c|urlencode }}">{{ c }}</a>
+      {% endfor %}
+    </div>
+    <form method="get" class="map__form" style="margin-top:12px">
+      <input type="hidden" name="country" value="{{ country }}">
+      <input type="text" name="q" value="{{ q }}" placeholder="Организация или город…">
+      <button type="submit" class="btn btn--p">Найти</button>
+    </form>
+  </div>
+
+  <div class="grid g2">
+    {% for o in orgs %}
+    <div class="panel org">
+      <div class="org__head">
+        <span class="org__kind">{{ o.get_kind_display }}</span>
+        <span class="meta">{{ o.country }}{% if o.city %} · {{ o.city }}{% endif %}</span>
+      </div>
+      <h3 class="org__name">{{ o.name }}</h3>
+      {% if o.address %}<p class="org__row">📍 {{ o.address }}</p>{% endif %}
+      {% if o.phones %}
+      <div class="org__phones">
+        {% for p in o.phone_list %}
+        <a class="btn btn--p" href="tel:{{ p|cut:' ' }}">📞 {{ p }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if o.website %}<p><a class="link" href="{{ o.website }}" target="_blank" rel="noopener">{{ o.website }}</a></p>{% endif %}
+      {% if o.notes %}<p class="org__notes">{{ o.notes }}</p>{% endif %}
+    </div>
+    {% empty %}
+    <div class="empty" style="grid-column:1/-1">
+      <div style="font-size:44px;margin-bottom:8px">🕊️</div>
+      <h3 style="font-size:18px;font-weight:800">Записей пока нет</h3>
+      <p style="color:var(--ink-soft)">Контакты по странам добавляет администрация — проверенные
+        телефоны и адреса, чтобы не подавать неверную информацию.</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <p class="page__hint">⚠ Контакты организаций меняются часто — перед визитом обязательно
+     уточняйте актуальность на официальных сайтах (unhcr.org и сайты посольств).</p>
+</div>
+{% endblock %}

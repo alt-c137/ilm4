@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Перевозки — {{ block.super }}{% endblock %}
+{% block body_class %}s-migration{% endblock %}
+
+{% block content %}
+<div class="svc">
+{% include 'includes/section_hero.html' with icon="🚚" title="Перевозки" desc="Грузовые и пассажирские перевозки, попутчики — находи машину или груз по маршруту" class="migration" cta="Добавить перевозку" cta_url="/transport/add/" %}
+
+  <div class="toolbar">
+    <div class="chips">
+      <a class="chip{% if not f_type %} chip--on{% endif %}" href="?from={{ f_from|urlencode }}&to={{ f_to|urlencode }}">Все типы</a>
+      {% for key, label in types %}
+      <a class="chip{% if key == f_type %} chip--on{% endif %}" href="?from={{ f_from|urlencode }}&to={{ f_to|urlencode }}&type={{ key }}">{{ label }}</a>
+      {% endfor %}
+    </div>
+    <form method="get" class="map__form" style="margin-top:12px">
+      <input type="hidden" name="type" value="{{ f_type }}">
+      <input type="text" name="from" value="{{ f_from }}" placeholder="Откуда">
+      <input type="text" name="to" value="{{ f_to }}" placeholder="Куда">
+      <button type="submit" class="btn btn--p">Найти маршрут</button>
+    </form>
+  </div>
+
+  <div class="grid g2">
+    {% for r in rides %}
+    <div class="panel ride">
+      <div class="ride__route">
+        <span class="ride__city">{{ r.from_city }}</span>
+        <span class="ride__arrow">→</span>
+        <span class="ride__city">{{ r.to_city }}</span>
+        <span class="badge">{{ r.get_type_display }}</span>
+      </div>
+      {% if r.price_text %}<div class="ride__price">{{ r.price_text }}</div>{% endif %}
+      <p class="ride__desc">{{ r.description|truncatechars:180 }}</p>
+      <div class="ride__meta">
+        {% if r.ride_date %}📅 {{ r.ride_date|date:"d.m.Y" }} · {% endif %}
+        📞 <b>{{ r.contact }}</b> · {{ r.created_at|date:"d.m" }}
+      </div>
+    </div>
+    {% empty %}
+    <div class="empty" style="grid-column:1/-1">
+      <div style="font-size:44px;margin-bottom:8px">🚚</div>
+      <h3 style="font-size:18px;font-weight:800">Маршрутов пока нет</h3>
+      <p style="color:var(--ink-soft)">Возишь грузы или пассажиров? Добавьте первую перевозку — бесплатно, после модерации.</p>
+      <a class="btn btn--p" href="{% url 'transport:create' %}">Добавить перевозку</a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
