@@ -57,3 +57,19 @@ def next_prayer(times: dict[str, str], now: datetime | None = None, tz_offset: i
             hours, rest = divmod(int(delta.total_seconds()), 3600)
             return key, NAMES[key], f'{hours}:{rest % 3600 // 60:02d}'
     return 'fajr', NAMES['fajr'], 'завтра'
+
+
+def prayer_progress(times: dict[str, str]) -> int:
+    """Процент (0–100) пути от предыдущего намаза к следующему — для полосы."""
+    now = datetime.now()
+    marks = [(k, datetime.strptime(times[k], '%H:%M')) for k in PRAYER_ONLY]
+    for i, (key, moment) in enumerate(marks):
+        if moment > now:
+            prev = marks[i - 1][1] if i else marks[-1][1]  # до Фаджра — от Иши
+            span = (moment - prev).total_seconds() or 1
+            done = (now - prev).total_seconds()
+            if done < 0:  # после полуночи: от вчерашней Иши до Фаджра
+                done += 24 * 3600
+                span = 24 * 3600 - span + (24 * 3600)  # приближение достаточно для полосы
+            return max(0, min(100, round(done / span * 100)))
+    return 100

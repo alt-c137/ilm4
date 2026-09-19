@@ -1,54 +1,63 @@
 {% extends 'base.html' %}
+{% load prayer_tags %}
 {% block title %}Время намаза — {{ block.super }}{% endblock %}
+{% block body_class %}s-prayer{% endblock %}
 
 {% block content %}
-{% include 'includes/section_hero.html' with icon="🕌" title="Время намаза" desc="Точный расчёт по вашему городу или GPS — быстро и без приложений" class="prayer" %}
-<div class="page">
-  <h1>Время намаза</h1>
+<div class="svc svc--prayer">
 
-  <form method="get" class="prayer__form">
-    <label for="city">Город</label>
-    <select name="city" id="city">
-      {% for key, name in cities.items %}
-        <option value="{{ key }}"{% if key == city_key %} selected{% endif %}>{{ name }}</option>
-      {% endfor %}
-    </select>
-    <label for="method">Метод расчёта</label>
-    <select name="method" id="method">
-      {% for key, name in methods.items %}
-        <option value="{{ key }}"{% if key == method %} selected{% endif %}>{{ name }}</option>
-      {% endfor %}
-    </select>
-    <button type="submit" class="btn btn--p">Показать</button>
-    <button type="button" class="btn btn--g" id="gps-btn">📍 Определить по GPS</button>
-  </form>
-
-  <h2 class="page__h2">{{ place }}</h2>
-  <div class="prayer prayer--page">
-    {% for it in items %}
-      <div class="prayer__item{% if it.soon %} on{% endif %}">
-        <span class="prayer__n">{{ it.label }}</span>
-        <span class="prayer__t">{{ it.time }}</span>
+  <div class="prayer__hero">
+    <div class="prayer__hero-main">
+      <div class="prayer__hero-kicker">🕌 {{ place }}</div>
+      <div class="prayer__hero-next">Ближайший намаз</div>
+      <div class="prayer__hero-name">{{ next_name }}</div>
+      <div class="prayer__hero-left">через {{ next_left }}</div>
+      <div class="prayer__bar"><span style="width: {{ progress }}%"></span></div>
+      <div class="prayer__bar-meta"><span>{{ progress }}% времени прошло</span><span>метод: {{ method }}</span></div>
+    </div>
+    <div class="prayer__tiles">
+      {% for it in items %}
+      <div class="ptile{% if it.soon %} ptile--next{% elif it.passed %} ptile--passed{% endif %}">
+        <div class="ptile__name">{{ it.label }}</div>
+        <div class="ptile__time">{{ it.time }}</div>
+        {% if it.soon %}<div class="ptile__mark">→ следующий</div>{% elif it.passed %}<div class="ptile__mark">✓</div>{% endif %}
       </div>
-    {% endfor %}
+      {% endfor %}
+    </div>
   </div>
-  <p class="prayer__next">Ближайший намаз: <b>{{ next_name }}</b> — через {{ next_left }}</p>
-  <p class="page__hint">Расчёт идёт локально на сервере по координатам и дате —
-    интернет-сервисы не используются. В мобильном приложении будет считаться
-    прямо на телефоне, без сети.</p>
+
+  <div class="prayer__panel">
+    <div class="prayer__chips">
+      {% for ck in top_cities %}
+      <a class="chip{% if ck == city_key %} chip--on{% endif %}" href="?city={{ ck }}">{{ cities|get_item:ck }}</a>
+      {% endfor %}
+      <a class="chip" href="#" id="gps-btn2">📍 GPS</a>
+    </div>
+    <form method="get" class="prayer__row">
+      <select name="city" aria-label="Город">
+        {% for key, name in cities.items %}<option value="{{ key }}"{% if key == city_key %} selected{% endif %}>{{ name }}</option>{% endfor %}
+      </select>
+      <select name="method" aria-label="Метод расчёта">
+        {% for key, name in methods.items %}<option value="{{ key }}"{% if key == method %} selected{% endif %}>{{ name }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="btn btn--p">Показать</button>
+    </form>
+    <p class="prayer__note">Расчёт идёт на сервере по координатам и дате — без внешних сервисов.
+       В приложении будет считаться прямо на телефоне, даже без интернета.</p>
+  </div>
+
 </div>
 
 <script>
-// GPS: берём координаты браузера и часовой пояс, перезагружаем страницу с ними
-document.getElementById('gps-btn').addEventListener('click', function () {
+document.getElementById('gps-btn2').addEventListener('click', function (e) {
+  e.preventDefault();
   if (!navigator.geolocation) { alert('Геолокация недоступна'); return; }
   navigator.geolocation.getCurrentPosition(function (pos) {
     var tz = -new Date().getTimezoneOffset() / 60;
-    var q = '?lat=' + pos.coords.latitude.toFixed(4) +
-            '&lon=' + pos.coords.longitude.toFixed(4) +
-            '&tz=' + tz + '&label=' + encodeURIComponent('Моё местоположение');
-    window.location.search = q;
-  }, function () { alert('Не удалось получить координаты — разреши доступ к геолокации'); });
+    window.location.search = '?lat=' + pos.coords.latitude.toFixed(4) +
+      '&lon=' + pos.coords.longitude.toFixed(4) + '&tz=' + tz +
+      '&label=' + encodeURIComponent('Моё местоположение');
+  }, function () { alert('Не удалось получить координаты'); });
 });
 </script>
 {% endblock %}

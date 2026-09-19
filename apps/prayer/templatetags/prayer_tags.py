@@ -7,6 +7,12 @@ from ..cities import CITIES, DEFAULT_CITY
 register = template.Library()
 
 
+@register.filter
+def get_item(dictionary, key):
+    """{{ cities|get_item:city_key }} — доступ по ключу в шаблоне."""
+    return (dictionary or {}).get(key)
+
+
 @register.simple_tag
 def prayer_widget(city_key: str = '') -> dict:
     from apps.core.models import SiteSettings

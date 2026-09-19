@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="{% static 'css/base.css' %}">
 {% if current_theme %}<style>:root{--accent:{{ current_theme.accent }};--accent-d:{{ current_theme.accent_d }};--accent-soft:{{ current_theme.accent_soft }}}</style>{% endif %}
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
 {% include 'includes/messages.html' %}
 <div class="wrap">
   <header class="top"><div class="top__row">

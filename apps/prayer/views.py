@@ -31,14 +31,23 @@ def index(request):
 
     times = services.compute(lat, lon, int(tz), method=method)
     next_key, next_name, next_left = services.next_prayer(times)
-    items = [
-        {'key': k, 'label': label, 'time': times[k], 'soon': k == next_key}
-        for k, label in services.NAMES.items()
-    ]
+    progress = services.prayer_progress(times)
+
+    order = list(services.PRAYER_ONLY)
+    items = []
+    for key, label in services.NAMES.items():
+        items.append({
+            'key': key, 'label': label, 'time': times[key],
+            'soon': key == next_key,
+            'passed': (key in order and next_key in order
+                       and order.index(key) < order.index(next_key)),
+        })
 
     response = render(request, 'prayer/index.html', {
         'items': items,
+        'progress': progress,
         'cities': {k: v[0] for k, v in CITIES.items()},
+        'top_cities': ['tashkent', 'samarkand', 'bukhara', 'moscow', 'kazan', 'dubai'],
         'city_key': city_key, 'place': place, 'method': method,
         'methods': services.METHODS,
         'next_name': next_name, 'next_left': next_left,
