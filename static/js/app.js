@@ -68,3 +68,21 @@ if (dt) {
     document.cookie = 'ilm4_dark=' + next + ';path=/;max-age=31536000;samesite=lax';
   });
 }
+
+// стрелки строк: скрываются на краях (дошёл до конца — «вперёд» исчезла)
+function refreshArrows(nav, row) {
+  var l = nav.querySelector('.rail-arrow.l');
+  var r = nav.querySelector('.rail-arrow.r');
+  if (!l || !r) return;
+  var max = row.scrollWidth - row.clientWidth - 4;
+  l.classList.toggle('hid', row.scrollLeft <= 4);
+  r.classList.toggle('hid', row.scrollLeft >= max);
+}
+document.querySelectorAll('.railnav').forEach(function (nav) {
+  var row = nav.querySelector('.rail, .apps, .nav__row');
+  if (!row) return;
+  var upd = function () { refreshArrows(nav, row); };
+  row.addEventListener('scroll', upd, { passive: true });
+  window.addEventListener('resize', upd);
+  upd();
+});

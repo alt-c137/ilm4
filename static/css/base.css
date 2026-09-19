@@ -29,8 +29,9 @@ a{color:inherit;text-decoration:none}
 
 /* навигация: топ-пилюли + выпадающее «Ещё» */
 .nav{padding:4px 0 8px}
-.nav__row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center}
-.nav a{padding:8px 15px;font-size:14px;font-weight:600;color:var(--ink-soft);background:var(--card);border-radius:40px;transition:.15s}
+.nav__row{display:flex;gap:8px;align-items:center;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;scroll-snap-type:x proximity;padding-bottom:2px}
+.nav__row::-webkit-scrollbar{display:none}
+.nav__row .nav a{padding:8px 15px;font-size:14px;font-weight:600;color:var(--ink-soft);background:var(--card);border-radius:40px;transition:.15s}
 .nav a:hover,.nav a.on{background:var(--accent);color:#fff}
 .nav__more{position:relative}
 .nav__drop{cursor:pointer;user-select:none}
@@ -542,3 +543,25 @@ html[data-theme=dark] .darktoggle::before{content:"☀️";left:29px}
 .soc{display:flex;gap:10px;margin-top:12px}
 .soc a{width:36px;height:36px;border-radius:12px;background:var(--bg);color:var(--ink-soft);display:grid;place-items:center;transition:.15s}
 .soc a:hover{background:var(--accent);color:#fff;transform:translateY(-2px)}
+
+/* пилюли-строка и ряд иконок: стрелки скрываются на краях прокрутки */
+.nav.railnav .rail-arrow{top:50%;transform:translateY(-50%)}
+.nav.railnav .rail-arrow:hover{transform:translateY(-50%) scale(1.08)}
+.rail-arrow.hid{opacity:0!important;pointer-events:none!important}
+.nav__row::-webkit-scrollbar{display:none}
+.nav a{scroll-snap-align:start}
+
+/* соцсети: вправо-вниз, крупнее */
+.foot__bot{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+.soc{display:flex;gap:12px;margin:0}
+.soc a{width:46px;height:46px;border-radius:14px;font-size:20px}
+
+/* баннер на узких экранах: стрелки меньше, текст не под ними */
+@media(max-width:760px){
+  .banner__slide{padding:30px 64px}
+  .banner__arrow{width:34px;height:34px;font-size:16px}
+  .banner__arrow--l{left:8px}
+  .banner__arrow--r{right:8px}
+  .banner__t{font-size:22px}
+  .banner__d{font-size:13px}
+}
