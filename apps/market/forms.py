@@ -30,3 +30,8 @@ class ListingForm(forms.ModelForm):
         if price is not None and price < 0:
             raise forms.ValidationError('Цена не может быть отрицательной')
         return price
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'category' in self.fields:
+            self.fields['category'].choices = [(chr(39)+chr(39), '— выберите из списка —')] + list(self.fields['category'].choices)
