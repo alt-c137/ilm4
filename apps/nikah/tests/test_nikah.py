@@ -1,9 +1,7 @@
 """Фаза 7 — никах: модерация, платный контакт для мужчин, бесплатный для женщин."""
-from datetime import timedelta
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.utils import timezone
 
 from apps.core.models import Moderation
 from apps.nikah.models import NikahContact, NikahProfile

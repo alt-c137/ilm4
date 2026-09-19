@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Диалог — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="page chat">
+  <h1>Диалог{% if thread.subject %}: {{ thread.subject }}{% endif %}</h1>
+  <div class="chat__log" id="chat-log">
+    {% for m in messages %}
+    <div class="chat__msg{% if m.sender == user %} mine{% endif %}">
+      <b>{{ m.sender.get_display_name }}</b>
+      <div>{{ m.body }}</div>
+      <span class="meta">{{ m.created_at|date:"d.m H:i" }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  <form method="post" action="{% url 'chat:thread' thread.pk %}" class="chat__form" id="chat-form">
+    {% csrf_token %}
+    <input type="text" name="body" id="chat-body" placeholder="Сообщение…" autocomplete="off" required>
+    <button type="submit" class="btn btn--p">Отправить</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// WebSocket: сообщения доставляются без перезагрузки; форма работает и как fallback
+(function () {
+  var proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+  var sock = new WebSocket(proto + '://' + window.location.host +
+                           '/ws/chat/{{ thread.pk }}/');
+  var log = document.getElementById('chat-log');
+  var form = document.getElementById('chat-form');
+  var input = document.getElementById('chat-body');
+
+  sock.onmessage = function (e) {
+    var d = JSON.parse(e.data);
+    var div = document.createElement('div');
+    div.className = 'chat__msg' + (d.sender_id === {{ user.id }} ? ' mine' : '');
+    div.innerHTML = '<b>' + escapeHtml(d.sender_name) + '</b><div>' +
+                    escapeHtml(d.body) + '</div><span class="meta">' + d.created_at + '</span>';
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+  };
+  form.addEventListener('submit', function (e) {
+    if (sock.readyState === 1 && input.value.trim()) {
+      e.preventDefault();
+      sock.send(JSON.stringify({body: input.value}));
+      input.value = '';
+    } // иначе — обычная отправка формы (fallback)
+  });
+  function escapeHtml(s) {
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+  log.scrollTop = log.scrollHeight;
+})();
+</script>
+{% endblock %}

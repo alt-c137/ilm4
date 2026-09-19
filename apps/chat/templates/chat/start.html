@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Новый диалог — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h1>Новый диалог</h1>
+  <form method="post" class="form">{% csrf_token %}
+    <label>Email участника</label>
+    <input type="email" name="email" value="{{ email }}" required>
+    <label>Тема (необязательно)</label>
+    <input type="text" name="subject" maxlength="160" placeholder="например: iPhone 14 Pro">
+    <button type="submit" class="btn btn--p">Начать диалог</button>
+  </form>
+</div>
+{% endblock %}

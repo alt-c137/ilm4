@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Чат — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h1>Сообщения</h1>
+  <p><a class="btn btn--p" href="{% url 'chat:start' %}">+ Новый диалог</a></p>
+  {% for row in rows %}
+  <a class="ni link" href="{% url 'chat:thread' row.thread.pk %}" style="align-items:center">
+    <div class="ni__i" style="background:linear-gradient(135deg,var(--accent-soft),var(--line));display:grid;place-items:center">💬</div>
+    <div>
+      <div class="ni__t">{{ row.other.get_display_name }}{% if row.thread.subject %} · {{ row.thread.subject }}{% endif %}</div>
+      <div class="ni__m">{% if row.last %}{{ row.last.body|truncatechars:60 }} · {{ row.thread.updated_at|date:"d.m H:i" }}{% else %}нет сообщений{% endif %}</div>
+    </div>
+  </a>
+  {% empty %}
+  <p>Диалогов пока нет.</p>
+  {% endfor %}
+</div>
+{% endblock %}

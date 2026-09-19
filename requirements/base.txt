@@ -8,3 +8,6 @@ whitenoise                 # статики в проде
 gunicorn                   # прод-сервер (unix)
 django-otp                 # 2FA (TOTP) для админов — PASSPORT §3 (плагин otp_totp встроен)
 qrcode                     # QR-код для подключения 2FA
+channels                   # WebSocket-чат (фаза 8)
+channels-redis             # прод-слой channel layers (в деве — InMemory)
+daphne                     # ASGI-сервер (runserver-WS + прод)

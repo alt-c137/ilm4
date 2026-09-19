@@ -30,6 +30,8 @@ INSTALLED_APPS = [
     'django_otp',
     'django_otp.plugins.otp_totp',
     'taggit',
+    'channels',
+    'daphne',   # runserver в ASGI-режиме — обслуживает и WebSocket чата
     # ilm4
     'apps.core',
     'apps.accounts',
@@ -45,6 +47,7 @@ INSTALLED_APPS = [
     'apps.services',
     'apps.library',
     'apps.nikah',
+    'apps.chat',
 ]
 
 MIDDLEWARE = [
@@ -80,6 +83,17 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
+ASGI_APPLICATION = 'config.asgi.application'
+
+# Real-time (чат): Redis на проде; в деве без Redis — слой в памяти
+CHANNEL_LAYERS = {
+    'default': (
+        {'BACKEND': 'channels_redis.core.RedisChannelLayer',
+         'CONFIG': [{'url': env('REDIS_URL')}]}
+        if env('REDIS_URL', default='') else
+        {'BACKEND': 'channels.layers.InMemoryChannelLayer'}
+    ),
+}
 
 DATABASES = {
     'default': env.db('DATABASE_URL'),

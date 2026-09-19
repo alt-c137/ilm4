@@ -23,6 +23,8 @@
       {% if user.is_authenticated %}
         <a class="btn btn--g" href="{% url 'accounts:profile' %}">{{ user.get_display_name }}</a>
         <a class="btn btn--g" href="{% url 'wallet:index' %}">Кошелёк</a>
+        <a class="btn btn--s" href="{% url 'notifications:list' %}">🔔{% if unread_notifications %} {{ unread_notifications }}{% endif %}</a>
+        <a class="btn btn--g" href="{% url 'chat:inbox' %}">💬</a>
         <form class="top__exit" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
           <button type="submit" class="btn btn--g">Выйти</button>
         </form>

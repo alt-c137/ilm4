@@ -44,9 +44,11 @@ def map_view(request):
          'distance': getattr(p, 'distance_km', None)}
         for p in places
     ]
+    # '<' экранируем: иначе строка с </script> внутри JSON вырвется из <script>-блока
+    markers_json = json.dumps(markers, ensure_ascii=False).replace('<', '\\u003c')
     return render(request, 'maps/map.html', {
         'places': places,
-        'markers_json': json.dumps(markers, ensure_ascii=False),
+        'markers_json': markers_json,
         'categories': HalalPlace.CATEGORIES,
         'city': request.GET.get('city', ''),
         'category': request.GET.get('category', ''),

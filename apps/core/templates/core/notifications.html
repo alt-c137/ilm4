@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Уведомления — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h1>Уведомления</h1>
+  <form method="post" action="{% url 'notifications:read-all' %}">{% csrf_token %}
+    <button type="submit" class="btn btn--s">Отметить все прочитанными</button>
+  </form>
+  <div class="panel" style="margin-top:14px">
+    {% for n in notifications %}
+    <div class="ni{% if not n.read %} unread{% endif %}">
+      <div>
+        <div class="ni__t">{% if n.url %}<a class="link" href="{{ n.url }}">{{ n.text }}</a>{% else %}{{ n.text }}{% endif %}</div>
+        <div class="ni__m">{{ n.created_at|date:"d.m H:i" }}</div>
+      </div>
+    </div>
+    {% empty %}<p>Уведомлений нет.</p>{% endfor %}
+  </div>
+</div>
+{% endblock %}

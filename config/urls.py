@@ -22,6 +22,8 @@ urlpatterns = [
     path('services/', include('apps.services.urls')),
     path('library/', include('apps.library.urls')),
     path('nikah/', include('apps.nikah.urls')),
+    path('chat/', include('apps.chat.urls')),
+    path('notifications/', include('apps.core.notification_urls')),
     path('', include('apps.core.urls')),
 ]
 
