@@ -37,9 +37,13 @@ def test_until_next_today_and_tomorrow():
     assert info['key'] == 'dhuhr' and not info['tomorrow']
     assert 'ч' in info['human'] and info['time'] == times['dhuhr']
     # после Иши — завтрашний Фаджр, и остаток считается честно
+    # (ожидание считается от фактических времён — они сдвигаются с датами)
     info = services.until_next(times, now=datetime(2026, 9, 19, 23, 30))
-    assert info['key'] == 'fajr' and info['tomorrow']
-    assert info['human'] == '5 ч 04 мин'  # 23:30 → 04:34
+    assert info['key'] == 'fajr' and info['tomorrow'] and info['time'] == times['fajr']
+    fajr_m = int(times['fajr'][:2]) * 60 + int(times['fajr'][3:])
+    expected = (1440 - (23 * 60 + 30)) + fajr_m
+    h, m = divmod(expected, 60)
+    assert info['human'] == f'{h} ч {m:02d} мин'
 
 
 def test_progress_between_prayers():
