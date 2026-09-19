@@ -33,6 +33,7 @@ def index(request):
     next_key, _next_name, _left = services.next_prayer(times)
     until = services.until_next(times)
     progress = services.prayer_progress(times)
+    next_epoch = services.next_epoch(times)
 
     order = list(services.PRAYER_ONLY)
     items = []
@@ -50,6 +51,7 @@ def index(request):
     response = render(request, 'prayer/index.html', {
         'items': items,
         'progress': progress,
+        'next_epoch': next_epoch,
         'until': until,
         'cities': {k: v[0] for k, v in CITIES.items()},
         'city_key': city_key, 'place': place, 'method': method,

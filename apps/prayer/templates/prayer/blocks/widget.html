@@ -14,5 +14,5 @@
       </div>
     {% endfor %}
   </div>
-  <p class="prayer__next">Ближайший намаз: <b>{{ w.next_name }}</b> — {{ w.countdown }}</p>
+  <p class="prayer__next">Ближайший намаз: <b>{{ w.next_name }}</b> — <span class="live-cd" data-ts="{{ w.next_epoch }}">{{ w.countdown }}</span></p>
 </section>

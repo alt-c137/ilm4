@@ -22,12 +22,24 @@
       <button type="submit">Найти</button>
     </form>
     <div class="top__act">
-      <a class="btn btn--s" href="{% url 'core:support' %}">♥ Поддержать</a>
       {% if user.is_authenticated %}
+      <a class="ibtn" href="/buy/add/" title="Подать объявление">
+        <span class="ibtn__ic">➕</span><span class="ibtn__n">Подать</span>
+      </a>
+      <a class="ibtn" href="{% url 'chat:inbox' %}" title="Сообщения">
+        <span class="ibtn__ic">💬</span><span class="ibtn__n">Чаты</span>
+      </a>
+      <a class="ibtn" href="{% url 'notifications:list' %}" title="Уведомления">
+        <span class="ibtn__ic">🔔</span>
+        {% if unread_notifications %}<span class="ibtn__badge">{{ unread_notifications }}</span>{% endif %}
+        <span class="ibtn__n">Колокольчик</span>
+      </a>
+      <a class="ibtn" href="{% url 'core:support' %}" title="Поддержать проект">
+        <span class="ibtn__ic">❤️</span><span class="ibtn__n">Поддержать</span>
+      </a>
       <div class="usermenu" tabindex="0">
         <button type="button" class="uchip">
           {% if user.avatar %}<img class="uchip__ava" src="{{ user.avatar.url }}" alt="">{% else %}<span class="uchip__ava uchip__ava--txt">{{ user.get_display_name|slice:":1"|upper }}</span>{% endif %}
-          <span class="uchip__n">{{ user.get_display_name }}</span>
           <span class="uchip__c">▾</span>
         </button>
         <div class="umenu">

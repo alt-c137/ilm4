@@ -17,6 +17,8 @@
       <div class="banner__d">Проверенные анкеты, уважение и цель — только никах.</div>
     </a>
   </div>
+  <button type="button" class="banner__arrow banner__arrow--l" id="banner-prev" aria-label="Назад">‹</button>
+  <button type="button" class="banner__arrow banner__arrow--r" id="banner-next" aria-label="Вперёд">›</button>
   <div class="banner__dots" id="banner-dots">
     <button type="button" class="banner__dot on" aria-label="Слайд 1"></button>
     <button type="button" class="banner__dot" aria-label="Слайд 2"></button>
@@ -35,6 +37,16 @@
     dots.forEach(function (d, k) { d.classList.toggle('on', k === i); });
   }
   function auto() { timer = setInterval(function () { go(i + 1); }, 5000); }
+  document.getElementById('banner-prev').addEventListener('click', function () { clearInterval(timer); go(i - 1); auto(); });
+  document.getElementById('banner-next').addEventListener('click', function () { clearInterval(timer); go(i + 1); auto(); });
+  var x0 = null;
+  win.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; clearInterval(timer); }, {passive: true});
+  win.addEventListener('touchend', function (e) {
+    if (x0 === null) return;
+    var dx = e.changedTouches[0].clientX - x0;
+    if (Math.abs(dx) > 40) go(dx < 0 ? i + 1 : i - 1);
+    x0 = null; auto();
+  }, {passive: true});
   dots.forEach(function (d, k) {
     d.addEventListener('click', function () { clearInterval(timer); go(k); auto(); });
   });

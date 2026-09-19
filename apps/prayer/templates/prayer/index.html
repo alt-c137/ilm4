@@ -12,18 +12,18 @@
       <div class="prayer__hero-next">Ближайший намаз</div>
       <div class="prayer__hero-name">{{ next_name }}</div>
       <div class="prayer__hero-left">
-        {% if until.tomorrow %}завтра, в {{ until.time }} — через {{ until.human }}
-        {% else %}через {{ until.human }}{% endif %}
+        {% if until.tomorrow %}завтра, в {{ until.time }} — <span class="live-cd" data-ts="{{ next_epoch }}">через {{ until.human }}</span>
+        {% else %}<span class="live-cd" data-ts="{{ next_epoch }}">через {{ until.human }}</span>{% endif %}
       </div>
       <div class="prayer__bar"><span style="width: {{ progress }}%"></span></div>
       <div class="prayer__bar-meta"><span>между намазами: {{ progress }}%</span><span>метод: {{ method }}</span></div>
     </div>
-    <div class="prayer__tiles">
+    <div class="tstrip">
       {% for it in items %}
-      <div class="ptile{% if it.soon %} ptile--next{% elif it.passed %} ptile--passed{% endif %}">
-        <div class="ptile__name">{{ it.label }}</div>
-        <div class="ptile__time">{{ it.time }}</div>
-        {% if it.soon %}<div class="ptile__mark">→ следующий</div>{% elif it.passed %}<div class="ptile__mark">✓ прошёл</div>{% endif %}
+      <div class="tstrip__cell{% if it.soon %} on{% elif it.passed %} passed{% endif %}">
+        <span class="tstrip__n">{{ it.label }}</span>
+        <span class="tstrip__t">{{ it.time }}</span>
+        {% if it.soon %}<span class="tstrip__mark">→ сейчас</span>{% elif it.passed %}<span class="tstrip__mark">✓</span>{% endif %}
       </div>
       {% endfor %}
     </div>

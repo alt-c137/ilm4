@@ -36,8 +36,10 @@ def prayer_widget(city_key: str = '') -> dict:
     else:
         countdown = f'через {until["human"]}'
 
+    next_epoch = services.next_epoch(times)
     return {
         'city': city_name,
+        'next_epoch': next_epoch,
         'items': items,
         'next_name': until['name'],
         'countdown': countdown,

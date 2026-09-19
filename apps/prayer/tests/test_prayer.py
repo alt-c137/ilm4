@@ -81,3 +81,20 @@ def test_widget_on_homepage(client):
     html = response.content.decode()
     assert 'Время намаза' in html       # блок на главной
     assert 'Ближайший намаз' in html
+
+
+def test_makkah_isha_after_maghrib():
+    """Умм аль-Кура: Иша = Магриб + 90 мин (регресс: порт praytimes ломал порядок)."""
+    times = services.compute(41.3111, 69.2797, 5, method='Makkah')
+    def mins(t):
+        h, m = t.split(':')
+        return int(h) * 60 + int(m)
+    assert mins(times['isha']) > mins(times['maghrib'])
+    assert mins(times['isha']) - mins(times['maghrib']) == 90
+
+
+def test_next_epoch_future():
+    import time as _time
+    times = services.compute(41.3111, 69.2797, 5)
+    ts = services.next_epoch(times)
+    assert ts > _time.time() - 120  # в будущем (или только что наступил)

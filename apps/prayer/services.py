@@ -3,7 +3,7 @@
 Библиотека praytimes — порт PrayTimes.org: астрономия по координатам и дате,
 методы отличаются углами Фаджр/Иша. У всех вызовов один вход — compute().
 """
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from django.utils import timezone as dj_tz
 from praytimes import PrayTimes
@@ -32,11 +32,31 @@ def compute(lat: float, lon: float, tz_offset: int, day: date | None = None,
             method: str = DEFAULT_METHOD) -> dict[str, str]:
     """Времена на день: {'fajr': '04:34', ...} в местном времени координат."""
     pt = PrayTimes()
-    if method in pt.methods and method != 'MWL':
+    if method == 'Makkah':
+        # Умм аль-Кура: Фаджр 18.5°, Иша = Магриб + 90 мин.
+        # Порт praytimes не умеет '90 min' (получалась Иша ДО Магриба) — считаем сами.
+        pt.adjust({'fajr': 18.5})
+    elif method in pt.methods and method != 'MWL':
         pt.adjust(pt.methods[method]['params'])
     day = day or date.today()
     times = pt.getTimes((day.year, day.month, day.day), (lat, lon), tz_offset)
+    if method == 'Makkah':
+        h, m = times['maghrib'].split(':')
+        total = (int(h) * 60 + int(m) + 90) % 1440
+        times['isha'] = f'{total // 60:02d}:{total % 60:02d}'
     return {key: times[key] for key in NAMES}
+
+
+def next_epoch(times: dict[str, str], now: datetime | None = None) -> int:
+    """Unix-время следующего намаза — для живого отсчёта на клиенте."""
+    info = until_next(times, now)
+    h, m = map(int, times[info['key']].split(':'))
+    base = (now or _now_naive()).date()
+    if info['tomorrow']:
+        base = base + timedelta(days=1)
+    aware = datetime.combine(base, datetime.min.time()).replace(
+        hour=h, minute=m, tzinfo=dj_tz.get_default_timezone())
+    return int(aware.timestamp())
 
 
 def compute_for_city(city_key: str, day: date | None = None,
