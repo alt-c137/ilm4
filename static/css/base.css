@@ -586,3 +586,7 @@ html[data-theme=dark] .darktoggle::before{content:"☀️";left:29px}
 
 .nav.railnav .rail-arrow.l{left:6px}
 .nav.railnav .rail-arrow.r{right:6px}
+
+/* иконка категории на карточке-заглушке */
+.rcard__emoji{width:56%;height:56%;object-fit:contain;font-size:32px}
+.rail .rcard__emoji{width:44px;height:44px}

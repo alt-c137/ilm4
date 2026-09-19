@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load icons %}
 {% block title %}ilmbuy — купля-продажа — {{ block.super }}{% endblock %}
 {% block body_class %}s-buy{% endblock %}
 
@@ -32,7 +33,7 @@
         {% if l.photo %}
         <div class="card__i" style="background-image:url('{{ l.photo.url }}')"></div>
         {% else %}
-        <div class="card__i" style="background:linear-gradient(135deg,#eceaff,#f4f3fd);display:grid;place-items:center;font-size:34px">{{ l.category.icon }}</div>
+        <div class="card__i" style="background:linear-gradient(135deg,#eceaff,#f4f3fd);display:grid;place-items:center">{% svc_icon 'cat-'|add:l.category.slug l.category.icon 'rcard__emoji' %}</div>
         {% endif %}
         <div class="card__b">
           {% if l.is_boosted %}<div class="card__c">⬆ ТОП</div>{% else %}<div class="card__c">{{ l.category.name|upper }}</div>{% endif %}
