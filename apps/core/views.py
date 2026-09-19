@@ -1,12 +1,16 @@
 from django.shortcuts import render
 
+from .models import Rate
 from .blocks import get_blocks
 from .models import ModuleConfig
 
 
 def home(request):
     """Главная: блоки реестра по порядку + витрина разделов (§3.2)."""
+    rates = Rate.objects.all()
     return render(request, 'core/home.html', {
+        'rates': rates,
+        'rates_updated': rates.first().updated if rates else None,
         'blocks': get_blocks(),
         'modules': ModuleConfig.objects.filter(in_grid=True).exclude(status=ModuleConfig.OFF),
     })

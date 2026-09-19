@@ -1,0 +1,19 @@
+{% load humanize %}
+{% if rates %}
+<section class="sec">
+  <div class="sec__h">
+    <div class="sec__t">Курс валют</div>
+    <span class="meta">обновлён: {{ rates_updated|date:"d.m H:i" }}</span>
+  </div>
+  <div class="rates">
+    {% for r in rates %}
+    <div class="rates__item">
+      <span class="rates__code">{{ r.code }}</span>
+      <span class="rates__val">{{ r.rate|intcomma }}</span>
+      <span class="rates__cur">сум</span>
+    </div>
+    {% endfor %}
+    <div class="rates__note">Источники: ЦБ, рыночные котировки. Не является офертой.</div>
+  </div>
+</section>
+{% endif %}

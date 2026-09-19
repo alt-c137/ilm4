@@ -17,8 +17,6 @@
         </span>
         <span class="prayer__n">{{ it.label }}</span>
         <span class="prayer__t">{{ it.time }}</span>
-        {% if it.soon %}<span class="prayer__next-mark">→ следующий</span>
-        {% elif it.passed %}<span class="prayer__next-mark">✓</span>{% endif %}
       </div>
     {% endfor %}
   </div>

@@ -47,7 +47,8 @@ class ModuleConfig(models.Model):
     status = models.CharField('статус', max_length=4, choices=STATUS, default=SOON)
     order = models.PositiveSmallIntegerField('порядок', default=0)
     icon = models.CharField('иконка', max_length=8, default='✦',
-                            help_text='Эмодзи для витрины разделов; SVG-иконки появятся по фазам')
+                            help_text='Эмодзи-фоллбек: если в static/img/icons/ есть '
+                                      '<ключ>.svg или .png — показывается он')
     in_grid = models.BooleanField('показывать на главной', default=True)
 
     class Meta:
@@ -74,6 +75,14 @@ class SiteSettings(SingletonModel):
     )
     hadis_source = models.CharField(
         'хадис дня — источник', max_length=200, default='аль-Бухари, Муслим',
+    )
+    hadis_image = models.ImageField(
+        'хадис — фоновая картинка', upload_to='settings/', blank=True, null=True,
+        help_text='Фон карточки хадиса на главной; без неё — фирменный градиент',
+    )
+    hero_image = models.ImageField(
+        'герой — картинка справа', upload_to='settings/', blank=True, null=True,
+        help_text='Иллюстрация в правой части главного баннера',
     )
     news_ticker = models.BooleanField('бегущая строка новостей', default=False)
     min_payout = models.PositiveIntegerField('минимальная сумма вывода, сум', default=100_000)
@@ -105,6 +114,46 @@ class SiteSettings(SingletonModel):
 
     def __str__(self):
         return 'Настройки сайта'
+
+
+class Banner(models.Model):
+    """Слайд рекламной карусели на главной. Управляется из админки.
+
+    Если активных слайдов нет — карусель показывает три фирменных
+    слайда-приглашения (как сейчас).
+    """
+
+    image = models.ImageField('картинка 1600×500', upload_to='banners/')
+    title = models.CharField('заголовок', max_length=120)
+    subtitle = models.CharField('подпись', max_length=200, blank=True)
+    cta_text = models.CharField('надпись кнопки', max_length=40, default='Подробнее')
+    cta_url = models.CharField('ссылка кнопки', max_length=300, default='/')
+    order = models.PositiveSmallIntegerField('порядок', default=0)
+    is_active = models.BooleanField('активен', default=True)
+
+    class Meta:
+        ordering = ['order', 'id']
+        verbose_name = 'баннер'
+        verbose_name_plural = 'баннеры (реклама на главной)'
+
+    def __str__(self):
+        return self.title
+
+
+class Rate(models.Model):
+    """Курс валют к суму. Обновляется командой python manage.py pull_rates."""
+
+    code = models.CharField('код валюты', max_length=6, unique=True)
+    rate = models.DecimalField('курс к суму', max_digits=14, decimal_places=2)
+    updated = models.DateTimeField('обновлено', auto_now=True)
+
+    class Meta:
+        ordering = ['code']
+        verbose_name = 'курс валюты'
+        verbose_name_plural = 'курсы валют'
+
+    def __str__(self):
+        return f'{self.code}: {self.rate}'
 
 
 class Notification(models.Model):

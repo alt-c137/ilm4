@@ -392,7 +392,7 @@ input[type=file]{position:absolute!important;width:1px!important;height:1px!impo
 /* баннер-карусель на главной */
 .banner{position:relative;border-radius:24px;overflow:hidden;box-shadow:var(--shadow-lg);margin:14px 0 6px}
 .banner__window{display:flex;transition:transform .55s cubic-bezier(.22,.61,.36,1)}
-.banner__slide{min-width:100%;min-height:210px;padding:40px 44px;color:#fff;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden}
+.banner__slide{min-width:100%;min-height:210px;padding:40px 44px;background-size:cover;background-position:center;color:#fff;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden}
 .banner__slide::after{content:"";position:absolute;right:-70px;top:-70px;width:240px;height:240px;border-radius:50%;background:rgba(255,255,255,.12)}
 .banner__k{font-size:12px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;opacity:.85;margin-bottom:6px}
 .banner__t{font-size:30px;font-weight:800;letter-spacing:-.5px;line-height:1.1;margin-bottom:6px;max-width:620px}
@@ -458,8 +458,6 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .card:hover::after{left:140%}
 
 /* баннер: медленный перелив градиента */
-.banner__slide{background-size:180% 180%;animation:bannshift 9s ease infinite alternate}
-@keyframes bannshift{from{background-position:0% 30%}to{background-position:100% 70%}}
 
 /* пилюля-поиск города (вместо россыпи чипсов) */
 .citypick{position:relative;display:inline-block}
@@ -494,15 +492,14 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 
 /* времена намаза: одна цельная плашка */
 .tstrip{background:var(--card);border-radius:24px;box-shadow:var(--shadow);display:grid;grid-template-columns:repeat(6,1fr);overflow:hidden}
-.tstrip__cell{padding:16px 6px;text-align:center;border-left:1px solid var(--line)}
+.tstrip__cell{padding:12px 14px;text-align:left;border-left:1px solid var(--line);display:flex;align-items:center;gap:10px}
 .tstrip__cell:first-child{border-left:0}
 .tstrip__cell.on{background:linear-gradient(140deg,#12b268,#0b7d49);color:#fff}
 .tstrip__cell.passed{opacity:.55}
-.tstrip__n{display:block;font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:2px}
+.tstrip__col{display:flex;flex-direction:column;min-width:0}
 .tstrip__cell.on .tstrip__n{color:#fff;opacity:.85}
 .tstrip__cell.passed .tstrip__t{color:var(--ink-soft)}
-.tstrip__t{font-size:22px;font-weight:800;letter-spacing:.4px}
-.tstrip__mark{display:block;font-size:10px;font-weight:800;margin-top:2px;opacity:.9}
+.tstrip__t{font-size:19px;font-weight:800;letter-spacing:.4px}
 @media(max-width:760px){.tstrip{grid-template-columns:repeat(3,1fr)}.tstrip__cell:nth-child(4){border-left:0}.tstrip__cell:nth-child(n+4){border-top:1px solid var(--line)}}
 
 /* стрелки баннера: всегда видны (и на тач-экранах) */
@@ -620,8 +617,30 @@ html[data-theme=dark] .darktoggle::before{content:"☀️";left:29px}
 .nav a.on .navic{filter:brightness(0) invert(1)}
 
 /* времена намаза: положение солнца на лёгком кружке */
-.tsun{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;margin:0 auto 8px;background:#fff4d6}
-.tsun svg{width:24px;height:24px}
+.tsun{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;flex:none;background:#fff4d6}
+.tsun svg{width:19px;height:19px}
 .tstrip__cell.on .tsun{background:rgba(255,255,255,.92)}
 .tstrip__cell.passed .tsun{background:var(--bg)}
 .tstrip__cell.passed .tsun svg{stroke:#9aa2b8}
+
+.banner__slide{background-size:cover;background-position:center}
+
+/* герой и хадис — раздельные карточки, картинки из админки */
+.hero2{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+.hero2__card{background:var(--card);border-radius:26px;padding:38px;box-shadow:var(--shadow);display:flex;align-items:center;gap:26px;position:relative;overflow:hidden}
+.hero2__card::after{content:"";position:absolute;right:-60px;top:-60px;width:260px;height:260px;border-radius:50%;background:var(--accent-soft);opacity:.5}
+.hero2__card .hero__l{position:relative;z-index:1}
+.hero2__img{width:38%;max-width:340px;border-radius:20px;object-fit:cover;position:relative;z-index:1;flex:none;align-self:stretch}
+.hadiscard{border-radius:26px;min-height:210px;padding:26px;color:#fff;display:flex;flex-direction:column;justify-content:center;background:var(--card);box-shadow:var(--shadow);background-size:cover;background-position:center;position:relative}
+.hadiscard::before{content:"";position:absolute;inset:0;border-radius:26px;background:linear-gradient(120deg,rgba(86,70,232,.88),rgba(139,125,255,.82))}
+.hadiscard>*{position:relative;z-index:1}
+.hadiscard__k{font-size:12px;font-weight:800;letter-spacing:1px;opacity:.9;margin-bottom:10px}
+.hadiscard__t{font-size:17px;font-weight:600;line-height:1.45;text-shadow:0 2px 10px rgba(0,0,0,.35)}
+.hadiscard__s{font-size:12.5px;opacity:.85;margin-top:10px}
+@media(max-width:980px){.hero2{grid-template-columns:1fr}}
+.rates{display:flex;gap:12px;flex-wrap:wrap;background:var(--card);border-radius:20px;padding:16px 18px;box-shadow:var(--shadow)}
+.rates__item{display:flex;flex-direction:column;padding:8px 18px;border-radius:14px;background:var(--bg);min-width:120px}
+.rates__code{font-size:12px;font-weight:800;color:var(--accent-d)}
+.rates__val{font-size:19px;font-weight:800}
+.rates__cur{font-size:11px;color:var(--ink-soft)}
+.rates__note{width:100%;font-size:11.5px;color:var(--ink-soft);margin-top:4px}
