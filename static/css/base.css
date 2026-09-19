@@ -403,3 +403,45 @@ input[type=file]{position:absolute!important;width:1px!important;height:1px!impo
 .banner__dots{position:absolute;bottom:14px;right:20px;display:flex;gap:7px;z-index:2}
 .banner__dot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.45);border:0;cursor:pointer;padding:0;transition:.2s}
 .banner__dot.on{background:#fff;width:22px;border-radius:6px}
+
+/* пользовательское меню-«⋯» в шапке (Telegram-стиль) */
+.usermenu{position:relative}
+.uchip{display:flex;align-items:center;gap:8px;background:var(--card);border:1.5px solid var(--line);border-radius:30px;padding:5px 12px 5px 5px;cursor:pointer;font-family:inherit;transition:.15s}
+.uchip:hover{border-color:var(--accent);box-shadow:0 6px 16px -8px rgba(30,34,60,.3)}
+.uchip__ava{width:30px;height:30px;border-radius:50%;object-fit:cover}
+.uchip__ava--txt,.umenu__ava--txt,.idcard__ava--txt{display:grid;place-items:center;background:linear-gradient(140deg,var(--accent),var(--accent-d));color:#fff;font-weight:800}
+.uchip__n{font-size:13.5px;font-weight:700;color:var(--ink);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.uchip__c{font-size:10px;color:var(--ink-soft)}
+.umenu{display:none;position:absolute;right:0;top:calc(100% + 10px);width:270px;background:var(--card);border-radius:20px;box-shadow:var(--shadow-lg);padding:8px;z-index:150}
+.usermenu:hover .umenu,.usermenu:focus-within .umenu{display:flex;flex-direction:column}
+.umenu__head{display:flex;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.umenu__ava{width:42px;height:42px;border-radius:50%;object-fit:cover}
+.umenu__name{font-size:14px;font-weight:800}
+.umenu__mail{font-size:12px;color:var(--ink-soft);word-break:break-all}
+.umenu a{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:12px;font-size:14px;font-weight:600;color:var(--ink);transition:.13s}
+.umenu a:hover{background:var(--accent-soft);color:var(--accent-d)}
+.umenu__badge{margin-left:auto;background:var(--accent);color:#fff;font-size:11px;font-weight:800;border-radius:14px;padding:1px 8px}
+.umenu__sep{height:1px;background:var(--line);margin:6px 4px}
+.umenu__lbl{font-size:11px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:var(--ink-soft);padding:6px 12px 4px}
+.umenu__sw{display:flex;gap:7px;padding:2px 12px 8px}
+.umenu__sw .sw{width:22px;height:22px}
+.umenu__exit{display:flex;align-items:center;gap:9px;width:100%;padding:9px 12px;border-radius:12px;font-size:14px;font-weight:600;color:#dc2626;background:none;border:0;cursor:pointer;font-family:inherit;transition:.13s}
+.umenu__exit:hover{background:#fdecec}
+
+/* профиль: карточка + настройки */
+.profile{display:grid;grid-template-columns:300px 1fr;gap:18px;margin:18px 0 30px;align-items:start}
+.idcard{background:var(--card);border-radius:22px;box-shadow:var(--shadow);overflow:hidden;text-align:center;padding-bottom:18px}
+.idcard__band{height:74px;background:linear-gradient(120deg,var(--accent),var(--accent-d))}
+.idcard__ava{width:96px;height:96px;border-radius:50%;object-fit:cover;border:4px solid #fff;margin:-48px auto 8px;display:block}
+.idcard__ava--txt{font-size:34px;width:96px;height:96px}
+.idcard__name{font-size:18px;font-weight:800}
+.idcard__mail{font-size:12.5px;color:var(--ink-soft);word-break:break-all;padding:0 16px}
+.idcard__role{display:inline-block;margin-top:8px;background:var(--accent-soft);color:var(--accent-d);font-size:11.5px;font-weight:800;border-radius:16px;padding:3px 12px}
+.idcard__role--su{background:#fdf3e0;color:#b45309}
+.idcard__rows{margin-top:10px;display:flex;flex-direction:column;gap:5px;font-size:13.5px;color:var(--ink-soft)}
+.idcard__staff{margin-top:12px;display:flex;flex-direction:column;gap:6px;align-items:center}
+.pset{background:var(--card);border-radius:22px;box-shadow:var(--shadow);padding:26px 28px}
+.pset__h{font-size:20px;font-weight:800;margin-bottom:14px}
+.pset__grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pset__grid div,.pset .form>div{display:flex;flex-direction:column;gap:6px}
+@media(max-width:900px){.profile{grid-template-columns:1fr}}

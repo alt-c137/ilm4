@@ -136,3 +136,14 @@ def test_profile_update(client):
     client.post('/accounts/profile/', {'nickname': 'Бобр', 'first_name': '', 'city': 'Бухара', 'theme': ''})
     user.refresh_from_db()
     assert user.nickname == 'Бобр' and user.city == 'Бухара'
+
+
+def test_profile_page_modern(client):
+    """Профиль: карточка с авой, меню-«⋯» в шапке, без селекта темы."""
+    user = User.objects.create_user('bob2', 'bob2@x.com', 'x', first_name='Боб')
+    client.force_login(user)
+    html = client.get('/accounts/profile/').content.decode()
+    assert 'idcard' in html                      # карточка профиля
+    assert 'usermenu' in html                    # меню-⋯ в шапке
+    assert 'Настройки профиля' in html
+    assert 'Тема оформления</label>' not in html  # выбор темы ушёл в меню

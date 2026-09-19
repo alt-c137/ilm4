@@ -24,13 +24,38 @@
     <div class="top__act">
       <a class="btn btn--s" href="{% url 'core:support' %}">♥ Поддержать</a>
       {% if user.is_authenticated %}
-        <a class="btn btn--g" href="{% url 'accounts:profile' %}">{{ user.get_display_name }}</a>
-        <a class="btn btn--g" href="{% url 'wallet:index' %}">Кошелёк</a>
-        <a class="btn btn--s" href="{% url 'notifications:list' %}">🔔{% if unread_notifications %} {{ unread_notifications }}{% endif %}</a>
-        <a class="btn btn--g" href="{% url 'chat:inbox' %}">💬</a>
-        <form class="top__exit" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
-          <button type="submit" class="btn btn--g">Выйти</button>
-        </form>
+      <div class="usermenu" tabindex="0">
+        <button type="button" class="uchip">
+          {% if user.avatar %}<img class="uchip__ava" src="{{ user.avatar.url }}" alt="">{% else %}<span class="uchip__ava uchip__ava--txt">{{ user.get_display_name|slice:":1"|upper }}</span>{% endif %}
+          <span class="uchip__n">{{ user.get_display_name }}</span>
+          <span class="uchip__c">▾</span>
+        </button>
+        <div class="umenu">
+          <div class="umenu__head">
+            {% if user.avatar %}<img class="umenu__ava" src="{{ user.avatar.url }}" alt="">{% else %}<span class="umenu__ava umenu__ava--txt">{{ user.get_display_name|slice:":1"|upper }}</span>{% endif %}
+            <div>
+              <div class="umenu__name">{{ user.get_display_name }}</div>
+              <div class="umenu__mail">{{ user.email }}</div>
+            </div>
+          </div>
+          <a href="{% url 'accounts:profile' %}">👤 Профиль</a>
+          <a href="{% url 'wallet:index' %}">💰 Кошелёк</a>
+          <a href="{% url 'chat:inbox' %}">💬 Сообщения</a>
+          <a href="{% url 'notifications:list' %}">🔔 Уведомления{% if unread_notifications %} <span class="umenu__badge">{{ unread_notifications }}</span>{% endif %}</a>
+          <div class="umenu__sep"></div>
+          <div class="umenu__lbl">Тема оформления</div>
+          <div class="umenu__sw">
+            {% for t in themes %}
+            <button type="button" class="sw{% if current_theme and t.id == current_theme.id %} on{% endif %}" data-id="{{ t.id }}" data-accent="{{ t.accent }}" data-accent-d="{{ t.accent_d }}" data-accent-soft="{{ t.accent_soft }}" style="background:{{ t.accent }}" title="{{ t.name }}" aria-label="Тема {{ t.name }}"></button>
+            {% endfor %}
+          </div>
+          <div class="umenu__sep"></div>
+          {% if user.is_staff %}<a href="/admin/">🛠 Админка</a>{% endif %}
+          <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
+            <button type="submit" class="umenu__exit">🚪 Выйти</button>
+          </form>
+        </div>
+      </div>
       {% else %}
         <a class="btn btn--g" href="{% url 'accounts:login' %}">Войти</a>
         <a class="btn btn--p" href="{% url 'accounts:register' %}">Регистрация</a>
@@ -73,7 +98,7 @@
   </div>
   <div class="foot__bot">© 2026 ilm4 · بارك الله فيكم</div>
 </div></footer>
-{% if themes %}
+{% if themes and not user.is_authenticated %}
 <div id="swwrap"><span class="swlbl">Тема</span><div id="swbar">
   {% for t in themes %}<button type="button" class="sw{% if current_theme and t.id == current_theme.id %} on{% endif %}" data-id="{{ t.id }}" data-accent="{{ t.accent }}" data-accent-d="{{ t.accent_d }}" data-accent-soft="{{ t.accent_soft }}" style="background:{{ t.accent }}" title="{{ t.name }}" aria-label="Тема {{ t.name }}"></button>{% endfor %}
 </div></div>

@@ -102,8 +102,8 @@ class RegisterForm(forms.Form):
 class ProfileForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ['nickname', 'first_name', 'city', 'avatar', 'theme']
+        fields = ['nickname', 'first_name', 'city', 'avatar']
         labels = {
             'nickname': 'Ник', 'first_name': 'Имя', 'city': 'Город',
-            'avatar': 'Аватар', 'theme': 'Тема оформления',
+            'avatar': 'Аватар',
         }
