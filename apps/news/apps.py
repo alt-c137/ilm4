@@ -9,4 +9,4 @@ class NewsConfig(AppConfig):
     def ready(self):
         from apps.core.blocks import register_block
 
-        register_block(key='news_recent', template='news/blocks/recent.html', order=60)
+        register_block(key='news_recent', template='news/blocks/recent.html', order=75)

@@ -1,26 +1,24 @@
-{% load news_tags %}{% recent_news 6 as recent %}
+{% load news_tags %}{% load humanize %}{% recent_news 10 as recent %}
 {% if recent %}
 <section class="sec">
   <div class="sec__h">
     <div class="sec__t">Новости</div>
     <a class="sec__l" href="/news/">Все новости →</a>
   </div>
-  <div class="railnav">
-  <div class="rail">
+  <div class="newsline-grid">
     {% for p in recent %}
-    <a class="card rcard--news" href="/news/{{ p.slug }}/">
-      <div class="ncard__cover ncard__cover--{% cycle 'a' 'b' 'c' %}">
-        {% if p.cover %}<img src="{{ p.cover.url }}" alt="">{% else %}📰{% endif %}
-      </div>
-      <div class="card__b">
-        <div class="card__t">{{ p.title }}</div>
-        <div class="card__f"><span class="meta">{{ p.created_at|date:"d.m H:i" }}</span></div>
-      </div>
+    <a class="newsline" href="/news/{{ p.slug }}/">
+      {% if p.cover %}
+      <span class="newsline__thumb"><img src="{{ p.cover.url }}" alt="" loading="lazy"></span>
+      {% else %}
+      <span class="newsline__thumb newsline__thumb--{% cycle 'a' 'b' 'c' %}">📰</span>
+      {% endif %}
+      <span class="newsline__body">
+        <span class="newsline__t">{{ p.title }}</span>
+        <span class="newsline__m">{{ p.created_at|naturaltime }}</span>
+      </span>
     </a>
     {% endfor %}
-  </div>
-  <button type="button" class="rail-arrow l" aria-label="Назад">‹</button>
-  <button type="button" class="rail-arrow r" aria-label="Вперёд">›</button>
   </div>
 </section>
 {% endif %}
