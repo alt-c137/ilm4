@@ -4,7 +4,7 @@
 сервисы. Иконку можно заменить своей: static/img/icons/<class>.svg (или .png).
 {% endcomment %}
 <div class="shero shero--{{ class }}">
-  {% svc_icon class icon %}
+  {% if icslug %}{% svc_icon icslug icon %}{% else %}{% svc_icon class icon %}{% endif %}
   <div class="shero__text">
     <div class="shero__crumb"><a href="/">ilm4</a> · {{ title }}</div>
     <h1 class="shero__title">{{ title }}</h1>

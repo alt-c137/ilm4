@@ -9,12 +9,13 @@
         <h1>Одна платформа для всей уммы</h1>
         <p>Учись, покупай и продавай, находи работу и жильё, читай новости и получай ответы — быстро и удобно.</p>
         <div class="hero__cta">
-          <a class="btn btn--p" href="{% url 'core:soon' %}">Начать учиться</a>
+          <a class="btn btn--p" href="{% url 'core:soon' %}">Начать учиться <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
           <a class="btn btn--g" href="#modules">Все разделы</a>
         </div>
       </div>
       {% if site_settings.hero_image %}
       <img class="hero2__img" src="{{ site_settings.hero_image.url }}" alt="">
+      <div class="hero2__fade"></div>
       {% endif %}
     </div>
 
@@ -22,7 +23,7 @@
     <div class="hadiscard">
       {% if site_settings.hadis_image %}<img class="hadiscard__bg" src="{{ site_settings.hadis_image.url }}" alt="">{% endif %}
       <div class="hadiscard__body">
-        <div class="hadiscard__k">ХАДИС ДНЯ</div>
+        <div class="hadiscard__k"><span class="hadiscard__badge"><svg viewBox="0 0 24 24"><path d="M12 6c-1.8-1.6-4.4-2-8-2v14c3.6 0 6.2.4 8 2 1.8-1.6 4.4-2 8-2V4c-3.6 0-6.2.4-8 2z"/><path d="M12 6v14"/></svg></span>Хадис дня</div>
         <div class="hadiscard__t">«Поистине, дела оцениваются по намерениям».</div>
         <div class="hadiscard__s">{{ site_settings.hadis_source }}</div>
       </div>

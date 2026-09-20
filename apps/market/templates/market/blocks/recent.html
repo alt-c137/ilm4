@@ -1,34 +1,22 @@
 {% load market_tags %}
-{% load icons %}{% recent_listings 8 as recent %}
+{% load icons %}{% recent_listings 10 as recent %}
 {% if recent %}
 <section class="sec">
   <div class="sec__h">
-    <div class="sec__t">Продажа рядом</div>
-    <a class="sec__l" href="/buy/">Смотреть все →</a>
+    <div class="sec__t">Свежие объявления</div>
+    <a class="sec__l" href="/buy/">Весь маркет →</a>
   </div>
-  <div class="railnav">
-  <div class="rail">
+  <div class="grid5">
     {% for l in recent %}
     <a class="card rcard" href="/buy/{{ l.pk }}/">
-      {% if l.photo %}
-      <div class="rcard__img" style="background-image:url('{{ l.photo.url }}')"></div>
-      {% else %}
-      <div class="rcard__img" style="background:linear-gradient(135deg,#eceaff,#f4f3fd);display:grid;place-items:center">{% svc_icon 'cat-'|add:l.category.slug l.category.icon 'rcard__emoji' %}</div>
-      {% endif %}
+      <div class="rcard__img rcard__img--{% cycle 'a' 'b' 'c' 'd' 'e' %}">{% svc_icon 'cat-'|add:l.category.slug l.category.icon 'rcard__emoji' %}{% if l.is_boosted %}<span class="badge">ТОП</span>{% endif %}</div>
       <div class="card__b">
-        <div class="card__f" style="margin:0 0 2px">
-          <span class="price">{% if l.price == 0 %}Даром{% else %}{{ l.price }} {{ l.get_currency_display }}{% endif %}</span>
-          {% if l.is_boosted %}<span class="badge" style="position:static">ТОП</span>{% endif %}
-        </div>
+        <div class="price">{% if l.price == 0 %}Даром{% else %}{{ l.price }} {{ l.get_currency_display }}{% endif %}</div>
         <div class="card__t">{{ l.title }}</div>
         <div class="card__d">{{ l.city }} · {{ l.created_at|date:"d.m" }}</div>
       </div>
     </a>
     {% endfor %}
-    <a class="rail__more" href="/buy/">Всё<br>→</a>
-  </div>
-  <button type="button" class="rail-arrow l" aria-label="Назад">‹</button>
-  <button type="button" class="rail-arrow r" aria-label="Вперёд">›</button>
   </div>
 </section>
 {% endif %}

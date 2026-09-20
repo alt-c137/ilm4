@@ -91,3 +91,11 @@ document.querySelectorAll('.railnav').forEach(function (nav) {
   window.addEventListener('resize', upd);
   upd();
 });
+
+// лента пилюль: при загрузке подрулить к активному разделу, а не сбрасываться в начало
+(function () {
+  var pill = document.querySelector('.nav__row a.on');
+  var row = document.querySelector('.nav__row');
+  if (!pill || !row) return;
+  row.scrollLeft = Math.max(0, pill.offsetLeft - (row.clientWidth - pill.offsetWidth) / 2);
+})();

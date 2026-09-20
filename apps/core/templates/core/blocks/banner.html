@@ -1,7 +1,8 @@
-{% load icons %}{% comment %}Рекламная карусель главной.
+{% load icons %}{% comment %}Рекламная карусель главной (Playerok-стиль).
 Если в админке есть активные баннеры (Core → Баннеры) — показываются они:
 у каждого своя картинка, текст, кнопка и СВОЯ длительность показа.
-Линии-таймеры внизу заполняются за время показа слайда.
+Полоски по центру заполняются, пока идёт слайд; при наведении на край
+баннера появляются стрелки; на телефоне — свайп.
 Пусто — три фирменных слайда-приглашения.{% endcomment %}
 <div class="banner" id="banner">
   <div class="banner__window" id="banner-window">
@@ -11,7 +12,7 @@
          data-duration="{% widthratio b.duration_seconds 1 1000 %}" href="{{ b.cta_url }}">
         <div class="banner__k">{{ b.subtitle }}</div>
         <div class="banner__t">{{ b.title }}</div>
-        {% if b.cta_text %}<span class="banner__cta">{{ b.cta_text }} →</span>{% endif %}
+        {% if b.cta_text %}<span class="banner__cta">{{ b.cta_text }} <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>{% endif %}
       </a>
       {% endfor %}
     {% else %}
@@ -19,21 +20,24 @@
         <div class="banner__k">ILMBUY</div>
         <div class="banner__t">Халяль-маркетплейс уммы</div>
         <div class="banner__d">От телефонов до фиников — покупай и продавай у своих, в своём городе.</div>
+        <span class="banner__cta">Перейти в маркетплейс <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
       </a>
       <a class="banner__slide banner__slide--prayer" style="{% banner_bg 'prayer' %}" href="/prayer/" data-duration="6000">
         <div class="banner__k">Время намаза</div>
         <div class="banner__t">Ни одна молитва не пропустится</div>
         <div class="banner__d">Точный расчёт по твоему городу или GPS — быстро и без лишнего.</div>
+        <span class="banner__cta">Посмотреть времена <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
       </a>
       <a class="banner__slide banner__slide--nikah" style="{% banner_bg 'nikah' %}" href="/nikah/" data-duration="6000">
         <div class="banner__k">Никах</div>
         <div class="banner__t">Знакомства для брака — серьёзно</div>
         <div class="banner__d">Проверенные анкеты, уважение и цель — только никах.</div>
+        <span class="banner__cta">Смотреть анкеты <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
       </a>
     {% endif %}
   </div>
-  <button type="button" class="banner__arrow banner__arrow--l" id="banner-prev" aria-label="Назад">‹</button>
-  <button type="button" class="banner__arrow banner__arrow--r" id="banner-next" aria-label="Вперёд">›</button>
+  <button type="button" class="banner__edge banner__edge--l" id="banner-prev" aria-label="Назад"><i>‹</i></button>
+  <button type="button" class="banner__edge banner__edge--r" id="banner-next" aria-label="Вперёд"><i>›</i></button>
   <div class="banner__lines" id="banner-lines">
     {% if db_banners %}
       {% for b in db_banners %}<span class="banner__line" data-duration="{% widthratio b.duration_seconds 1 1000 %}"><span class="banner__line-fill"></span></span>{% endfor %}
@@ -69,15 +73,15 @@
     lines.forEach(function (ln, k) { ln.classList.toggle('on', k === i); });
     drawLine(i);
   }
+  function restart() { clearInterval(timer); auto(); drawLine(i); }
   function auto() {
     var slide = win.children[i];
     var dur = parseInt((slide && slide.dataset.duration) || '6000', 10);
     timer = setInterval(function () { go(i + 1); }, dur);
   }
-  function restart() { clearInterval(timer); auto(); drawLine(i); }
 
-  document.getElementById('banner-prev').addEventListener('click', function () { clearInterval(timer); go(i - 1); restart(); });
-  document.getElementById('banner-next').addEventListener('click', function () { clearInterval(timer); go(i + 1); restart(); });
+  document.getElementById('banner-prev').addEventListener('click', function (e) { e.preventDefault(); clearInterval(timer); go(i - 1); restart(); });
+  document.getElementById('banner-next').addEventListener('click', function (e) { e.preventDefault(); clearInterval(timer); go(i + 1); restart(); });
   lines.forEach(function (ln, k) {
     ln.addEventListener('click', function () { clearInterval(timer); go(k); restart(); });
   });

@@ -13,7 +13,7 @@ NS_TO_KEY = {
     'prayer': 'prayer', 'market': 'buy', 'maps': 'map', 'health': 'health',
     'nikah': 'nikah', 'forum': 'forum', 'news': 'news', 'jobs': 'jobs',
     'migration': 'migration', 'services': 'services', 'library': 'library',
-    'chat': 'chat', 'wallet': 'wallet',
+    'chat': 'chat', 'wallet': 'wallet', 'refugee': 'refugee', 'transport': 'transport',
 }
 
 
