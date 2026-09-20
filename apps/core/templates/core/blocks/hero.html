@@ -1,6 +1,6 @@
-{% comment %}Главная: ДВЕ отдельные карточки — герой и хадис дня.
-У каждой свои картинки из админки (SiteSettings: hero_image, hadis_image).
-У хадиса при наведении — кнопка «i» с разбором хадиса (SiteSettings: hadis_details).{% endcomment %}
+{% load icons %}{% load prayer_tags %}{% load weather %}{% load humanize %}{% comment %}Главная: герой + ИНФОПАНЕЛЬ (хадис дня, ближайшая молитва, погода, курс валют).
+Картинки героя/хадиса — из админки (SiteSettings: hero_image, hadis_image).
+Погода — Open-Meteo с кешем; при недоступности панель просто без погоды.{% endcomment %}
 <section class="sec">
   <div class="hero2">
     <div class="hero2__card">
@@ -19,19 +19,46 @@
       {% endif %}
     </div>
 
-    {% if site_settings.hadis_enabled %}
-    <div class="hadiscard">
-      {% if site_settings.hadis_image %}<img class="hadiscard__bg" src="{{ site_settings.hadis_image.url }}" alt="">{% endif %}
-      <div class="hadiscard__body">
-        <div class="hadiscard__k"><span class="hadiscard__badge"><svg viewBox="0 0 24 24"><path d="M12 6c-1.8-1.6-4.4-2-8-2v14c3.6 0 6.2.4 8 2 1.8-1.6 4.4-2 8-2V4c-3.6 0-6.2.4-8 2z"/><path d="M12 6v14"/></svg></span>Хадис дня</div>
-        <div class="hadiscard__t">«Поистине, дела оцениваются по намерениям».</div>
-        <div class="hadiscard__s">{{ site_settings.hadis_source }}</div>
+    <aside class="ipanel">
+      {% if site_settings.hadis_enabled %}
+      <div class="ipanel__hadis"{% if site_settings.hadis_image %} style="background-image:url('{{ site_settings.hadis_image.url }}')"{% endif %}>
+        <div class="ipanel__hadis-k"><span class="hadiscard__badge"><svg viewBox="0 0 24 24"><path d="M12 6c-1.8-1.6-4.4-2-8-2v14c3.6 0 6.2.4 8 2 1.8-1.6 4.4-2 8-2V4c-3.6 0-6.2.4-8 2z"/><path d="M12 6v14"/></svg></span>Хадис дня</div>
+        <div class="ipanel__hadis-t">«Поистине, дела оцениваются по намерениям».</div>
+        <div class="ipanel__hadis-s">{{ site_settings.hadis_source }}</div>
+        {% if site_settings.hadis_details %}
+        <button type="button" class="hadiscard__info" id="hadis-info-btn" aria-label="Подробнее о хадисе">i</button>
+        {% endif %}
       </div>
-      {% if site_settings.hadis_details %}
-      <button type="button" class="hadiscard__info" id="hadis-info-btn" aria-label="Подробнее о хадисе">i</button>
       {% endif %}
-    </div>
-    {% endif %}
+
+      {% prayer_widget as w %}{% get_weather as wx %}
+      <div class="ipanel__grid">
+        <div class="ipanel__cell{% if not wx %} ipanel__cell--wide{% endif %}">
+          <span class="ipanel__ic"><svg viewBox="0 0 24 24" fill="none" stroke="#6d5efc" stroke-width="2" stroke-linecap="round"><path d="M20.4 14.2A8.5 8.5 0 1 1 9.8 3.6a7 7 0 1 0 10.6 10.6z"/></svg></span>
+          <span class="ipanel__col">
+            <span class="ipanel__lbl">Ближайший намаз</span>
+            <span class="ipanel__val">{{ w.next_name }} · {{ w.next_time }}</span>
+            <span class="ipanel__sub live-cd" data-ts="{{ w.next_epoch }}">{{ w.countdown }}</span>
+          </span>
+        </div>
+        {% if wx %}
+        <div class="ipanel__cell">
+          <span class="ipanel__ic ipanel__ic--wx">{% svc_icon 'wx-'|add:wx.kind 'uwu' 'ipanel__wxic' %}</span>
+          <span class="ipanel__col">
+            <span class="ipanel__lbl">Сейчас · {{ wx.desc }}</span>
+            <span class="ipanel__val">{{ wx.temp }}°</span>
+            <span class="ipanel__sub">день {{ wx.tmax }}° · ночь {{ wx.tmin }}°</span>
+          </span>
+        </div>
+        {% endif %}
+      </div>
+
+      {% if rates %}
+      <div class="ipanel__rates">
+        {% for r in rates %}<div><b>{{ r.code }}</b><span>{{ r.rate|intcomma }}</span></div>{% endfor %}
+      </div>
+      {% endif %}
+    </aside>
   </div>
 </section>
 
@@ -44,4 +71,16 @@
     <div class="modal__body">{{ site_settings.hadis_details|linebreaks }}</div>
   </div>
 </div>
+<script>
+/* хадис дня: кнопка «i» открывает разбор */
+(function () {
+  var btn = document.getElementById('hadis-info-btn');
+  var modal = document.getElementById('hadis-modal');
+  if (!btn || !modal) return;
+  btn.addEventListener('click', function () { modal.hidden = false; });
+  document.getElementById('hadis-modal-close').addEventListener('click', function () { modal.hidden = true; });
+  modal.addEventListener('click', function (e) { if (e.target === modal) modal.hidden = true; });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') modal.hidden = true; });
+})();
+</script>
 {% endif %}

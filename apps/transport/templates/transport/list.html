@@ -34,7 +34,7 @@
       <p class="ride__desc">{{ r.description|truncatechars:180 }}</p>
       <div class="ride__meta">
         {% if r.ride_date %}📅 {{ r.ride_date|date:"d.m.Y" }} · {% endif %}
-        📞 <b>{{ r.contact }}</b> · {{ r.created_at|date:"d.m" }}
+        <svg class="mmeta" viewBox="0 0 24 24"><path d="M6.5 3.5h3l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.5 5.7 2 2 0 0 1 6.5 3.5z"/></svg><b>{{ r.contact }}</b> · {{ r.created_at|date:"d.m" }}
       </div>
     </div>
     {% empty %}

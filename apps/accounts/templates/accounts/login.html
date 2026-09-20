@@ -2,8 +2,9 @@
 {% block title %}Вход — {{ block.super }}{% endblock %}
 
 {% block content %}
-<div class="page">
-  <h1>Вход</h1>
+<div class="auth">
+  <h1>С возвращением!</h1>
+  <p class="auth__sub">Войди — курсы, объявления и чаты ждут.</p>
   <form method="post" class="form">{% csrf_token %}
     <input type="hidden" name="next" value="{{ next }}">
     {% for field in form %}
@@ -14,6 +15,6 @@
     {% if form.non_field_errors %}<span class="err">{{ form.non_field_errors.0 }}</span>{% endif %}
     <button type="submit" class="btn btn--p">Войти</button>
   </form>
-  <p class="page__hint">Нет аккаунта? <a href="{% url 'accounts:register' %}" class="link">Зарегистрироваться</a></p>
+  <p class="auth__hint">Нет аккаунта? <a href="{% url 'accounts:register' %}" class="link">Зарегистрироваться</a></p>
 </div>
 {% endblock %}

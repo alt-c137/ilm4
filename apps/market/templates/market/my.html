@@ -20,7 +20,7 @@
       <td>
         {% if l.is_approved %}
         <form method="post" action="{% url 'market:boost' l.pk %}">{% csrf_token %}
-          <button class="btn btn--s" title="Поднять в поиске на 7 дней за {{ boost_price|intcomma }} сум">⬆ Буст</button>
+          <button class="btn btn--s" title="Поднять в поиске на 7 дней за {{ boost_price|intcomma }} сум">↑ Буст</button>
         </form>
         {% endif %}
       </td>

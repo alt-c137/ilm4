@@ -42,6 +42,8 @@ def prayer_widget(city_key: str = '') -> dict:
         'next_epoch': next_epoch,
         'items': items,
         'next_name': until['name'],
+        'next_key': until['key'],
+        'next_time': until['time'],
         'countdown': countdown,
         'method': method,
     }

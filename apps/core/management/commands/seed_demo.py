@@ -18,12 +18,21 @@ from apps.market.models import Category, Listing
 from apps.news.models import NewsPost
 
 
-def make_cover(c1, c2, motif='star'):
-    """Красивая обложка 800x500: диагональный градиент + геометрия + блик."""
+def make_cover(c1, c2, motif='soft'):
+    """Мягкая обложка 800x500: пастельный диагональный градиент + нежное свечение.
+
+    Никаких узоров и звёзд — просто приятная глазу подложка под контент.
+    Насыщенные цвета на входе автоматически смягчаются к пастели.
+    """
     size = (800, 500)
     img = Image.new('RGB', size)
-    top = tuple(int(a, 16) for a in (c1[0:2], c1[2:4], c1[4:6]))
-    bot = tuple(int(a, 16) for a in (c2[0:2], c2[2:4], c2[4:6]))
+
+    def pastel(hex_color):
+        c = tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
+        return tuple(int(v * 0.35 + 255 * 0.65) for v in c)
+
+    top = pastel(c1)
+    bot = pastel(c2)
     px = img.load()
     for y in range(size[1]):
         for x in range(0, size[0], 4):
@@ -33,18 +42,9 @@ def make_cover(c1, c2, motif='star'):
                 if x + dx < size[0]:
                     px[x + dx, y] = color
     draw = ImageDraw.Draw(img, 'RGBA')
-    # светящиеся круги
-    for cx, cy, r in ((650, 90, 130), (120, 420, 160), (420, 250, 90)):
-        draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=(255, 255, 255, 26))
-    # восьмиконечная звезда — исламская геометрия
-    cx, cy, R = 400, 250, 130
-    pts = []
-    for i in range(16):
-        r = R if i % 2 == 0 else R * 0.42
-        a = math.pi * i / 8 - math.pi / 2
-        pts.append((cx + r * math.cos(a), cy + r * math.sin(a)))
-    draw.polygon(pts, outline=(255, 255, 255, 90), width=5)
-    draw.regular_polygon((cx, cy, 46), 8, rotation=0, outline=(255, 255, 255, 70), width=3)
+    # два больших мягких свечения — глубина без узоров
+    for cx, cy, r, a in ((640, 100, 210, 40), (110, 430, 250, 32)):
+        draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=(255, 255, 255, a))
     buf = io.BytesIO()
     img.save(buf, 'JPEG', quality=88)
     return ContentFile(buf.getvalue())

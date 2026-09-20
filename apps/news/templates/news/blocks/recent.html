@@ -11,7 +11,7 @@
       {% if p.cover %}
       <span class="newsline__thumb"><img src="{{ p.cover.url }}" alt="" loading="lazy"></span>
       {% else %}
-      <span class="newsline__thumb newsline__thumb--{% cycle 'a' 'b' 'c' %}">📰</span>
+      <span class="newsline__thumb newsline__thumb--{% cycle 'a' 'b' 'c' %}"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="12" height="16" rx="1.6"/><path d="M16 8h4v10a2 2 0 0 1-2 2"/><path d="M7 8h6M7 11h6M7 14h4"/></svg></span>
       {% endif %}
       <span class="newsline__body">
         <span class="newsline__t">{{ p.title }}</span>

@@ -12,7 +12,7 @@
       <p class="price" style="font-size:24px">
         {% if listing.price == 0 %}Даром{% else %}{{ listing.price }} {{ listing.get_currency_display }}{% endif %}
       </p>
-      <p>{{ listing.category.icon }} {{ listing.category.name }} · {{ listing.city }} · {{ listing.created_at|date:"d.m.Y H:i" }} · 👁 {{ listing.views }}</p>
+      <p>{% svc_icon 'cat-'|add:listing.category.slug listing.category.icon 'mdet__cat' %} {{ listing.category.name }} · {{ listing.city }} · {{ listing.created_at|date:"d.m.Y H:i" }} · <svg class="mmeta" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg> {{ listing.views }}</p>
       <div class="listing__desc">{{ listing.description|linebreaks }}</div>
       {% if listing.tags.all %}
       <p>{% for t in listing.tags.all %}<span class="tag">{{ t.name }}</span> {% endfor %}</p>
@@ -20,7 +20,7 @@
       <h2 class="page__h2">Контакты</h2>
       <p>{% if listing.contact %}<b>{{ listing.contact }}</b>{% else %}Напишите автору: <b>{{ listing.owner.email }}</b>{% endif %}</p>
       <p class="page__hint">Не переводите деньги незнакомым людям без гаранта —
-        используйте эскроу платформы (когда откроется) ⚖️</p>
+        используйте эскроу платформы (когда откроется)</p>
       <a class="btn btn--g" href="/buy/">← Все объявления</a>
     </div>
   </div>

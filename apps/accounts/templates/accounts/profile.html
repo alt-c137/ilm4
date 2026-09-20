@@ -13,7 +13,7 @@
       {% else %}
       <div class="idcard__ava idcard__ava--txt">{{ user.get_display_name|slice:":1"|upper }}</div>
       {% endif %}
-      <span class="idcard__cam">📸 Поменять фото</span>
+      <span class="idcard__cam">Поменять фото</span>
     </label>
     {{ form.avatar }}
     <div class="idcard__name">{{ user.get_display_name }}</div>
@@ -21,13 +21,13 @@
     {% if user.is_super_admin %}<span class="idcard__role idcard__role--su">Супер-админ</span>
     {% elif user.is_admin_role %}<span class="idcard__role">Админ</span>{% endif %}
     <div class="idcard__rows">
-      {% if user.city %}<div>📍 {{ user.city }}</div>{% endif %}
-      {% if user.nickname %}<div>✦ {{ user.nickname }}</div>{% endif %}
-      <div>🗓 с нами с {{ user.date_joined|date:"m.Y" }}</div>
+      {% if user.city %}<div><svg class="idrow-svg" viewBox="0 0 24 24"><path d="M12 21s-6.5-5.3-6.5-10a6.5 6.5 0 0 1 13 0c0 4.7-6.5 10-6.5 10z"/><circle cx="12" cy="10.6" r="2.3"/></svg>{{ user.city }}</div>{% endif %}
+      {% if user.nickname %}<div>{{ user.nickname }}</div>{% endif %}
+      <div><svg class="idrow-svg" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="15" rx="2"/><path d="M4 10.5h16M8.5 3.5v4M15.5 3.5v4"/></svg>с нами с {{ user.date_joined|date:"m.Y" }}</div>
     </div>
     {% if user.is_staff %}
     <div class="idcard__staff">
-      <a class="btn btn--g" href="/admin/">🛠 Админка</a>
+      <a class="btn btn--g" href="/admin/"><svg class="mmeta" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></svg>Админка</a>
       <a class="link" href="{% url 'accounts:two_factor_setup' %}">настройки 2FA</a>
     </div>
     {% endif %}

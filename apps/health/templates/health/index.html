@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load icons %}
 {% block title %}Здоровье — {{ block.super }}{% endblock %}
 {% block body_class %}s-health{% endblock %}
 
@@ -24,7 +25,7 @@
 <div class="grid g3">
   {% for d in doctors %}
   <a class="card" href="{% url 'health:detail' d.pk %}">
-    <div class="card__i" style="background:linear-gradient(135deg,#fdeaec,#fdecec);display:grid;place-items:center;font-size:34px">🩺</div>
+    <div class="card__i" style="background:linear-gradient(135deg,#fdeaec,#fdecec);display:grid;place-items:center">{% svc_icon 'health' '🩺' 'card__plug' %}</div>
     <div class="card__b">
       <div class="card__c">{{ d.specialization|upper }}</div>
       <div class="card__t">{{ d.name }}</div>
@@ -35,7 +36,7 @@
   </a>
   {% empty %}
   <div class="empty" style="grid-column:1/-1">
-    <div style="font-size:44px;margin-bottom:8px">🩺</div>
+    <div class="empty__plug">{% svc_icon 'health' '🩺' '' %}</div>
     <h3 style="font-size:18px;font-weight:800">Врачей пока нет</h3>
     <p style="color:var(--ink-soft)">Врач или знаешь проверенного? Опубликуй анкету —
       бесплатно, после модерации.</p>

@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="page chat">
-  <div class='chat__who'>💬 {{ other.get_display_name }}{% if thread.subject %} · {{ thread.subject }}{% endif %}</div>
+  <div class='chat__who'><svg viewBox="0 0 24 24" class="chat__who-svg"><path d="M21 11.5a8.4 8.4 0 0 1-11.9 7.6L3 21l1.9-6.1A8.4 8.4 0 1 1 21 11.5z"/></svg>{{ other.get_display_name }}{% if thread.subject %} · {{ thread.subject }}{% endif %}</div>
   <div class="chat__log" id="chat-log">
     {% for m in messages %}
     <div class="chat__msg{% if m.sender == user %} mine{% endif %}">

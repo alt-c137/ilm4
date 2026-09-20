@@ -34,7 +34,7 @@
   </a>
   {% empty %}
   <div class="page" style="grid-column:1/-1;text-align:center;padding:46px">
-    <div style="font-size:44px;margin-bottom:8px">💍</div>
+    <div class="empty__plug"><svg viewBox="0 0 24 24"><circle cx="10" cy="14.5" r="5.2"/><path d="M13.2 10.7 16 7.9l-1.6-1.6 1.5-1.5 1.6 1.6L19 4.9l1.6 1.6-1.5 1.5-1.6-1.6-2.8 2.8"/></svg></div>
     <h3 style="font-size:18px;font-weight:800">Анкет пока нет</h3>
     <p style="color:var(--ink-soft)">Создайте первую — просмотр бесплатный, модерация бережная.</p>
     <a class="btn btn--p" href="{% url 'nikah:create' %}">Создать анкету</a>

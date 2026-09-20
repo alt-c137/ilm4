@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load icons %}
 {% block title %}Новости — {{ block.super }}{% endblock %}
 {% block body_class %}s-news{% endblock %}
 
@@ -22,7 +23,7 @@
   </a>
   {% empty %}
   <div class="empty" style="grid-column:1/-1">
-    <div style="font-size:44px;margin-bottom:8px">📰</div>
+    <div class="empty__plug">{% svc_icon 'news' '📰' '' %}</div>
     <h3 style="font-size:18px;font-weight:800">Новостей пока нет</h3>
     <p style="color:var(--ink-soft)">Первые публикации появятся здесь.</p>
   </div>

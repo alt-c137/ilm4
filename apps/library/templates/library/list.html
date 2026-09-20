@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load icons %}
 {% block title %}Библиотека — {{ block.super }}{% endblock %}
 {% block body_class %}s-library{% endblock %}
 
@@ -22,7 +23,7 @@
       {% if b.cover %}
       <div class="card__i" style="background-image:url('{{ b.cover.url }}')"></div>
       {% else %}
-      <div class="card__i" style="background:linear-gradient(135deg,var(--accent-soft),var(--line))">📚</div>
+      <div class="card__i" style="background:linear-gradient(135deg,var(--accent-soft),var(--line));display:grid;place-items:center">{% svc_icon 'library' '📚' 'card__plug' %}</div>
       {% endif %}
       <div class="card__b">
         <div class="card__t">{{ b.title }}</div>

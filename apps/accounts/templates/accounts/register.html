@@ -2,8 +2,9 @@
 {% block title %}Регистрация — {{ block.super }}{% endblock %}
 
 {% block content %}
-<div class="page">
-  <h1>Регистрация</h1>
+<div class="auth auth--wide">
+  <h1>Создать аккаунт</h1>
+  <p class="auth__sub">Пара шагов — и ты с нами.</p>
   <form method="post" class="form">{% csrf_token %}
     {% for field in form %}
       <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span class="req">*</span>{% endif %}</label>
@@ -14,6 +15,6 @@
     {% if form.non_field_errors %}<span class="err">{{ form.non_field_errors.0 }}</span>{% endif %}
     <button type="submit" class="btn btn--p">Создать аккаунт</button>
   </form>
-  <p class="page__hint">Уже есть аккаунт? <a href="{% url 'accounts:login' %}" class="link">Войти</a></p>
+  <p class="auth__hint">Уже есть аккаунт? <a href="{% url 'accounts:login' %}" class="link">Войти</a></p>
 </div>
 {% endblock %}

@@ -18,7 +18,7 @@
     </div>
     <input type="text" name="city" value="{{ city }}" placeholder="Город">
     <button type="submit" class="btn btn--p">Найти</button>
-    <button type="button" class="btn btn--g" id="near-btn">📍 Рядом со мной</button>
+    <button type="button" class="btn btn--g" id="near-btn"><svg class="mmeta" viewBox="0 0 24 24"><path d="M12 21s-6.5-5.3-6.5-10a6.5 6.5 0 0 1 13 0c0 4.7-6.5 10-6.5 10z"/><circle cx="12" cy="10.6" r="2.3"/></svg>Рядом со мной</button>
   </form>
 
   <div id="map"></div>
@@ -31,7 +31,7 @@
         <div class="card__t">{{ p.name }}</div>
         <div class="card__d">{{ p.city }}{% if p.address %} · {{ p.address }}{% endif %}
           {% if p.distance_km is not None %} · {{ p.distance_km }} км от вас{% endif %}</div>
-        {% if p.phone %}<div class="card__d">☎ {{ p.phone }}</div>{% endif %}
+        {% if p.phone %}<div class="card__d">тел. {{ p.phone }}</div>{% endif %}
       </div>
     </div>
     {% empty %}
@@ -55,7 +55,7 @@ markers.forEach(function (m) {
     .addTo(map)
     .bindPopup('<b>' + m.name + '</b><br>' + m.category + ' · ' + m.city +
                (m.address ? '<br>' + m.address : '') +
-               (m.phone ? '<br>☎ ' + m.phone : '') +
+               (m.phone ? '<br>тел. ' + m.phone : '') +
                (m.url ? '<br><a href="' + m.url + '" target="_blank" rel="noopener">сайт</a>' : ''));
 });
 document.getElementById('near-btn').addEventListener('click', function () {

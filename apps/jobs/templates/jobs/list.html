@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load icons %}
 {% block title %}Работа — {{ block.super }}{% endblock %}
 {% block body_class %}s-jobs{% endblock %}
 
@@ -23,7 +24,7 @@
 <div class="grid g3">
   {% for v in vacancies %}
   <a class="card" href="{% url 'jobs:detail' v.pk %}">
-    <div class="card__i" style="background:linear-gradient(135deg,#fdf3e0,#fefaf3);display:grid;place-items:center;font-size:34px">💼</div>
+    <div class="card__i" style="background:linear-gradient(135deg,#fdf3e0,#fefaf3);display:grid;place-items:center">{% svc_icon 'jobs' '💼' 'card__plug' %}</div>
     <div class="card__b">
       <div class="card__c">{{ v.get_category_display|upper }}</div>
       <div class="card__t">{{ v.title }}</div>
@@ -36,7 +37,7 @@
   </a>
   {% empty %}
   <div class="empty" style="grid-column:1/-1">
-    <div style="font-size:44px;margin-bottom:8px">💼</div>
+    <div class="empty__plug">{% svc_icon 'jobs' '💼' '' %}</div>
     <h3 style="font-size:18px;font-weight:800">Вакансий пока нет</h3>
     <p style="color:var(--ink-soft)">Есть кого нанять или знаете, кто ищет людей? Добавьте первую вакансию.</p>
     <a class="btn btn--p" href="{% url 'jobs:create' %}">Добавить вакансию</a>
