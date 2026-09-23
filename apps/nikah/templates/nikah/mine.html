@@ -1,19 +1,37 @@
-{% extends 'base.html' %}
-{% load humanize %}
-{% block title %}Моя анкета — {{ block.super }}{% endblock %}
+{% extends 'nikah/_base.html' %}
+{% load nikah_tags humanize %}
+{% block nk_title %}Моя анкета · Никях{% endblock %}
+{% block nk %}
+<div class="nkme">
+  <header class="nkprof__head">
+    <span class="nkava nkava--lg nkava--{{ p.gender }}">{% if p.gender == 'M' %}{% nk_icon 'brother' %}{% else %}{% nk_icon 'sister' %}{% endif %}</span>
+    <div class="nkprof__who"><h1>{{ p.display_name }}, {{ p.age }}</h1><p>{{ p.place|default:"—" }} · {{ p.get_gender_display }}</p></div>
+  </header>
+  <div class="nkchips">
+    {% if p.aqida %}<span class="nkchip nkchip--acc">{{ p|nk:'aqida' }}</span>{% endif %}
+    {% if p.madhhab %}<span class="nkchip">{{ p|nk:'madhhab' }}</span>{% endif %}
+  </div>
+  <div class="nkstatus nkstatus--{% if not p.is_active %}hidden{% else %}{{ p.status }}{% endif %}">
+    {% if not p.is_active %}Скрыта — вас не видят в ленте{% elif p.status == 'approved' %}✓ Опубликована — видна в ленте{% elif p.status == 'rejected' %}Не прошла проверку — исправьте и отправьте снова{% else %}На проверке у модератора{% endif %}
+  </div>
+  <p class="nktext">{{ p.about|truncatechars:220 }}</p>
 
-{% block content %}
-<div class="page">
-  <h1>Моя анкета</h1>
-  <p>Статус: <b>{{ profile.get_status_display }}</b>
-     {% if profile.is_boosted %} · поднята до {{ profile.boosted_until|date:"d.m H:i" }}{% endif %}</p>
-  <form method="post" action="{% url 'nikah:boost' %}">{% csrf_token %}
-    <button type="submit" class="btn btn--s"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6 12l6-6 6 6"/></svg>Поднять на 7 дней — {{ boost_price|intcomma }} сум</button>
-  </form>
+  <h2 class="nkh2">Анкета</h2>
+  <div class="nkmenu">
+    <a href="{% url 'nikah:detail' p.pk %}">{% nk_icon 'user' %}<span>Как видят мою анкету</span>{% nk_icon 'arrow' 'nkmenu__go' %}</a>
+    <a href="{% url 'nikah:edit' %}">{% nk_icon 'edit' %}<span>Редактировать анкету</span>{% nk_icon 'arrow' 'nkmenu__go' %}</a>
+    <a href="{% url 'nikah:edit' %}#step-13">{% nk_icon 'camera' %}<span>{% if p.has_photo %}Заменить фото{% else %}Добавить фото{% endif %}</span><small>{{ p|nk:'photo_mode' }}</small>{% nk_icon 'arrow' 'nkmenu__go' %}</a>
+    <a href="{% url 'nikah:how' %}">{% nk_icon 'shield' %}<span>Защита фото · как это работает</span>{% nk_icon 'arrow' 'nkmenu__go' %}</a>
+    <form method="post" action="{% url 'nikah:pause' %}">{% csrf_token %}<button type="submit">{% nk_icon 'eye_off' %}<span>{% if p.is_active %}Скрыть анкету из ленты{% else %}Вернуть анкету в ленту{% endif %}</span></button></form>
+  </div>
 
-  <h2 class="page__h2">Открыли ваш контакт ({{ contacts|length }})</h2>
-  {% for c in contacts %}
-  <p><svg class="mmeta" viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M4 7l8 6 8-6"/></svg>{{ c.from_user.get_display_name }} · {{ c.created_at|date:"d.m H:i" }}</p>
-  {% empty %}<p>Пока никто.</p>{% endfor %}
+  <h2 class="nkh2">Продвижение</h2>
+  <div class="nkmenu">
+    {% if premium_on %}<a href="{% url 'nikah:premium' %}">{% nk_icon 'star' %}<span>Премиум</span><small>{% if p.is_premium %}до {{ p.premium_until|date:"d.m.Y" }}{% else %}без лимита анкет{% endif %}</small>{% nk_icon 'arrow' 'nkmenu__go' %}</a>{% endif %}
+    {% if p.is_boosted %}<div class="nkmenu__info">{% nk_icon 'star' %}<span>Анкета в топе до {{ p.boosted_until|date:"d.m H:i" }}</span></div>
+    {% else %}<form method="post" action="{% url 'nikah:boost' %}">{% csrf_token %}<button type="submit"{% if not p.is_published %} disabled{% endif %}>{% nk_icon 'star' %}<span>Поднять анкету на 7 дней</span><small>{{ boost_price|intcomma }} сум</small></button></form>{% endif %}
+    <a href="{% url 'wallet:index' %}">{% nk_icon 'lock' %}<span>Кошелёк</span><small>{{ balance|floatformat:0|intcomma }} сум</small>{% nk_icon 'arrow' 'nkmenu__go' %}</a>
+  </div>
+  {% if not user.telegram_id and tg_bot %}<p class="nkhint">{% nk_icon 'telegram' %} Откройте никях в <a class="link" href="https://t.me/{{ tg_bot }}" target="_blank" rel="noopener">Telegram</a> — уведомления о взаимной симпатии будут приходить туда.</p>{% endif %}
 </div>
 {% endblock %}

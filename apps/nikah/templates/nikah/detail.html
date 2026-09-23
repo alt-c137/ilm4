@@ -1,58 +1,66 @@
-{% extends 'base.html' %}
-{% load icons %}
-{% block title %}Анкета — {{ block.super }}{% endblock %}
-{% block body_class %}s-nikah{% endblock %}
-
-{% block content %}
-<div class="dpage">
-  <a class="crumb" href="{% url 'nikah:list' %}">{% ico 'back' %}Все анкеты</a>
-  <div class="dgrid dgrid--rev">
-    <aside class="dside">
-      <div class="dcard pcard">
-        <div class="pcard__ava {% if profile.gender == 'M' %}pcard__ava--m{% else %}pcard__ava--f{% endif %}">
-          {% if profile.photo %}<img src="{{ profile.photo.url }}" alt="">{% else %}{{ profile.age }}{% endif %}
-        </div>
-        <h1 class="dtitle">{{ profile.get_gender_display }}, {{ profile.age }}</h1>
-        <div class="dmeta">
-          <span class="mchip">{% ico 'pin' %}{{ profile.city }}</span>
-          {% if profile.is_boosted %}<span class="mchip mchip--acc">{% ico 'moneyup' %}в топе</span>{% endif %}
-        </div>
-
-        <div class="dact">
-          {% if profile.user == request.user %}
-            <a class="btn btn--g" href="{% url 'nikah:mine' %}">{% ico 'edit' %}Моя анкета</a>
-          {% elif has_contact %}
-            <div class="contactbox">
-              <div class="contactbox__v"><span class="contactbox__l">Контакт открыт</span>{{ profile.contact_hint|default:profile.user.email }}</div>
-              <button type="button" class="copybtn" data-copy="{{ profile.contact_hint|default:profile.user.email }}">Копировать</button>
-            </div>
-          {% elif user.is_authenticated %}
-            <form method="post" action="{% url 'nikah:contact' profile.pk %}">{% csrf_token %}
-              <button type="submit" class="btn btn--p" style="width:100%">{% ico 'lock' %}
-                {% if profile.gender == 'F' %}Открыть контакт{% else %}Открыть контакт — {{ chat_price }} сум{% endif %}
-              </button>
-            </form>
-          {% else %}
-            <a class="btn btn--p" href="{% url 'accounts:login' %}?next={{ request.path }}">Войти, чтобы открыть контакт</a>
-          {% endif %}
-        </div>
-      </div>
-      {% include 'includes/disclaimer.html' with dkind='nikah' %}
-      <div class="dnote">{% ico 'shield' %}<span>{% if has_contact %}Дальше — по шариату: предложите встречу с вали (опекуном), не оставайтесь наедине. БаракаЛлаху фикум.{% else %}Для братьев открытие контакта платное (разово на анкету), для сестёр — бесплатно.{% endif %}</span></div>
-    </aside>
-
-    <div class="dmain">
-      <section class="dcard">
-        <h2 class="dcard__h">О себе</h2>
-        <div class="prose">{{ profile.about|linebreaks }}</div>
-      </section>
-      {% if profile.partner_expectations %}
-      <section class="dcard">
-        <h2 class="dcard__h">Кого ищет</h2>
-        <div class="prose">{{ profile.partner_expectations|linebreaks }}</div>
-      </section>
-      {% endif %}
+{% extends 'nikah/_base.html' %}
+{% load nikah_tags %}
+{% block nk_title %}{{ p.display_name }}, {{ p.age }} · Никях{% endblock %}
+{% block nk_back %}<a class="nkback" href="{% url 'nikah:home' %}" data-back>{% nk_icon 'back' %}Назад</a>{% endblock %}
+{% block nk %}
+<div class="nkprof">
+  <header class="nkprof__head">
+    <span class="nkava nkava--lg nkava--{{ p.gender }}">{% if p.gender == 'M' %}{% nk_icon 'brother' %}{% else %}{% nk_icon 'sister' %}{% endif %}</span>
+    <div class="nkprof__who">
+      <h1>{{ p.display_name }}, {{ p.age }}</h1>
+      <p>{{ p.place|default:"—" }}{% if p.nationality %} · {{ p.nationality }}{% endif %} · {{ p.get_gender_display }}</p>
     </div>
+    {% if p.compat is not None %}<span class="nkcompat nkcompat--lg" style="--p:{{ p.compat }}"><b>{{ p.compat }}%</b><small>совместимость</small></span>{% endif %}
+  </header>
+  {% if p.why %}<div class="nkwhy nkwhy--box">{% nk_icon 'check' %}{{ p.why|join:" · " }}</div>{% endif %}
+
+  {% if match %}
+  <a class="nkbanner" href="{% url 'nikah:match' match.pk %}">{% nk_icon 'heart' %}<div><b>Взаимная симпатия</b><span>{{ match.get_stage_display|capfirst }} — открыть</span></div>{% nk_icon 'arrow' %}</a>
+  {% elif likes_me %}
+  <div class="nkbanner nkbanner--soft">{% nk_icon 'heart' %}<div><b>{% if p.gender == 'M' %}Брат проявил{% else %}Сестра проявила{% endif %} интерес к вам</b><span>Ответьте взаимностью — откроется следующий шаг.</span></div></div>
+  {% endif %}
+
+  <section class="nksec"><h2>Вероубеждение и манхадж</h2>
+    <div class="nkkv">
+      <div><span>Вероубеждение</span><b>{{ p|nk:'aqida'|default:"—" }}</b></div>
+      <div><span>Мазхаб</span><b>{{ p|nk:'madhhab'|default:"—" }}</b></div>
+      <div><span>Намаз</span><b>{{ p|nk:'prayer'|default:"—" }}</b></div>
+      <div><span>Коран</span><b>{{ p|nk:'quran'|default:"—" }}</b></div>
+      <div class="nkkv__w"><span>Где Аллах?</span><b>{{ p|nk:'where_allah'|default:"—" }}</b></div>
+      <div><span>{% if p.gender == 'M' %}Борода{% else %}Покрытие{% endif %}</span><b>{{ p|nk:'look'|default:"—" }}</b></div>
+    </div>
+    <p class="nktext">{{ p.manhaj_text|linebreaksbr }}</p>
+  </section>
+
+  <section class="nksec"><h2>О себе</h2><p class="nktext">{{ p.about|linebreaksbr }}</p></section>
+  <section class="nksec"><h2>{% if p.gender == 'M' %}Какую жену ищет{% else %}Какого мужа ищет{% endif %}</h2><p class="nktext">{{ p.partner_expectations|linebreaksbr }}</p>
+    <p class="nkmeta">Возраст {% if p.gender == 'M' %}жены{% else %}мужа{% endif %}: {{ p.age_from }}–{{ p.age_to }}</p></section>
+
+  <section class="nksec"><h2>Семья и планы</h2>
+    <div class="nkkv">
+      <div><span>Семейное положение</span><b>{{ p|nk:'marital'|default:"—" }}</b></div>
+      {% if p.gender == 'M' %}<div><span>Ищет жену</span><b>{{ p|nk:'wife_number'|default:"Первую" }}</b></div>
+      {% else %}<div><span>Многожёнство</span><b>{{ p|nk:'polygyny'|default:"—" }}</b></div>{% endif %}
+      <div><span>Свои дети</span><b>{{ p|nk:'children_want'|default:"—" }}</b></div>
+      <div><span>Дети партнёра</span><b>{{ p|nk:'children_accept'|default:"—" }}</b></div>
+      <div><span>Готов{% if p.gender == 'F' %}а{% endif %} к никяху</span><b>{{ p|nk:'ready_when'|default:"—" }}</b></div>
+      <div><span>Переезд</span><b>{{ p|nk:'relocation'|default:"—" }}</b></div>
+      {% if p.height %}<div><span>Рост</span><b>{{ p.height }} см</b></div>{% endif %}
+      {% if p.weight %}<div><span>Вес</span><b>{{ p.weight }} кг</b></div>{% endif %}
+    </div>
+  </section>
+
+  {% if p.pk != me.pk %}
+  <div class="nkdock">
+    <form method="post" action="{% url 'nikah:save' p.pk %}">{% csrf_token %}<input type="hidden" name="back" value="{{ request.path }}">
+      <button class="nkicon nkicon--lg{% if saved %} on{% endif %}" type="submit" aria-label="Сохранить" title="{% if saved %}Убрать из сохранённых{% else %}Сохранить{% endif %}">{% nk_icon 'star' %}</button></form>
+    {% if not match %}
+    <form method="post" action="{% url 'nikah:interest' p.pk %}" class="nkdock__main">{% csrf_token %}<input type="hidden" name="back" value="{{ request.path }}">
+      {% if liked %}<input type="hidden" name="undo" value="1"><button class="nkbtn nkbtn--on nkbtn--lg" type="submit">{% nk_icon 'heart' %}Интерес отправлен · отозвать</button>
+      {% else %}<button class="nkbtn nkbtn--love nkbtn--lg" type="submit"{% if not me.is_published %} disabled title="После одобрения вашей анкеты"{% endif %}>{% nk_icon 'heart' %}{% if likes_me %}Ответить взаимностью{% else %}Проявить интерес{% endif %}</button>{% endif %}
+    </form>
+    {% endif %}
   </div>
+  {% endif %}
 </div>
 {% endblock %}

@@ -43,6 +43,15 @@ def decrypt(value: str) -> str:
         return '[сообщение не удалось расшифровать]'
 
 
+def encrypt_bytes(data: bytes) -> bytes:
+    """Файлы (фото анкет никяха) — тем же ключом, что и переписка."""
+    return _fernet().encrypt(data)
+
+
+def decrypt_bytes(token: bytes) -> bytes:
+    return _fernet().decrypt(token)
+
+
 class EncryptedTextField(models.TextField):
     """TextField, который шифрует при записи и расшифровывает при чтении."""
 

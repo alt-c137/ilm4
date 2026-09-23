@@ -1,0 +1,342 @@
+{% extends 'nikah/_base.html' %}
+{% load nikah_tags %}
+{% block nk_title %}{% if editing %}Редактировать анкету{% else %}Анкета{% endif %} · Никях{% endblock %}
+{% block nk %}
+<form method="post" enctype="multipart/form-data" class="nkwiz" id="nkwiz" novalidate
+      data-start="{{ step }}" data-editing="{{ editing|yesno:'1,0' }}" data-bound="{{ form.is_bound|yesno:'1,0' }}"
+      data-gender="{{ gender|default:form.gender.value|default:'' }}">
+  {% csrf_token %}
+  {% if editing %}<input type="hidden" name="gender" value="{{ gender }}">{% endif %}
+  <div class="nkwiz__top">
+    <button type="button" class="nkwiz__back" data-back aria-label="Назад">{% nk_icon 'back' %}</button>
+    <div class="nkwiz__bar"><i id="nk-bar"></i></div>
+    <span class="nkwiz__n" id="nk-n">1/15</span>
+  </div>
+
+  {# 1 — кто вы #}
+  <section class="nkstep" data-step="1" hidden>
+    <h2>Кто вы?</h2>
+    <div class="nkopts nkopts--grid nkopts--big" data-req="gender">
+      <label class="nkopt"><input type="radio" name="gender" value="M"{% if form.gender.value == 'M' %} checked{% endif %}{% if editing %} disabled{% endif %}><span class="nkopt__ic">{% nk_icon 'brother' %}</span><span class="nkopt__t"><b>Я брат</b><small>Мужчина</small></span></label>
+      <label class="nkopt"><input type="radio" name="gender" value="F"{% if form.gender.value == 'F' %} checked{% endif %}{% if editing %} disabled{% endif %}><span class="nkopt__ic">{% nk_icon 'sister' %}</span><span class="nkopt__t"><b>Я сестра</b><small>Женщина</small></span></label>
+    </div>
+    <p class="nkstep__err">{{ form.gender.errors.0 }}</p>
+  </section>
+
+  {# 2 — имя и возраст #}
+  <section class="nkstep" data-step="2" hidden>
+    <h2>Имя и возраст</h2>
+    <label class="nkf" data-req="name"><span>Имя или ник</span><input type="text" name="name" maxlength="40" value="{{ form.name.value|default:'' }}" placeholder="Например: Ахмад" autocomplete="off"></label>
+    <p class="nkstep__err">{{ form.name.errors.0 }}</p>
+    <div class="nkrange"><span>Возраст · <b data-out="age"></b></span><input type="range" name="age" min="18" max="80" value="{{ form.age.value|default:25 }}"></div>
+    <p class="nkstep__err">{{ form.age.errors.0 }}</p>
+    <div class="nksub"><b><span data-g="M">Желаемый возраст жены</span><span data-g="F">Желаемый возраст мужа</span> · <span data-out="age_from"></span>–<span data-out="age_to"></span></b>
+      <small>Поиск покажет в первую очередь подходящих по возрасту.</small></div>
+    <div class="nkrange"><span>От · <b data-out="age_from"></b></span><input type="range" name="age_from" min="18" max="80" value="{{ form.age_from.value|default:18 }}"></div>
+    <div class="nkrange"><span>До · <b data-out="age_to"></b></span><input type="range" name="age_to" min="18" max="80" value="{{ form.age_to.value|default:60 }}"></div>
+    <p class="nkstep__err">{{ form.age_to.errors.0 }}</p>
+  </section>
+
+  {# 3 — откуда #}
+  <section class="nkstep" data-step="3" hidden>
+    <h2>Откуда вы</h2>
+    <p class="nkstep__sub">Страна и национальность помогают точнее подобрать пару. Город — по желанию.</p>
+    <label class="nkf" data-req="country"><span>Страна</span><input type="text" name="country" maxlength="80" value="{{ form.country.value|default:'' }}" list="nk-countries" placeholder="Начните печатать: Узбекистан, Россия…" autocomplete="off"></label>
+    <p class="nkstep__err">{{ form.country.errors.0 }}</p>
+    <label class="nkf"><span>Город</span><input type="text" name="city" maxlength="80" value="{{ form.city.value|default:'' }}" placeholder="Ташкент" autocomplete="off"></label>
+    <label class="nkf"><span>Национальность</span><input type="text" name="nationality" maxlength="80" value="{{ form.nationality.value|default:'' }}" placeholder="Узбек / Татарка / Чеченец…" autocomplete="off"></label>
+    <p class="nkstep__tip">В исламе национальность передаётся по отцу. При смешанных корнях можно рассказать об этом в разделе «О себе».</p>
+    <datalist id="nk-countries">{% for c in countries %}<option value="{{ c }}">{% endfor %}</datalist>
+  </section>
+
+  {# 4 — рост и вес #}
+  <section class="nkstep" data-step="4" hidden>
+    <h2>Физические данные</h2>
+    <p class="nkstep__sub">Необязательно, но помогает понять друг друга честно.</p>
+    <div class="nkrange"><span>Рост · <b data-out="height" data-unit=" см"></b></span><input type="range" name="height" min="120" max="230" value="{{ form.height.value|default:'' }}" data-def-m="175" data-def-f="162"></div>
+    <p class="nkstep__err">{{ form.height.errors.0 }}</p>
+    <div class="nkrange"><span>Вес · <b data-out="weight" data-unit=" кг"></b></span><input type="range" name="weight" min="40" max="200" value="{{ form.weight.value|default:'' }}" data-def-m="75" data-def-f="58"></div>
+    <p class="nkstep__err">{{ form.weight.errors.0 }}</p>
+  </section>
+
+  {# 5 — семейное положение #}
+  <section class="nkstep" data-step="5" hidden>
+    <h2>Семейное положение</h2>
+    {% include 'nikah/_opts.html' with name='marital' options=opts.marital value=form.marital.value %}
+    <p class="nkstep__err">{{ form.marital.errors.0 }}</p>
+    <div data-only="M">
+      <h3>Какую по счёту жену ищете?</h3>
+      {% include 'nikah/_opts.html' with name='wife_number' options=opts.wife_number value=form.wife_number.value|default:1 grid=1 %}
+      <p class="nkstep__err">{{ form.wife_number.errors.0 }}</p>
+    </div>
+    <div data-only="F">
+      <h3>Готовы ли вы быть не единственной женой?</h3>
+      {% include 'nikah/_opts.html' with name='polygyny' options=opts.polygyny value=form.polygyny.value %}
+      <p class="nkstep__err">{{ form.polygyny.errors.0 }}</p>
+    </div>
+  </section>
+
+  {# 6 — религия #}
+  <section class="nkstep" data-step="6" hidden>
+    <h2>Религия</h2>
+    <h3>Мазхаб</h3>
+    {% include 'nikah/_opts.html' with name='madhhab' options=opts.madhhab value=form.madhhab.value %}
+    <h3>Вероубеждение</h3>
+    {% include 'nikah/_opts.html' with name='aqida' options=opts.aqida value=form.aqida.value %}
+    <h3>Намаз</h3>
+    {% include 'nikah/_opts.html' with name='prayer' options=opts.prayer value=form.prayer.value grid=1 %}
+    <h3>Как часто читаете Коран</h3>
+    {% include 'nikah/_opts.html' with name='quran' options=opts.quran value=form.quran.value %}
+    <h3>Где Аллах?</h3>
+    <p class="nkstep__sub">Главный вопрос убеждения — отвечайте так, как верите.</p>
+    {% include 'nikah/_opts.html' with name='where_allah' options=opts.where_allah value=form.where_allah.value %}
+    <p class="nkstep__err">{{ errs|get_item:6 }}</p>
+  </section>
+
+  {# 7 — дети и сроки #}
+  <section class="nkstep" data-step="7" hidden>
+    <h2>Дети и планы</h2>
+    <h3>Есть ли у вас дети?</h3>
+    {% include 'nikah/_opts.html' with name='has_children' options=opts.has_children value=form.has_children.value grid=1 %}
+    <h3>Хотите ли своих детей?</h3>
+    {% include 'nikah/_opts.html' with name='children_want' options=opts.children_want value=form.children_want.value %}
+    <h3>Готовы принять детей партнёра?</h3>
+    {% include 'nikah/_opts.html' with name='children_accept' options=opts.children_accept value=form.children_accept.value %}
+    <h3>Когда готовы к никяху?</h3>
+    {% include 'nikah/_opts.html' with name='ready_when' options=opts.ready_when value=form.ready_when.value grid=1 %}
+    <p class="nkstep__err">{{ errs|get_item:7 }}</p>
+  </section>
+
+  {# 8 — борода / покрытие #}
+  <section class="nkstep" data-step="8" hidden>
+    <h2 data-g="M">Носите ли вы бороду?</h2><h2 data-g="F">Носите ли вы покрытие?</h2>
+    {% include 'nikah/_opts.html' with name='look' options=opts.look_m value=form.look.value grid=1 icons='look_m_' only='M' %}
+    {% include 'nikah/_opts.html' with name='look' options=opts.look_f value=form.look.value grid=1 icons='look_f_' only='F' %}
+    <p class="nkstep__err">{{ form.look.errors.0 }}</p>
+  </section>
+
+  {# 9 — манхадж своими словами #}
+  <section class="nkstep" data-step="9" hidden>
+    <h2>Вероубеждение и манхадж</h2>
+    <p class="nkstep__sub">Опишите своими словами: какого манхаджа придерживаетесь, каких учёных слушаете, какие книги читаете. Это главный критерий совместимости. Контакты писать нельзя — анкета не пройдёт проверку.</p>
+    <label class="nkf" data-req="manhaj_text" data-min="10"><textarea name="manhaj_text" rows="7" maxlength="900" placeholder="Например: стараюсь следовать Корану и Сунне по пониманию праведных предшественников, изучаю…">{{ form.manhaj_text.value|default:'' }}</textarea><small class="nkcount"><b>0</b>/900 · минимум 10</small></label>
+    <p class="nkstep__err">{{ form.manhaj_text.errors.0 }}</p>
+  </section>
+
+  {# 10 — переезд #}
+  <section class="nkstep" data-step="10" hidden>
+    <h2>Готовность к переезду</h2>
+    {% include 'nikah/_opts.html' with name='relocation' options=opts.relocation value=form.relocation.value grid=1 icons='move_' %}
+    <p class="nkstep__err">{{ form.relocation.errors.0 }}</p>
+  </section>
+
+  {# 11 — о себе #}
+  <section class="nkstep" data-step="11" hidden>
+    <h2>О себе</h2>
+    <p class="nkstep__sub">Что для вас важно, чем занимаетесь, какие цели. Контакты (телефон, ссылки, соцсети) писать нельзя.</p>
+    <label class="nkf" data-req="about" data-min="20"><textarea name="about" rows="7" maxlength="900" placeholder="Работаю…, учусь…, в свободное время…">{{ form.about.value|default:'' }}</textarea><small class="nkcount"><b>0</b>/900 · минимум 20</small></label>
+    <p class="nkstep__err">{{ form.about.errors.0 }}</p>
+  </section>
+
+  {# 12 — кого ищу #}
+  <section class="nkstep" data-step="12" hidden>
+    <h2 data-g="M">Какую жену ищу</h2><h2 data-g="F">Какого мужа ищу</h2>
+    <p class="nkstep__sub">Какие качества важны и чего точно не примете. Контакты писать нельзя.</p>
+    <label class="nkf" data-req="partner_expectations" data-min="20"><textarea name="partner_expectations" rows="7" maxlength="900" placeholder="Для меня важно…">{{ form.partner_expectations.value|default:'' }}</textarea><small class="nkcount"><b>0</b>/900 · минимум 20</small></label>
+    <p class="nkstep__err">{{ form.partner_expectations.errors.0 }}</p>
+  </section>
+
+  {# 13 — фото #}
+  <section class="nkstep" data-step="13" id="step-13" hidden>
+    <h2>Фото в анкете</h2>
+    <p class="nkstep__sub">В ленте анкеты без фото — первое впечатление складывается по убеждениям и описанию. Выберите, что будет с вашим фото при взаимной симпатии:</p>
+    {% include 'nikah/_opts.html' with name='photo_mode' options=opts.photo_mode value=form.photo_mode.value icons='photo_' %}
+    <div class="nkphotoup" data-if-photo>
+      <label class="nkdrop">{% nk_icon 'camera' %}<span id="nk-photo-t">{% if has_photo %}Фото загружено — нажмите, чтобы заменить{% else %}Выберите фото (JPG, PNG, до 10 МБ){% endif %}</span>
+        <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" data-skip="1"></label>
+      <p class="nkstep__tip">Фото хранится зашифрованным. Показывается только при взаимной симпатии, один раз, с водяным знаком. Сестра смотрит первой. <a class="link" href="{% url 'nikah:how' %}">Подробнее</a></p>
+    </div>
+    <p class="nkstep__err">{{ errs|get_item:13 }}</p>
+  </section>
+
+  {# 14 — закрытые вопросы #}
+  <section class="nkstep" data-step="14" hidden>
+    <h2>Несколько вопросов о религии</h2>
+    <p class="nkstep__sub">Отвечайте, как есть сейчас. За недостоверные ответы доступ может быть закрыт.</p>
+    {% for key, q, o in faith_q %}
+    <div class="nkq" data-req="faith_{{ key }}"><p>{{ q }}</p>
+      <div class="nkpills">
+        <label><input type="radio" name="faith_{{ key }}" value="yes"{% if faith_cur|get_item:key == 'yes' %} checked{% endif %}><span>{{ o.0 }}</span></label>
+        <label><input type="radio" name="faith_{{ key }}" value="no"{% if faith_cur|get_item:key == 'no' %} checked{% endif %}><span>{{ o.1 }}</span></label>
+      </div></div>
+    {% endfor %}
+    <p class="nkconf">{% nk_icon 'lock' %}Конфиденциально: эти ответы видит только модератор, другим участникам они не показываются.</p>
+    <p class="nkstep__err">{{ errs|get_item:14 }}</p>
+  </section>
+
+  {# 15 — обязательства #}
+  <section class="nkstep" data-step="15" hidden>
+    <h2>Подтверждение</h2>
+    <p class="nkstep__sub">Чтобы завершить, примите условия.</p>
+    <div data-req="pledges" data-all="1">
+    {% for key, title, text in pledges %}
+    <label class="nkcheck nkcheck--card"><input type="checkbox" name="agree_{{ key }}" value="1"><span><b>{{ title }}</b>{{ text }}</span></label>
+    {% endfor %}
+    </div>
+    <p class="nkstep__tip">Все пункты обязательны. Перед Аллахом — обещание, перед сервисом — правило.</p>
+    <p class="nkstep__err">{{ errs|get_item:15 }}</p>
+  </section>
+
+  <div class="nkwiz__foot">
+    <button type="button" class="btn btn--g" data-back>Назад</button>
+    <button type="button" class="btn btn--p" data-next>Далее</button>
+    <button type="submit" class="btn btn--p" data-submit hidden>{% if editing %}Сохранить анкету{% else %}Отправить анкету{% endif %}</button>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}{{ block.super }}
+<script>
+(function () {
+  var form = document.getElementById('nkwiz');
+  var editing = form.dataset.editing === '1';
+  var steps = [].slice.call(form.querySelectorAll('.nkstep'));
+  var skip = editing ? [1, 15] : [];
+  var order = steps.map(function (s) { return +s.dataset.step; }).filter(function (n) { return skip.indexOf(n) === -1; });
+  var DRAFT = 'ilm4_nikah_draft';
+  var CONTACT = /(\+?\d[\s\-()]*){7,}|(^|[^\w.])@[a-z0-9_]{4,}|https?:\/\/|www\.|t\.me\/|телеграм|telegram|whats?app|ватсап|инстаграм|instagram/i;
+  var cur;
+
+  function gender() { return form.dataset.gender; }
+  function applyGender() {
+    var g = gender();
+    form.querySelectorAll('[data-only]').forEach(function (el) {
+      var off = g && el.dataset.only !== g;
+      el.hidden = off;
+      el.querySelectorAll('input').forEach(function (i) { i.disabled = off; });
+    });
+    form.querySelectorAll('input[type=range][data-def-m]').forEach(function (r) {
+      if (!r.getAttribute('value') && !r.dataset.touched) r.value = g === 'F' ? r.dataset.defF : r.dataset.defM;
+    });
+    outputs();
+  }
+  function outputs() {
+    form.querySelectorAll('[data-out]').forEach(function (o) {
+      var i = form.querySelector('[name=' + o.dataset.out + ']');
+      if (i) o.textContent = i.value + (o.dataset.unit || '');
+    });
+  }
+  function photoVisible() {
+    var m = form.querySelector('[name=photo_mode]:checked');
+    form.querySelector('[data-if-photo]').hidden = !(m && m.value === 'exchange');
+  }
+  function stepEl(n) { return form.querySelector('.nkstep[data-step="' + n + '"]'); }
+
+  function check(n) {
+    var el = stepEl(n), err = '';
+    el.querySelectorAll('[data-req]').forEach(function (g) {
+      if (err || g.closest('[hidden]') && g.closest('[hidden]') !== el) return;
+      if (g.dataset.all) {
+        if ([].some.call(g.querySelectorAll('input[type=checkbox]'), function (c) { return !c.checked; })) err = 'Отметьте все пункты.';
+        return;
+      }
+      var radios = g.querySelectorAll('input[type=radio]:not(:disabled)');
+      if (radios.length) {
+        if (![].some.call(radios, function (r) { return r.checked; })) err = 'Выберите вариант в каждом вопросе.';
+        return;
+      }
+      var f = g.querySelector('input, textarea'), min = +(g.dataset.min || 1), v = (f.value || '').trim();
+      if (v.length < min) err = min > 1 ? 'Напишите хотя бы ' + min + ' символов.' : 'Заполните поле.';
+      else if (f.tagName === 'TEXTAREA' && CONTACT.test(v)) err = 'Уберите контакты: телефон, ссылки, ники и соцсети.';
+    });
+    if (n === 2) {
+      var a = +form.querySelector('[name=age_from]').value, b = +form.querySelector('[name=age_to]').value;
+      if (a > b) err = 'Возраст «от» не может быть больше «до».';
+    }
+    if (n === 13) {
+      var m = form.querySelector('[name=photo_mode]:checked'), file = form.querySelector('[name=photo]');
+      if (m && m.value === 'exchange' && !file.files.length && !{{ has_photo|yesno:'true,false' }}) err = 'Загрузите фото или выберите «Без фото».';
+    }
+    var box = el.querySelector('.nkstep__js');
+    box.textContent = err; box.hidden = !err;
+    return !err;
+  }
+
+  function show(n) {
+    if (order.indexOf(n) === -1) n = order[0];
+    cur = n;
+    steps.forEach(function (s) { s.hidden = +s.dataset.step !== n; });
+    var i = order.indexOf(n);
+    document.getElementById('nk-bar').style.width = ((i + 1) / order.length * 100) + '%';
+    document.getElementById('nk-n').textContent = (i + 1) + '/' + order.length;
+    var last = i === order.length - 1;
+    form.querySelector('[data-next]').hidden = last;
+    form.querySelector('[data-submit]').hidden = !last;
+    form.querySelectorAll('[data-back]').forEach(function (b) { b.disabled = i === 0; });
+    form.querySelectorAll('.nkstep__err').forEach(function (e) { e.hidden = !e.textContent.trim(); });
+    stepEl(n).querySelector('.nkstep__js').hidden = true;
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  }
+  function next() {
+    if (!check(cur)) return;
+    var i = order.indexOf(cur);
+    if (i < order.length - 1) { show(order[i + 1]); save(); }
+  }
+  function back() { var i = order.indexOf(cur); if (i > 0) show(order[i - 1]); }
+
+  // черновик: не потерять анкету, если закрыли вкладку (без файлов)
+  function save() {
+    if (editing) return;
+    var data = {};
+    [].forEach.call(form.elements, function (el) {
+      if (!el.name || el.type === 'file' || el.name === 'csrfmiddlewaretoken') return;
+      if ((el.type === 'radio' || el.type === 'checkbox') && !el.checked) return;
+      data[el.name] = el.value;
+    });
+    data._step = cur;
+    try { localStorage.setItem(DRAFT, JSON.stringify(data)); } catch (e) {}
+  }
+  function restore() {
+    if (editing || form.dataset.bound === '1') return null;
+    var data; try { data = JSON.parse(localStorage.getItem(DRAFT) || 'null'); } catch (e) { data = null; }
+    if (!data) return null;
+    [].forEach.call(form.elements, function (el) {
+      if (!el.name || !(el.name in data) || el.type === 'file') return;
+      if (el.type === 'radio' || el.type === 'checkbox') el.checked = data[el.name] === el.value;
+      else el.value = data[el.name];
+    });
+    return data._step;
+  }
+
+  form.addEventListener('change', function (e) {
+    if (e.target.name === 'gender') { form.dataset.gender = e.target.value; applyGender(); }
+    if (e.target.name === 'photo_mode') photoVisible();
+    if (e.target.name === 'photo' && e.target.files.length) document.getElementById('nk-photo-t').textContent = e.target.files[0].name;
+    if (e.target.type === 'radio' && e.target.closest('.nkstep').querySelectorAll('[data-req]').length === 1 && cur !== 13) setTimeout(next, 180);
+    save();
+  });
+  form.addEventListener('input', function (e) {
+    if (e.target.type === 'range') { e.target.dataset.touched = '1'; outputs(); }
+    var c = e.target.parentNode.querySelector('.nkcount b'); if (c) c.textContent = e.target.value.length;
+    var err = e.target.closest('.nkstep').querySelector('.nkstep__js'); if (err) err.hidden = true;
+  });
+  form.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); next(); }
+  });
+  form.querySelectorAll('[data-next]').forEach(function (b) { b.addEventListener('click', next); });
+  form.querySelectorAll('[data-back]').forEach(function (b) { b.addEventListener('click', back); });
+  form.addEventListener('submit', function (e) {
+    if (!check(cur)) { e.preventDefault(); return; }
+    try { localStorage.removeItem(DRAFT); } catch (x) {}
+  });
+
+  steps.forEach(function (s) { var p = document.createElement('p'); p.className = 'nkstep__err nkstep__js'; p.hidden = true; s.appendChild(p); });
+  var saved = restore();
+  if (!form.dataset.gender) { var g = form.querySelector('[name=gender]:checked'); if (g) form.dataset.gender = g.value; }
+  form.querySelectorAll('textarea').forEach(function (t) { var c = t.parentNode.querySelector('.nkcount b'); if (c) c.textContent = t.value.length; });
+  applyGender(); photoVisible();
+  var hash = (location.hash.match(/step-(\d+)/) || [])[1];
+  show(form.dataset.bound === '1' ? +form.dataset.start : +(hash || saved || order[0]));
+})();
+</script>
+{% endblock %}

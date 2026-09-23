@@ -1,0 +1,9 @@
+{% extends 'nikah/_base.html' %}
+{% load nikah_tags %}
+{% block nk_title %}Сохранённые · Никях{% endblock %}
+{% block nk %}
+<div class="nkgrid">
+  {% for p in profiles %}{% include 'nikah/_card.html' %}
+  {% empty %}<div class="nkempty">{% nk_icon 'star' %}<h3>Сохранённых нет</h3><p>Нажмите ☆ на анкете — она появится здесь. Видите только вы.</p></div>{% endfor %}
+</div>
+{% endblock %}

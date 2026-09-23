@@ -11,7 +11,7 @@ class HalalPlaceForm(forms.ModelForm):
         fields = ['name', 'category', 'city', 'address', 'lat', 'lon',
                   'phone', 'url', 'description', 'photo',
                   # мечеть (показываются при категории «Мечеть»)
-                  'branch', 'madhhab', 'affiliation', 'imam', 'khutba_lang',
+                  'branch', 'madhhab', 'manhaj', 'kind', 'affiliation', 'imam', 'khutba_lang',
                   'has_jumua', 'has_women', 'has_wudu', 'has_parking', 'accessible']
         labels = {
             'name': 'Название', 'category': 'Категория', 'city': 'Город',

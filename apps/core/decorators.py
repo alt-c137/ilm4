@@ -12,6 +12,9 @@ def module_required(key: str):
     def decorator(view):
         @wraps(view)
         def wrapped(request, *args, **kwargs):
+            from django.conf import settings
+            if settings.SITE_MODE == 'nikah' and key not in settings.NIKAH_MODE_KEYS:
+                raise Http404   # отдельная установка никяха: чужие разделы закрыты
             module = ModuleConfig.objects.filter(key=key).first()
             if module is None or module.status == ModuleConfig.OFF:
                 raise Http404

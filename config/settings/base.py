@@ -122,6 +122,17 @@ LOGIN_URL = '/accounts/login/'
 GOOGLE_OAUTH_CLIENT_ID = env('GOOGLE_OAUTH_CLIENT_ID', default='')
 GOOGLE_OAUTH_CLIENT_SECRET = env('GOOGLE_OAUTH_CLIENT_SECRET', default='')
 
+# Режим сайта: full — вся платформа; nikah — отдельная установка только раздела «Никях»
+# (главная ведёт в никях, остальные разделы закрыты). См. docs/LAUNCH.md §7.
+SITE_MODE = env('SITE_MODE', default='full')
+NIKAH_MODE_KEYS = {'nikah', 'chat', 'wallet'}   # разделы, которые нужны никяху
+
+# Telegram: мини-приложение (вход из Telegram) и уведомления бота. Токен — от @BotFather
+TELEGRAM_BOT_TOKEN = env('TELEGRAM_BOT_TOKEN', default='')
+TELEGRAM_BOT_USERNAME = env('TELEGRAM_BOT_USERNAME', default='')   # без @, для ссылки «Открыть в Telegram»
+# Адрес сайта для ссылок в уведомлениях (кнопка «Открыть» в Telegram — только https)
+SITE_URL = env('SITE_URL', default='')
+
 # Шифрование переписки в БД (apps/chat/crypto.py). В проде — свой ключ и его резервная копия!
 CHAT_ENCRYPTION_KEY = env('CHAT_ENCRYPTION_KEY', default='')
 

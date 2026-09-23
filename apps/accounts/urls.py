@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import google, views
+from . import google, telegram, views
 
 app_name = 'accounts'
 
@@ -9,6 +9,7 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('google/', google.google_start, name='google'),
     path('google/callback/', google.google_callback, name='google_callback'),
+    path('telegram/webapp/', telegram.webapp_login, name='telegram_webapp'),
     path('register/', views.register, name='register'),
     path('password/reset/', views.password_reset, name='password_reset'),
     path('password/reset/sent/', views.password_reset_done, name='password_reset_done'),

@@ -1,0 +1,46 @@
+{% load nikah_tags %}<article class="nkswipe" data-id="{{ p.pk }}" data-name="{{ p.display_name }}"
+  data-skip="{% url 'nikah:skip' p.pk %}" data-like="{% url 'nikah:interest' p.pk %}">
+  <div class="nkswipe__in">
+    <header class="nkswipe__head">
+      <div class="nkswipe__who"><h2>{{ p.display_name }} <span>{{ p.age }}</span></h2>
+        <div class="nkswipe__tags">
+          {% if p.shares_photo %}<span class="nktag nktag--ok">{% nk_icon 'camera' %}Фото при симпатии</span>{% else %}<span class="nktag">{% nk_icon 'eye_off' %}Без фото</span>{% endif %}
+          {% if me.is_premium and p.is_online %}<span class="nktag nktag--on"><i></i>В сети</span>{% endif %}
+          {% if p.is_boosted %}<span class="nktag nktag--top">{% nk_icon 'star' %}В топе</span>{% endif %}
+        </div>
+        <p class="nkswipe__place">{% nk_icon 'feed' %}{{ p.place|default:"—" }}</p>
+      </div>
+      <div class="nkswipe__compat"><b>{{ p.compat }}%</b><small>совмест.</small></div>
+    </header>
+    {% if p.why %}<div class="nkwhy nkwhy--box">{% nk_icon 'check' %}{{ p.why|join:" · " }}</div>{% endif %}
+    <div class="nkkv nkkv--3">
+      {% if p.nationality %}<div><span>Нация</span><b>{{ p.nationality }}</b></div>{% endif %}
+      {% if p.height %}<div><span>Рост</span><b>{{ p.height }} см</b></div>{% endif %}
+      {% if p.weight %}<div><span>Вес</span><b>{{ p.weight }} кг</b></div>{% endif %}
+    </div>
+    <section class="nksec"><h3>Вероубеждение и манхадж</h3>
+      <div class="nkchips">
+        {% if p.aqida %}<span class="nkchip nkchip--acc">{{ p|nk:'aqida' }}</span>{% endif %}
+        {% if p.madhhab %}<span class="nkchip">{% if p.madhhab == 'none' %}Без мазхаба{% else %}{{ p|nk:'madhhab' }}{% endif %}</span>{% endif %}
+        {% if p.prayer %}<span class="nkchip">Намаз: {{ p|nk:'prayer'|lower }}</span>{% endif %}
+        {% if p.quran %}<span class="nkchip">Коран: {{ p|nk:'quran'|lower }}</span>{% endif %}
+        {% if p.look %}<span class="nkchip">{{ p|nk:'look' }}</span>{% endif %}
+      </div>
+      {% if p.where_allah %}<p class="nkmeta">Где Аллах: <b>{{ p|nk:'where_allah' }}</b></p>{% endif %}
+      <p class="nktext">{{ p.manhaj_text|linebreaksbr }}</p>
+    </section>
+    <section class="nksec"><h3>Семья и планы</h3>
+      <div class="nkkv">
+        <div><span>Семейное положение</span><b>{{ p|nk:'marital'|default:"—" }}</b></div>
+        {% if p.gender == 'M' %}<div><span>Ищет жену</span><b>{{ p|nk:'wife_number'|default:"Первую" }}</b></div>{% else %}<div><span>Многожёнство</span><b>{{ p|nk:'polygyny'|default:"—" }}</b></div>{% endif %}
+        {% if p.has_children %}<div><span>Свои дети</span><b>{{ p.get_has_children_display }}</b></div>{% endif %}
+        <div><span>Хочет детей</span><b>{{ p|nk:'children_want'|default:"—" }}</b></div>
+        <div><span>К никяху</span><b>{{ p|nk:'ready_when'|default:"—" }}</b></div>
+        <div><span>Переезд</span><b>{{ p|nk:'relocation'|default:"—" }}</b></div>
+      </div>
+    </section>
+    <section class="nksec"><h3>О себе</h3><p class="nktext">{{ p.about|linebreaksbr }}</p></section>
+    <section class="nksec"><h3>{% if p.gender == 'M' %}Какую жену ищет{% else %}Какого мужа ищет{% endif %}</h3><p class="nktext">{{ p.partner_expectations|linebreaksbr }}</p></section>
+    <a class="nkswipe__more link" href="{% url 'nikah:detail' p.pk %}">Открыть анкету отдельно →</a>
+  </div>
+</article>

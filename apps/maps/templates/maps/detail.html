@@ -17,11 +17,11 @@
           <span class="mchip">{% ico 'pin' %}{{ place.city }}</span>
         </div>
         {% if place.is_mosque and place.mosque_brief %}<div class="mbrief">{{ place.mosque_brief }}</div>{% endif %}
-        <div class="pcard__rep">{% if not place.is_mosque %}{% rating_badge place %}{% endif %}{% verified_badge place %}
-          {% if confirmed %}<span class="cbadge" title="Столько пользователей подтвердили, что информация верна">{% ico 'user' %}Подтвердили {{ confirmed }}</span>{% endif %}</div>
+        <div class="pcard__rep">{% if not place.is_mosque %}{% rating_badge place %}{% endif %}
+          <a class="vbadge vbadge--{{ verif.level }}" href="#confirm" title="{% if verif.who %}Подтвердили: {{ verif.who }}{% else %}Сведения ещё никто не подтвердил{% endif %}">{{ verif.label }}</a></div>
         <div class="dact">
           {% if place.phone %}<a class="btn btn--p" href="tel:{{ place.phone|cut:' ' }}">{% ico 'phone' %}Позвонить</a>{% endif %}
-          <a class="btn btn--g" href="https://www.google.com/maps/search/?api=1&amp;query={{ place.lat }},{{ place.lon }}" target="_blank" rel="noopener">{% ico 'pin' %}Маршрут</a>
+          <a class="btn btn--g" href="#pmap">{% ico 'pin' %}Маршрут</a>
           {% if place.url %}<a class="btn btn--g" href="{{ place.url }}" target="_blank" rel="noopener nofollow" data-ext>{% ico 'globe' %}Сайт / соцсеть</a>{% endif %}
         </div>
       </div>
@@ -33,12 +33,17 @@
         <div class="minfo">
           <div><span>Течение</span><b>{{ place.get_branch_display|default:"не указано" }}</b></div>
           <div><span>Мазхаб</span><b>{{ place.get_madhhab_display|default:"не указан" }}</b></div>
+          <div><span>Манхадж / направление</span><b>{{ place.get_manhaj_display|default:"не указано" }}</b></div>
+          <div><span>На чём держится</span><b>{{ place.get_kind_display|default:"не указано" }}</b></div>
           <div class="minfo__wide"><span>Кому принадлежит</span><b>{{ place.affiliation|default:"не указано" }}</b></div>
           {% if place.imam %}<div><span>Имам</span><b>{{ place.imam }}</b></div>{% endif %}
           {% if place.khutba_lang %}<div><span>Язык хутбы</span><b>{{ place.khutba_lang }}</b></div>{% endif %}
         </div>
         {% if place.amenities %}<div class="mamen">{% for a in place.amenities %}<span>✓ {{ a }}</span>{% endfor %}</div>{% endif %}
-        <p class="minfo__note">Сведения собраны из открытых источников и от пользователей. Если что-то не так — сообщите ниже, модератор исправит.</p>
+        <div class="vline vline--{{ verif.level }}">
+          <span class="vbadge vbadge--{{ verif.level }}">{{ verif.label }}</span>
+          <small>{% if verif.level == 'ilm4' %}Модератор ilm4 сверил сведения с мечетью.{% elif verif.level == 'users' %}Подтвердили: {{ verif.who }}.{% else %}Сведения примерные — со слов пользователей. Были здесь? Подтвердите или поправьте ниже.{% endif %}{% if verif.disputed %} Есть уточнение — на проверке у модератора.{% endif %}</small>
+        </div>
       </section>
       {% endif %}
       <section class="dcard">
@@ -46,6 +51,12 @@
         <div class="kv">
           <div class="kv__row"><span class="kv__ic">{% ico 'pin' %}</span><div><div class="kv__l">Адрес</div><div class="kv__v">{{ place.address|default:place.city }}</div></div></div>
           {% if place.phone %}<div class="kv__row"><span class="kv__ic">{% ico 'phone' %}</span><div><div class="kv__l">Телефон</div><div class="kv__v"><a href="tel:{{ place.phone|cut:' ' }}">{{ place.phone }}</a></div></div></div>{% endif %}
+        </div>
+        <div id="pmap" class="pmap" data-lat="{{ place.lat|stringformat:'f' }}" data-lon="{{ place.lon|stringformat:'f' }}"></div>
+        <div class="proutes"><span>Маршрут:</span>
+          <a href="https://www.google.com/maps/dir/?api=1&amp;destination={{ place.lat|stringformat:'f' }},{{ place.lon|stringformat:'f' }}" target="_blank" rel="noopener">Google</a>
+          <a href="https://yandex.ru/maps/?rtext=~{{ place.lat|stringformat:'f' }},{{ place.lon|stringformat:'f' }}" target="_blank" rel="noopener">Яндекс</a>
+          <a href="https://2gis.ru/routeSearch/rsType/car/to/{{ place.lon|stringformat:'f' }},{{ place.lat|stringformat:'f' }}" target="_blank" rel="noopener">2ГИС</a>
         </div>
       </section>
       {% if place.description %}<section class="dcard"><h2 class="dcard__h">О месте</h2><div class="prose">{{ place.description|linebreaks }}</div></section>{% endif %}
@@ -59,13 +70,20 @@
               <button type="submit" class="btn btn--p">{% ico 'shield' %}Да, всё верно</button></form>
             <details class="confirm__bad"><summary class="btn btn--g">Сообщить о неточности</summary>
               <form method="post" action="{% url 'maps:confirm' place.pk %}">{% csrf_token %}<input type="hidden" name="correct" value="0">
-                <textarea name="note" rows="2" maxlength="500" required placeholder="Что не так: течение, мазхаб, адрес, телефон…"></textarea>
+                {% if place.is_mosque %}<p class="confirm__hint">Выберите, как на самом деле (что знаете), — модератор применит одной кнопкой.</p>
+                <div class="confirm__grid">
+                  <label>Течение<select name="branch"><option value="">— без изменений —</option>{% for k, v in branches %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+                  <label>Мазхаб<select name="madhhab"><option value="">— без изменений —</option>{% for k, v in madhhabs %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+                  <label>Манхадж<select name="manhaj"><option value="">— без изменений —</option>{% for k, v in manhajs %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+                  <label>На чём держится<select name="kind"><option value="">— без изменений —</option>{% for k, v in kinds %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+                </div>{% endif %}
+                <textarea name="note" rows="2" maxlength="500"{% if not place.is_mosque %} required{% endif %} placeholder="Что не так: адрес, телефон, часы, имам…"></textarea>
                 <button type="submit" class="btn btn--s">Отправить модератору</button></form>
             </details>
           </div>
         {% else %}<p class="reviews__login"><a class="link" href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">Войдите</a>, чтобы подтвердить или уточнить.</p>{% endif %}
       </section>
-      {% if place.is_mosque %}{% reviews_block place "Сообщения" %}{% else %}{% reviews_block place "Отзывы посетителей" %}{% endif %}
+      {% if place.is_mosque %}{% reviews_block place "Комментарии" %}{% else %}{% reviews_block place "Отзывы посетителей" %}{% endif %}
       {% if not place.is_mosque %}{% include 'includes/disclaimer.html' %}{% endif %}
     </div>
   </div>
@@ -76,4 +94,16 @@
   <a class="btn btn--p" href="tel:{{ place.phone|cut:' ' }}">{% ico 'phone' %}Позвонить</a>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% include 'includes/map_assets.html' %}
+<script>
+(function () {
+  var el = document.getElementById('pmap');
+  var ll = [parseFloat(el.dataset.lat), parseFloat(el.dataset.lon)];
+  var map = ilmMap('pmap', {center: ll, zoom: 16, scrollWheelZoom: false});
+  L.circleMarker(ll, {radius: 10, color: '{% if place.is_mosque %}#0e8f57{% else %}#5646e8{% endif %}', weight: 3, fillOpacity: .85}).addTo(map);
+})();
+</script>
 {% endblock %}

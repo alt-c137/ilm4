@@ -33,6 +33,9 @@ class User(AbstractUser):
     findable_by_phone = models.BooleanField(
         'меня можно найти по номеру', default=False,
         help_text='Друзья, у которых ваш номер в контактах, увидят, что вы на ilm4')
+    telegram_id = models.BigIntegerField('Telegram ID', null=True, blank=True, unique=True,
+                                         help_text='Заполняется при входе из Telegram (мини-приложение)')
+    telegram_username = models.CharField('Telegram @', max_length=64, blank=True)
     platform_verified = models.BooleanField(
         'проверен платформой', default=False,
         help_text='Продавец/исполнитель/заведение проверены админом (документы, контакты)')

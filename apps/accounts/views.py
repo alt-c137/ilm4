@@ -23,8 +23,11 @@ def register(request):
         user = form.save()
         auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
         messages.success(request, f'Добро пожаловать, {user.get_display_name()}!')
+        next_url = request.POST.get('next') or request.GET.get('next')
+        if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+            return redirect(next_url)
         return redirect('core:home')
-    return render(request, 'accounts/register.html', {'form': form})
+    return render(request, 'accounts/register.html', {'form': form, 'next': request.GET.get('next', '')})
 
 
 # Защита от подбора пароля: не больше N неудачных попыток за окно — по логину и по IP

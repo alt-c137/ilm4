@@ -10,6 +10,10 @@ POPULAR_COUNT = 11
 
 def home(request):
     """Главная: блоки реестра по порядку + витрина разделов (§3.2)."""
+    from django.conf import settings
+    from django.shortcuts import redirect
+    if settings.SITE_MODE == 'nikah':
+        return redirect('nikah:home')
     rates = Rate.objects.all()
     db_banners = list(Banner.objects.filter(is_active=True).order_by('order', 'id'))
     modules = list(ModuleConfig.objects.filter(in_grid=True).exclude(status=ModuleConfig.OFF))

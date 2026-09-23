@@ -59,12 +59,11 @@ def test_password_reset_unknown_email_no_leak(client):
 
 
 def test_nikah_rejects_html_as_photo(client):
+    from apps.nikah.tests.test_nikah import wizard_data
     user = User.objects.create_user('n', 'n@x.com', 'x')
     client.force_login(user)
-    client.post('/nikah/create/', {
-        'gender': 'M', 'age': '30', 'about': 'Серьёзные намерения, работаю, учусь',
-        'pledge': '1', 'photo': SimpleUploadedFile('x.html', b'<script>alert(1)</script>', content_type='image/png'),
-    })
+    client.post('/nikah/create/', wizard_data(relocation='stay', photo_mode='exchange', photo=SimpleUploadedFile(
+        'x.html', b'<script>alert(1)</script>', content_type='image/png')))
     assert not NikahProfile.objects.filter(user=user).exists()
 
 
@@ -74,7 +73,7 @@ def test_paid_actions_refuse_get(client):
     NikahProfile.objects.create(user=user, gender='M', age=30, about='о себе достаточно длинно',
                                 status=Moderation.APPROVED)
     client.force_login(user)
-    assert client.get('/nikah/boost/').status_code == 405
+    assert client.get('/nikah/me/boost/').status_code == 405
     assert wallet.balance_of(user) == 100_000
 
 
@@ -82,12 +81,12 @@ def test_nikah_accepts_real_photo(client):
     import io
 
     from PIL import Image
+
+    from apps.nikah.tests.test_nikah import wizard_data
     buf = io.BytesIO()
     Image.new('RGB', (20, 20), 'green').save(buf, 'PNG')
     user = User.objects.create_user('n2', 'n2@x.com', 'x')
     client.force_login(user)
-    client.post('/nikah/create/', {
-        'gender': 'M', 'age': '30', 'about': 'Серьёзные намерения, работаю, учусь',
-        'pledge': '1', 'photo': SimpleUploadedFile('me.png', buf.getvalue(), content_type='image/png'),
-    })
-    assert NikahProfile.objects.get(user=user).photo
+    client.post('/nikah/create/', wizard_data(relocation='stay', photo_mode='exchange', photo=SimpleUploadedFile(
+        'me.png', buf.getvalue(), content_type='image/png')))
+    assert NikahProfile.objects.get(user=user).has_photo

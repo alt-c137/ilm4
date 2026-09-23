@@ -1,0 +1,4 @@
+{% load static %}<link rel="stylesheet" href="{% static 'vendor/leaflet/leaflet.css' %}">
+<script src="{% static 'vendor/leaflet/leaflet.js' %}"></script>
+{{ map_cfg|json_script:"map-cfg" }}
+<script src="{% static 'js/ilmap.js' %}?v={{ asset_v }}"></script>

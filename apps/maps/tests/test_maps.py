@@ -113,3 +113,54 @@ def test_doctor_publish_paid_insufficient(client):
     from apps.health.models import Doctor
 
     assert not Doctor.objects.filter(name='Доктор Бедный').exists()  # не создана
+
+
+# --- v35: ступени проверки, уточнения мечети, устойчивость ---
+
+def test_verification_levels(client):
+    place = make_place('Мечеть Нур')
+    assert place.verification()['level'] == 'none'
+    u = User.objects.create_user('v', 'v@x.com', 'x', nickname='Юсуф')
+    client.force_login(u)
+    client.post(f'/map/{place.pk}/confirm/', {'correct': '1'})
+    v = HalalPlace.objects.get(pk=place.pk).verification()
+    assert v['level'] == 'users' and v['count'] == 1 and 'Юсуф' in v['who']
+    HalalPlace.objects.filter(pk=place.pk).update(platform_verified=True)
+    assert HalalPlace.objects.get(pk=place.pk).verification()['level'] == 'ilm4'
+    assert 'Проверено ilm4' in client.get(f'/map/{place.pk}/').content.decode()
+
+
+def test_mosque_suggestion_applied_by_admin(client):
+    from apps.maps.models import PlaceConfirmation
+    mosque = HalalPlace.objects.create(name='Мечеть', category='mosque', city='Ташкент', lat=41.3, lon=69.2,
+                                       status=Moderation.APPROVED, madhhab='hanafi')
+    u = User.objects.create_user('s', 's@x.com', 'x')
+    client.force_login(u)
+    client.post(f'/map/{mosque.pk}/confirm/', {'correct': '0', 'madhhab': 'shafii', 'manhaj': 'ashari',
+                                               'kind': 'bogus'})
+    c = PlaceConfirmation.objects.get()
+    assert (c.suggested_madhhab, c.suggested_manhaj, c.suggested_kind) == ('shafii', 'ashari', '')
+    from django.contrib.admin.sites import site
+    from django.test import RequestFactory
+
+    from apps.maps.admin import PlaceConfirmationAdmin
+    request = RequestFactory().post('/')
+    request.user = User.objects.create_superuser('adm', 'adm@x.com', 'x')
+    request._messages = type('M', (), {'add': lambda *a, **k: None})()
+    PlaceConfirmationAdmin(PlaceConfirmation, site).apply_suggestion(request, PlaceConfirmation.objects.all())
+    mosque.refresh_from_db()
+    assert mosque.madhhab == 'shafii' and mosque.manhaj == 'ashari'
+    assert PlaceConfirmation.objects.get().resolved
+
+
+def test_bad_coordinates_do_not_crash(client):
+    make_place()
+    for q in ('lat=abc&lon=1', 'lat=nan&lon=nan', 'lat=999&lon=0'):
+        assert client.get(f'/map/?{q}').status_code == 200
+
+
+def test_map_pages_use_local_leaflet(client):
+    place = make_place()
+    for url in ('/map/', f'/map/{place.pk}/'):
+        html = client.get(url).content.decode()
+        assert 'vendor/leaflet/leaflet.js' in html and 'unpkg.com' not in html

@@ -58,8 +58,20 @@ class HalalPlace(BasePlace):
         ('hanafi', 'Ханафитский'), ('shafii', 'Шафиитский'), ('maliki', 'Маликитский'),
         ('hanbali', 'Ханбалитский'), ('jafari', 'Джафаритский'), ('mixed', 'Разные мазхабы'),
     ]
+    MANHAJS = [
+        ('sunna', 'Ахлю-с-Сунна (без уточнения)'), ('ashari', 'Ашариты / матуридиты'),
+        ('athari', 'Асариты / саляфиты'), ('sufi', 'Суфийская (тарикат)'),
+        ('tabligh', 'Таблиг'), ('other', 'Другое'),
+    ]
+    KINDS = [
+        ('official', 'Официальная (муфтият / духовное управление)'),
+        ('community', 'Общинная / частная'), ('foundation', 'Фонд / организация'), ('other', 'Другое'),
+    ]
     branch = models.CharField('течение', max_length=8, choices=BRANCHES, blank=True)
     madhhab = models.CharField('мазхаб', max_length=8, choices=MADHHABS, blank=True)
+    manhaj = models.CharField('манхадж / направление', max_length=8, choices=MANHAJS, blank=True,
+                              help_text='Примерно, по словам прихожан. Уточняется подтверждениями')
+    kind = models.CharField('на чём держится', max_length=10, choices=KINDS, blank=True)
     affiliation = models.CharField('кому принадлежит', max_length=200, blank=True,
                                    help_text='Например: Управление мусульман Узбекистана, округ / частная')
     imam = models.CharField('имам', max_length=120, blank=True)
@@ -85,6 +97,21 @@ class HalalPlace(BasePlace):
             parts.append(f'{self.get_madhhab_display().lower()} мазхаб')
         return ' · '.join(parts)
 
+    def verification(self) -> dict:
+        """Насколько сведениям можно верить — одна из трёх ступеней:
+        «Проверено ilm4» → «Проверили пользователи (N)» → «Не проверено»."""
+        confirmed = [c for c in self.confirmations.all() if c.is_correct]
+        disputed = any(not c.is_correct and not c.resolved for c in self.confirmations.all())
+        names = [c.user.get_display_name() for c in confirmed[:2]]
+        if self.platform_verified:
+            level, label = 'ilm4', 'Проверено ilm4'
+        elif confirmed:
+            level, label = 'users', f'Проверили пользователи: {len(confirmed)}'
+        else:
+            level, label = 'none', 'Не проверено'
+        who = ', '.join(names) + (f' и ещё {len(confirmed) - len(names)}' if len(confirmed) > len(names) else '')
+        return {'level': level, 'label': label, 'count': len(confirmed), 'who': who, 'disputed': disputed}
+
     def amenities(self) -> list[str]:
         flags = [('has_jumua', 'Джума'), ('has_women', 'Женский зал'), ('has_wudu', 'Омовение'),
                  ('has_parking', 'Парковка'), ('accessible', 'Для колясок')]
@@ -99,6 +126,11 @@ class PlaceConfirmation(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='+')
     is_correct = models.BooleanField('информация верна', default=True)
     note = models.CharField('что неточно', max_length=500, blank=True)
+    # уточнение по полям: «на самом деле мазхаб шафиитский» — модератор применяет одной кнопкой
+    suggested_branch = models.CharField('предлагают: течение', max_length=8, choices=HalalPlace.BRANCHES, blank=True)
+    suggested_madhhab = models.CharField('предлагают: мазхаб', max_length=8, choices=HalalPlace.MADHHABS, blank=True)
+    suggested_manhaj = models.CharField('предлагают: манхадж', max_length=8, choices=HalalPlace.MANHAJS, blank=True)
+    suggested_kind = models.CharField('предлагают: на чём держится', max_length=10, choices=HalalPlace.KINDS, blank=True)
     resolved = models.BooleanField('разобрано модератором', default=False)
     created_at = models.DateTimeField('когда', auto_now=True)
 

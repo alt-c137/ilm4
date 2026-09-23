@@ -1,150 +1,459 @@
-"""Никах: витрина анкет, создание своей, платное «написать» (мужчинам), буст."""
+"""Никях: знакомство, лента без фото, интерес → взаимность → обмен фото → чат.
+
+Страницы: /nikah/ (о сервисе или лента), анкета (мастер 15 шагов), интересы,
+сохранённые, чаты, «Я», пара (обмен фото). Работает и на сайте, и внутри Telegram
+(мини-приложение: вход по подписи Telegram — apps/accounts/telegram.py).
+"""
 from datetime import timedelta
+from functools import wraps
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.db.models import Q
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from apps.core.decorators import module_required, pledge_required
+from apps.accounts.audit import log_action
+from apps.core.decorators import module_required
 from apps.core.models import Moderation, SiteSettings
 from apps.core.uploads import clean_image
 from apps.wallet import services as wallet
 from apps.wallet.models import Transaction
 from apps.wallet.services import InsufficientFunds
 
-from .models import NikahContact, NikahProfile
+from . import choices as C
+from . import deck, services
+from .forms import NikahProfileForm
+from .models import NikahInterest, NikahMatch, NikahProfile, NikahSaved
 
+FEED_LIMIT = 60
+
+
+def _me(request):
+    return getattr(request.user, 'nikah_profile', None) if request.user.is_authenticated else None
+
+
+def profile_required(view):
+    """Раздел для участников с анкетой: без анкеты — на мастер."""
+    @wraps(view)
+    @login_required
+    @module_required('nikah')
+    def wrapped(request, *args, **kwargs):
+        me = _me(request)
+        if me is None:
+            messages.info(request, 'Сначала заполните анкету — это займёт около 5 минут.')
+            return redirect('nikah:create')
+        request.nikah = me
+        deck.touch(me)
+        return view(request, *args, **kwargs)
+    return wrapped
+
+
+def _badges(me):
+    """Счётчики для вкладок: новые интересы, пары, ждущие действия."""
+    incoming = (NikahInterest.objects.filter(to_profile=me)
+                .exclude(from_profile__in=me.interests_sent.values('to_profile')).count())
+    matches = NikahMatch.objects.filter(Q(sister=me) | Q(brother=me)).exclude(stage=NikahMatch.CLOSED)
+    waiting = sum(1 for m in matches if services.turn(m) == m.side(me))
+    return {'incoming': incoming, 'waiting': waiting}
+
+
+def _ctx(request, tab, **extra):
+    from django.conf import settings
+
+    me = getattr(request, 'nikah', None) or _me(request)
+    st = SiteSettings.get_solo()
+    return {'me': me, 'tab': tab, 'badges': _badges(me) if me else {},
+            'tg_bot': getattr(settings, 'TELEGRAM_BOT_USERNAME', ''),
+            'balance': wallet.balance_of(request.user) if me else None,
+            'premium_on': st.nikah_premium_enabled, **extra}
+
+
+# ---------- главная раздела: о сервисе (гость) или лента ----------
 
 @module_required('nikah')
-def profile_list(request):
-    """Витрина анкет: просмотр бесплатный (PASSPORT §2)."""
-    qs = NikahProfile.objects.filter(status=Moderation.APPROVED, is_active=True)
-    gender = request.GET.get('gender', '').strip()
-    city = request.GET.get('city', '').strip()
-    if gender in ('M', 'F'):
-        qs = qs.filter(gender=gender)
-    if city:
-        qs = qs.filter(city__icontains=city)
-    return render(request, 'nikah/list.html', {
-        'profiles': qs.select_related('user')[:60],
-        'gender': gender, 'city': city,
-    })
+def home(request):
+    me = _me(request)
+    if me is None:
+        return render(request, 'nikah/intro.html', _ctx(request, 'feed', minutes=services.photo_minutes()))
+    request.nikah = me
+    return feed(request)
 
 
-@module_required('nikah')
-def profile_detail(request, pk):
-    profile = get_object_or_404(NikahProfile, pk=pk, status=Moderation.APPROVED,
-                                is_active=True)
-    # контакт виден, если уже оплачен/бесплатен
-    has_contact = False
-    if request.user.is_authenticated:
-        has_contact = NikahContact.objects.filter(
-            from_user=request.user, to_profile=profile).exists()
-    return render(request, 'nikah/detail.html', {
-        'profile': profile,
-        'has_contact': has_contact,
-        'chat_price': SiteSettings.get_solo().nikah_chat_price,
-    })
+def feed(request):
+    """Колода анкет: свайп вправо — интерес, влево — пропуск. Дневной лимит без премиума."""
+    me = request.nikah
+    deck.touch(me)
+    f = request.session.get(deck.SESSION_KEY, {})
+    cards = deck.deck(me, f)
+    saved = set(NikahSaved.objects.filter(user=request.user).values_list('profile_id', flat=True))
+    for p in cards:
+        p.saved = p.pk in saved
+    st = SiteSettings.get_solo()
+    return render(request, 'nikah/feed.html', _ctx(
+        request, 'feed', cards=cards, f=f, filtered=bool(f), left=deck.left_today(me),
+        limit=st.nikah_daily_limit, skipped=deck.skipped_count(me), restore_price=st.nikah_restore_price,
+        premium_price=st.nikah_premium_price, premium_days=st.nikah_premium_days,
+        nation_groups=[(g, label) for g, label, _k in deck.NATION_GROUPS],
+        other_gender='F' if me.gender == 'M' else 'M',
+        opts={'madhhab': C.MADHHAB, 'aqida': C.AQIDA, 'prayer': C.PRAYER, 'ready_when': C.READY,
+              'marital': [m for m in C.MARITAL if not (me.gender == 'M' and m[0] == 'married')],
+              'look': C.LOOK_F if me.gender == 'M' else C.LOOK_M, 'children_want': C.CHILDREN_WANT,
+              'relocation': C.RELOCATION}))
+
+
+def _wants_json(request):
+    return 'application/json' in request.headers.get('Accept', '')
+
+
+@profile_required
+@require_POST
+def skip(request, pk):
+    me = request.nikah
+    p = get_object_or_404(NikahProfile, pk=pk)
+    left = deck.left_today(me)
+    if left == 0:
+        return JsonResponse({'ok': False, 'limit': True}, status=429) if _wants_json(request) \
+            else redirect('nikah:home')
+    deck.skip(me, p)
+    if _wants_json(request):
+        return JsonResponse({'ok': True, 'left': deck.left_today(me)})
+    return redirect('nikah:home')
+
+
+@profile_required
+@require_POST
+def filters(request):
+    if request.POST.get('reset') == '1':
+        request.session.pop(deck.SESSION_KEY, None)
+    else:
+        request.session[deck.SESSION_KEY] = deck.clean_filters(request.POST)
+    return redirect('nikah:home')
+
+
+@profile_required
+@require_POST
+def restore(request):
+    try:
+        n = deck.restore_skipped(request.nikah, request.user)
+    except InsufficientFunds:
+        messages.error(request, 'На балансе не хватает средств — пополните кошелёк.')
+        return redirect('wallet:index')
+    messages.success(request, f'Вернули в ленту: {n}.' if n else 'Отклонённых анкет нет.')
+    return redirect('nikah:home')
+
+
+@profile_required
+def premium(request):
+    me = request.nikah
+    st = SiteSettings.get_solo()
+    if request.method == 'POST':
+        try:
+            deck.buy_premium(me, request.user)
+        except InsufficientFunds:
+            messages.error(request, 'На балансе не хватает средств — пополните кошелёк.')
+            return redirect('wallet:index')
+        except ValueError as exc:
+            messages.error(request, str(exc))
+            return redirect('nikah:premium')
+        messages.success(request, 'Премиум подключён. БаракаЛлаху фик!')
+        return redirect('nikah:premium')
+    return render(request, 'nikah/premium.html', _ctx(
+        request, 'me', price=st.nikah_premium_price, days=st.nikah_premium_days, limit=st.nikah_daily_limit,
+        restore_price=st.nikah_restore_price))
+
+
+@profile_required
+def detail(request, pk):
+    me = request.nikah
+    p = get_object_or_404(NikahProfile, pk=pk)
+    if p.pk != me.pk and (p.gender == me.gender or not p.is_published):
+        raise Http404
+    p.compat, p.why = services.compatibility(me, p) if p.pk != me.pk else (None, [])
+    match = NikahMatch.objects.filter(Q(sister=me, brother=p) | Q(sister=p, brother=me)).first()
+    return render(request, 'nikah/detail.html', _ctx(
+        request, 'feed', p=p, match=match,
+        liked=NikahInterest.objects.filter(from_profile=me, to_profile=p).exists(),
+        likes_me=NikahInterest.objects.filter(from_profile=p, to_profile=me).exists(),
+        saved=NikahSaved.objects.filter(user=request.user, profile=p).exists()))
+
+
+@profile_required
+@require_POST
+def interest(request, pk):
+    me = request.nikah
+    p = get_object_or_404(NikahProfile, pk=pk, status=Moderation.APPROVED, is_active=True)
+    if not me.is_published:
+        text = 'Интерес можно проявлять, когда вашу анкету одобрит модератор.'
+        if _wants_json(request):
+            return JsonResponse({'ok': False, 'error': text}, status=403)
+        messages.info(request, text)
+        return redirect('nikah:detail', pk=pk)
+    back = request.POST.get('back', '')
+    if request.POST.get('from_deck') == '1' and deck.left_today(me) == 0:
+        return JsonResponse({'ok': False, 'limit': True}, status=429) if _wants_json(request) \
+            else redirect('nikah:home')
+    if request.POST.get('undo') == '1':
+        if not NikahMatch.objects.filter(Q(sister=me, brother=p) | Q(sister=p, brother=me)).exists():
+            services.withdraw_interest(me, p)
+        return redirect(back if back.startswith('/nikah/') else 'nikah:home')
+    try:
+        match = services.send_interest(me, p)
+    except ValueError as exc:
+        if _wants_json(request):
+            return JsonResponse({'ok': False, 'error': str(exc)}, status=400)
+        messages.error(request, str(exc))
+        return redirect('nikah:home')
+    if _wants_json(request):
+        return JsonResponse({'ok': True, 'left': deck.left_today(me),
+                             'match': reverse('nikah:match', args=[match.pk]) if match else ''})
+    if match:
+        messages.success(request, 'Взаимная симпатия! Посмотрите, что дальше.')
+        return redirect('nikah:match', pk=match.pk)
+    messages.success(request, 'Интерес отправлен. Если он взаимный — вы оба узнаете.')
+    return redirect(back if back.startswith('/nikah/') else 'nikah:home')
+
+
+@profile_required
+@require_POST
+def save_toggle(request, pk):
+    p = get_object_or_404(NikahProfile, pk=pk)
+    obj, created = NikahSaved.objects.get_or_create(user=request.user, profile=p)
+    if not created:
+        obj.delete()
+    back = request.POST.get('back', '')
+    return redirect(back if back.startswith('/nikah/') else 'nikah:saved')
+
+
+@profile_required
+def interests(request):
+    me = request.nikah
+    sent_ids = set(me.interests_sent.values_list('to_profile_id', flat=True))
+    incoming = [i.from_profile for i in NikahInterest.objects.filter(to_profile=me).select_related('from_profile')
+                if i.from_profile_id not in sent_ids and i.from_profile.is_published]
+    sent = [i.to_profile for i in me.interests_sent.select_related('to_profile')
+            if not NikahInterest.objects.filter(from_profile=i.to_profile, to_profile=me).exists()]
+    matches = [services.refresh(m) for m in NikahMatch.objects.filter(Q(sister=me) | Q(brother=me))
+               .select_related('sister', 'brother')]
+    for m in matches:
+        m.partner, m.my_turn = m.other(me), services.turn(m) == m.side(me)
+    for p in incoming + sent:
+        p.compat, p.why = services.compatibility(me, p)
+    return render(request, 'nikah/interests.html', _ctx(
+        request, 'interests', incoming=incoming, sent=sent, matches=matches,
+        show=request.GET.get('show', 'incoming')))
+
+
+@profile_required
+def saved(request):
+    me = request.nikah
+    profiles = [s.profile for s in NikahSaved.objects.filter(user=request.user).select_related('profile')
+                if s.profile.is_published and s.profile.gender != me.gender]
+    for p in profiles:
+        p.compat, p.why = services.compatibility(me, p)
+        p.saved = True
+    return render(request, 'nikah/saved.html', _ctx(request, 'saved', profiles=profiles))
+
+
+@profile_required
+def chats(request):
+    me = request.nikah
+    matches = list(NikahMatch.objects.filter(Q(sister=me) | Q(brother=me), stage=NikahMatch.CHAT)
+                   .select_related('sister', 'brother', 'thread'))
+    for m in matches:
+        m.partner = m.other(me)
+    return render(request, 'nikah/chats.html', _ctx(request, 'chats', matches=matches,
+                                                    price=services.chat_price()))
+
+
+# ---------- пара: обмен фото и открытие чата ----------
+
+def _my_match(request, pk):
+    me = request.nikah
+    m = get_object_or_404(NikahMatch.objects.select_related('sister', 'brother'), pk=pk)
+    if me.pk not in (m.sister_id, m.brother_id):
+        raise Http404
+    return me, services.refresh(m)
+
+
+@profile_required
+def match(request, pk):
+    me, m = _my_match(request, pk)
+    side = m.side(me)
+    other_side = 'brother' if side == 'sister' else 'sister'
+    return render(request, 'nikah/match.html', _ctx(
+        request, 'interests', m=m, partner=m.other(me), side=side, turn=services.turn(m),
+        opened=getattr(m, f'{side}_viewed_at'), my_ok=getattr(m, f'{side}_ok'),
+        their_ok=getattr(m, f'{other_side}_ok'), seconds=services.seconds_left(m, side),
+        minutes=services.photo_minutes(), price=services.chat_price(), tg_photo=services.tg_ready(request.user),
+        balance=wallet.balance_of(request.user) if side == 'brother' else None))
+
+
+@profile_required
+@require_POST
+def match_open(request, pk):
+    me, m = _my_match(request, pk)
+    if request.POST.get('oath') != '1':
+        messages.error(request, 'Подтвердите обещание не сохранять и не пересылать фото.')
+        return redirect('nikah:match', pk=pk)
+    try:
+        services.open_photo(m, m.side(me))
+        log_action(request, 'Никях: открыто фото (обещание принято)', f'пара #{m.pk}')
+    except ValueError as exc:
+        messages.error(request, str(exc))
+        return redirect('nikah:match', pk=pk)
+    if request.POST.get('via') == 'tg':
+        m.refresh_from_db()
+        if services.send_photo_to_telegram(m, m.side(me), request.user):
+            messages.success(request, 'Фото отправлено в Telegram — откройте чат с ботом. Решение примите здесь.')
+        else:
+            messages.error(request, 'Не удалось отправить в Telegram — фото открыто здесь.')
+    return redirect('nikah:match', pk=pk)
+
+
+@profile_required
+def match_photo(request, pk):
+    """Фото собеседника: только в свою очередь, после «открыть», пока идёт таймер."""
+    me, m = _my_match(request, pk)
+    side = m.side(me)
+    if services.turn(m) != side or not getattr(m, f'{side}_viewed_at') or services.seconds_left(m, side) <= 0:
+        raise PermissionDenied
+    partner = m.other(me)
+    if not partner.has_photo:
+        raise Http404
+    resp = HttpResponse(services.watermarked_photo(partner, request.user), content_type='image/jpeg')
+    resp['Cache-Control'] = 'no-store, private'
+    resp['X-Content-Type-Options'] = 'nosniff'
+    return resp
+
+
+@profile_required
+@require_POST
+def match_decide(request, pk):
+    me, m = _my_match(request, pk)
+    try:
+        services.decide(m, m.side(me), request.POST.get('ok') == '1')
+    except ValueError as exc:
+        messages.error(request, str(exc))
+    return redirect('nikah:match', pk=pk)
+
+
+@profile_required
+@require_POST
+def match_pay(request, pk):
+    m = _my_match(request, pk)[1]
+    try:
+        services.pay_chat(m, request.user)
+    except InsufficientFunds:
+        messages.error(request, 'На балансе не хватает средств — пополните кошелёк.')
+        return redirect('wallet:index')
+    except ValueError as exc:
+        messages.error(request, str(exc))
+    m.refresh_from_db()
+    return redirect('chat:thread', pk=m.thread_id) if m.thread_id else redirect('nikah:match', pk=pk)
+
+
+# ---------- «Я» и анкета ----------
+
+@profile_required
+def mine(request):
+    me = request.nikah
+    return render(request, 'nikah/mine.html', _ctx(
+        request, 'me', p=me, balance=wallet.balance_of(request.user),
+        boost_price=SiteSettings.get_solo().nikah_boost_price))
 
 
 @login_required
 @module_required('nikah')
-@pledge_required
-def profile_create(request):
-    if hasattr(request.user, 'nikah_profile'):
-        return redirect('nikah:mine')
+def create(request):
+    if _me(request):
+        return redirect('nikah:edit')
+    return _wizard(request, None)
+
+
+@profile_required
+def edit(request):
+    return _wizard(request, request.nikah)
+
+
+def _wizard(request, instance):
+    editing = instance is not None
+    form = NikahProfileForm(request.POST or None, instance=instance, editing=editing)
+    step, step_errors = 1, {}
     if request.method == 'POST':
-        gender = request.POST.get('gender', '')
-        try:
-            age = int(request.POST.get('age', ''))
-        except ValueError:
-            age = 0
-        about = request.POST.get('about', '').strip()
-        errors = []
-        if gender not in ('M', 'F'):
-            errors.append('Укажите, кто вы.')
-        if not (18 <= age <= 99):
-            errors.append('Возраст — от 18 до 99.')
-        if len(about) < 20:
-            errors.append('Расскажите о себе хотя бы парой предложений (20+ символов).')
+        faith = {k: request.POST.get(f'faith_{k}', '') for k, _q, _o in C.FAITH_QUESTIONS}
+        faith_given = all(v in ('yes', 'no') for v in faith.values())
+        if not editing and not faith_given:
+            step_errors[14] = 'Ответьте на все вопросы.'
+        if not editing and not all(request.POST.get(f'agree_{k}') == '1' for k, _t, _d in C.PLEDGES):
+            step_errors[15] = 'Примите все пункты, чтобы завершить регистрацию.'
+        photo = None
         try:
             photo = clean_image(request.FILES.get('photo'))
         except ValidationError as exc:
-            photo = None
-            errors.append(exc.messages[0] if exc.messages else 'Загрузите фото в формате JPG или PNG.')
-        if errors:
-            for e in errors:
-                messages.error(request, e)
-        else:
-            NikahProfile.objects.create(
-                user=request.user, gender=gender, age=age,
-                city=request.POST.get('city', '').strip()[:80],
-                about=about,
-                partner_expectations=request.POST.get('partner_expectations', ''),
-                contact_hint=request.POST.get('contact_hint', '').strip()[:200],
-                photo=photo,
-            )
-            messages.success(request, 'Анкета отправлена на модерацию.')
-            return redirect('nikah:list')
-    return render(request, 'nikah/create.html')
+            step_errors[13] = exc.messages[0] if exc.messages else 'Загрузите фото в формате JPG или PNG.'
+        has_photo = photo is not None or (editing and instance.has_photo)
+        if request.POST.get('photo_mode') == 'exchange' and not has_photo and 13 not in step_errors:
+            step_errors[13] = 'Загрузите фото или выберите «Без фото».'
+        if form.is_valid() and not step_errors:
+            profile = form.save(commit=False)
+            profile.user = request.user
+            if faith_given:
+                profile.faith_answers = faith
+            if not editing:
+                profile.agreed_at = timezone.now()
+            profile.status = Moderation.PENDING       # любая правка — снова на проверку
+            if photo is not None:
+                services.store_photo(profile, photo)
+            profile.save()
+            log_action(request, 'Никях: анкета ' + ('изменена' if editing else 'создана, обязательства приняты'),
+                       f'#{profile.pk}')
+            messages.success(request, 'Анкета отправлена на проверку. Обычно это занимает до суток.')
+            return redirect('nikah:mine')
+        step = min([form.first_error_step() if form.errors else 99, *step_errors.keys()])
+    # первая ошибка каждого шага — для вывода под вопросами
+    from .forms import STEP_OF
+    errs = dict(step_errors)
+    for name, errors in form.errors.items():
+        errs.setdefault(STEP_OF.get(name, 1), errors[0])
+    return render(request, 'nikah/wizard.html', _ctx(
+        request, 'me', form=form, editing=editing, step=step, errs=errs,
+        gender=(instance.gender if editing else request.POST.get('gender', '')),
+        faith_q=C.FAITH_QUESTIONS, pledges=C.PLEDGES, has_photo=editing and instance.has_photo,
+        opts={
+            'marital': C.MARITAL, 'wife_number': C.WIFE_NUMBER, 'polygyny': C.POLYGYNY,
+            'madhhab': C.MADHHAB, 'aqida': C.AQIDA, 'prayer': C.PRAYER, 'quran': C.QURAN,
+            'where_allah': C.WHERE_ALLAH, 'children_want': C.CHILDREN_WANT,
+            'children_accept': C.CHILDREN_ACCEPT, 'ready_when': C.READY,
+            'has_children': [('no', 'Нет'), ('yes', 'Есть')],
+            'look_m': C.LOOK_M, 'look_f': C.LOOK_F, 'relocation': C.RELOCATION, 'photo_mode': C.PHOTO_MODE,
+        },
+        faith_cur={k: request.POST.get(f'faith_{k}') or (instance.faith_answers.get(k) if editing else '')
+                   for k, _q, _o in C.FAITH_QUESTIONS},
+        countries=C.COUNTRIES,
+    ))
 
 
-@login_required
 @module_required('nikah')
-def mine(request):
-    profile = getattr(request.user, 'nikah_profile', None)
-    if not profile:
-        return redirect('nikah:create')
-    contacts = profile.contacts_received.select_related('from_user')
-    return render(request, 'nikah/mine.html', {
-        'profile': profile, 'contacts': contacts,
-        'boost_price': SiteSettings.get_solo().nikah_boost_price,
-    })
-
-
-@login_required
-@module_required('nikah')
-@require_POST
-def open_contact(request, pk):
-    """«Написать»: женщинам бесплатно, мужчинам — разовая оплата на анкету."""
-    profile = get_object_or_404(NikahProfile, pk=pk, status=Moderation.APPROVED,
-                                is_active=True)
-    if profile.user == request.user:
-        messages.error(request, 'Это ваша анкета.')
-        return redirect('nikah:mine')
-
-    contact, created = NikahContact.objects.get_or_create(
-        from_user=request.user, to_profile=profile)
-    # пол отправителя — из его анкеты; без анкеты считаем платным (мужская логика)
-    own = getattr(request.user, 'nikah_profile', None)
-    sender_is_male = own is None or own.gender == 'M'
-    if created and sender_is_male and not request.user.is_superuser:
-        price = SiteSettings.get_solo().nikah_chat_price
-        try:
-            wallet.debit(request.user, price, Transaction.PURCHASE,
-                         ref=f'nikah:contact:{pk}', note=f'Контакт анкеты #{pk}')
-        except InsufficientFunds:
-            contact.delete()
-            messages.error(request, 'Недостаточно средств — пополните кошелёк.')
-            return redirect('wallet:index')
-    return redirect('nikah:detail', pk=pk)
+def how(request):
+    return render(request, 'nikah/how.html', _ctx(request, 'me', minutes=services.photo_minutes()))
 
 
 @login_required
 @module_required('nikah')
 @require_POST
 def boost(request):
-    """Поднять свою анкету в поиске на 7 дней — платно."""
-    profile = getattr(request.user, 'nikah_profile', None)
+    """Поднять свою анкету в ленте на 7 дней — платно."""
+    profile = _me(request)
     if not profile:
         return redirect('nikah:create')
     price = SiteSettings.get_solo().nikah_boost_price
     try:
-        wallet.debit(request.user, price, Transaction.PURCHASE,
-                     ref='nikah:boost', note='Буст анкеты никаха')
+        wallet.debit(request.user, price, Transaction.PURCHASE, ref='nikah:boost', note='Буст анкеты никаха')
     except InsufficientFunds:
         messages.error(request, 'Недостаточно средств — пополните кошелёк.')
         return redirect('wallet:index')
@@ -153,3 +462,29 @@ def boost(request):
     profile.save(update_fields=['boosted_until'])
     messages.success(request, 'Анкета поднята на 7 дней.')
     return redirect('nikah:mine')
+
+
+@login_required
+@require_POST
+def pause(request):
+    """Скрыть / вернуть свою анкету в ленту."""
+    profile = _me(request)
+    if profile:
+        profile.is_active = not profile.is_active
+        profile.save(update_fields=['is_active'])
+        messages.success(request, 'Анкета снова в ленте.' if profile.is_active else 'Анкета скрыта из ленты.')
+    return redirect('nikah:mine')
+
+
+@login_required
+def admin_photo(request, pk):
+    """Фото анкеты для модератора (с водяным знаком модератора, запись в журнал)."""
+    if not request.user.is_staff:
+        raise PermissionDenied
+    p = get_object_or_404(NikahProfile, pk=pk)
+    if not p.has_photo:
+        raise Http404
+    log_action(request, 'Никях: модератор открыл фото анкеты', f'#{p.pk}')
+    resp = HttpResponse(services.watermarked_photo(p, request.user), content_type='image/jpeg')
+    resp['Cache-Control'] = 'no-store, private'
+    return resp

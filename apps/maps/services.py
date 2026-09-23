@@ -14,7 +14,14 @@ def distance_km(lat1, lon1, lat2, lon2) -> float:
 
 
 def nearby(qs, lat, lon, radius_km: float = 50):
-    """Отфильтровать qs (с полями lat/lon) по радиусу, добавив .distance_km."""
+    """Отфильтровать qs (с полями lat/lon) по радиусу, добавив .distance_km.
+    Кривые координаты из адресной строки — пустой результат, а не ошибка."""
+    try:
+        lat, lon = float(lat), float(lon)
+    except (TypeError, ValueError):
+        return []
+    if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+        return []
     items = []
     for obj in qs:
         d = distance_km(lat, lon, obj.lat, obj.lon)

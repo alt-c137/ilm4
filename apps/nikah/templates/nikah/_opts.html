@@ -1,0 +1,9 @@
+{% load nikah_tags %}<div class="nkopts{% if grid %} nkopts--grid{% endif %}" data-req="{{ name }}"{% if only %} data-only="{{ only }}"{% endif %}>
+  {% for opt in options %}
+  <label class="nkopt"{% if name == 'marital' and opt.0 == 'married' %} data-only="M"{% endif %}>
+    <input type="radio" name="{{ name }}" value="{{ opt.0 }}"{% if opt.0|stringformat:"s" == value|stringformat:"s" %} checked{% endif %}>
+    {% if icons %}<span class="nkopt__ic">{% with ic=icons|add:opt.0 %}{% nk_icon ic %}{% endwith %}</span>{% endif %}
+    <span class="nkopt__t">{% if opt.2 %}<span data-g="M">{{ opt.1 }}</span><span data-g="F">{{ opt.2 }}</span>{% else %}{{ opt.1 }}{% endif %}</span>
+  </label>
+  {% endfor %}
+</div>

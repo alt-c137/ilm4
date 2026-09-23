@@ -1,0 +1,28 @@
+{% extends 'nikah/_base.html' %}
+{% load nikah_tags %}
+{% block nk_title %}Интересы · Никях{% endblock %}
+{% block nk %}
+<div class="nkseg">
+  <a class="{% if show == 'incoming' %}on{% endif %}" href="?show=incoming">Мне{% if incoming %} <i>{{ incoming|length }}</i>{% endif %}</a>
+  <a class="{% if show == 'mutual' %}on{% endif %}" href="?show=mutual">Взаимные{% if badges.waiting %} <i>{{ badges.waiting }}</i>{% endif %}</a>
+  <a class="{% if show == 'sent' %}on{% endif %}" href="?show=sent">Мои</a>
+</div>
+
+{% if show == 'mutual' %}
+  {% for m in matches %}
+  <a class="nkrow" href="{% url 'nikah:match' m.pk %}">
+    <span class="nkava nkava--{{ m.partner.gender }}">{% if m.partner.gender == 'M' %}{% nk_icon 'brother' %}{% else %}{% nk_icon 'sister' %}{% endif %}</span>
+    <div class="nkrow__b"><b>{{ m.partner.display_name }}, {{ m.partner.age }}</b><small>{% if m.stage == 'chat' %}Чат открыт{% elif m.stage == 'closed' %}Не сложилось{% elif m.my_turn %}Ваша очередь: посмотреть фото и решить{% else %}Обмен фото — ждём ответа{% endif %}</small></div>
+    {% if m.my_turn %}<span class="nkdot"></span>{% endif %}{% nk_icon 'arrow' 'nkrow__go' %}
+  </a>
+  {% empty %}<div class="nkempty">{% nk_icon 'heart' %}<h3>Взаимных симпатий пока нет</h3><p>Когда интерес проявят оба — пара появится здесь.</p></div>{% endfor %}
+{% elif show == 'sent' %}
+  <div class="nkgrid">{% for p in sent %}{% with p=p %}<article class="nkcard nkcard--mini"><a class="nkcard__main" href="{% url 'nikah:detail' p.pk %}"><div class="nkcard__top"><span class="nkava nkava--{{ p.gender }}">{% if p.gender == 'M' %}{% nk_icon 'brother' %}{% else %}{% nk_icon 'sister' %}{% endif %}</span><div class="nkcard__who"><b>{{ p.display_name }}, {{ p.age }}</b><small>{{ p.place }}</small></div><span class="nkcompat" style="--p:{{ p.compat }}"><b>{{ p.compat }}%</b></span></div></a>
+    <div class="nkcard__act"><form method="post" action="{% url 'nikah:interest' p.pk %}">{% csrf_token %}<input type="hidden" name="undo" value="1"><input type="hidden" name="back" value="{{ request.get_full_path }}"><button class="nkbtn nkbtn--on" type="submit">{% nk_icon 'x' %}Отозвать</button></form></div></article>{% endwith %}
+  {% empty %}<div class="nkempty">{% nk_icon 'heart' %}<h3>Вы пока никому не отправили интерес</h3><p><a class="link" href="{% url 'nikah:home' %}">Открыть ленту →</a></p></div>{% endfor %}</div>
+{% else %}
+  <p class="nkhint">Эти {% if me.gender == 'M' %}сёстры{% else %}братья{% endif %} проявили к вам интерес. Ответите взаимностью — откроется следующий шаг.</p>
+  <div class="nkgrid">{% for p in incoming %}{% include 'nikah/_card.html' %}
+  {% empty %}<div class="nkempty">{% nk_icon 'heart' %}<h3>Пока тихо</h3><p>Полная, искренняя анкета — лучший способ быть замеченным.</p></div>{% endfor %}</div>
+{% endif %}
+{% endblock %}

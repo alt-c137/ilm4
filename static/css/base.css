@@ -603,18 +603,18 @@ html[data-theme=dark] ::-webkit-scrollbar-thumb{background:#39405a;border-color:
 html[data-theme=dark] .shero{--sh-bg1:#1b1f2e;--sh-bg2:#141722}
 html[data-theme=dark] .card::after{background:linear-gradient(100deg,transparent,rgba(255,255,255,.08),transparent)}
 /* переключатель темы: солнце/луна на дорожке, бегунок закрывает текущий режим */
-.darktoggle{--dt-w:56px;--dt-h:30px;--dt-k:24px;width:var(--dt-w);height:var(--dt-h);border-radius:var(--pill);background:#e4e6f2;border:1.5px solid #c3c7de;cursor:pointer;position:relative;flex:none;padding:0;transition:background .2s,border-color .2s}
+.darktoggle{--dt-w:56px;--dt-h:30px;--dt-k:24px;width:var(--dt-w);height:var(--dt-h);border-radius:var(--pill);background:var(--card-2);border:1px solid color-mix(in srgb,var(--ink) 16%,transparent);cursor:pointer;position:relative;flex:none;padding:0;transition:background .2s,border-color .2s}
 .darktoggle:hover{border-color:var(--accent)}
 .darktoggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .darktoggle::before{content:"";position:absolute;top:50%;left:2px;width:var(--dt-k);height:var(--dt-k);margin-top:calc(var(--dt-k) / -2);border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(20,24,60,.28);transition:left .22s ease}
 .darktoggle svg{position:absolute;top:50%;width:calc(var(--dt-k) - 8px);height:calc(var(--dt-k) - 8px);transform:translateY(-50%);z-index:1;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:color .2s,opacity .2s}
-.darktoggle .dt-sun{left:calc(2px + 4px);color:#e8930c;stroke:currentColor}
-.darktoggle .dt-moon{right:calc(2px + 4px);color:#7b80a3;stroke:currentColor}
-html[data-theme=dark] .darktoggle{background:#232738;border-color:#454b66}
+.darktoggle .dt-sun{left:calc(2px + 4px);color:var(--ink);stroke:currentColor}
+.darktoggle .dt-moon{right:calc(2px + 4px);color:var(--ink-soft);stroke:currentColor;opacity:.75}
+html[data-theme=dark] .darktoggle{background:var(--card-2);border-color:color-mix(in srgb,var(--ink) 18%,transparent)}
 html[data-theme=dark] .darktoggle:hover{border-color:var(--accent)}
-html[data-theme=dark] .darktoggle::before{left:calc(var(--dt-w) - var(--dt-k) - 5px);background:#3b4160;box-shadow:0 1px 4px rgba(0,0,0,.5)}
-html[data-theme=dark] .darktoggle .dt-sun{color:#8d92b0}
-html[data-theme=dark] .darktoggle .dt-moon{color:#ffd66b}
+html[data-theme=dark] .darktoggle::before{left:calc(var(--dt-w) - var(--dt-k) - 5px);background:var(--card);box-shadow:0 1px 4px rgba(0,0,0,.5)}
+html[data-theme=dark] .darktoggle .dt-sun{color:var(--ink-soft);opacity:.75}
+html[data-theme=dark] .darktoggle .dt-moon{color:var(--ink);opacity:1}
 
 /* соцсети в футере */
 .soc{display:flex;gap:10px;margin-top:12px}

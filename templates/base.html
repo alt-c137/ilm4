@@ -28,7 +28,7 @@
 {% block extra_head %}{% endblock %}
 {% if current_theme %}<style>:root{--accent:{{ current_theme.accent }};--accent-d:{{ current_theme.accent_d }};--accent-soft:{{ current_theme.accent_soft }}}</style>{% endif %}
 </head>
-<body class="{% block body_class %}{% endblock %}{% if is_home %} page-home{% endif %}"{% if user.is_authenticated and calls_on %} data-calls="1"{% endif %}>
+<body class="{% block body_class %}{% endblock %}{% if is_home %} page-home{% endif %}{% if nikah_mode %} mode-nikah{% endif %}"{% if user.is_authenticated and calls_on %} data-calls="1"{% endif %}>
 {% include 'includes/messages.html' %}
 <div class="wrap">
   <header class="top" id="top"><div class="top__row">

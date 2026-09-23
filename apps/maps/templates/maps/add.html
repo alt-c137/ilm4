@@ -14,8 +14,11 @@
     </div>
     <form method="post" enctype="multipart/form-data" class="form fgrid" id="place-form">{% csrf_token %}
       {% for field in form %}
+      {% if field.name == 'lat' %}<div class="field field--wide"><label>Точка на карте <span class="req">*</span></label>
+        <div id="pick" class="pmap pmap--pick"></div>
+        <div class="pick__bar"><button type="button" class="btn btn--g btn--s" id="pick-me">{% ico 'pin' %}Я сейчас здесь</button><span class="hint">Нажмите на карту или перетащите метку — координаты заполнятся сами.</span></div></div>{% endif %}
       {% if field.name == 'branch' %}<div class="field field--wide mosque-only fsep"><b>О мечети</b><span class="hint">Заполните, что знаете. Остальное уточнят пользователи.</span></div>{% endif %}
-      <div class="field{% if field.name in 'name address description photo affiliation' %} field--wide{% endif %}{% if field.name in 'branch madhhab affiliation imam khutba_lang has_jumua has_women has_wudu has_parking accessible' %} mosque-only{% endif %}{% if field.field.widget.input_type == 'checkbox' %} field--check{% endif %}{% if field.errors %} field--err{% endif %}">
+      <div class="field{% if field.name in 'name address description photo affiliation' %} field--wide{% endif %}{% if field.name in 'branch madhhab manhaj kind affiliation imam khutba_lang has_jumua has_women has_wudu has_parking accessible' %} mosque-only{% endif %}{% if field.field.widget.input_type == 'checkbox' %} field--check{% endif %}{% if field.errors %} field--err{% endif %}">
         {% if field.field.widget.input_type == 'checkbox' %}<label class="fcheck">{{ field }} {{ field.label }}</label>{% else %}
         <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span class="req">*</span>{% endif %}</label>
         {{ field }}{% endif %}
@@ -31,6 +34,36 @@
 {% endblock %}
 
 {% block extra_js %}
+{% include 'includes/map_assets.html' %}
+<script>
+/* выбор точки: клик/перетаскивание метки → поля широта/долгота */
+(function () {
+  var lat = document.querySelector('#place-form [name=lat]'), lon = document.querySelector('#place-form [name=lon]');
+  if (!lat || !lon) return;
+  var start = (lat.value && lon.value) ? [parseFloat(lat.value), parseFloat(lon.value)] : null;
+  var map = ilmMap('pick', {center: start || [41.3111, 69.2797], zoom: start ? 16 : 11});
+  var marker = null;
+  function set(ll, pan) {
+    if (!marker) {
+      marker = L.marker(ll, {draggable: true, icon: L.divIcon({className: 'pickpin', iconSize: [28, 28], iconAnchor: [14, 28]})}).addTo(map);
+      marker.on('dragend', function () { set(marker.getLatLng(), false); });
+    } else marker.setLatLng(ll);
+    lat.value = (+ll.lat || ll[0]).toFixed(6); lon.value = (+ll.lng || ll[1]).toFixed(6);
+    if (pan) map.setView(ll, Math.max(map.getZoom(), 16));
+  }
+  if (start) set(L.latLng(start), false);
+  map.on('click', function (e) { set(e.latlng, false); });
+  [lat, lon].forEach(function (f) { f.addEventListener('change', function () {
+    var a = parseFloat(lat.value), b = parseFloat(lon.value);
+    if (!isNaN(a) && !isNaN(b)) set(L.latLng(a, b), true);
+  }); });
+  document.getElementById('pick-me').addEventListener('click', function () {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(function (p) { set(L.latLng(p.coords.latitude, p.coords.longitude), true); },
+      function () { alert('Не удалось получить координаты — разрешите доступ к геолокации'); });
+  });
+})();
+</script>
 <script>
 /* поля мечети — только при категории «Мечеть» */
 (function () {

@@ -1,0 +1,8 @@
+<div class="nkdual" data-unit="{{ unit }}">
+  <div class="nkdual__head"><span>{{ label }}</span><b><i data-a></i> – <i data-b></i>{% if unit %} <small>{{ unit }}</small>{% endif %}</b></div>
+  <div class="nkdual__track"><div class="nkdual__fill"></div>
+    <input type="range" name="{{ name }}_min" min="{{ lo }}" max="{{ hi }}" value="{{ a|default:lo }}" aria-label="{{ label }} от">
+    <input type="range" name="{{ name }}_max" min="{{ lo }}" max="{{ hi }}" value="{{ b|default:hi }}" aria-label="{{ label }} до">
+  </div>
+  <div class="nkdual__scale"><span>{{ lo }}</span><span>{{ hi }}</span></div>
+</div>

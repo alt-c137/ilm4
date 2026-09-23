@@ -7,6 +7,7 @@
   <p class="auth__sub">Пара шагов — и ты с нами.</p>
   {% include 'accounts/includes/oauth.html' with label="Продолжить с Google" %}
   <form method="post" class="form">{% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
     {% for field in form %}
       <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span class="req">*</span>{% endif %}</label>
       {{ field }}
@@ -17,6 +18,6 @@
     <button type="submit" class="btn btn--p">Создать аккаунт</button>
   </form>
   <p class="auth__legal">Регистрируясь, вы принимаете <a class="link" href="{% url 'core:rules' %}">Правила</a> и <a class="link" href="{% url 'core:privacy' %}">Политику конфиденциальности</a>.</p>
-  <p class="auth__hint">Уже есть аккаунт? <a href="{% url 'accounts:login' %}" class="link">Войти</a></p>
+  <p class="auth__hint">Уже есть аккаунт? <a href="{% url 'accounts:login' %}{% if next %}?next={{ next|urlencode }}{% endif %}" class="link">Войти</a></p>
 </div>
 {% endblock %}

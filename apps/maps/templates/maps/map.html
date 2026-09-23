@@ -24,17 +24,18 @@
   {% include 'includes/disclaimer.html' %}
   <div id="map"></div>
 
-  <div class="grid g3" style="margin-top:16px">
+  <div class="grid g3 plist">
     {% for p in places %}
-    <div class="card">
+    <a class="card pitem" href="{% url 'maps:detail' p.pk %}">
       <div class="card__b">
         <div class="card__c">{{ p.get_category_display|upper }}</div>
         <div class="card__t">{{ p.name }}</div>
+        {% if p.is_mosque and p.mosque_brief %}<div class="pitem__brief">{{ p.mosque_brief }}</div>{% endif %}
         <div class="card__d">{{ p.city }}{% if p.address %} · {{ p.address }}{% endif %}
-          {% if p.distance_km is not None %} · {{ p.distance_km }} км от вас{% endif %}</div>
-        {% if p.phone %}<div class="card__d">тел. {{ p.phone }}</div>{% endif %}
+          {% if p.distance_km is not None %} · <b>{{ p.distance_km }} км</b>{% endif %}</div>
+        <span class="vbadge vbadge--{{ p.verif.level }}">{{ p.verif.label }}</span>
       </div>
-    </div>
+    </a>
     {% empty %}
     <p>Пока ничего не найдено. {% if user.is_authenticated %}<a class="link" href="{% url 'maps:add' %}">Добавьте первое место →</a>{% endif %}</p>
     {% endfor %}
@@ -43,37 +44,39 @@
 {% endblock %}
 
 {% block extra_js %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% include 'includes/map_assets.html' %}
 <script>
 var markers = {{ markers_json|safe }};
-var map = L.map('map').setView([41.3111, 69.2797], 6);
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19, attribution: '© OpenStreetMap'
-}).addTo(map);
+var map = ilmMap('map', {center: [41.3111, 69.2797], zoom: 6});
 /* данные мест — от пользователей: экранируем всё, ссылку пускаем только http(s) */
 function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
 function safeUrl(u) { return /^https?:\/\//i.test(u || '') ? esc(u) : ''; }
+var bounds = [];
 markers.forEach(function (m) {
   var url = safeUrl(m.url);
-  L.circleMarker([m.lat, m.lon], {radius: m.kind === 'mosque' ? 9 : 8, color: m.kind === 'mosque' ? '#0e8f57' : '#5646e8', fillOpacity: .8})
+  bounds.push([m.lat, m.lon]);
+  L.circleMarker([m.lat, m.lon], {radius: m.kind === 'mosque' ? 9 : 8, color: m.kind === 'mosque' ? '#0e8f57' : '#5646e8', weight: 2, fillOpacity: .8})
     .addTo(map)
     .bindPopup('<b>' + esc(m.name) + '</b><br>' + esc(m.category) + ' · ' + esc(m.city) +
                (m.brief ? '<br><span style="color:#0e8f57;font-weight:700">' + esc(m.brief) + '</span>' : '') +
                (m.affiliation ? '<br>' + esc(m.affiliation) : '') +
                (m.address ? '<br>' + esc(m.address) : '') +
                (m.phone ? '<br>тел. ' + esc(m.phone) : '') +
+               '<br><span class="vbadge vbadge--' + esc(m.verif) + '">' + esc(m.verif_label) + '</span>' +
                (url ? '<br><a href="' + url + '" target="_blank" rel="noopener nofollow" data-ext>сайт</a>' : '') +
                '<br><a href="/map/' + parseInt(m.id, 10) + '/"><b>Подробнее и отзывы →</b></a>')
     .bindTooltip('<b>' + esc(m.name) + '</b>' + (m.brief ? '<br>' + esc(m.brief) : ''), {direction: 'top', offset: [0, -6]});
 });
+if (bounds.length > 1) map.fitBounds(bounds, {padding: [30, 30], maxZoom: 14});
+else if (bounds.length === 1) map.setView(bounds[0], 14);
 document.getElementById('near-btn').addEventListener('click', function () {
+  if (!navigator.geolocation) { alert('Браузер не умеет определять местоположение'); return; }
   navigator.geolocation.getCurrentPosition(function (pos) {
     var u = new URL(window.location);
     u.searchParams.set('lat', pos.coords.latitude.toFixed(4));
     u.searchParams.set('lon', pos.coords.longitude.toFixed(4));
     window.location = u;
-  }, function () { alert('Не удалось получить координаты'); });
+  }, function () { alert('Не удалось получить координаты — разрешите доступ к геолокации'); });
 });
 </script>
 {% endblock %}

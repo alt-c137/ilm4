@@ -52,6 +52,12 @@ def vacancy_create(request):
 @module_required('jobs')
 def vacancy_respond(request, pk):
     vacancy = get_object_or_404(Vacancy, pk=pk, status=Moderation.APPROVED)
+    if vacancy.owner_id == request.user.pk:
+        messages.info(request, 'Это ваша вакансия.')
+        return redirect('jobs:detail', pk=pk)
+    if vacancy.responses.filter(user=request.user).exists():
+        messages.info(request, 'Вы уже откликнулись на эту вакансию.')
+        return redirect('jobs:detail', pk=pk)
     form = VacancyResponseForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         response_obj = form.save(commit=False)

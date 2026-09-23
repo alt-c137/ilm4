@@ -116,6 +116,21 @@ class SiteSettings(SingletonModel):
         'кошелёк: вывод средств включён', default=False,
         help_text='Вывод и переводы между людьми делают кошелёк платёжным сервисом — '
                   'обычно нужна лицензия. Без вывода баланс — предоплата за услуги платформы.')
+    map_maptiler_key = models.CharField(
+        'карта: ключ MapTiler', max_length=80, blank=True,
+        help_text='cloud.maptiler.com → API keys. В настройках ключа разрешите только свой домен. '
+                  'Без ключа карта работает на запасных подложках (OpenStreetMap, Esri)')
+    nikah_photo_minutes = models.PositiveSmallIntegerField(
+        'никях: минут на просмотр фото', default=10,
+        help_text='Сколько длится одноразовый показ фото при взаимной симпатии')
+    nikah_daily_limit = models.PositiveSmallIntegerField(
+        'никях: анкет в день (без премиума)', default=20,
+        help_text='Сколько анкет можно просмотреть (свайпнуть) за сутки. С премиумом — без ограничения')
+    nikah_premium_enabled = models.BooleanField('никях: премиум включён', default=True)
+    nikah_premium_price = models.PositiveIntegerField('никях: цена премиума, сум', default=49_000)
+    nikah_premium_days = models.PositiveSmallIntegerField('никях: премиум, дней', default=30)
+    nikah_restore_price = models.PositiveIntegerField(
+        'никях: «вернуть отклонённых», сум', default=10_000, help_text='С премиумом — бесплатно')
     prayer_method = models.CharField(
         'метод расчёта намаза', max_length=10, default='Karachi',
         help_text='Karachi (СНГ/Азия), MWL, ISNA, Makkah, Egypt',
@@ -130,7 +145,8 @@ class SiteSettings(SingletonModel):
     boost_price = models.PositiveIntegerField('цена буста объявления (7 дней), сум',
                                               default=20_000)
     nikah_chat_price = models.PositiveIntegerField(
-        'никах: цена «написать» для мужчин, сум', default=10_000)
+        'никях: цена открытия чата для брата (после взаимной симпатии), сум', default=0,
+        help_text='0 — бесплатно. Сёстрам всегда бесплатно. Пока пополнение баланса не подключено — оставьте 0')
     nikah_boost_price = models.PositiveIntegerField(
         'никах: цена буста анкеты (7 дней), сум', default=15_000)
     support_text = models.TextField(

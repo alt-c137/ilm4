@@ -59,6 +59,9 @@ def site(request):
                    or settings_obj.default_theme or themes.first())
 
     modules = list(ModuleConfig.objects.filter(status=ModuleConfig.ON))
+    nikah_mode = django_settings.SITE_MODE == 'nikah'
+    if nikah_mode:   # отдельная установка никяха: в меню только его разделы
+        modules = [m for m in modules if m.key in django_settings.NIKAH_MODE_KEYS]
     by_key = {m.key: m for m in modules}
     top = [by_key.pop(k) for k in TOP_MENU_KEYS if k in by_key]
     more = sorted(by_key.values(), key=lambda m: m.order)  # остальные — «Ещё ▾»
@@ -70,6 +73,7 @@ def site(request):
 
     return {
         'site_settings': settings_obj,
+        'nikah_mode': nikah_mode,
         'themes': themes,
         'current_theme': current,
         'menu_top': top,
@@ -90,5 +94,6 @@ def site(request):
         or django_settings.DEBUG,
         'social_links': social_links(),
         'donate_url': DONATE_URL,
+        'map_cfg': {'maptiler': settings_obj.map_maptiler_key},
         'asset_v': ASSET_V if not django_settings.DEBUG else _asset_version(),
     }
