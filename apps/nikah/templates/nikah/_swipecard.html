@@ -2,7 +2,7 @@
   data-skip="{% url 'nikah:skip' p.pk %}" data-like="{% url 'nikah:interest' p.pk %}">
   <div class="nkswipe__in">
     <header class="nkswipe__head">
-      <div class="nkswipe__who"><h2>{{ p.display_name }} <span>{{ p.age }}</span></h2>
+      <div class="nkswipe__who"><h2>{{ p.display_name }} <span>{{ p.age }}</span>{% if p.verified %}<i class="nkverified" title="Верифицирован(а)">✓</i>{% endif %}</h2>
         <div class="nkswipe__tags">
           {% if p.shares_photo %}<span class="nktag nktag--ok">{% nk_icon 'camera' %}Фото при симпатии</span>{% else %}<span class="nktag">{% nk_icon 'eye_off' %}Без фото</span>{% endif %}
           {% if me.is_premium and p.is_online %}<span class="nktag nktag--on"><i></i>В сети</span>{% endif %}

@@ -131,6 +131,12 @@ class SiteSettings(SingletonModel):
     nikah_premium_days = models.PositiveSmallIntegerField('никях: премиум, дней', default=30)
     nikah_restore_price = models.PositiveIntegerField(
         'никях: «вернуть отклонённых», сум', default=10_000, help_text='С премиумом — бесплатно')
+    nikah_ref_bonus_days = models.PositiveSmallIntegerField(
+        'никях: дней премиума за приглашённого', default=3,
+        help_text='Начисляется, когда анкету приглашённого одобрит модератор')
+    stars_rate = models.PositiveIntegerField(
+        'Telegram Stars: сум за 1 звезду', default=250,
+        help_text='Пополнение через Stars: сумма в сум ÷ курс = сколько звёзд списать')
     prayer_method = models.CharField(
         'метод расчёта намаза', max_length=10, default='Karachi',
         help_text='Karachi (СНГ/Азия), MWL, ISNA, Makkah, Egypt',

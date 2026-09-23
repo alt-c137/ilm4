@@ -28,6 +28,32 @@ def bot_token() -> str:
     return getattr(settings, 'TELEGRAM_BOT_TOKEN', '') or ''
 
 
+def api(method: str, data: dict | None = None, files: dict | None = None, timeout: int = 10) -> dict | None:
+    """Вызов Bot API. Возвращает result или None (ошибки не ломают сайт)."""
+    token = bot_token()
+    if not token:
+        return None
+    payload = {k: (json.dumps(v, ensure_ascii=False) if isinstance(v, (dict, list)) else v)
+               for k, v in (data or {}).items() if v is not None}
+    try:
+        r = requests.post(f'https://api.telegram.org/bot{token}/{method}', data=payload, files=files, timeout=timeout)
+        body = r.json()
+    except (requests.RequestException, ValueError):
+        return None
+    return body.get('result') if body.get('ok') else None
+
+
+def webapp_url(path: str = '/nikah/') -> str:
+    """https-адрес мини-приложения (Telegram открывает только https)."""
+    site = getattr(settings, 'SITE_URL', '').rstrip('/')
+    return site + path if site.startswith('https://') else ''
+
+
+def open_button(text: str = 'Открыть никях', path: str = '/nikah/') -> dict | None:
+    url = webapp_url(path)
+    return {'inline_keyboard': [[{'text': text, 'web_app': {'url': url}}]]} if url else None
+
+
 def verify_init_data(init_data: str, token: str | None = None, now: float | None = None) -> dict | None:
     """Проверить подпись initData. Возвращает данные пользователя Telegram или None."""
     token = token if token is not None else bot_token()

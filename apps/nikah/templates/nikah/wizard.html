@@ -41,12 +41,11 @@
   <section class="nkstep" data-step="3" hidden>
     <h2>Откуда вы</h2>
     <p class="nkstep__sub">Страна и национальность помогают точнее подобрать пару. Город — по желанию.</p>
-    <label class="nkf" data-req="country"><span>Страна</span><input type="text" name="country" maxlength="80" value="{{ form.country.value|default:'' }}" list="nk-countries" placeholder="Начните печатать: Узбекистан, Россия…" autocomplete="off"></label>
+    <div class="nkf" data-req="country"><span>Страна</span><div class="nkpick" data-pick="country"><input type="text" name="country" maxlength="80" value="{{ form.country.value|default:'' }}" placeholder="Выберите или начните печатать"></div></div>
     <p class="nkstep__err">{{ form.country.errors.0 }}</p>
-    <label class="nkf"><span>Город</span><input type="text" name="city" maxlength="80" value="{{ form.city.value|default:'' }}" placeholder="Ташкент" autocomplete="off"></label>
+    <div class="nkf"><span>Город</span><div class="nkpick" data-pick="city"><input type="text" name="city" maxlength="80" value="{{ form.city.value|default:'' }}" placeholder="Сначала укажите страну"></div></div>
     <label class="nkf"><span>Национальность</span><input type="text" name="nationality" maxlength="80" value="{{ form.nationality.value|default:'' }}" placeholder="Узбек / Татарка / Чеченец…" autocomplete="off"></label>
     <p class="nkstep__tip">В исламе национальность передаётся по отцу. При смешанных корнях можно рассказать об этом в разделе «О себе».</p>
-    <datalist id="nk-countries">{% for c in countries %}<option value="{{ c }}">{% endfor %}</datalist>
   </section>
 
   {# 4 — рост и вес #}

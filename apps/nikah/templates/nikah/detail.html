@@ -7,7 +7,7 @@
   <header class="nkprof__head">
     <span class="nkava nkava--lg nkava--{{ p.gender }}">{% if p.gender == 'M' %}{% nk_icon 'brother' %}{% else %}{% nk_icon 'sister' %}{% endif %}</span>
     <div class="nkprof__who">
-      <h1>{{ p.display_name }}, {{ p.age }}</h1>
+      <h1>{{ p.display_name }}, {{ p.age }}{% if p.verified %}<i class="nkverified" title="Верифицирован(а): модератор видел кружок">✓</i>{% endif %}</h1>
       <p>{{ p.place|default:"—" }}{% if p.nationality %} · {{ p.nationality }}{% endif %} · {{ p.get_gender_display }}</p>
     </div>
     {% if p.compat is not None %}<span class="nkcompat nkcompat--lg" style="--p:{{ p.compat }}"><b>{{ p.compat }}%</b><small>совместимость</small></span>{% endif %}

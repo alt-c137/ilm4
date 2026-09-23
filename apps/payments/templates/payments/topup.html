@@ -3,17 +3,19 @@
 {% block title %}Пополнить баланс — {{ block.super }}{% endblock %}
 {% block content %}
 <div class="fpage">
-  <a class="crumb" href="{% url 'wallet:index' %}">{% ico 'back' %}Кошелёк</a>
+  <a class="crumb" href="{{ next|default:'/wallet/' }}" data-back>{% ico 'back' %}Назад</a>
   <div class="dcard">
     <div class="fpage__h"><span class="fpage__ic">{% ico 'plus' %}</span>
-      <div><h1>Пополнить баланс</h1><div class="fpage__sub">Баланс идёт на услуги ilm4: поднятие объявлений, анкет, безопасные сделки.</div></div></div>
-    <form method="post" class="form" style="max-width:none">{% csrf_token %}
+      <div><h1>Пополнение баланса</h1><div class="fpage__sub">Выберите сумму и способ оплаты. Баланс идёт на услуги ilm4: премиум, поднятие анкет и объявлений.</div></div></div>
+    <form method="post" class="form" id="topup-form" style="max-width:none">{% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
       <label>Сумма, сум</label>
       <div class="tamounts">{% for a in amounts %}<label><input type="radio" name="amount" value="{{ a }}"{% if forloop.counter == 2 %} checked{% endif %}><span>{{ a|intcomma }}</span></label>{% endfor %}</div>
+      <input type="number" name="custom" min="1000" step="1000" inputmode="numeric" placeholder="Или своя сумма, сум">
       <label>Способ оплаты</label>
       <div class="tpays">
         {% for p in providers %}
-        <label class="tpay{% if p not in ready %} is-off{% endif %}"><input type="radio" name="provider" value="{{ p.key }}"{% if p not in ready %} disabled{% endif %}>
+        <label class="tpay{% if p not in ready %} is-off{% endif %}"><input type="radio" name="provider" value="{{ p.key }}"{% if p == ready.0 %} checked{% endif %}{% if p not in ready %} disabled{% endif %}>
           <span class="tpay__b"><b>{{ p.title }}</b><small>{{ p.hint }}</small></span>
           {% if p not in ready %}<span class="tpay__soon">скоро</span>{% endif %}</label>
         {% endfor %}
@@ -23,4 +25,23 @@
     </form>
   </div>
 </div>
+{% endblock %}
+{% block extra_js %}
+<script>
+/* Внутри Telegram звёзды оплачиваются без выхода из приложения (openInvoice) */
+(function () {
+  var f = document.getElementById('topup-form');
+  f.addEventListener('submit', function (e) {
+    var tg = window.Telegram && Telegram.WebApp, p = f.querySelector('[name=provider]:checked');
+    if (!tg || !tg.openInvoice || !p || p.value !== 'stars') return;
+    e.preventDefault();
+    fetch(location.pathname, {method: 'POST', body: new FormData(f), credentials: 'same-origin', headers: {'Accept': 'application/json'}})
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j.ok) { alert(j.error); return; }
+        tg.openInvoice(j.url, function (status) { if (status === 'paid' || status === 'pending') location.href = j.done; });
+      });
+  });
+})();
+</script>
 {% endblock %}

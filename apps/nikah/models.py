@@ -72,6 +72,12 @@ class NikahProfile(models.Model):
     is_active = models.BooleanField('анкета активна', default=True)
     boosted_until = models.DateTimeField('буст до', null=True, blank=True)
     premium_until = models.DateTimeField('премиум до', null=True, blank=True)
+    verified = models.BooleanField('верифицирован(а) ✅', default=False,
+                                   help_text='Модератор посмотрел видео-кружок в Telegram: живой человек, лицо совпадает')
+    verified_at = models.DateTimeField('верификация', null=True, blank=True)
+    referred_by = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL,
+                                    related_name='invited', verbose_name='пригласил(а)')
+    ref_bonus_given = models.BooleanField('бонус за приглашение начислен', default=False, editable=False)
     last_seen = models.DateTimeField('был(а) в сети', null=True, blank=True)
     created_at = models.DateTimeField('создано', auto_now_add=True)
     updated_at = models.DateTimeField('изменено', auto_now=True)

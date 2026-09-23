@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% load icons humanize %}
+{% block title %}Оплата — {{ block.super }}{% endblock %}
+{% block content %}
+<div class="fpage"><div class="dcard" style="text-align:center">
+  <h1 id="pay-h">{% if t.status == 'paid' %}Баланс пополнен ✅{% elif t.status == 'pending' %}Ждём подтверждение оплаты…{% else %}Оплата не прошла{% endif %}</h1>
+  <p class="fpage__sub">{{ t.amount|intcomma }} сум · {{ t.provider }}. {% if t.status == 'pending' %}Обычно это секунды — страница обновится сама.{% endif %}</p>
+  <a class="btn btn--p" href="{{ next|default:'/wallet/' }}">Продолжить</a>
+</div></div>
+{% endblock %}
+{% block extra_js %}{% if t.status == 'pending' %}
+<script>
+(function poll(n) {
+  fetch(location.pathname, {headers: {'Accept': 'application/json'}, credentials: 'same-origin'}).then(function (r) { return r.json(); })
+    .then(function (j) { if (j.status !== 'pending') location.reload(); else if (n < 40) setTimeout(function () { poll(n + 1); }, 3000); });
+})(0);
+</script>{% endif %}{% endblock %}

@@ -2,7 +2,7 @@
   <a class="nkcard__main" href="{% url 'nikah:detail' p.pk %}">
     <div class="nkcard__top">
       <span class="nkava nkava--{{ p.gender }}">{% if p.gender == 'M' %}{% nk_icon 'brother' %}{% else %}{% nk_icon 'sister' %}{% endif %}</span>
-      <div class="nkcard__who"><b>{{ p.display_name }}, {{ p.age }}</b><small>{{ p.place|default:"—" }}{% if p.nationality %} · {{ p.nationality }}{% endif %}</small></div>
+      <div class="nkcard__who"><b>{{ p.display_name }}, {{ p.age }}{% if p.verified %}<i class="nkverified">✓</i>{% endif %}</b><small>{{ p.place|default:"—" }}{% if p.nationality %} · {{ p.nationality }}{% endif %}</small></div>
       {% if p.compat is not None %}<span class="nkcompat" style="--p:{{ p.compat }}" title="Совместимость с вами"><b>{{ p.compat }}%</b></span>{% endif %}
     </div>
     <div class="nkchips">

@@ -5,40 +5,8 @@
 {% block body_class %}s-nikah nk-page{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/nikah.css' %}?v={{ asset_v }}">
-<script>
-/* Внутри Telegram (мини-приложение): прячем шапку сайта, входим по подписи Telegram */
-(function () {
-  var inTg = (location.hash || '').indexOf('tgWebAppData=') !== -1;
-  try { if (inTg) sessionStorage.setItem('ilm4_tg', '1'); else inTg = sessionStorage.getItem('ilm4_tg') === '1'; } catch (e) {}
-  if (!inTg) return;
-  document.documentElement.classList.add('in-tg');
-  var s = document.createElement('script');
-  s.src = 'https://telegram.org/js/telegram-web-app.js';
-  s.async = true;
-  s.onload = function () {
-    var tg = window.Telegram && window.Telegram.WebApp;
-    if (!tg) return;
-    tg.ready(); tg.expand();
-    if (tg.colorScheme === 'dark' && document.documentElement.getAttribute('data-theme') !== 'dark') {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      document.cookie = 'ilm4_dark=1;path=/;max-age=31536000;samesite=lax';
-    }
-    var needLogin = {% if user.is_authenticated %}{% if user.telegram_id %}false{% else %}true{% endif %}{% else %}true{% endif %};
-    if (tg.initData && needLogin) {
-      var fd = new FormData(); fd.append('init_data', tg.initData);
-      fetch('{% url "accounts:telegram_webapp" %}', {method: 'POST', body: fd, credentials: 'same-origin',
-        headers: {'X-CSRFToken': '{{ csrf_token }}'}})
-        .then(function (r) { return r.json(); })
-        .then(function (j) { if (j.ok && j.reload) location.reload(); });
-    }
-    if (location.pathname !== '{% url "nikah:home" %}') {
-      tg.BackButton.show();
-      tg.BackButton.onClick(function () { history.length > 1 ? history.back() : (location.href = '{% url "nikah:home" %}'); });
-    }
-  };
-  document.head.appendChild(s);
-})();
-</script>
+<script src="{% static 'js/nikah.js' %}?v={{ asset_v }}" defer></script>
+
 {% endblock %}
 
 {% block content %}
@@ -48,24 +16,33 @@ document.addEventListener('click', function (e) {
   if (history.length > 1 && document.referrer.indexOf(location.host) !== -1) { e.preventDefault(); history.back(); }
 });
 </script>
-<div class="nk">
-  {% block nk_back %}{% endblock %}
+<div class="nk{% if me %} nk--app{% endif %}">
   {% if me %}
-  <div class="nkbar">
-    <div class="nkbar__l">{% block nk_bar_left %}{% endblock %}</div>
-    <div class="nkbar__r">
-      {% if premium_on %}<a class="nkbar__btn nkbar__btn--prem{% if me.is_premium %} on{% endif %}" href="{% url 'nikah:premium' %}">{% nk_icon 'star' %}<span>{% if me.is_premium %}Премиум до {{ me.premium_until|date:"d.m" }}{% else %}Премиум{% endif %}</span></a>{% endif %}
-      <a class="nkbar__btn" href="{% url 'wallet:index' %}" title="Кошелёк">{% nk_icon 'lock' %}<span>Баланс <b>{{ balance|floatformat:0 }}</b> сум</span></a>
-    </div>
-  </div>
-  <nav class="nktabs" aria-label="Никях">
-    <a class="nktab{% if tab == 'feed' %} on{% endif %}" href="{% url 'nikah:home' %}">{% nk_icon 'feed' %}<span>Лента</span></a>
-    <a class="nktab{% if tab == 'interests' %} on{% endif %}" href="{% url 'nikah:interests' %}">{% nk_icon 'heart' %}<span>Интересы</span>{% if badges.incoming or badges.waiting %}<i class="nktab__n">{{ badges.incoming|add:badges.waiting }}</i>{% endif %}</a>
-    <a class="nktab{% if tab == 'saved' %} on{% endif %}" href="{% url 'nikah:saved' %}">{% nk_icon 'star' %}<span>Сохранённые</span></a>
-    <a class="nktab{% if tab == 'chats' %} on{% endif %}" href="{% url 'nikah:chats' %}">{% nk_icon 'chat' %}<span>Чаты</span></a>
-    <a class="nktab{% if tab == 'me' %} on{% endif %}" href="{% url 'nikah:mine' %}">{% nk_icon 'user' %}<span>Я</span></a>
-  </nav>
+  <aside class="nkside">
+    <a class="nkside__logo" href="{% url 'nikah:home' %}">{% nk_icon 'moon' %}<b>Никях</b></a>
+    <nav class="nktabs" aria-label="Никях">
+      <a class="nktab{% if tab == 'feed' %} on{% endif %}" href="{% url 'nikah:home' %}">{% nk_icon 'feed' %}<span>Лента</span></a>
+      <a class="nktab{% if tab == 'interests' %} on{% endif %}" href="{% url 'nikah:interests' %}">{% nk_icon 'heart' %}<span>Интересы</span>{% if badges.incoming or badges.waiting %}<i class="nktab__n">{{ badges.incoming|add:badges.waiting }}</i>{% endif %}</a>
+      <a class="nktab{% if tab == 'saved' %} on{% endif %}" href="{% url 'nikah:saved' %}">{% nk_icon 'star' %}<span>Сохранённые</span></a>
+      <a class="nktab{% if tab == 'chats' %} on{% endif %}" href="{% url 'nikah:chats' %}">{% nk_icon 'chat' %}<span>Чаты</span></a>
+      <a class="nktab{% if tab == 'me' %} on{% endif %}" href="{% url 'nikah:mine' %}">{% nk_icon 'user' %}<span>Я</span></a>
+    </nav>
+    <a class="nkside__bal" href="{% url 'wallet:topup' %}?next={{ request.path|urlencode }}">{% nk_icon 'lock' %}<span>Баланс</span><b>{{ balance|floatformat:0 }} сум</b></a>
+  </aside>
   {% endif %}
-  {% block nk %}{% endblock %}
+  <main class="nkmain">
+    {% block nk_back %}{% endblock %}
+    {% if me %}
+    <div class="nkbar">
+      <div class="nkbar__l">{% block nk_bar_left %}{% endblock %}</div>
+      <div class="nkbar__r">
+        {% if premium_on %}<a class="nkbar__btn nkbar__btn--prem{% if me.is_premium %} on{% endif %}" href="{% url 'nikah:premium' %}">{% nk_icon 'star' %}<span>{% if me.is_premium %}Премиум до {{ me.premium_until|date:"d.m" }}{% else %}Премиум{% endif %}</span></a>{% endif %}
+        <a class="nkbar__btn nkbar__btn--bal" href="{% url 'wallet:topup' %}?next={{ request.path|urlencode }}" title="Пополнить баланс">{% nk_icon 'lock' %}<span>Баланс <b>{{ balance|floatformat:0 }}</b> сум</span></a>
+      </div>
+    </div>
+    {% endif %}
+    {% block nk %}{% endblock %}
+  </main>
 </div>
+{% if geo %}{{ geo|json_script:"nk-geo" }}{% endif %}
 {% endblock %}

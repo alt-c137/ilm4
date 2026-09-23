@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'apps.reviews',
     'apps.deals',
     'apps.payments',
+    'apps.tgbot',
 ]
 
 MIDDLEWARE = [
@@ -130,6 +131,13 @@ NIKAH_MODE_KEYS = {'nikah', 'chat', 'wallet'}   # разделы, которые
 # Telegram: мини-приложение (вход из Telegram) и уведомления бота. Токен — от @BotFather
 TELEGRAM_BOT_TOKEN = env('TELEGRAM_BOT_TOKEN', default='')
 TELEGRAM_BOT_USERNAME = env('TELEGRAM_BOT_USERNAME', default='')   # без @, для ссылки «Открыть в Telegram»
+# Чат модераторов в Telegram (группа, куда бот присылает анкеты и кружки верификации).
+# Узнать id группы: добавить бота в группу, написать в ней /id — бот ответит.
+TELEGRAM_MODERATION_CHAT_ID = env('TELEGRAM_MODERATION_CHAT_ID', default='')
+# Кто может нажимать «одобрить» (Telegram user id через запятую). Пусто — любой участник группы модераторов.
+TELEGRAM_MODERATOR_IDS = [int(x) for x in env.list('TELEGRAM_MODERATOR_IDS', default=[]) if str(x).strip().lstrip('-').isdigit()]
+# Секрет вебхука (любая длинная строка): Telegram присылает его в заголовке — чужие запросы отбрасываются
+TELEGRAM_WEBHOOK_SECRET = env('TELEGRAM_WEBHOOK_SECRET', default='')
 # Адрес сайта для ссылок в уведомлениях (кнопка «Открыть» в Telegram — только https)
 SITE_URL = env('SITE_URL', default='')
 
@@ -137,12 +145,13 @@ SITE_URL = env('SITE_URL', default='')
 CHAT_ENCRYPTION_KEY = env('CHAT_ENCRYPTION_KEY', default='')
 
 # Платёжные провайдеры (apps/payments/providers.py): способ включается, когда заданы ключи
-PAYME_MERCHANT_ID = env('PAYME_MERCHANT_ID', default='')
-PAYME_SECRET = env('PAYME_SECRET', default='')
+CLICK_SERVICE_ID = env('CLICK_SERVICE_ID', default='')
+CLICK_MERCHANT_ID = env('CLICK_MERCHANT_ID', default='')
+CLICK_SECRET_KEY = env('CLICK_SECRET_KEY', default='')
 STRIPE_SECRET_KEY = env('STRIPE_SECRET_KEY', default='')
 STRIPE_WEBHOOK_SECRET = env('STRIPE_WEBHOOK_SECRET', default='')
-CRYPTO_GATEWAY_KEY = env('CRYPTO_GATEWAY_KEY', default='')
-CRYPTO_GATEWAY_SECRET = env('CRYPTO_GATEWAY_SECRET', default='')
+NOWPAYMENTS_API_KEY = env('NOWPAYMENTS_API_KEY', default='')
+NOWPAYMENTS_IPN_SECRET = env('NOWPAYMENTS_IPN_SECRET', default='')
 # Почта (восстановление пароля). В деве письма печатаются в консоль.
 # Прод: EMAIL_URL=smtp+tls://логин:пароль@smtp.сервис.com:587 (пароль — url-кодированный)
 vars().update(env.email_url('EMAIL_URL', default='consolemail://'))

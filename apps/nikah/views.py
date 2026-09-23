@@ -77,6 +77,9 @@ def _ctx(request, tab, **extra):
 
 @module_required('nikah')
 def home(request):
+    ref = request.GET.get('ref', '')
+    if ref.isdigit():
+        request.session['nikah_ref'] = int(ref)
     me = _me(request)
     if me is None:
         return render(request, 'nikah/intro.html', _ctx(request, 'feed', minutes=services.photo_minutes()))
@@ -98,7 +101,14 @@ def feed(request):
         request, 'feed', cards=cards, f=f, filtered=bool(f), left=deck.left_today(me),
         limit=st.nikah_daily_limit, skipped=deck.skipped_count(me), restore_price=st.nikah_restore_price,
         premium_price=st.nikah_premium_price, premium_days=st.nikah_premium_days,
-        nation_groups=[(g, label) for g, label, _k in deck.NATION_GROUPS],
+        nation_groups=[(g, label) for g, label, _k in deck.NATION_GROUPS], geo=_geo(),
+        range_rows=[
+            {'name': 'age', 'label': 'Возраст', 'unit': 'лет', 'values': range(18, 81),
+             'a': (f.get('age') or [18, 80])[0], 'b': (f.get('age') or [18, 80])[1]},
+            {'name': 'height', 'label': 'Рост', 'unit': 'см', 'values': range(120, 231, 5),
+             'a': (f.get('height') or [120, 230])[0], 'b': (f.get('height') or [120, 230])[1]},
+            {'name': 'weight', 'label': 'Вес', 'unit': 'кг', 'values': range(40, 201, 5),
+             'a': (f.get('weight') or [40, 200])[0], 'b': (f.get('weight') or [40, 200])[1]}],
         other_gender='F' if me.gender == 'M' else 'M',
         opts={'madhhab': C.MADHHAB, 'aqida': C.AQIDA, 'prayer': C.PRAYER, 'ready_when': C.READY,
               'marital': [m for m in C.MARITAL if not (me.gender == 'M' and m[0] == 'married')],
@@ -375,9 +385,95 @@ def create(request):
     return _wizard(request, None)
 
 
+TEXT_FIELDS = ('name', 'manhaj_text', 'about', 'partner_expectations')
+
+
 @profile_required
 def edit(request):
-    return _wizard(request, request.nikah)
+    """Редактирование одной страницей (все пункты анкеты сразу). Тексты или фото
+    поменялись — анкета снова уходит на проверку; остальное меняется сразу."""
+    me = request.nikah
+    before = {f: getattr(me, f) for f in TEXT_FIELDS}
+    form = NikahProfileForm(request.POST or None, instance=me, editing=True)
+    photo_error = ''
+    if request.method == 'POST':
+        photo = None
+        try:
+            photo = clean_image(request.FILES.get('photo'))
+        except ValidationError as exc:
+            photo_error = exc.messages[0] if exc.messages else 'Загрузите фото JPG или PNG.'
+        if request.POST.get('photo_mode') == 'exchange' and not (photo or me.has_photo) and not photo_error:
+            photo_error = 'Загрузите фото или выберите «Без фото».'
+        if form.is_valid() and not photo_error:
+            profile = form.save(commit=False)
+            texts_changed = any(getattr(profile, f) != before[f] for f in TEXT_FIELDS)
+            if photo is not None:
+                services.store_photo(profile, photo)
+            if texts_changed or photo is not None:
+                profile.status = Moderation.PENDING
+            profile.save()
+            log_action(request, 'Никях: анкета изменена', f'#{profile.pk}')
+            if profile.status == Moderation.PENDING and (texts_changed or photo is not None):
+                from .bot import send_for_moderation
+                send_for_moderation(profile)
+                messages.success(request, 'Сохранено. Тексты и фото проверит модератор — обычно до суток.')
+            else:
+                messages.success(request, 'Сохранено.')
+            return redirect('nikah:mine')
+    return render(request, 'nikah/edit.html', _ctx(
+        request, 'me', form=form, photo_error=photo_error, p=me, opts=_opts(), geo=_geo(),
+        ages=range(18, 81), heights=range(120, 231), weights=range(40, 201)))
+
+
+def _opts():
+    return {
+        'marital': C.MARITAL, 'wife_number': C.WIFE_NUMBER, 'polygyny': C.POLYGYNY,
+        'madhhab': C.MADHHAB, 'aqida': C.AQIDA, 'prayer': C.PRAYER, 'quran': C.QURAN,
+        'where_allah': C.WHERE_ALLAH, 'children_want': C.CHILDREN_WANT, 'children_accept': C.CHILDREN_ACCEPT,
+        'ready_when': C.READY, 'has_children': [('no', 'Нет'), ('yes', 'Есть')],
+        'look_m': C.LOOK_M, 'look_f': C.LOOK_F, 'relocation': C.RELOCATION, 'photo_mode': C.PHOTO_MODE,
+    }
+
+
+def _geo():
+    from .geo import CITIES, COUNTRIES
+    return {'countries': COUNTRIES, 'cities': CITIES}
+
+
+@profile_required
+def settings_page(request):
+    """Настройки: режим фото, верификация, уведомления, лайки сегодня, платежи, приглашение друзей."""
+    me = request.nikah
+    if request.method == 'POST' and request.POST.get('photo_mode') in ('exchange', 'none'):
+        mode = request.POST['photo_mode']
+        if mode == 'exchange' and not me.has_photo:
+            messages.info(request, 'Сначала добавьте фото в анкете.')
+            return redirect(reverse('nikah:edit') + '#photo')
+        me.photo_mode = mode
+        me.save(update_fields=['photo_mode'])
+        messages.success(request, 'Сохранено.')
+        return redirect('nikah:settings')
+    from django.conf import settings as dj
+    bot = getattr(dj, 'TELEGRAM_BOT_USERNAME', '')
+    site = getattr(dj, 'SITE_URL', '').rstrip('/') or request.build_absolute_uri('/').rstrip('/')
+    st = SiteSettings.get_solo()
+    return render(request, 'nikah/settings.html', _ctx(
+        request, 'me', p=me, left=deck.left_today(me), limit=st.nikah_daily_limit,
+        invite_web=f'{site}/nikah/?ref={me.pk}', invite_tg=f'https://t.me/{bot}?start=ref_{me.pk}' if bot else '',
+        invited=me.invited.count(), bonus_days=st.nikah_ref_bonus_days,
+        verify_tg=f'https://t.me/{bot}?start=verify' if bot else ''))
+
+
+@profile_required
+@require_POST
+def verify(request):
+    """Верификация кружком: бот присылает инструкцию в Telegram."""
+    from .bot import send_verify_instructions
+    if request.user.telegram_id and send_verify_instructions(request.user.telegram_id):
+        messages.success(request, 'Инструкция отправлена в Telegram — запишите видео-кружок боту.')
+    else:
+        messages.info(request, 'Верификация проходит в Telegram: откройте бота по кнопке ниже.')
+    return redirect('nikah:settings')
 
 
 def _wizard(request, instance):
@@ -406,12 +502,20 @@ def _wizard(request, instance):
                 profile.faith_answers = faith
             if not editing:
                 profile.agreed_at = timezone.now()
+                ref = request.session.pop('nikah_ref', None)
+                if not ref and request.user.telegram_id:
+                    from django.core.cache import cache
+                    ref = cache.get(f'tgref:{request.user.telegram_id}')
+                if ref:
+                    profile.referred_by = NikahProfile.objects.filter(pk=ref).exclude(user=request.user).first()
             profile.status = Moderation.PENDING       # любая правка — снова на проверку
             if photo is not None:
                 services.store_photo(profile, photo)
             profile.save()
             log_action(request, 'Никях: анкета ' + ('изменена' if editing else 'создана, обязательства приняты'),
                        f'#{profile.pk}')
+            from .bot import send_for_moderation
+            send_for_moderation(profile)
             messages.success(request, 'Анкета отправлена на проверку. Обычно это занимает до суток.')
             return redirect('nikah:mine')
         step = min([form.first_error_step() if form.errors else 99, *step_errors.keys()])
@@ -434,7 +538,7 @@ def _wizard(request, instance):
         },
         faith_cur={k: request.POST.get(f'faith_{k}') or (instance.faith_answers.get(k) if editing else '')
                    for k, _q, _o in C.FAITH_QUESTIONS},
-        countries=C.COUNTRIES,
+        countries=C.COUNTRIES, geo=_geo(),
     ))
 
 

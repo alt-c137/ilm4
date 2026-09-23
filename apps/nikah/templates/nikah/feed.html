@@ -9,12 +9,14 @@
 
 {% if cards %}
 <p class="nkdeck__hint">← Листайте свайпом: влево — пропустить, вправо — интерес →{% if left is not None %} · <b id="nk-left">{{ left }}</b> на сегодня{% endif %}</p>
+<div class="nkdeckwrap">
 <div class="nkdeck" id="nkdeck">
   {% for p in cards %}{% include 'nikah/_swipecard.html' %}{% endfor %}
 </div>
 <div class="nkdeck__act">
-  <button type="button" class="nkround nkround--no" data-act="no" aria-label="Пропустить">{% nk_icon 'x' %}</button>
-  <button type="button" class="nkround nkround--yes" data-act="yes" aria-label="Проявить интерес"{% if not me.is_published %} disabled title="После одобрения анкеты"{% endif %}>{% nk_icon 'check' %}</button>
+  <button type="button" class="nkround nkround--no" data-act="no" aria-label="Пропустить" title="Пропустить (←)">{% nk_icon 'x' %}</button>
+  <button type="button" class="nkround nkround--yes" data-act="yes" aria-label="Проявить интерес" title="Интерес (→)"{% if not me.is_published %} disabled{% endif %}>{% nk_icon 'check' %}</button>
+</div>
 </div>
 <div class="nkstamp nkstamp--no" aria-hidden="true">{% nk_icon 'x' %}</div>
 <div class="nkstamp nkstamp--yes" aria-hidden="true">{% nk_icon 'check' %}</div>
@@ -46,8 +48,8 @@
     </header>
     <div class="nkfilters__body">
       <section class="nkfs"><h4>Где живёт</h4>
-        <label class="nkf"><span>Страна</span><input type="text" name="country" value="{{ f.country|default:'' }}" placeholder="Любая"></label>
-        <label class="nkf"><span>Город</span><input type="text" name="city" value="{{ f.city|default:'' }}" placeholder="Любой"></label>
+        <div class="nkf"><span>Страна</span><div class="nkpick" data-pick="country"><input type="text" name="country" value="{{ f.country|default:'' }}" placeholder="Любая"></div></div>
+        <div class="nkf"><span>Город</span><div class="nkpick" data-pick="city"><input type="text" name="city" value="{{ f.city|default:'' }}" placeholder="Любой"></div></div>
       </section>
       <section class="nkfs"><h4>Национальность</h4>
         <div class="nkchipset">
@@ -56,9 +58,15 @@
         </div>
         <label class="nkf"><input type="text" name="nation_text" value="{{ f.nation_text|default:'' }}" placeholder="Или впишите одну нацию: татарка, чеченец…"></label>
       </section>
-      <section class="nkfs">{% include 'nikah/_dual.html' with name='age' label='Возраст' lo=18 hi=80 a=f.age.0 b=f.age.1 unit='' %}</section>
-      <section class="nkfs">{% include 'nikah/_dual.html' with name='height' label='Рост' lo=120 hi=230 a=f.height.0 b=f.height.1 unit='см' %}</section>
-      <section class="nkfs">{% include 'nikah/_dual.html' with name='weight' label='Вес' lo=40 hi=200 a=f.weight.0 b=f.weight.1 unit='кг' %}</section>
+      {% for r in range_rows %}
+      <section class="nkfs"><h4>{{ r.label }}, {{ r.unit }}</h4>
+        <div class="nkrange2">
+          <select name="{{ r.name }}_min" aria-label="{{ r.label }} от">{% for v in r.values %}<option value="{{ v }}"{% if v == r.a %} selected{% endif %}>от {{ v }}</option>{% endfor %}</select>
+          <span>—</span>
+          <select name="{{ r.name }}_max" aria-label="{{ r.label }} до">{% for v in r.values %}<option value="{{ v }}"{% if v == r.b %} selected{% endif %}>до {{ v }}</option>{% endfor %}</select>
+        </div>
+      </section>
+      {% endfor %}
       <section class="nkfs"><h4>Мазхаб</h4>{% include 'nikah/_chips.html' with name='madhhab' options=opts.madhhab value=f.madhhab %}</section>
       <section class="nkfs"><h4>Вероубеждение</h4>{% include 'nikah/_chips.html' with name='aqida' options=opts.aqida value=f.aqida %}</section>
       <section class="nkfs"><h4>Намаз</h4>{% include 'nikah/_chips.html' with name='prayer' options=opts.prayer value=f.prayer %}</section>
@@ -88,19 +96,6 @@
   document.querySelectorAll('[data-open-filters]').forEach(function (b) { b.addEventListener('click', function () { dlg.showModal(); }); });
   dlg.querySelector('[data-close]').addEventListener('click', function () { dlg.close(); });
   dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
-  dlg.querySelectorAll('.nkdual').forEach(function (box) {
-    var r = box.querySelectorAll('input'), fill = box.querySelector('.nkdual__fill');
-    var lo = +r[0].min, hi = +r[0].max;
-    function draw(e) {
-      if (+r[0].value > +r[1].value) { if (e && e.target === r[0]) r[0].value = r[1].value; else r[1].value = r[0].value; }
-      var a = +r[0].value, b = +r[1].value;
-      fill.style.left = ((a - lo) / (hi - lo) * 100) + '%';
-      fill.style.right = (100 - (b - lo) / (hi - lo) * 100) + '%';
-      box.querySelector('[data-a]').textContent = a; box.querySelector('[data-b]').textContent = b;
-    }
-    r.forEach(function (i) { i.addEventListener('input', draw); }); draw();
-  });
-
   /* ---- колода: свайп с наклоном, круги ✕ / ✓ ---- */
   var deckEl = document.getElementById('nkdeck'); if (!deckEl) return;
   var CSRF = '{{ csrf_token }}';

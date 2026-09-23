@@ -25,6 +25,7 @@
 <link rel="stylesheet" href="{% static 'css/unify.css' %}?v={{ asset_v }}">
 <link rel="stylesheet" href="{% static 'css/chat.css' %}?v={{ asset_v }}">
 <link rel="stylesheet" href="{% static 'css/mobile.css' %}?v={{ asset_v }}">
+{% include 'includes/tg_webapp.html' %}
 {% block extra_head %}{% endblock %}
 {% if current_theme %}<style>:root{--accent:{{ current_theme.accent }};--accent-d:{{ current_theme.accent_d }};--accent-soft:{{ current_theme.accent_soft }}}</style>{% endif %}
 </head>

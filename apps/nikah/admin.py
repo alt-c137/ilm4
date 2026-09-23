@@ -3,7 +3,6 @@ from django.urls import reverse
 from django.utils.html import format_html, format_html_join
 
 from apps.accounts.audit import log_action
-from apps.core.models import Moderation
 
 from .choices import FAITH_QUESTIONS, FAITH_RED_FLAGS
 from .models import NikahInterest, NikahMatch, NikahProfile
@@ -25,14 +24,15 @@ class RedFlagFilter(admin.SimpleListFilter):
 
 @admin.register(NikahProfile)
 class NikahProfileAdmin(admin.ModelAdmin):
-    list_display = ('display_name', 'user', 'gender', 'age', 'city', 'country', 'aqida', 'status', 'has_photo',
-                    'flags', 'created_at')
-    list_filter = ('status', 'gender', 'aqida', 'madhhab', RedFlagFilter)
+    list_display = ('display_name', 'user', 'gender', 'age', 'city', 'country', 'aqida', 'status', 'verified',
+                    'has_photo', 'flags', 'created_at')
+    list_filter = ('status', 'verified', 'gender', 'aqida', 'madhhab', RedFlagFilter)
     search_fields = ('user__email', 'name', 'city', 'country', 'about', 'manhaj_text')
     readonly_fields = ('faith_table', 'photo_link', 'agreed_at', 'created_at', 'updated_at')
     actions = ('approve', 'reject')
     fieldsets = (
-        (None, {'fields': ('user', 'status', 'is_active', 'boosted_until')}),
+        (None, {'fields': ('user', 'status', 'verified', 'is_active', 'boosted_until', 'premium_until',
+                           'referred_by')}),
         ('Анкета', {'fields': ('gender', 'name', 'age', ('age_from', 'age_to'), ('country', 'city', 'nationality'),
                                ('height', 'weight'), ('marital', 'wife_number', 'polygyny'))}),
         ('Религия', {'fields': (('madhhab', 'aqida'), ('prayer', 'quran'), 'where_allah', 'look', 'manhaj_text')}),
@@ -62,12 +62,16 @@ class NikahProfileAdmin(admin.ModelAdmin):
 
     @admin.action(description='Одобрить')
     def approve(self, request, queryset):
-        queryset.update(status=Moderation.APPROVED)
+        from .bot import approve
+        for p in queryset:
+            approve(p)          # + уведомление и бонус пригласившему
         log_action(request, 'Одобрены анкеты никаха', f'{queryset.count()} шт.')
 
     @admin.action(description='Отклонить')
     def reject(self, request, queryset):
-        queryset.update(status=Moderation.REJECTED)
+        from .bot import reject
+        for p in queryset:
+            reject(p)
         log_action(request, 'Отклонены анкеты никаха', f'{queryset.count()} шт.')
 
 

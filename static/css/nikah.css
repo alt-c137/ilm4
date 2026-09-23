@@ -263,9 +263,6 @@ html[data-theme=dark] .nkstatus--approved{background:rgba(52,211,153,.12);color:
   body.nk-page:has(.nkwiz) .wrap{padding-bottom:12px}
 }
 
-/* внутри Telegram: как приложение — без шапки, меню и подвала сайта */
-html.in-tg .top,html.in-tg .nav,html.in-tg .tabbar,html.in-tg footer,html.in-tg .foot,html.in-tg .crumb{display:none!important}
-html.in-tg .wrap{padding-top:10px}
 
 /* поля ввода — как в формах сайта */
 .nkf input,.nkf textarea,.nkfilter__f input,.nkfilter__f select{border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;font:inherit;font-size:16px;outline:none;background:var(--bg);color:var(--ink);transition:border-color .15s,box-shadow .15s;width:100%;box-sizing:border-box}
@@ -416,3 +413,60 @@ body.mode-nikah .nav,body.mode-nikah .tabbar,body.mode-nikah .search,body.mode-n
   .nkfilters[open]{animation:nksheet .25s ease-out}
 }
 @keyframes nksheet{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+
+/* ===== v4: каркас «приложения» — на компьютере меню слева, баланс внизу ===== */
+.nkside__logo,.nkside__bal{display:none}
+@media (min-width:1000px){
+  .nk--app{max-width:1180px;display:grid;grid-template-columns:230px minmax(0,1fr);gap:24px;align-items:start}
+  .nkside{position:sticky;top:12px;display:flex;flex-direction:column;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:14px;min-height:calc(100vh - 140px)}
+  .nkside__logo{display:flex;align-items:center;gap:9px;padding:6px 8px 10px;font-size:18px;color:var(--ink);text-decoration:none}
+  .nkside__logo svg{width:26px;height:26px;color:var(--accent-d)}
+  .nkside .nktabs{position:static;flex-direction:column;border:0;box-shadow:none;padding:0;margin:0;background:none}
+  .nkside .nktab{justify-content:flex-start;padding:11px 12px;font-size:14.5px}
+  .nkside .nktab__n{position:static;margin-left:auto}
+  .nkside__bal{display:flex;align-items:center;gap:8px;margin-top:auto;padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--card-2);color:var(--ink);text-decoration:none;font-size:13px}
+  .nkside__bal svg{width:18px;height:18px;color:var(--accent-d)}
+  .nkside__bal b{margin-left:auto}
+  .nkmain{min-width:0}
+  .nkbar__btn--bal{display:none}
+  /* колода: кнопки ✕ и ✓ по бокам карточки */
+  .nkdeckwrap{position:relative;max-width:640px;margin:0 auto}
+  .nkdeckwrap .nkdeck__act{position:absolute;inset:0;margin:0;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
+  .nkdeckwrap .nkround{width:72px;height:72px}
+  .nkdeck{height:min(74vh,700px)}
+}
+/* выбор страны/города */
+.nkpick{position:relative}
+.nkpick__list{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;max-height:260px;overflow-y:auto;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 30px rgba(20,24,60,.18);padding:4px}
+.nkpick__i{display:block;width:100%;text-align:left;padding:10px 12px;border:0;background:none;border-radius:10px;font:inherit;font-size:14.5px;color:var(--ink);cursor:pointer}
+.nkpick__i:hover{background:var(--accent-soft)}
+.nkpick__hint{margin:0;padding:10px 12px;font-size:13px;color:var(--ink-soft)}
+/* диапазон «от — до» списками */
+.nkrange2{display:flex;align-items:center;gap:8px}
+.nkrange2 select{flex:1;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;font:inherit;font-size:15px;background:var(--bg);color:var(--ink)}
+.nkrange2 span{color:var(--ink-soft);font-weight:700}
+.nkverified{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#16a34a;color:#fff;font-size:12px;font-weight:900;vertical-align:3px;margin-left:4px}
+/* редактирование одной страницей */
+.nkedit{max-width:720px;display:flex;flex-direction:column;gap:10px}
+.nkedit__head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.nkedit__head h1{font-size:22px;font-weight:800;margin:0}
+.nkedit__state{font-size:12.5px;font-weight:700;color:var(--ink-soft);padding:5px 11px;border-radius:var(--pill);background:var(--card-2)}
+.nkedit__state.on{background:#fff4d6;color:#8a6400}
+html[data-theme=dark] .nkedit__state.on{background:rgba(224,161,0,.14);color:#f3c95a}
+.nkedit .nkf select{border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;font:inherit;font-size:15px;background:var(--bg);color:var(--ink);width:100%}
+.nkedit__foot{position:sticky;bottom:calc(8px + env(safe-area-inset-bottom));z-index:30;padding:10px;background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:18px}
+.nkedit__foot .btn{width:100%}
+.nkgrid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.nknote--err{background:#fdecec}
+html[data-theme=dark] .nknote--err{background:rgba(229,72,77,.14)}
+@media (max-width:640px){.nkedit__foot{bottom:calc(84px + env(safe-area-inset-bottom))}}
+.nkphotomode{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}
+.nkpm{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:14px;border-radius:16px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font:inherit;cursor:pointer}
+.nkpm svg{width:28px;height:28px;color:var(--accent-d)}
+.nkpm small{color:var(--ink-soft);font-size:12.5px;line-height:1.4}
+.nkpm.on{border-color:var(--accent);background:var(--accent-soft)}
+.nkok{margin:0;font-weight:600;color:#0b7a4b}
+html[data-theme=dark] .nkok{color:#34d399}
+.nkcopy{display:flex;gap:8px}
+.nkcopy input{flex:1;min-width:0;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;font:inherit;font-size:13.5px;background:var(--bg);color:var(--ink)}
+.nkmenu__info b{margin-left:auto}

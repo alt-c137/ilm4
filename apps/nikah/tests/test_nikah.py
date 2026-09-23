@@ -394,3 +394,50 @@ def test_site_mode_nikah(client, settings):
     assert client.get('/').url == '/nikah/'
     assert client.get('/buy/').status_code == 404
     assert client.get('/nikah/').status_code == 200
+
+
+# ---------- редактирование одной страницей и настройки ----------
+
+def _edit_data(p, **over):
+    from apps.nikah.forms import STEP_OF
+    data = {f: getattr(p, f) if getattr(p, f) is not None else '' for f in STEP_OF}
+    data.update(over)
+    return data
+
+
+def test_edit_non_text_keeps_published(client):
+    p = make_profile('e@x.com', 'M', relocation='stay')
+    client.force_login(p.user)
+    client.post('/nikah/edit/', _edit_data(p, relocation='abroad', height=180))
+    p.refresh_from_db()
+    assert p.relocation == 'abroad' and p.height == 180 and p.status == Moderation.APPROVED
+
+
+def test_edit_text_goes_to_moderation(client):
+    p = make_profile('e@x.com', 'M')
+    client.force_login(p.user)
+    client.post('/nikah/edit/', _edit_data(p, about='Совсем новый текст о себе, достаточно длинный.'))
+    p.refresh_from_db()
+    assert p.status == Moderation.PENDING
+
+
+def test_settings_photo_mode_needs_photo(client):
+    p = make_profile('e@x.com', 'M', photo_mode='none')
+    client.force_login(p.user)
+    assert client.get('/nikah/settings/').status_code == 200
+    client.post('/nikah/settings/', {'photo_mode': 'exchange'})
+    p.refresh_from_db()
+    assert p.photo_mode == 'none'          # без фото режим обмена не включить
+
+
+def test_referral_link_sets_referrer(client):
+    ref = make_profile('r@x.com', 'F')
+    client.get(f'/nikah/?ref={ref.pk}')
+    user = User.objects.create_user('n', 'n@x.com', 'x')
+    client.force_login(user)
+    # сессия сохраняется после входа
+    session = client.session
+    session['nikah_ref'] = ref.pk
+    session.save()
+    client.post('/nikah/create/', wizard_data(relocation='stay'))
+    assert NikahProfile.objects.get(user=user).referred_by == ref

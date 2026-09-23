@@ -840,3 +840,7 @@ html[data-theme=dark] .idcard__role--su{color:#fbbf24}
 @media(max-width:1100px){.apps{--n:7}}
 @media(max-width:900px){.apps{--n:5}}
 @media(max-width:560px){.apps{--n:4}}
+
+/* Telegram Mini App: как приложение — без шапки, меню и подвала сайта (кнопка «Назад» — своя) */
+html.in-tg .top,html.in-tg .nav,html.in-tg .tabbar,html.in-tg footer,html.in-tg .foot{display:none!important}
+html.in-tg .wrap{padding-top:10px}

@@ -5,7 +5,7 @@
 <div class="nkme">
   <header class="nkprof__head">
     <span class="nkava nkava--lg nkava--{{ p.gender }}">{% if p.gender == 'M' %}{% nk_icon 'brother' %}{% else %}{% nk_icon 'sister' %}{% endif %}</span>
-    <div class="nkprof__who"><h1>{{ p.display_name }}, {{ p.age }}</h1><p>{{ p.place|default:"—" }} · {{ p.get_gender_display }}</p></div>
+    <div class="nkprof__who"><h1>{{ p.display_name }}, {{ p.age }}{% if p.verified %}<i class="nkverified" title="Верифицирован(а)">✓</i>{% endif %}</h1><p>{{ p.place|default:"—" }} · {{ p.get_gender_display }}</p></div>
   </header>
   <div class="nkchips">
     {% if p.aqida %}<span class="nkchip nkchip--acc">{{ p|nk:'aqida' }}</span>{% endif %}
@@ -21,7 +21,9 @@
     <a href="{% url 'nikah:detail' p.pk %}">{% nk_icon 'user' %}<span>Как видят мою анкету</span>{% nk_icon 'arrow' 'nkmenu__go' %}</a>
     <a href="{% url 'nikah:edit' %}">{% nk_icon 'edit' %}<span>Редактировать анкету</span>{% nk_icon 'arrow' 'nkmenu__go' %}</a>
     <a href="{% url 'nikah:edit' %}#step-13">{% nk_icon 'camera' %}<span>{% if p.has_photo %}Заменить фото{% else %}Добавить фото{% endif %}</span><small>{{ p|nk:'photo_mode' }}</small>{% nk_icon 'arrow' 'nkmenu__go' %}</a>
+    <a href="{% url 'nikah:settings' %}#verify">{% nk_icon 'check' %}<span>Верификация кружком</span><small>{% if p.verified %}✅ пройдена{% else %}не пройдена{% endif %}</small>{% nk_icon 'arrow' 'nkmenu__go' %}</a>
     <a href="{% url 'nikah:how' %}">{% nk_icon 'shield' %}<span>Защита фото · как это работает</span>{% nk_icon 'arrow' 'nkmenu__go' %}</a>
+    <a href="{% url 'nikah:settings' %}">{% nk_icon 'gauge' %}<span>Настройки</span><small>фото, уведомления, приглашения</small>{% nk_icon 'arrow' 'nkmenu__go' %}</a>
     <form method="post" action="{% url 'nikah:pause' %}">{% csrf_token %}<button type="submit">{% nk_icon 'eye_off' %}<span>{% if p.is_active %}Скрыть анкету из ленты{% else %}Вернуть анкету в ленту{% endif %}</span></button></form>
   </div>
 

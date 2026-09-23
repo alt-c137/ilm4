@@ -1,0 +1,35 @@
+{# Telegram Mini App: определяем запуск из Telegram, прячем шапку сайта, входим по подписи Telegram #}
+<script>
+/* Внутри Telegram (мини-приложение): прячем шапку сайта, входим по подписи Telegram */
+(function () {
+  var inTg = (location.hash || '').indexOf('tgWebAppData=') !== -1;
+  try { if (inTg) sessionStorage.setItem('ilm4_tg', '1'); else inTg = sessionStorage.getItem('ilm4_tg') === '1'; } catch (e) {}
+  if (!inTg) return;
+  document.documentElement.classList.add('in-tg');
+  var s = document.createElement('script');
+  s.src = 'https://telegram.org/js/telegram-web-app.js';
+  s.async = true;
+  s.onload = function () {
+    var tg = window.Telegram && window.Telegram.WebApp;
+    if (!tg) return;
+    tg.ready(); tg.expand();
+    if (tg.colorScheme === 'dark' && document.documentElement.getAttribute('data-theme') !== 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.cookie = 'ilm4_dark=1;path=/;max-age=31536000;samesite=lax';
+    }
+    var needLogin = {% if user.is_authenticated %}{% if user.telegram_id %}false{% else %}true{% endif %}{% else %}true{% endif %};
+    if (tg.initData && needLogin) {
+      var fd = new FormData(); fd.append('init_data', tg.initData);
+      fetch('{% url "accounts:telegram_webapp" %}', {method: 'POST', body: fd, credentials: 'same-origin',
+        headers: {'X-CSRFToken': '{{ csrf_token }}'}})
+        .then(function (r) { return r.json(); })
+        .then(function (j) { if (j.ok && j.reload) location.reload(); });
+    }
+    if (location.pathname !== '{% url "nikah:home" %}' && location.pathname !== '/') {
+      tg.BackButton.show();
+      tg.BackButton.onClick(function () { history.length > 1 ? history.back() : (location.href = '{% url "nikah:home" %}'); });
+    }
+  };
+  document.head.appendChild(s);
+})();
+</script>
