@@ -34,4 +34,15 @@ class ListingForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if 'category' in self.fields:
-            self.fields['category'].choices = [(chr(39)+chr(39), '— выберите из списка —')] + list(self.fields['category'].choices)
+            self.fields['category'].empty_label = '— выберите из списка —'
+        placeholders = {
+            'title': 'Например: iPhone 14 Pro, 128 ГБ',
+            'description': 'Состояние, комплект, причина продажи — чем подробнее, тем быстрее продастся',
+            'city': 'Ташкент',
+            'contact': 'Телефон или Telegram — необязательно',
+        }
+        for name, text in placeholders.items():
+            if name in self.fields:
+                self.fields[name].widget.attrs.setdefault('placeholder', text)
+        if 'price' in self.fields:
+            self.fields['price'].widget.attrs.update({'inputmode': 'decimal', 'min': '0'})

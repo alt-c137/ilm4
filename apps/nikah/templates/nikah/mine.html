@@ -8,12 +8,12 @@
   <p>Статус: <b>{{ profile.get_status_display }}</b>
      {% if profile.is_boosted %} · поднята до {{ profile.boosted_until|date:"d.m H:i" }}{% endif %}</p>
   <form method="post" action="{% url 'nikah:boost' %}">{% csrf_token %}
-    <button type="submit" class="btn btn--s">⬆ Поднять на 7 дней — {{ boost_price|intcomma }} сум</button>
+    <button type="submit" class="btn btn--s"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6 12l6-6 6 6"/></svg>Поднять на 7 дней — {{ boost_price|intcomma }} сум</button>
   </form>
 
   <h2 class="page__h2">Открыли ваш контакт ({{ contacts|length }})</h2>
   {% for c in contacts %}
-  <p>📩 {{ c.from_user.get_display_name }} · {{ c.created_at|date:"d.m H:i" }}</p>
+  <p><svg class="mmeta" viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M4 7l8 6 8-6"/></svg>{{ c.from_user.get_display_name }} · {{ c.created_at|date:"d.m H:i" }}</p>
   {% empty %}<p>Пока никто.</p>{% endfor %}
 </div>
 {% endblock %}

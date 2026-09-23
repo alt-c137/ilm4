@@ -1,43 +1,57 @@
 {% load icons %}{% comment %}Рекламная карусель главной (Playerok-стиль).
 Если в админке есть активные баннеры (Core → Баннеры) — показываются они:
 у каждого своя картинка, текст, кнопка и СВОЯ длительность показа.
-Полоски по центру заполняются, пока идёт слайд; при наведении на край
-баннера появляются стрелки; на телефоне — свайп.
+Картинка — <picture>: на компьютере широкий кадр с текстом слева,
+на телефоне — кадр сверху, текст снизу (своя обрезка banner/<slug>-m.jpg).
 Пусто — три фирменных слайда-приглашения.{% endcomment %}
-<div class="banner" id="banner">
+<div class="banner" id="banner" aria-roledescription="карусель">
   <div class="banner__window" id="banner-window">
     {% if db_banners %}
       {% for b in db_banners %}
-      <a class="banner__slide" style="background-image:url('{{ b.image.url }}')"
-         data-duration="{% widthratio b.duration_seconds 1 1000 %}" href="{{ b.cta_url }}">
-        <div class="banner__k">{{ b.subtitle }}</div>
-        <div class="banner__t">{{ b.title }}</div>
-        {% if b.cta_text %}<span class="banner__cta">{{ b.cta_text }} <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>{% endif %}
+      <a class="banner__slide has-img" data-duration="{% widthratio b.duration_seconds 1 1000 %}" href="{{ b.cta_url }}">
+        <picture class="banner__media"><img src="{{ b.image.url }}" alt="" decoding="async"{% if not forloop.first %} loading="lazy"{% endif %}></picture>
+        <div class="banner__body">
+          <div class="banner__k">{{ b.subtitle }}</div>
+          <div class="banner__t">{{ b.title }}</div>
+          {% if b.cta_text %}<span class="banner__cta">{{ b.cta_text }} <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>{% endif %}
+        </div>
       </a>
       {% endfor %}
     {% else %}
-      <a class="banner__slide banner__slide--buy" style="{% banner_bg 'buy' %}" href="/buy/" data-duration="6000">
-        <div class="banner__k">ILMBUY</div>
-        <div class="banner__t">Халяль-маркетплейс уммы</div>
-        <div class="banner__d">От телефонов до фиников — покупай и продавай у своих, в своём городе.</div>
-        <span class="banner__cta">Перейти в маркетплейс <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      {% banner_url 'buy' as buy_d %}{% banner_url 'buy-m' as buy_m %}
+      <a class="banner__slide banner__slide--buy{% if buy_d %} has-img{% endif %}" href="/buy/" data-duration="6000">
+        {% if buy_d %}<picture class="banner__media">{% if buy_m %}<source media="(max-width:760px)" srcset="{{ buy_m }}">{% endif %}<img src="{{ buy_d }}" alt="" decoding="async" fetchpriority="high"></picture>{% endif %}
+        <div class="banner__body">
+          <div class="banner__k">ILMBUY</div>
+          <div class="banner__t">Халяль-маркетплейс уммы</div>
+          <div class="banner__d">От телефонов до фиников — покупай и продавай у своих, в своём городе.</div>
+          <span class="banner__cta">Перейти в маркетплейс <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
       </a>
-      <a class="banner__slide banner__slide--prayer" style="{% banner_bg 'prayer' %}" href="/prayer/" data-duration="6000">
-        <div class="banner__k">Время намаза</div>
-        <div class="banner__t">Ни одна молитва не пропустится</div>
-        <div class="banner__d">Точный расчёт по твоему городу или GPS — быстро и без лишнего.</div>
-        <span class="banner__cta">Посмотреть времена <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      {% banner_url 'prayer' as pr_d %}{% banner_url 'prayer-m' as pr_m %}
+      <a class="banner__slide banner__slide--prayer{% if pr_d %} has-img{% endif %}" href="/prayer/" data-duration="6000">
+        {% if pr_d %}<picture class="banner__media">{% if pr_m %}<source media="(max-width:760px)" srcset="{{ pr_m }}">{% endif %}<img src="{{ pr_d }}" alt="" decoding="async" loading="lazy"></picture>{% endif %}
+        <div class="banner__body">
+          <div class="banner__k">Время намаза</div>
+          <div class="banner__t">Ни одна молитва не пропустится</div>
+          <div class="banner__d">Точный расчёт по твоему городу или GPS — быстро и без лишнего.</div>
+          <span class="banner__cta">Посмотреть времена <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
       </a>
-      <a class="banner__slide banner__slide--nikah" style="{% banner_bg 'nikah' %}" href="/nikah/" data-duration="6000">
-        <div class="banner__k">Никах</div>
-        <div class="banner__t">Знакомства для брака — серьёзно</div>
-        <div class="banner__d">Проверенные анкеты, уважение и цель — только никах.</div>
-        <span class="banner__cta">Смотреть анкеты <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      {% banner_url 'nikah' as nk_d %}{% banner_url 'nikah-m' as nk_m %}
+      <a class="banner__slide banner__slide--nikah{% if nk_d %} has-img{% endif %}" href="/nikah/" data-duration="6000">
+        {% if nk_d %}<picture class="banner__media">{% if nk_m %}<source media="(max-width:760px)" srcset="{{ nk_m }}">{% endif %}<img src="{{ nk_d }}" alt="" decoding="async" loading="lazy"></picture>{% endif %}
+        <div class="banner__body">
+          <div class="banner__k">Никах</div>
+          <div class="banner__t">Знакомства для брака — серьёзно</div>
+          <div class="banner__d">Проверенные анкеты, уважение и цель — только никах.</div>
+          <span class="banner__cta">Смотреть анкеты <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
       </a>
     {% endif %}
   </div>
-  <button type="button" class="banner__edge banner__edge--l" id="banner-prev" aria-label="Назад"><i>‹</i></button>
-  <button type="button" class="banner__edge banner__edge--r" id="banner-next" aria-label="Вперёд"><i>›</i></button>
+  <button type="button" class="banner__edge banner__edge--l" id="banner-prev" aria-label="Предыдущий слайд"><i>‹</i></button>
+  <button type="button" class="banner__edge banner__edge--r" id="banner-next" aria-label="Следующий слайд"><i>›</i></button>
   <div class="banner__lines" id="banner-lines">
     {% if db_banners %}
       {% for b in db_banners %}<span class="banner__line" data-duration="{% widthratio b.duration_seconds 1 1000 %}"><span class="banner__line-fill"></span></span>{% endfor %}
@@ -85,14 +99,34 @@
   lines.forEach(function (ln, k) {
     ln.addEventListener('click', function () { clearInterval(timer); go(k); restart(); });
   });
-  var x0 = null;
-  win.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; clearInterval(timer); }, { passive: true });
-  win.addEventListener('touchend', function (e) {
+
+  /* свайп пальцем: слайд тянется за пальцем, отпустил — докручивается */
+  var x0 = null, y0 = null, dx = 0, dragging = false, moved = false;
+  win.addEventListener('touchstart', function (e) {
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; dx = 0; dragging = false; moved = false;
+    clearInterval(timer);
+  }, { passive: true });
+  win.addEventListener('touchmove', function (e) {
     if (x0 === null) return;
-    var dx = e.changedTouches[0].clientX - x0;
-    if (Math.abs(dx) > 40) go(dx < 0 ? i + 1 : i - 1);
+    var mx = e.touches[0].clientX - x0, my = e.touches[0].clientY - y0;
+    if (!dragging && Math.abs(mx) > 8 && Math.abs(mx) > Math.abs(my)) dragging = true;
+    if (!dragging) return;
+    dx = mx; moved = true;
+    win.style.transition = 'none';
+    win.style.transform = 'translateX(calc(-' + i * 100 + '% + ' + dx + 'px))';
+  }, { passive: true });
+  win.addEventListener('touchend', function () {
+    if (x0 === null) return;
+    win.style.transition = '';
+    if (dragging && Math.abs(dx) > 50) go(dx < 0 ? i + 1 : i - 1); else go(i);
     x0 = null; restart();
   }, { passive: true });
+  /* после свайпа не открывать ссылку слайда */
+  win.addEventListener('click', function (e) { if (moved) { e.preventDefault(); moved = false; } }, true);
+  /* вкладка скрыта — карусель на паузе */
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) clearInterval(timer); else restart();
+  });
 
   go(0); auto();
 })();

@@ -10,6 +10,10 @@
       {% if m.status == 'soon' %}<div class="app__soon">скоро</div>{% endif %}
     </a>
     {% endfor %}
+    <a class="app app--more hide-d" href="{% url 'core:soon' %}">
+      <div class="app__wrap"><div class="app__ic"><svg viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18.5" cy="12" r="1.6"/></svg></div></div>
+      <div class="app__n">Скоро ещё</div>
+    </a>
   </div>
   <button type="button" class="rail-arrow l" aria-label="Назад">‹</button>
   <button type="button" class="rail-arrow r" aria-label="Вперёд">›</button>

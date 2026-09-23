@@ -13,7 +13,7 @@ document.querySelectorAll('input[type=file]').forEach(function (input) {
   var btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'filebtn';
-  btn.textContent = '📎 Выбрать файл';
+  btn.innerHTML = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5 12.3 19.2a4.8 4.8 0 0 1-6.8-6.8l7.7-7.7a3.2 3.2 0 0 1 4.5 4.5l-7.6 7.7a1.6 1.6 0 0 1-2.3-2.3l7-7"/></svg>Выбрать файл';
   var name = document.createElement('span');
   name.className = 'filename';
   name.textContent = 'файл не выбран';
@@ -67,8 +67,41 @@ if (dt) {
     var next = dark ? '0' : '1';
     document.documentElement.setAttribute('data-theme', next === '1' ? 'dark' : 'light');
     document.cookie = 'ilm4_dark=' + next + ';path=/;max-age=31536000;samesite=lax';
+    var mt = document.getElementById('meta-theme');
+    if (mt) mt.setAttribute('content', next === '1' ? '#0e1016' : '#f2f3fb');
   });
 }
+
+// телефон: поиск раскрывается по кнопке-лупе
+(function () {
+  var t = document.getElementById('search-toggle');
+  var top = document.getElementById('top');
+  var form = document.getElementById('search');
+  if (!t || !top || !form) return;
+  t.addEventListener('click', function () {
+    var open = top.classList.toggle('top--search');
+    t.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) form.querySelector('input').focus();
+  });
+})();
+
+// меню профиля: открытие по тапу (на тач-экранах нет hover), закрытие вне меню
+(function () {
+  var menu = document.getElementById('usermenu');
+  var chip = document.getElementById('uchip');
+  if (!menu || !chip) return;
+  chip.addEventListener('click', function (e) {
+    e.stopPropagation();
+    var open = menu.classList.toggle('open');
+    chip.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  document.addEventListener('click', function (e) {
+    if (!menu.contains(e.target)) { menu.classList.remove('open'); chip.setAttribute('aria-expanded', 'false'); }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { menu.classList.remove('open'); chip.setAttribute('aria-expanded', 'false'); }
+  });
+})();
 
 // стрелки строк: скрываются на краях (дошёл до конца — «вперёд» исчезла)
 function refreshArrows(nav, row) {
@@ -99,3 +132,26 @@ document.querySelectorAll('.railnav').forEach(function (nav) {
   if (!pill || !row) return;
   row.scrollLeft = Math.max(0, pill.offsetLeft - (row.clientWidth - pill.offsetWidth) / 2);
 })();
+
+// кнопка «Копировать» (контакты): data-copy="текст"
+document.querySelectorAll('[data-copy]').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var txt = b.dataset.copy, label = b.textContent;
+    var done = function () { b.textContent = 'Скопировано'; b.classList.add('ok');
+      setTimeout(function () { b.textContent = label; b.classList.remove('ok'); }, 1600); };
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(txt).then(done);
+    else { var t = document.createElement('textarea'); t.value = txt; document.body.appendChild(t);
+      t.select(); try { document.execCommand('copy'); done(); } catch (e) {} t.remove(); }
+  });
+});
+
+// «Поделиться»: системное меню телефона (iOS/Android), иначе — копируем ссылку
+document.querySelectorAll('[data-share]').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var data = { title: b.dataset.share, url: location.href };
+    if (navigator.share) { navigator.share(data).catch(function () {}); return; }
+    var label = b.innerHTML;
+    var done = function () { b.textContent = 'Ссылка скопирована'; setTimeout(function () { b.innerHTML = label; }, 1600); };
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(location.href).then(done);
+  });
+});

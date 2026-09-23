@@ -11,8 +11,8 @@
   {% for p in posts %}
   <a class="card" href="{% url 'news:detail' p.slug %}">
     <div class="ncard__cover ncard__cover--{% cycle 'a' 'b' 'c' %}">
-      {% if p.cover %}<img src="{{ p.cover.url }}" alt="">{% else %}📰{% endif %}
-      {% if p.is_pinned %}<span class="badge">📌 Важное</span>{% endif %}
+      {% if p.cover %}<img src="{{ p.cover.url }}" alt="">{% else %}<svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="opacity:.9"><path d="M4 5h13v14H5a1 1 0 0 1-1-1V5zM17 8h3v9a2 2 0 0 1-2 2M7 8h7M7 11.5h7M7 15h5"/></svg>{% endif %}
+      {% if p.is_pinned %}<span class="badge"><svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" style="vertical-align:-1px;margin-right:3px"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.1 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.3l6.1-.7z"/></svg>Важное</span>{% endif %}
     </div>
     <div class="card__b">
       <div class="card__t">{{ p.title }}</div>

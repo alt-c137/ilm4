@@ -1,35 +1,57 @@
 {% extends 'base.html' %}
+{% load icons %}
 {% block title %}Анкета — {{ block.super }}{% endblock %}
+{% block body_class %}s-nikah{% endblock %}
 
 {% block content %}
-<div class="page">
-  <h1>{{ profile.get_gender_display }}, {{ profile.age}} · {{ profile.city }}</h1>
-  <h2 class="page__h2">О себе</h2>
-  <p>{{ profile.about|linebreaks }}</p>
-  {% if profile.partner_expectations %}
-  <h2 class="page__h2">Кого ищет</h2>
-  <p>{{ profile.partner_expectations|linebreaks }}</p>
-  {% endif %}
+<div class="dpage">
+  <a class="crumb" href="{% url 'nikah:list' %}">{% ico 'back' %}Все анкеты</a>
+  <div class="dgrid dgrid--rev">
+    <aside class="dside">
+      <div class="dcard pcard">
+        <div class="pcard__ava {% if profile.gender == 'M' %}pcard__ava--m{% else %}pcard__ava--f{% endif %}">
+          {% if profile.photo %}<img src="{{ profile.photo.url }}" alt="">{% else %}{{ profile.age }}{% endif %}
+        </div>
+        <h1 class="dtitle">{{ profile.get_gender_display }}, {{ profile.age }}</h1>
+        <div class="dmeta">
+          <span class="mchip">{% ico 'pin' %}{{ profile.city }}</span>
+          {% if profile.is_boosted %}<span class="mchip mchip--acc">{% ico 'moneyup' %}в топе</span>{% endif %}
+        </div>
 
-  {% if profile.user == request.user %}
-    <p><a class="btn btn--g" href="{% url 'nikah:mine' %}">Моя анкета</a></p>
-  {% elif has_contact %}
-    <div class="contact-open">
-      <b>Контакт открыт:</b> {{ profile.contact_hint|default:profile.user.email }}
+        <div class="dact">
+          {% if profile.user == request.user %}
+            <a class="btn btn--g" href="{% url 'nikah:mine' %}">{% ico 'edit' %}Моя анкета</a>
+          {% elif has_contact %}
+            <div class="contactbox">
+              <div class="contactbox__v"><span class="contactbox__l">Контакт открыт</span>{{ profile.contact_hint|default:profile.user.email }}</div>
+              <button type="button" class="copybtn" data-copy="{{ profile.contact_hint|default:profile.user.email }}">Копировать</button>
+            </div>
+          {% elif user.is_authenticated %}
+            <form method="post" action="{% url 'nikah:contact' profile.pk %}">{% csrf_token %}
+              <button type="submit" class="btn btn--p" style="width:100%">{% ico 'lock' %}
+                {% if profile.gender == 'F' %}Открыть контакт{% else %}Открыть контакт — {{ chat_price }} сум{% endif %}
+              </button>
+            </form>
+          {% else %}
+            <a class="btn btn--p" href="{% url 'accounts:login' %}?next={{ request.path }}">Войти, чтобы открыть контакт</a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="dnote">{% ico 'shield' %}<span>{% if has_contact %}Дальше — по шариату: предложите встречу с вали (опекуном), не оставайтесь наедине. БаракаЛлаху фикум.{% else %}Для братьев открытие контакта платное (разово на анкету), для сестёр — бесплатно.{% endif %}</span></div>
+    </aside>
+
+    <div class="dmain">
+      <section class="dcard">
+        <h2 class="dcard__h">О себе</h2>
+        <div class="prose">{{ profile.about|linebreaks }}</div>
+      </section>
+      {% if profile.partner_expectations %}
+      <section class="dcard">
+        <h2 class="dcard__h">Кого ищет</h2>
+        <div class="prose">{{ profile.partner_expectations|linebreaks }}</div>
+      </section>
+      {% endif %}
     </div>
-    <p class="page__hint">Дальше — по шариату: предложите встречу с вали (опекуном),
-      не оставайтесь наедине. БаракаЛлаху фикум.</p>
-  {% elif user.is_authenticated %}
-    <form method="post" action="{% url 'nikah:contact' profile.pk %}">{% csrf_token %}
-      <button type="submit" class="btn btn--p">
-        {% if profile.gender == 'F' %}Открыть контакт{% else %}Открыть контакт — {{ chat_price }} сум{% endif %}
-      </button>
-    </form>
-    <p class="page__hint">Для братьев открытие контакта платное (разово на анкету);
-       для сестёр — бесплатно.</p>
-  {% else %}
-    <p><a class="link" href="{% url 'accounts:login' %}?next={{ request.path }}">Войдите</a>, чтобы открыть контакт.</p>
-  {% endif %}
-  <a class="btn btn--g" href="{% url 'nikah:list' %}">← Все анкеты</a>
+  </div>
 </div>
 {% endblock %}

@@ -1,5 +1,8 @@
 {% extends 'base.html' %}
 
 {% block content %}
-{% for b in blocks %}{% include b.template %}{% endfor %}
+{# каждый блок в обёртке с ключом: на телефоне порядок перестраивается в mobile.css #}
+<div class="home">
+{% for b in blocks %}<div class="hb hb--{{ b.key }}">{% include b.template %}</div>{% endfor %}
+</div>
 {% endblock %}

@@ -1,16 +1,53 @@
 {% extends 'base.html' %}
+{% load icons %}
 {% block title %}{{ doctor.name }} — {{ block.super }}{% endblock %}
+{% block description %}{{ doctor.name }} — {{ doctor.specialization }}, {{ doctor.city }}. Контакты врача на ilm4.{% endblock %}
+{% block body_class %}s-health{% if doctor.phone %} has-dbar{% endif %}{% endblock %}
 
 {% block content %}
-<div class="page">
-  <h1>{{ doctor.name }}</h1>
-  <p><b>{{ doctor.specialization }}</b> · {{ doctor.city }}{% if doctor.clinic %} · {{ doctor.clinic }}{% endif %}
-     {% if doctor.experience %} · опыт {{ doctor.experience }} лет{% endif %}</p>
-  {% if doctor.address %}<p>Адрес: {{ doctor.address }}</p>{% endif %}
-  {% if doctor.phone %}<p>Телефон: <b>{{ doctor.phone }}</b></p>{% endif %}
-  {% if doctor.url %}<p><a class="link" href="{{ doctor.url }}" target="_blank" rel="noopener">{{ doctor.url }}</a></p>{% endif %}
-  {% if doctor.description %}<p>{{ doctor.description|linebreaks }}</p>{% endif %}
-  <p class="page__hint">Платформа не даёт медицинских заключений — связывайтесь с врачом напрямую.</p>
-  <a class="btn btn--g" href="{% url 'health:index' %}">← Все врачи</a>
+<div class="dpage">
+  <a class="crumb" href="{% url 'health:index' %}">{% ico 'back' %}Все врачи</a>
+  <div class="dgrid dgrid--rev">
+    <aside class="dside">
+      <div class="dcard pcard">
+        <div class="pcard__ava pcard__ava--health">{% if doctor.photo %}<img src="{{ doctor.photo.url }}" alt="">{% else %}{% ico 'pulse' %}{% endif %}</div>
+        <h1 class="dtitle">{{ doctor.name }}</h1>
+        <div class="dmeta">
+          <span class="mchip mchip--acc">{{ doctor.specialization }}</span>
+          <span class="mchip">{% ico 'pin' %}{{ doctor.city }}</span>
+          {% if doctor.experience %}<span class="mchip">{% ico 'star' %}опыт {{ doctor.experience }} лет</span>{% endif %}
+        </div>
+        <div class="dact">
+          {% if doctor.phone %}<a class="btn btn--p" href="tel:{{ doctor.phone|cut:' ' }}">{% ico 'phone' %}Позвонить</a>{% endif %}
+          {% if doctor.url %}<a class="btn btn--g" href="{{ doctor.url }}" target="_blank" rel="noopener">{% ico 'globe' %}Сайт / соцсеть</a>{% endif %}
+        </div>
+      </div>
+    </aside>
+
+    <div class="dmain">
+      <section class="dcard">
+        <h2 class="dcard__h">Контакты и приём</h2>
+        <div class="kv">
+          {% if doctor.clinic %}<div class="kv__row"><span class="kv__ic">{% ico 'building' %}</span><div><div class="kv__l">Клиника</div><div class="kv__v">{{ doctor.clinic }}</div></div></div>{% endif %}
+          <div class="kv__row"><span class="kv__ic">{% ico 'pin' %}</span><div><div class="kv__l">Адрес</div><div class="kv__v">{{ doctor.address|default:doctor.city }}</div></div></div>
+          {% if doctor.phone %}<div class="kv__row"><span class="kv__ic">{% ico 'phone' %}</span><div><div class="kv__l">Телефон</div><div class="kv__v"><a href="tel:{{ doctor.phone|cut:' ' }}">{{ doctor.phone }}</a></div></div></div>{% endif %}
+          {% if doctor.url %}<div class="kv__row"><span class="kv__ic">{% ico 'globe' %}</span><div><div class="kv__l">Сайт</div><div class="kv__v"><a href="{{ doctor.url }}" target="_blank" rel="noopener">{{ doctor.url|cut:'https://'|cut:'http://' }}</a></div></div></div>{% endif %}
+        </div>
+      </section>
+      {% if doctor.description %}
+      <section class="dcard">
+        <h2 class="dcard__h">О враче</h2>
+        <div class="prose">{{ doctor.description|linebreaks }}</div>
+      </section>
+      {% endif %}
+      <div class="dnote">{% ico 'info' %}<span>Платформа не даёт медицинских заключений и не отвечает за лечение — связывайтесь с врачом напрямую.</span></div>
+    </div>
+  </div>
 </div>
+{% if doctor.phone %}
+<div class="dbar">
+  <div class="dbar__p"><div class="dbar__v">{{ doctor.name }}</div><div class="dbar__s">{{ doctor.specialization }} · {{ doctor.city }}</div></div>
+  <a class="btn btn--p" href="tel:{{ doctor.phone|cut:' ' }}">{% ico 'phone' %}Позвонить</a>
+</div>
+{% endif %}
 {% endblock %}

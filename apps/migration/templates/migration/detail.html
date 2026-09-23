@@ -1,12 +1,30 @@
 {% extends 'base.html' %}
+{% load icons %}
 {% block title %}{{ story.title }} — {{ block.super }}{% endblock %}
+{% block description %}{{ story.title }}: история переезда {{ story.country_from }} → {{ story.country_to }} на ilm4.{% endblock %}
+{% block body_class %}s-migration{% endblock %}
 
 {% block content %}
-<div class="page">
-  <h1>{{ story.title }}</h1>
-  <p class="meta">{{ story.country_from }} → {{ story.country_to }} ·
-     {{ story.author.get_display_name }} · {{ story.created_at|date:"d.m.Y" }}</p>
-  <div>{{ story.body|linebreaks }}</div>
-  <a class="btn btn--g" href="{% url 'migration:list' %}">← Все истории</a>
+<div class="dpage">
+  <article class="article">
+    <a class="crumb" href="{% url 'migration:list' %}">{% ico 'back' %}Все истории</a>
+    <div class="dcard">
+      <div class="dkicker">{% ico 'plane' %}История переезда</div>
+      <h1 class="dtitle">{{ story.title }}</h1>
+      <div class="dmeta">
+        <span class="route">{{ story.country_from }} {% ico 'arrow' %} {{ story.country_to }}</span>
+      </div>
+      <div class="sepline"></div>
+      <div class="person person--sm">
+        <span class="person__ava">{{ story.author.get_display_name|slice:":1"|upper }}</span>
+        <div><div class="person__n">{{ story.author.get_display_name }}</div><div class="person__s">{{ story.created_at|date:"j E Y" }}</div></div>
+      </div>
+      <div class="prose">{{ story.body|linebreaks }}</div>
+      <div class="article__foot">
+        <a class="btn btn--g" href="{% url 'migration:list' %}">{% ico 'back' %}Все истории</a>
+        <a class="btn btn--s" href="{% url 'migration:create' %}">{% ico 'edit' %}Рассказать свою</a>
+      </div>
+    </div>
+  </article>
 </div>
 {% endblock %}

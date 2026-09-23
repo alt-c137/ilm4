@@ -1,0 +1,364 @@
+/* ilm4 · мобильная раскладка (iOS / Android).
+   ≤980px — планшет: поиск прячется под лупу.
+   ≤760px — телефон: компактная шапка, нижние вкладки, свой порядок главной,
+   баннер «фото сверху — текст снизу», ленты от края до края.
+   Учитываем «чёлку» и полоску жеста iPhone (env(safe-area-inset-*)). */
+
+/* ================= планшет ================= */
+@media (max-width:980px){
+  .tbtn{display:grid}
+  .top{position:sticky}
+  .top__row{position:relative}
+  .top--search .search{display:flex;position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:5;
+    background:var(--card);border-color:var(--line);box-shadow:var(--shadow-lg);padding:4px;animation:ilm4-drop .16s ease}
+  .top--search .search input{padding-left:42px;font-size:16px}
+  .dgrid,.dgrid--rev{grid-template-columns:1fr}
+  .dside{position:static}
+  /* деталь «split»: фото/заголовок → карточка с ценой и кнопкой → описание → подсказка */
+  .dgrid--split>.dmain,.dgrid--split>.dside{display:contents}
+  .dgrid--split>.dmain>*{order:3}
+  .dgrid--split>.dmain>:first-child{order:1}
+  .dgrid--split>.dside>*{order:4}
+  .dgrid--split>.dside>:first-child{order:2}
+}
+
+/* ================= телефон ================= */
+@media (max-width:760px){
+  :root{--radius:18px;--radius-lg:22px;--tab-h:62px}
+  body{padding-bottom:calc(var(--tab-h) + env(safe-area-inset-bottom))}
+  .wrap{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right))}
+
+  /* --- шапка: лого + тумблер слева, лупа · колокольчик · профиль справа --- */
+  .top{padding:calc(6px + env(safe-area-inset-top)) 0 6px;
+    background:linear-gradient(var(--bg) 70%,color-mix(in srgb,var(--bg) 0%,transparent))}
+  .top__row{gap:4px;padding:5px 5px 5px 14px;border-radius:20px;min-height:52px}
+  .logo--text b{font-size:23px}
+  .darktoggle{width:42px;height:24px;margin-left:6px}
+  .darktoggle::before{width:18px;height:18px}
+  html[data-theme=dark] .darktoggle::before{left:20px}
+  .top__act{gap:0}
+  .ibtn--add,.ibtn--chat,.supp-wide,.btn--reg,.ibtn__n{display:none!important}
+  .ibtn{width:40px;height:40px;padding:0;justify-content:center;border-radius:50%}
+  .ibtn__badge{top:4px;right:4px;min-width:16px;height:16px;font-size:9.5px;border:2px solid var(--card);box-sizing:content-box;width:auto;padding:0 3px;border-radius:10px}
+  .btn--login{padding:8px 15px;font-size:13.5px;margin-left:4px;border-color:transparent;background:var(--accent);color:#fff}
+  .btn--login:hover{background:var(--accent-d);color:#fff}
+  .uchip{margin-left:4px;padding:3px}
+  .uchip__ava{width:34px;height:34px}
+  .umenu{position:fixed;left:10px;right:10px;width:auto;top:calc(env(safe-area-inset-top) + 70px);
+    max-height:calc(100dvh - env(safe-area-inset-top) - var(--tab-h) - 96px);overflow-y:auto;border-radius:22px;padding:10px;
+    box-shadow:0 24px 60px -12px rgba(12,14,30,.45)}
+  .umenu a,.umenu__exit{padding:12px 12px;font-size:15px}
+  .umenu__m-only{display:flex!important}
+  .umenu__sw .sw{width:28px;height:28px}
+
+  /* --- пилюли разделов: лента от края до края; на главной не нужны --- */
+  .nav{margin:0 -14px;padding:2px 0 6px}
+  .nav__row{padding:0 14px;gap:6px;scroll-padding:0 14px;-webkit-mask-image:none;mask-image:none}
+  .nav a{padding:7px 13px;font-size:13px}
+  .nav .rail-arrow{display:none}
+  .page-home .nav{display:none}
+
+  /* --- общие секции --- */
+  .sec{padding:10px 0}
+  .sec__h{margin-bottom:11px;align-items:center}
+  .sec__t{font-size:19px;letter-spacing:-.01em}
+  .sec__l{font-size:13px;white-space:nowrap;padding:4px 0}
+  .hide-m{display:none!important}
+  .hide-d{display:revert!important}
+  .page{padding:22px 18px;margin:12px 0 20px}
+  .page h1{font-size:22px}
+  .svc{padding:2px 0 16px}
+  .panel{padding:18px 16px}
+
+  /* --- главная: свой порядок блоков --- */
+  .home{display:flex;flex-direction:column}
+  .hb{order:50}
+  .hb--banner{order:1}
+  .hb--modules{order:2}
+  .hb--prayer_widget{order:3}
+  .hb--hero{order:4}
+  .hb--market_recent{order:5}
+  .hb--map_recent{order:6}
+  .hb--forum_recent{order:7}
+  .hb--news_recent{order:8}
+  .hb--support{order:9}
+
+  /* баннер: фото сверху, текст на цвете слайда снизу, свайп вместо стрелок */
+  .banner{margin:8px 0 4px;border-radius:24px;box-shadow:0 18px 40px -22px rgba(30,40,140,.55)}
+  .banner__window{align-items:stretch}
+  .banner__slide{min-height:0;padding:0;justify-content:flex-start}
+  .banner__slide:not(.has-img) .banner__body{padding:30px 22px 44px}
+  .banner__slide.has-img::before{display:none}
+  .banner__media{position:relative;inset:auto;z-index:0;aspect-ratio:860/500;flex:none}
+  .banner__media img{object-position:center}
+  .banner__media::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:48%;
+    background:linear-gradient(to bottom,transparent,var(--slide-c-d,#2f3fb8))}
+  .banner__slide.has-img .banner__body{flex:1;max-width:none;padding:0 20px 42px;margin-top:-14px;z-index:1}
+  .banner__k{font-size:11px;margin-bottom:6px;letter-spacing:.14em}
+  .banner__t{font-size:23px;line-height:1.15;margin-bottom:8px}
+  .banner__d{font-size:14px;line-height:1.45;opacity:.9}
+  .banner__cta{margin-top:14px;padding:10px 16px;font-size:13.5px}
+  .banner__edge{display:none}
+  .banner__lines{bottom:16px;width:34%;gap:5px}
+  .banner__line{height:3px}
+
+  /* витрина разделов: сетка 4 в ряд на карточке (как в суперприложениях) */
+  .hb--modules .sec{padding-top:12px}
+  .apps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px 4px;overflow:visible;
+    background:var(--card);border:1px solid var(--line);border-radius:24px;padding:16px 8px 14px;box-shadow:var(--shadow-sm)}
+  .app{width:auto;min-width:0}
+  .app__ic{width:56px;height:56px;border-radius:18px;margin-bottom:7px;box-shadow:0 8px 18px -10px rgba(21,23,42,.45)}
+  .app__ic img{width:26px;height:26px}
+  .app__n{font-size:11.5px;line-height:1.22;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;padding:0 2px;overflow-wrap:anywhere;hyphens:auto}
+  .app__soon{font-size:9.5px;padding:1px 7px;margin-top:3px}
+  .hb--modules .rail-arrow{display:none}
+  .apps .app.soon{display:none}
+  .app--more .app__ic{background:var(--card-2);border:1px dashed color-mix(in srgb,var(--accent) 45%,var(--line));box-shadow:none}
+  .app--more .app__ic svg{width:26px;height:26px;fill:var(--accent-d);stroke:none}
+  .app--more .app__n{color:var(--ink-soft)}
+
+  /* время намаза: компактная сетка 3×2 */
+  .tstrip{grid-template-columns:repeat(3,1fr);border-radius:20px}
+  .tstrip .tstrip__cell:nth-child(n){flex-direction:column;align-items:center;text-align:center;gap:6px;padding:12px 4px 11px;border-left:1px solid var(--line);border-top:0}
+  .tstrip .tstrip__cell:nth-child(3n+1){border-left:0}
+  .tstrip .tstrip__cell:nth-child(n+4){border-top:1px solid var(--line)}
+  .tstrip__col{align-items:center}
+  .tsun{width:32px;height:32px;border-radius:10px}
+  .tsun svg{width:17px;height:17px}
+  .tstrip__n{font-size:12px}
+  .tstrip__t{font-size:17px}
+  .prayer__next{font-size:12.5px;margin-top:8px;padding:0 2px}
+
+  /* инфопанель (хадис · погода · курс): без героя-приветствия и без дубля намаза */
+  .hero2{margin:4px 0 2px}
+  .hero2__card{display:none}
+  .page-home .ipanel__grid .ipanel__cell:first-child{display:none}
+  .page-home .ipanel__grid .ipanel__cell+.ipanel__cell{border-left:0}
+  .page-home .ipanel__grid:not(:has(.ipanel__cell:nth-child(2))){display:none}
+  .ipanel__grid{grid-template-columns:1fr}
+  .ipanel{border-radius:22px}
+  .ipanel__hadis{padding:18px 18px 16px;min-height:0}
+  .ipanel__hadis-t{font-size:16px}
+  .ipanel__cell{padding:12px 16px}
+  .ipanel__rates>div{padding:10px 4px}
+  .ipanel__rates span{font-size:14px}
+
+  /* свежие объявления: 2 колонки, 2×2 */
+  .grid5{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .grid5>.card:nth-child(n+5){display:none}
+  .grid5 .rcard__img{aspect-ratio:1/1}
+  .grid5 .card__b{padding:10px 11px 12px}
+  .grid5 .card__t{font-size:13px;margin:2px 0 4px}
+  .grid5 .price{font-size:15px}
+  .grid5 .rcard__emoji{width:40%;height:40%}
+
+  /* горизонтальные ленты: от края до края, карточка «выглядывает» */
+  .rail{margin:0 -14px;padding:4px 14px 12px;scroll-padding:0 14px;gap:10px;overscroll-behavior-x:contain}
+  .rail .hcard--mini{flex-basis:74%}
+  .rail .qa{flex-basis:84%}
+  .rail .card{flex-basis:62%}
+  .rail::after{content:"";flex:0 0 1px}
+  .qa{padding:14px;gap:12px;border-radius:18px}
+  .qa__ava{width:40px;height:40px;font-size:16px}
+  .qa__t{font-size:14.5px}
+  .qa__count{min-width:48px;padding:6px 8px}
+
+  /* новости строками */
+  .newsline-grid{padding:2px 14px;border-radius:20px}
+  .newsline{gap:12px;padding:12px 0}
+  .newsline__thumb{width:72px;height:56px;border-radius:12px}
+  .newsline__t{font-size:14px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+
+  /* полоса «поддержать» */
+  .strip{padding:24px 20px;border-radius:24px;margin:14px 0 6px;gap:16px}
+  .strip h3{font-size:21px}
+  .strip p{font-size:14px}
+  .strip .btn{width:100%;padding:13px}
+
+  /* --- шапка раздела --- */
+  .shero{padding:16px;gap:12px 14px;margin:8px 0 12px;border-radius:22px;align-items:flex-start}
+  .shero__icon{width:48px;height:48px;border-radius:15px}
+  .shero__icon img{width:26px;height:26px}
+  .shero__text{min-width:0;flex:1 1 calc(100% - 62px)}
+  .shero__crumb{display:none}
+  .shero__title{font-size:21px}
+  .shero__desc{font-size:13.5px;line-height:1.45}
+  .shero__cta{width:100%;padding:12px 18px}
+  .sec__h:empty{display:none}
+
+  /* фильтры: чипсы одной лентой с прокруткой, поля — в столбик */
+  .toolbar{padding:12px;border-radius:20px;margin-bottom:12px}
+  .toolbar .chips,.prayer__chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -12px;padding:0 12px 2px;scroll-padding:0 12px}
+  .toolbar .chips::-webkit-scrollbar,.prayer__chips::-webkit-scrollbar{display:none}
+  .chip{white-space:nowrap;flex:none;padding:8px 14px;font-size:13px}
+  .map__form{gap:8px}
+  .map__form input,.map__form select{flex:1 1 100%;min-width:0;padding:11px 14px}
+  .map__form .btn{flex:1 1 auto;padding:12px 18px}
+  .map__form label{flex:1 1 100%}
+
+  /* списки-сетки */
+  .grid{gap:10px}
+  .g3,.g4{grid-template-columns:1fr}
+  .market .g3,.s-library .g4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .card__b{padding:8px 14px 16px}
+  .card__i{height:140px}
+
+  /* маркет: категории — лента пилюль вместо сайдбара */
+  .market{gap:10px}
+  .mside{display:flex;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:6px;background:transparent;box-shadow:none;border:0;padding:0 14px 2px;margin:0 -14px;border-radius:0}
+  .mside::-webkit-scrollbar{display:none}
+  .mside__h{display:none}
+  .mside a{flex:none;white-space:nowrap;background:var(--card);border:1px solid var(--line);border-radius:var(--pill);padding:8px 14px 8px 11px;font-size:13px}
+  .mside a.on{border-color:transparent}
+  .market .card__i{margin:6px;border-radius:12px}
+  .market .card__b{padding:6px 11px 12px;gap:3px}
+  .market .card__c{font-size:10px}
+  .market .card__t{font-size:13.5px}
+  .market .price{font-size:15px}
+
+  /* никах */
+  .nikah__bar{padding:12px;gap:10px;border-radius:20px}
+  .nikah__chips{width:100%}
+  .nchip{flex:1;text-align:center;padding:9px 10px}
+  .nikah__search{min-width:0;flex:1 1 100%}
+  .nikah__search input,.chat__form input{min-width:0;width:100%}
+  .gal{gap:10px}
+  .prof{padding:16px 10px;border-radius:18px}
+  .prof__ava{width:68px;height:68px;font-size:22px}
+  .prof__about{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+
+  /* намаз: страница раздела */
+  .prayer__hero-main{padding:20px;border-radius:22px}
+  .prayer__hero-name{font-size:32px}
+  .prayer__panel{padding:16px;border-radius:20px}
+  .prayer__chips{margin:0 -16px;padding:0 16px 2px}
+  .citypick{flex:none}
+  .citypick__drop{position:fixed;left:12px;right:12px;width:auto;top:auto;bottom:calc(var(--tab-h) + env(safe-area-inset-bottom) + 12px);max-height:60vh;display:none;flex-direction:column}
+  .citypick.open .citypick__drop{display:flex}
+  .citypick__list{max-height:44vh}
+  .citypick__item{padding:12px}
+
+  /* карта */
+  #map{height:58vh;min-height:320px;border-radius:20px;margin-left:-4px;margin-right:-4px}
+
+  /* пустые состояния */
+  .empty{padding:32px 20px;border-radius:20px}
+
+  /* --- детали / статьи / формы --- */
+  .dpage{padding:4px 0 20px}
+  .dgrid{gap:12px}
+  .crumb{margin:4px 0 8px -4px}
+  .dcard{padding:18px 16px;border-radius:20px}
+  .gallery{border-radius:20px;margin:0 -4px}
+  .dprice{font-size:26px}
+  .dtitle{font-size:21px}
+  .article .dcard{padding:20px 18px}
+  .article__cover{aspect-ratio:16/10;border-radius:20px;margin-bottom:12px}
+  .article .prose{font-size:16px}
+  .dlead{font-size:16px}
+  .answer{padding:14px}
+  .pcard{padding:22px 16px 18px}
+  .fpage{margin:8px 0 20px}
+  .fpage .dcard{padding:18px 16px}
+  .fpage h1{font-size:21px}
+  .fgrid{grid-template-columns:1fr;gap:12px}
+  .fgrid .btn[type=submit]{justify-self:stretch;width:100%}
+  .page .form .btn[type=submit]{width:100%}
+  .form{max-width:none}
+
+  /* нижняя панель действий на карточке объявления/врача/вакансии */
+  .dbar{display:flex;position:fixed;left:0;right:0;bottom:calc(var(--tab-h) + env(safe-area-inset-bottom));z-index:95;
+    align-items:center;gap:10px;padding:10px 14px;background:color-mix(in srgb,var(--card) 92%,transparent);
+    backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);border-top:1px solid var(--line)}
+  .dbar__p{flex:1;min-width:0}
+  .dbar__v{font-family:var(--disp);font-weight:800;font-size:18px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dbar__s{font-size:11.5px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dbar .btn{padding:12px 18px;font-size:14.5px}
+  .has-dbar{padding-bottom:calc(var(--tab-h) + 70px + env(safe-area-inset-bottom))}
+  .has-dbar .dside .dact{display:none}
+
+  /* вход и регистрация */
+  .auth{margin:10px 0 24px;padding:26px 20px;border-radius:24px}
+  .auth h1{font-size:23px}
+
+  /* профиль, кошелёк, таблицы */
+  .profile{gap:12px;margin:10px 0 20px}
+  .pset{padding:18px 16px;border-radius:20px}
+  .pset__grid{grid-template-columns:1fr}
+  .balance{padding:18px;border-radius:20px}
+  .balance__sum{font-size:26px}
+  .tbl{font-size:13px}
+  .tbl th,.tbl td{padding:9px 8px}
+
+  /* чат: окно на весь экран без футера */
+  .page-thread .foot,.page-thread .nav{display:none}
+  .page-thread{padding-bottom:0}
+  .page-thread .tabbar{display:none}
+  .page-thread .wrap{padding:0}
+  .page-thread .top{padding-left:14px;padding-right:14px}
+  .chatwin{margin:0;border-radius:0;border-left:0;border-right:0;border-bottom:0;box-shadow:none;
+    height:calc(100dvh - 64px - env(safe-area-inset-top))}
+  .chatwin .chat__form{padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+  .chatwin .chat__msg{max-width:84%}
+
+  /* футер: компактный, бренд на всю ширину */
+  .foot{margin-top:24px;padding:26px 0 18px;border-radius:26px 26px 0 0}
+  .foot__g{grid-template-columns:1fr 1fr;gap:18px 14px;margin-bottom:16px}
+  .foot__brand{grid-column:1/-1}
+  .foot__about{max-width:none}
+  .foot h4{font-size:13px;margin-bottom:6px}
+  .foot a{font-size:13.5px;padding:5px 0}
+  .foot__g>div:last-child{grid-column:1/-1}
+  .foot__bot{font-size:12px}
+
+  /* плашки поверх контента поднимаем над панелью вкладок */
+  .ckbar{left:10px;right:10px;bottom:calc(var(--tab-h) + env(safe-area-inset-bottom) + 10px);padding:12px 14px;font-size:12.5px;gap:10px;flex-wrap:nowrap;border-radius:16px}
+  .ckbar .btn{padding:8px 14px;font-size:13px;flex:none}
+  .flash{padding-top:8px}
+  .modal{align-items:end;padding:0}
+  .modal__card{border-radius:26px 26px 0 0;padding:26px 20px calc(24px + env(safe-area-inset-bottom));max-height:86vh;overflow-y:auto;animation:ilm4-sheet .28s cubic-bezier(.2,.9,.3,1)}
+  @keyframes ilm4-sheet{from{transform:translateY(100%)}to{transform:none}}
+
+  /* --- нижняя панель вкладок --- */
+  .tabbar{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:100;
+    height:calc(var(--tab-h) + env(safe-area-inset-bottom));padding:0 max(6px,env(safe-area-inset-right)) env(safe-area-inset-bottom) max(6px,env(safe-area-inset-left));
+    background:color-mix(in srgb,var(--card) 90%,transparent);backdrop-filter:blur(20px) saturate(1.5);-webkit-backdrop-filter:blur(20px) saturate(1.5);
+    border-top:1px solid var(--line);box-shadow:0 -8px 24px -18px rgba(21,23,42,.35)}
+  .tabbar__i{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--ink-soft);font-size:10.5px;font-weight:600;letter-spacing:.01em;position:relative;min-width:0}
+  .tabbar__i svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .tabbar__i.on{color:var(--accent-d)}
+  .tabbar__i.on svg{stroke-width:2.1}
+  .tabbar__i.on:not(.tabbar__add)::before{content:"";position:absolute;top:0;left:50%;width:22px;height:3px;margin-left:-11px;border-radius:0 0 3px 3px;background:var(--accent)}
+  .tabbar__i:active{opacity:.6}
+  .tabbar__add i{width:46px;height:32px;border-radius:12px;margin:-6px 0 0!important;display:grid;place-items:center;background:linear-gradient(140deg,var(--accent),var(--accent-d));box-shadow:0 8px 18px -8px var(--accent)}
+  .tabbar__add i svg{stroke:#fff;width:22px;height:22px;stroke-width:2.4}
+  .tabbar__add{gap:2px}
+  .tabbar__ava{width:26px;height:26px;border-radius:50%;object-fit:cover}
+  .tabbar__ava--txt{display:grid;place-items:center;background:linear-gradient(140deg,var(--accent),var(--accent-d));color:#fff;font-size:12px;font-weight:800}
+  .tabbar__i.on .tabbar__ava{box-shadow:0 0 0 2px var(--card),0 0 0 4px var(--accent)}
+  html[data-theme=dark] .tabbar{box-shadow:none}
+}
+
+/* ================= узкие телефоны (Android 360 и меньше) ================= */
+@media (max-width:380px){
+  .wrap{padding-left:12px;padding-right:12px}
+  .nav,.rail,.mside{margin-left:-12px;margin-right:-12px}
+  .nav__row,.rail,.mside{padding-left:12px;padding-right:12px}
+  .top__row{padding-left:12px}
+  .logo--text b{font-size:22px}
+  .darktoggle{margin-left:4px}
+  .ibtn,.tbtn{width:38px;height:38px}
+  .apps{gap:14px 2px;padding:14px 4px 12px}
+  .app__ic{width:52px;height:52px;border-radius:16px}
+  .app__n{font-size:11px}
+  .banner__t{font-size:21px}
+  .tstrip__t{font-size:16px}
+  .sec__t{font-size:18px}
+  .grid5 .card__t{font-size:12.5px}
+  .tabbar__i{font-size:10px}
+}
+
+/* установленное приложение (PWA): без лишних отступов браузера */
+@media (display-mode:standalone){
+  .top{padding-top:calc(4px + env(safe-area-inset-top))}
+}

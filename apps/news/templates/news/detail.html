@@ -1,11 +1,27 @@
 {% extends 'base.html' %}
+{% load icons %}
 {% block title %}{{ post.title }} — {{ block.super }}{% endblock %}
+{% block description %}{{ post.summary|default:post.body|striptags|truncatechars:160 }}{% endblock %}
+{% block body_class %}s-news{% endblock %}
 
 {% block content %}
-<div class="page">
-  <h1>{{ post.title }}</h1>
-  <p class="meta">{{ post.created_at|date:"d.m.Y H:i" }}</p>
-  {{ post.body|linebreaks }}
-  <a class="btn btn--g" href="{% url 'news:list' %}">← Все новости</a>
+<div class="dpage">
+  <article class="article">
+    <a class="crumb" href="{% url 'news:list' %}">{% ico 'back' %}Все новости</a>
+    <div class="article__cover">
+      {% if post.cover %}<img src="{{ post.cover.url }}" alt="" fetchpriority="high">{% else %}{% ico 'news' %}{% endif %}
+    </div>
+    <div class="dcard">
+      <div class="dkicker">{% ico 'news' %}Новости{% if post.is_pinned %} · важное{% endif %}</div>
+      <h1 class="dtitle">{{ post.title }}</h1>
+      <div class="dmeta"><span class="mchip">{% ico 'calendar' %}{{ post.created_at|date:"j E Y, H:i" }}</span></div>
+      {% if post.summary %}<p class="dlead">{{ post.summary }}</p>{% endif %}
+      <div class="prose">{{ post.body|linebreaks }}</div>
+      <div class="article__foot">
+        <a class="btn btn--g" href="{% url 'news:list' %}">{% ico 'back' %}Все новости</a>
+        <button type="button" class="btn btn--s" data-share="{{ post.title }}">{% ico 'send' %}Поделиться</button>
+      </div>
+    </div>
+  </article>
 </div>
 {% endblock %}

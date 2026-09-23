@@ -1,28 +1,82 @@
 {% extends 'base.html' %}
+{% load icons %}{% load humanize %}
 {% block title %}{{ listing.title }} — {{ block.super }}{% endblock %}
+{% block description %}{{ listing.title }}{% if listing.city %}, {{ listing.city }}{% endif %} — {{ listing.description|truncatechars:140 }}{% endblock %}
+{% block body_class %}s-buy{% if listing.owner != request.user %} has-dbar{% endif %}{% endblock %}
 
 {% block content %}
-<div class="page">
-  <div class="listing">
-    {% if listing.photo %}
-    <img class="listing__photo" src="{{ listing.photo.url }}" alt="{{ listing.title }}">
-    {% endif %}
-    <div class="listing__info">
-      <h1>{{ listing.title }}</h1>
-      <p class="price" style="font-size:24px">
-        {% if listing.price == 0 %}Даром{% else %}{{ listing.price }} {{ listing.get_currency_display }}{% endif %}
-      </p>
-      <p>{% svc_icon 'cat-'|add:listing.category.slug listing.category.icon 'mdet__cat' %} {{ listing.category.name }} · {{ listing.city }} · {{ listing.created_at|date:"d.m.Y H:i" }} · <svg class="mmeta" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg> {{ listing.views }}</p>
-      <div class="listing__desc">{{ listing.description|linebreaks }}</div>
-      {% if listing.tags.all %}
-      <p>{% for t in listing.tags.all %}<span class="tag">{{ t.name }}</span> {% endfor %}</p>
-      {% endif %}
-      <h2 class="page__h2">Контакты</h2>
-      <p>{% if listing.contact %}<b>{{ listing.contact }}</b>{% else %}Напишите автору: <b>{{ listing.owner.email }}</b>{% endif %}</p>
-      <p class="page__hint">Не переводите деньги незнакомым людям без гаранта —
-        используйте эскроу платформы (когда откроется)</p>
-      <a class="btn btn--g" href="/buy/">← Все объявления</a>
+{% with owner=listing.owner %}
+<div class="dpage">
+  <a class="crumb" href="/buy/{% if listing.category %}?cat={{ listing.category.slug }}{% endif %}">{% ico 'back' %}{% if listing.category %}{{ listing.category.name }}{% else %}Все объявления{% endif %}</a>
+  <div class="dgrid dgrid--split">
+    <div class="dmain">
+      <div class="gallery">
+        {% if listing.photo %}
+        <img src="{{ listing.photo.url }}" alt="{{ listing.title }}" decoding="async" fetchpriority="high">
+        {% else %}
+        <div class="gallery__plug">{% svc_icon 'cat-'|add:listing.category.slug listing.category.icon 'card__plug' %}</div>
+        {% endif %}
+        {% if listing.is_boosted %}<span class="badge">ТОП</span>{% endif %}
+      </div>
+
+      <section class="dcard">
+        <h2 class="dcard__h">Описание</h2>
+        <div class="prose">{{ listing.description|linebreaks }}</div>
+        {% if listing.tags.all %}
+        <div class="tags">{% for t in listing.tags.all %}<span class="tag">#{{ t.name }}</span>{% endfor %}</div>
+        {% endif %}
+      </section>
     </div>
+
+    <aside class="dside">
+      <div class="dcard">
+        <div class="dprice">{% if listing.price == 0 %}Даром{% else %}{{ listing.price|intcomma }} {{ listing.get_currency_display }}{% endif %}</div>
+        <h1 class="dtitle">{{ listing.title }}</h1>
+        <div class="dmeta">
+          {% if listing.category %}<span class="mchip mchip--acc">{% svc_icon 'cat-'|add:listing.category.slug listing.category.icon 'mdet__cat' %}{{ listing.category.name }}</span>{% endif %}
+          {% if listing.city %}<span class="mchip">{% ico 'pin' %}{{ listing.city }}</span>{% endif %}
+          <span class="mchip">{% ico 'calendar' %}{{ listing.created_at|date:"j E" }}</span>
+          <span class="mchip" title="Просмотры">{% ico 'eye' %}{{ listing.views }}</span>
+        </div>
+
+        <div class="dact">
+          {% if listing.owner == request.user %}
+            <a class="btn btn--g" href="{% url 'market:my' %}">{% ico 'edit' %}Мои объявления</a>
+          {% else %}
+            <a class="btn btn--p" href="{% url 'chat:start' %}?email={{ owner.email|urlencode }}">{% ico 'chat' %}Написать продавцу</a>
+          {% endif %}
+        </div>
+
+        {% if listing.contact and listing.owner != request.user %}
+        <div class="contactbox">
+          <div class="contactbox__v"><span class="contactbox__l">Контакт продавца</span>{{ listing.contact }}</div>
+          <button type="button" class="copybtn" data-copy="{{ listing.contact }}">Копировать</button>
+        </div>
+        {% endif %}
+
+        <div class="sepline"></div>
+        <div class="person">
+          {% if owner.avatar %}<img class="person__ava" src="{{ owner.avatar.url }}" alt="">{% else %}<span class="person__ava">{{ owner.get_display_name|slice:":1"|upper }}</span>{% endif %}
+          <div>
+            <div class="person__n">{{ owner.get_display_name }}</div>
+            <div class="person__s">на ilm4 с {{ owner.date_joined|date:"E Y"|lower }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dnote">{% ico 'shield' %}<span>Не переводите предоплату незнакомым людям. Встречайтесь в людных местах и проверяйте товар до оплаты. Безопасная сделка через платформу появится позже.</span></div>
+    </aside>
   </div>
 </div>
+
+{% if listing.owner != request.user %}
+<div class="dbar">
+  <div class="dbar__p">
+    <div class="dbar__v">{% if listing.price == 0 %}Даром{% else %}{{ listing.price|intcomma }} {{ listing.get_currency_display }}{% endif %}</div>
+    <div class="dbar__s">{{ listing.title }}</div>
+  </div>
+  <a class="btn btn--p" href="{% url 'chat:start' %}?email={{ owner.email|urlencode }}">{% ico 'chat' %}Написать</a>
+</div>
+{% endif %}
+{% endwith %}
 {% endblock %}

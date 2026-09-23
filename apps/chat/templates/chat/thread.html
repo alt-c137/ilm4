@@ -1,23 +1,32 @@
 {% extends 'base.html' %}
+{% load icons %}
 {% block title %}Диалог — {{ block.super }}{% endblock %}
-{% block body_class %}s-chat{% endblock %}
+{% block body_class %}s-chat page-thread{% endblock %}
 
 {% block content %}
-<div class="page chat">
-  <div class='chat__who'><svg viewBox="0 0 24 24" class="chat__who-svg"><path d="M21 11.5a8.4 8.4 0 0 1-11.9 7.6L3 21l1.9-6.1A8.4 8.4 0 1 1 21 11.5z"/></svg>{{ other.get_display_name }}{% if thread.subject %} · {{ thread.subject }}{% endif %}</div>
+<div class="chatwin">
+  <div class="chatwin__head">
+    <a class="chatwin__back" href="{% url 'chat:inbox' %}" aria-label="Все диалоги">{% ico 'back' %}</a>
+    <div class="person person--sm">
+      {% if other.avatar %}<img class="person__ava" src="{{ other.avatar.url }}" alt="">{% else %}<span class="person__ava">{{ other.get_display_name|slice:":1"|upper }}</span>{% endif %}
+      <div><div class="person__n">{{ other.get_display_name }}</div>{% if thread.subject %}<div class="person__s">{{ thread.subject }}</div>{% endif %}</div>
+    </div>
+  </div>
   <div class="chat__log" id="chat-log">
     {% for m in messages %}
     <div class="chat__msg{% if m.sender == user %} mine{% endif %}">
       <b>{{ m.sender.get_display_name }}</b>
-      <div>{{ m.body }}</div>
+      <div>{{ m.body|linebreaksbr }}</div>
       <span class="meta">{{ m.created_at|date:"d.m H:i" }}</span>
     </div>
+    {% empty %}
+    <div class="chat__empty" id="chat-empty">Напишите первое сообщение — {{ other.get_display_name }} получит уведомление.</div>
     {% endfor %}
   </div>
   <form method="post" action="{% url 'chat:thread' thread.pk %}" class="chat__form" id="chat-form">
     {% csrf_token %}
-    <input type="text" name="body" id="chat-body" placeholder="Сообщение…" autocomplete="off" required>
-    <button type="submit" class="btn btn--p">Отправить</button>
+    <input type="text" name="body" id="chat-body" placeholder="Сообщение…" autocomplete="off" enterkeyhint="send" required>
+    <button type="submit" class="btn btn--p chat__send" aria-label="Отправить">{% ico 'send' %}</button>
   </form>
 </div>
 {% endblock %}
@@ -39,6 +48,7 @@
     div.className = 'chat__msg' + (d.sender_id === {{ user.id }} ? ' mine' : '');
     div.innerHTML = '<b>' + escapeHtml(d.sender_name) + '</b><div>' +
                     escapeHtml(d.body) + '</div><span class="meta">' + d.created_at + '</span>';
+    var em = document.getElementById('chat-empty'); if (em) em.remove();
     log.appendChild(div);
     log.scrollTop = log.scrollHeight;
   };

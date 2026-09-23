@@ -33,13 +33,13 @@
       {% if r.price_text %}<div class="ride__price">{{ r.price_text }}</div>{% endif %}
       <p class="ride__desc">{{ r.description|truncatechars:180 }}</p>
       <div class="ride__meta">
-        {% if r.ride_date %}📅 {{ r.ride_date|date:"d.m.Y" }} · {% endif %}
+        {% if r.ride_date %}<svg class="mmeta" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/></svg>{{ r.ride_date|date:"d.m.Y" }} · {% endif %}
         <svg class="mmeta" viewBox="0 0 24 24"><path d="M6.5 3.5h3l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.5 5.7 2 2 0 0 1 6.5 3.5z"/></svg><b>{{ r.contact }}</b> · {{ r.created_at|date:"d.m" }}
       </div>
     </div>
     {% empty %}
     <div class="empty" style="grid-column:1/-1">
-      <div style="font-size:44px;margin-bottom:8px">🚚</div>
+      <div class="empty__plug"><svg viewBox="0 0 24 24"><path d="M3 6.5h11v9H3zM14 9.5h3.5L21 13v2.5h-7z"/><circle cx="7.5" cy="17" r="1.7"/><circle cx="17.5" cy="17" r="1.7"/></svg></div>
       <h3 style="font-size:18px;font-weight:800">Маршрутов пока нет</h3>
       <p style="color:var(--ink-soft)">Возишь грузы или пассажиров? Добавьте первую перевозку — бесплатно, после модерации.</p>
       <a class="btn btn--p" href="{% url 'transport:create' %}">Добавить перевозку</a>

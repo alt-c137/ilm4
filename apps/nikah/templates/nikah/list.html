@@ -25,10 +25,10 @@
     <div class="prof__ava{% if p.gender == 'M' %} prof__ava--m{% else %} prof__ava--f{% endif %}">
       {% if p.photo %}<img src="{{ p.photo.url }}" alt="">{% else %}{{ p.age }}{% endif %}
     </div>
-    {% if p.is_boosted %}<span class="prof__top">⬆ в топе</span>{% endif %}
+    {% if p.is_boosted %}<span class="prof__top"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px"><path d="M12 19V6M6 12l6-6 6 6"/></svg>в топе</span>{% endif %}
     <div class="prof__name">{{ p.get_gender_display }}</div>
     <div class="prof__age">{{ p.age }} лет</div>
-    <div class="prof__city">📍 {{ p.city }}</div>
+    <div class="prof__city"><svg class="mmeta" viewBox="0 0 24 24"><path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg>{{ p.city }}</div>
     <div class="prof__about">{{ p.about|truncatechars:80 }}</div>
     <span class="prof__open">Смотреть анкету →</span>
   </a>

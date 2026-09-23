@@ -28,7 +28,7 @@
         <span class="meta">{{ o.country }}{% if o.city %} · {{ o.city }}{% endif %}</span>
       </div>
       <h3 class="org__name">{{ o.name }}</h3>
-      {% if o.address %}<p class="org__row">📍 {{ o.address }}</p>{% endif %}
+      {% if o.address %}<p class="org__row"><svg class="mmeta" viewBox="0 0 24 24"><path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg>{{ o.address }}</p>{% endif %}
       {% if o.phones %}
       <div class="org__phones">
         {% for p in o.phone_list %}
@@ -41,7 +41,7 @@
     </div>
     {% empty %}
     <div class="empty" style="grid-column:1/-1">
-      <div style="font-size:44px;margin-bottom:8px">🕊️</div>
+      <div class="empty__plug"><svg viewBox="0 0 24 24"><path d="M12 20s-6-4.2-8-8a4 4 0 0 1 8-1 4 4 0 0 1 8 1c-2 3.8-8 8-8 8z"/></svg></div>
       <h3 style="font-size:18px;font-weight:800">Записей пока нет</h3>
       <p style="color:var(--ink-soft)">Контакты по странам добавляет администрация — проверенные
         телефоны и адреса, чтобы не подавать неверную информацию.</p>

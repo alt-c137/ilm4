@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load icons %}
+{% load icons %}{% load humanize %}
 {% block title %}ilmbuy — купля-продажа — {{ block.super }}{% endblock %}
 {% block body_class %}s-buy{% endblock %}
 
@@ -40,7 +40,7 @@
           <div class="card__t">{{ l.title }}</div>
           <div class="card__d">{{ l.city }}</div>
           <div class="card__f">
-            <span class="price">{% if l.price == 0 %}Даром{% else %}{{ l.price }} {{ l.get_currency_display }}{% endif %}</span>
+            <span class="price">{% if l.price == 0 %}Даром{% else %}{{ l.price|intcomma }} {{ l.get_currency_display }}{% endif %}</span>
             <span class="meta"><svg class="mmeta" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>{{ l.views }}</span>
           </div>
         </div>
