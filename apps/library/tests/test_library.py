@@ -33,7 +33,10 @@ def test_paid_book_purchase_once(client):
     wallet.credit(user, 100_000, Transaction.TOPUP)
     book = make_book(title='Комментарий к аль-Фатихе', price=60_000)
     client.force_login(user)
-    assert client.get(f'/library/{book.pk}/download/').status_code == 200
+    # GET платную не покупает: иначе чужой сайт спишет деньги ссылкой-картинкой
+    assert client.get(f'/library/{book.pk}/download/').status_code == 302
+    assert wallet.balance_of(user) == 100_000
+    assert client.post(f'/library/{book.pk}/download/').status_code == 200
     assert wallet.balance_of(user) == 40_000  # куплено
 
     client.get(f'/library/{book.pk}/download/')  # повторное скачивание
@@ -44,8 +47,9 @@ def test_paid_book_insufficient(client):
     user = User.objects.create_user('u3', 'u3@x.com', 'x')
     book = make_book(title='Дорогая книга', price=999_999)
     client.force_login(user)
-    response = client.get(f'/library/{book.pk}/download/')
+    response = client.post(f'/library/{book.pk}/download/')
     assert response.status_code == 302 and '/wallet/' in response.url
+    assert not book.purchases.exists()   # покупка откатилась вместе со списанием
 
 
 def test_add_book_rejects_exe(client):

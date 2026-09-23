@@ -77,6 +77,7 @@ def site(request):
         'menu_modules': [m for m in modules if m.key != 'wallet'],  # меню (футер, пилюли)
         'wallet_on': any(m.key == 'wallet' for m in modules),
         'escrow_on': settings_obj.escrow_enabled,
+        'contacts_on': settings_obj.chat_contacts_enabled,
         'calls_on': (settings_obj.chat_calls_enabled or settings_obj.chat_video_calls_enabled)
         and any(m.key == 'chat' for m in modules),
         'unread_notifications': unread,

@@ -132,6 +132,12 @@ STRIPE_SECRET_KEY = env('STRIPE_SECRET_KEY', default='')
 STRIPE_WEBHOOK_SECRET = env('STRIPE_WEBHOOK_SECRET', default='')
 CRYPTO_GATEWAY_KEY = env('CRYPTO_GATEWAY_KEY', default='')
 CRYPTO_GATEWAY_SECRET = env('CRYPTO_GATEWAY_SECRET', default='')
+# Почта (восстановление пароля). В деве письма печатаются в консоль.
+# Прод: EMAIL_URL=smtp+tls://логин:пароль@smtp.сервис.com:587 (пароль — url-кодированный)
+vars().update(env.email_url('EMAIL_URL', default='consolemail://'))
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='ilm4 <noreply@ilm4.com>')
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
@@ -151,9 +157,22 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Кэш: локальная память, пока Redis не понадобится (фаза карт/чата).
+# Пароли: не короче 8 символов, не из списка популярных, не только цифры
+AUTH_PASSWORD_VALIDATORS = [
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+]
+
+# Кэш: в проде — Redis (общий для всех процессов: лимиты входа, контактов);
+# в деве без Redis — локальная память.
 CACHES = {
-    'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'},
+    'default': (
+        {'BACKEND': 'django.core.cache.backends.redis.RedisCache', 'LOCATION': env('REDIS_URL')}
+        if env('REDIS_URL', default='') else
+        {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}
+    ),
 }
 
 LOCALE_PATHS = [BASE_DIR / 'locale']

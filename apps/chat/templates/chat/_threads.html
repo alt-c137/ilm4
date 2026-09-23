@@ -2,7 +2,7 @@
   <div class="tg__sidehead">
     <h1 class="tg__title">Чаты</h1>
     <span class="tg__heads">
-      <a class="tg__new" href="{% url 'chat:contacts' %}" title="Найти знакомых из контактов" aria-label="Найти знакомых">{% ico 'user' %}</a>
+      {% if contacts_on %}<a class="tg__new" href="{% url 'chat:contacts' %}" title="Найти знакомых из контактов" aria-label="Найти знакомых">{% ico 'user' %}</a>{% endif %}
       <a class="tg__new" href="{% url 'chat:start' %}" title="Новый диалог" aria-label="Новый диалог">{% ico 'edit' %}</a>
     </span>
   </div>

@@ -3,11 +3,14 @@ from datetime import timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from apps.core.decorators import module_required, pledge_required
 from apps.core.models import Moderation, SiteSettings
+from apps.core.uploads import clean_image
 from apps.wallet import services as wallet
 from apps.wallet.models import Transaction
 from apps.wallet.services import InsufficientFunds
@@ -67,6 +70,11 @@ def profile_create(request):
             errors.append('Возраст — от 18 до 99.')
         if len(about) < 20:
             errors.append('Расскажите о себе хотя бы парой предложений (20+ символов).')
+        try:
+            photo = clean_image(request.FILES.get('photo'))
+        except ValidationError as exc:
+            photo = None
+            errors.append(exc.messages[0] if exc.messages else 'Загрузите фото в формате JPG или PNG.')
         if errors:
             for e in errors:
                 messages.error(request, e)
@@ -77,7 +85,7 @@ def profile_create(request):
                 about=about,
                 partner_expectations=request.POST.get('partner_expectations', ''),
                 contact_hint=request.POST.get('contact_hint', '').strip()[:200],
-                photo=request.FILES.get('photo'),
+                photo=photo,
             )
             messages.success(request, 'Анкета отправлена на модерацию.')
             return redirect('nikah:list')
@@ -99,6 +107,7 @@ def mine(request):
 
 @login_required
 @module_required('nikah')
+@require_POST
 def open_contact(request, pk):
     """«Написать»: женщинам бесплатно, мужчинам — разовая оплата на анкету."""
     profile = get_object_or_404(NikahProfile, pk=pk, status=Moderation.APPROVED,
@@ -126,6 +135,7 @@ def open_contact(request, pk):
 
 @login_required
 @module_required('nikah')
+@require_POST
 def boost(request):
     """Поднять свою анкету в поиске на 7 дней — платно."""
     profile = getattr(request.user, 'nikah_profile', None)

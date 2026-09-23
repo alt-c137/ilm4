@@ -6,9 +6,11 @@ import django_otp
 import qrcode
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
+from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LogoutView
 from django.shortcuts import redirect, render
+from django.urls import reverse_lazy
 from django.utils.http import url_has_allowed_host_and_scheme
 
 from .audit import log_action
@@ -25,8 +27,38 @@ def register(request):
     return render(request, 'accounts/register.html', {'form': form})
 
 
+# Защита от подбора пароля: не больше N неудачных попыток за окно — по логину и по IP
+LOGIN_WINDOW = 15 * 60
+LOGIN_MAX_PER_LOGIN = 8
+LOGIN_MAX_PER_IP = 30
+
+
+def client_ip(request) -> str:
+    """IP посетителя: nginx кладёт его в X-Real-IP (за Cloudflare — из CF-Connecting-IP)."""
+    return (request.META.get('HTTP_X_REAL_IP') or request.META.get('REMOTE_ADDR') or '').strip()
+
+
+def _login_keys(request):
+    login_value = (request.POST.get('login') or '').strip().lower()[:254]
+    return [(f'login_fail:u:{login_value}', LOGIN_MAX_PER_LOGIN),
+            (f'login_fail:ip:{client_ip(request)}', LOGIN_MAX_PER_IP)]
+
+
 def login_view(request):
+    from django.core.cache import cache
+
+    if request.method == 'POST' and any(cache.get(k, 0) >= limit for k, limit in _login_keys(request)):
+        messages.error(request, 'Слишком много попыток входа. Подождите 15 минут и попробуйте снова.')
+        return render(request, 'accounts/login.html', {'form': LoginForm(request), 'next': request.GET.get('next', '')},
+                      status=429)
     form = LoginForm(request, request.POST or None)
+    if request.method == 'POST' and not form.is_valid():
+        for key, _limit in _login_keys(request):
+            cache.add(key, 0, LOGIN_WINDOW)
+            try:
+                cache.incr(key)
+            except ValueError:
+                cache.set(key, 1, LOGIN_WINDOW)
     if request.method == 'POST' and form.is_valid():
         user = form.get_user()
         auth_login(request, user, backend='apps.accounts.backends.EmailBackend')
@@ -40,6 +72,37 @@ def login_view(request):
 
 # Выход — только POST (Django 5), кнопка-форма в шапке
 logout_view = LogoutView.as_view()
+
+
+# --- Восстановление пароля по email (стандартные токены Django: одноразовые, 3 дня) ---
+_reset_view = auth_views.PasswordResetView.as_view(
+    template_name='accounts/reset_form.html',
+    email_template_name='accounts/reset_email.txt',
+    subject_template_name='accounts/reset_subject.txt',
+    success_url=reverse_lazy('accounts:password_reset_done'),
+)
+
+
+def password_reset(request):
+    """Не больше 5 писем в час с одного IP — чтобы форму не использовали для спама."""
+    from django.core.cache import cache
+
+    if request.method == 'POST':
+        key = f'pwreset:{client_ip(request)}'
+        if cache.get(key, 0) >= 5:
+            messages.error(request, 'Слишком много запросов. Попробуйте через час.')
+            return redirect('accounts:password_reset')
+        cache.set(key, cache.get(key, 0) + 1, 3600)
+    return _reset_view(request)
+
+
+password_reset_done = auth_views.PasswordResetDoneView.as_view(template_name='accounts/reset_done.html')
+password_reset_confirm = auth_views.PasswordResetConfirmView.as_view(
+    template_name='accounts/reset_confirm.html',
+    success_url=reverse_lazy('accounts:password_reset_complete'),
+)
+password_reset_complete = auth_views.PasswordResetCompleteView.as_view(
+    template_name='accounts/reset_complete.html')
 
 
 @login_required

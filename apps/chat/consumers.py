@@ -7,10 +7,25 @@
 Звонки: браузеры соединяются напрямую (WebRTC), сервер лишь передаёт служебные
 сигналы (offer/answer/ice) — медиа через наш сервер не идёт.
 """
+import time
+
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
 SIGNAL_ACTIONS = {'ring', 'accept', 'decline', 'offer', 'answer', 'ice', 'end', 'busy'}
+# защита от флуда: не больше N сообщений за окно (сигналы звонка — отдельно, их много)
+MSG_LIMIT, MSG_WINDOW = 20, 10
+SIGNAL_LIMIT, SIGNAL_WINDOW = 300, 60
+
+
+def _allow(bucket: list, limit: int, window: int) -> bool:
+    now = time.monotonic()
+    while bucket and now - bucket[0] > window:
+        bucket.pop(0)
+    if len(bucket) >= limit:
+        return False
+    bucket.append(now)
+    return True
 
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
@@ -21,6 +36,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         if not self.user.is_authenticated or not await self._is_participant():
             await self.close()
             return
+        self._msgs, self._signals = [], []
         await self.channel_layer.group_add(self.group, self.channel_name)
         await self.accept()
 
@@ -30,7 +46,14 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
     async def receive_json(self, content):
         if content.get('type') == 'signal':
+            if not _allow(self._signals, SIGNAL_LIMIT, SIGNAL_WINDOW):
+                return
+            if not await self._calls_allowed(bool(content.get('video'))):
+                return   # звонки выключены в админке — сигналы не пересылаем
             await self._signal(content)
+            return
+        if not _allow(self._msgs, MSG_LIMIT, MSG_WINDOW):
+            await self.send_json({'type': 'error', 'error': 'Слишком часто — подождите немного.'})
             return
         if content.get('type') == 'calllog':
             payload = await self._call_log(content)
@@ -75,6 +98,13 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def chat_signal(self, event):
         if event['sender_id'] != self.user.id:
             await self.send_json({'type': 'signal', **event['data']})
+
+    @database_sync_to_async
+    def _calls_allowed(self, video: bool) -> bool:
+        from apps.core.models import SiteSettings
+
+        st = SiteSettings.get_solo()
+        return st.chat_video_calls_enabled if video else (st.chat_calls_enabled or st.chat_video_calls_enabled)
 
     @database_sync_to_async
     def _is_participant(self):

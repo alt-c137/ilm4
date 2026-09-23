@@ -16,3 +16,6 @@ staticfiles/
 .idea/
 .vscode/
 .DS_Store
+
+# Резервные копии на сервере
+backups/

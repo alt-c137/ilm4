@@ -18,6 +18,7 @@ from .events import preview
 from .models import Message, Thread
 
 User = get_user_model()
+HISTORY = 300
 WEEKDAYS = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс']
 
 
@@ -90,7 +91,8 @@ def thread_detail(request, pk):
         .update(read_at=timezone.now())
 
     items, prev = [], None
-    msgs = list(thread.messages.select_related('sender'))
+    # последние HISTORY сообщений: длинная переписка не грузит страницу целиком
+    msgs = list(thread.messages.select_related('sender').order_by('-created_at', '-pk')[:HISTORY])[::-1]
     for i, m in enumerate(msgs):
         local = timezone.localtime(m.created_at)
         nxt = msgs[i + 1] if i + 1 < len(msgs) else None
@@ -148,7 +150,7 @@ def thread_start(request):
 def _flags():
     from apps.core.models import SiteSettings
     st = SiteSettings.get_solo()
-    return {'photo': st.chat_photos_enabled, 'voice': st.chat_voice_enabled, 'circle': st.chat_circles_enabled,
+    return {'contacts': st.chat_contacts_enabled, 'photo': st.chat_photos_enabled, 'voice': st.chat_voice_enabled, 'circle': st.chat_circles_enabled,
             'calls': st.chat_calls_enabled, 'video_calls': st.chat_video_calls_enabled,
             'turn': {'url': st.webrtc_turn_url, 'username': st.webrtc_turn_username,
                      'credential': st.webrtc_turn_credential} if st.webrtc_turn_url else None}
@@ -206,6 +208,8 @@ def attachment(request, msg_id):
 @module_required('chat')
 def contacts(request):
     """«Найти знакомых»: кто из контактов телефона уже в ilm4."""
+    if not _flags()['contacts']:
+        raise Http404
     return render(request, 'chat/contacts.html', {'has_phone': bool(request.user.phone)})
 
 
@@ -218,6 +222,8 @@ def contacts_match(request):
 
     from django.core.cache import cache
 
+    if not _flags()['contacts']:
+        raise Http404
     key = f'contacts_match:{request.user.pk}'
     hits = cache.get(key, 0)
     if hits >= 10:

@@ -13,6 +13,7 @@ register = template.Library()
 
 _CACHE = {"ts": 0.0, "data": None}
 _TTL = 1800  # секунд
+_FAIL_TTL = 300  # после ошибки API — повтор не раньше чем через 5 минут
 _TASHKENT = ("https://api.open-meteo.com/v1/forecast"
              "?latitude=41.3111&longitude=69.2797"
              "&current=temperature_2m,weather_code"
@@ -40,6 +41,8 @@ def get_weather():
     now = time.time()
     if _CACHE["data"] is not None and now - _CACHE["ts"] < _TTL:
         return _CACHE["data"]
+    if _CACHE.get("fail_ts") and now - _CACHE["fail_ts"] < _FAIL_TTL:
+        return _CACHE["data"]   # API недавно не ответил — не ждём его на каждой странице
     data = None
     try:
         req = urllib.request.Request(_TASHKENT, headers={"User-Agent": "ilm4/1.0"})
@@ -54,9 +57,11 @@ def get_weather():
             "tmax": round(payload["daily"]["temperature_2m_max"][0]),
             "tmin": round(payload["daily"]["temperature_2m_min"][0]),
         }
-    except Exception:
+    except Exception:  # noqa: BLE001 — любая ошибка сети/формата: просто без погоды
         data = None
-    if data is not None:
+    if data is None:
+        _CACHE["fail_ts"] = now
+    else:
         _CACHE["ts"] = now
         _CACHE["data"] = data
-    return data
+    return data if data is not None else _CACHE["data"]   # сбой — показываем последнюю известную

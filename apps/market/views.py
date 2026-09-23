@@ -3,9 +3,10 @@ from datetime import timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
+from django.db.models import F, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from apps.core.decorators import module_required, pledge_required
 from apps.core.models import Moderation, SiteSettings
@@ -52,7 +53,7 @@ def listing_list(request):
 @module_required('buy')
 def listing_detail(request, pk):
     listing = get_object_or_404(Listing, pk=pk, status=Moderation.APPROVED, is_active=True)
-    Listing.objects.filter(pk=pk).update(views=listing.views + 1)
+    Listing.objects.filter(pk=pk).update(views=F('views') + 1)
     return render(request, 'market/detail.html', {'listing': listing})
 
 
@@ -87,6 +88,7 @@ def my_listings(request):
 
 @login_required
 @module_required('buy')
+@require_POST
 def listing_boost(request, pk):
     """Поднять объявление в поиске на 7 дней — платное действие (кошелёк)."""
     listing = get_object_or_404(Listing, pk=pk, owner=request.user)

@@ -16,6 +16,7 @@
     {% if form.non_field_errors %}<span class="err">{{ form.non_field_errors.0 }}</span>{% endif %}
     <button type="submit" class="btn btn--p">Войти</button>
   </form>
+  <p class="auth__hint"><a href="{% url 'accounts:password_reset' %}" class="link">Забыли пароль?</a></p>
   <p class="auth__hint">Нет аккаунта? <a href="{% url 'accounts:register' %}" class="link">Зарегистрироваться</a></p>
 </div>
 {% endblock %}

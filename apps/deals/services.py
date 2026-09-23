@@ -53,6 +53,8 @@ def create(client, provider, title, terms, amount, deadline=None, kind='freelanc
         raise DealError('Сумма должна быть больше нуля')
     if not title.strip() or not terms.strip():
         raise DealError('Опишите задачу и результат')
+    if kind not in dict(Order.KINDS):
+        kind = 'freelance'
     order = Order.objects.create(client=client, provider=provider, title=title.strip()[:160],
                                  terms=terms.strip(), amount=amount, fee_percent=st.escrow_fee_percent,
                                  deadline=deadline, kind=kind, thread=thread)

@@ -5,11 +5,11 @@
 """
 from django.core.management.base import BaseCommand
 
+from apps.core.management.commands.seed_demo import make_cover
 from apps.health.models import Doctor
 from apps.maps.models import HalalPlace
 from apps.market.models import Listing
 from apps.news.models import NewsPost
-from apps.core.management.commands.seed_demo import make_cover
 
 PALETTES = [
     ('6d5efc', '8b7dff'),

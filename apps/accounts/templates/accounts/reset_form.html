@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Восстановление пароля — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="auth">
+  <h1>Забыли пароль?</h1>
+  <p class="auth__sub">Укажите email аккаунта — пришлём ссылку, чтобы задать новый пароль.</p>
+  <form method="post" class="form">{% csrf_token %}
+    <label for="{{ form.email.id_for_label }}">Email</label>
+    {{ form.email }}
+    {% if form.email.errors %}<span class="err">{{ form.email.errors.0 }}</span>{% endif %}
+    <button type="submit" class="btn btn--p">Прислать ссылку</button>
+  </form>
+  <p class="auth__hint">Входили через Google? Просто нажмите «Войти через Google» — пароль не нужен.</p>
+  <p class="auth__hint"><a href="{% url 'accounts:login' %}" class="link">← Назад ко входу</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}Проверьте почту — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="auth">
+  <h1>Проверьте почту</h1>
+  <p class="auth__sub">Если такой email зарегистрирован, мы отправили на него ссылку для нового пароля. Письмо может прийти через пару минут — загляните и в «Спам».</p>
+  <p class="auth__hint"><a href="{% url 'accounts:login' %}" class="link">← Ко входу</a></p>
+</div>
+{% endblock %}

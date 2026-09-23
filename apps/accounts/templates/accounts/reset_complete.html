@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}Пароль изменён — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="auth">
+  <h1>Пароль изменён</h1>
+  <p class="auth__sub">Теперь войдите с новым паролем.</p>
+  <a class="btn btn--p" href="{% url 'accounts:login' %}">Войти</a>
+</div>
+{% endblock %}

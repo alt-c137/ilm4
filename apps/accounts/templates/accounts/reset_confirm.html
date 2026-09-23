@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Новый пароль — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="auth">
+  {% if validlink %}
+  <h1>Новый пароль</h1>
+  <p class="auth__sub">Придумайте пароль не короче 8 символов.</p>
+  <form method="post" class="form">{% csrf_token %}
+    {% for field in form %}
+      <label for="{{ field.id_for_label }}">{% if forloop.first %}Новый пароль{% else %}Ещё раз{% endif %}</label>
+      {{ field }}
+      {% if field.errors %}<span class="err">{{ field.errors.0 }}</span>{% endif %}
+    {% endfor %}
+    <button type="submit" class="btn btn--p">Сохранить пароль</button>
+  </form>
+  {% else %}
+  <h1>Ссылка устарела</h1>
+  <p class="auth__sub">Ссылка уже использована или истекла. Запросите новую.</p>
+  <a class="btn btn--p" href="{% url 'accounts:password_reset' %}">Запросить ссылку</a>
+  {% endif %}
+</div>
+{% endblock %}

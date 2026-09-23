@@ -4,7 +4,6 @@
 Идемпотентно: повторный запуск ничего не задваивает. На прод не запускать.
 """
 import io
-import math
 
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile

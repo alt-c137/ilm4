@@ -42,7 +42,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 docker compose -f docker-compose.prod.yml exec app python manage.py createsuperuser
 ```
 
-Сайт поднимется на `http://<IP-сервера>` — nginx (80) → gunicorn (app) → Postgres.
+Сайт поднимется на `http://<IP-сервера>` — nginx (80) → daphne (app) → Postgres. Полная инструкция и что подключить — `docs/LAUNCH.md`.
 Обновление версий: `git pull && docker compose -f docker-compose.prod.yml up -d --build`.
 
 ## Структура

@@ -65,6 +65,8 @@
         (d.ids || []).forEach(function (id) { var t = log.querySelector('.bub[data-id="' + id + '"] .tick'); if (t) t.classList.add('tick--2'); });
       } else if (d.type === 'signal') {
         Call.onSignal(d);
+      } else if (d.type === 'error') {
+        toast(d.error);
       } else {
         add(d);
       }

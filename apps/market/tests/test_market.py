@@ -107,8 +107,9 @@ def test_only_own_listing_boost(client, user, cat):
 
 def test_create_requires_pledge(client):
     """Без «Договора перед Аллахом» объявление не публикуется."""
-    from apps.market.models import Listing
     from django.contrib.auth import get_user_model
+
+    from apps.market.models import Listing
     user = get_user_model().objects.create_user('pl', 'pl@x.com', 'pass12345')
     client.force_login(user)
     before = Listing.objects.count()

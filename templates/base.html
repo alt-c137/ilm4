@@ -33,7 +33,7 @@
 <div class="wrap">
   <header class="top" id="top"><div class="top__row">
     <a class="logo logo--text" href="{% url 'core:home' %}" aria-label="ilm4 — на главную"><b>ilm<i>4</i></b></a>
-    <button type="button" class="darktoggle" id="darktoggle" aria-label="Тёмная тема"><span class="dtknob"></span></button>
+    <button type="button" class="darktoggle" id="darktoggle" aria-label="Светлая или тёмная тема" title="Светлая / тёмная тема"><svg class="dt-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg><svg class="dt-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg></button>
     <form class="search" id="search" method="get" action="/buy/" role="search">
       <input name="q" type="search" placeholder="Поиск объявлений: телефон, финики, коврик…" aria-label="Поиск" enterkeyhint="search" autocomplete="off">
       <button type="submit">Найти</button>

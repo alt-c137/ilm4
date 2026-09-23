@@ -2,7 +2,7 @@ from django.shortcuts import render
 
 from .blocks import get_blocks
 from .catalog import build_catalog
-from .models import Banner, ModuleConfig, Rate
+from .models import Banner, ModuleConfig, Rate, SiteSettings
 
 # на главной — первые работающие разделы (порядок из админки) + плитка «Все сервисы»
 POPULAR_COUNT = 11
@@ -28,8 +28,13 @@ def home(request):
 def catalog(request):
     """«Все сервисы»: каталог разделов по группам с поиском."""
     modules = list(ModuleConfig.objects.exclude(status=ModuleConfig.OFF))
+    groups = build_catalog(modules)
+    if not SiteSettings.get_solo().feed_enabled:   # выключенная лента — не показываем в каталоге
+        for g in groups:
+            g.items = [m for m in g.items if getattr(m, 'key', '') != 'feed']
+        groups = [g for g in groups if g.items]
     return render(request, 'core/catalog.html', {
-        'groups': build_catalog(modules),
+        'groups': groups,
         'services_total': len(modules),
         'services_on': sum(m.status == ModuleConfig.ON for m in modules),
         'services_soon': sum(m.status == ModuleConfig.SOON for m in modules),
@@ -72,6 +77,9 @@ def feed(request):
     """Лента (прототип): вертикальные карточки из реального контента платформы —
     новости, объявления, вопросы, места, вакансии. Позже сюда придут посты
     каналов/блогов и короткие видео (docs/ROADMAP.md §3)."""
+    from django.http import Http404
+    if not SiteSettings.get_solo().feed_enabled:
+        raise Http404
     from itertools import zip_longest
 
     from apps.core.models import Moderation

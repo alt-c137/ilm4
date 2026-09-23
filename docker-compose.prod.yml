@@ -41,6 +41,21 @@ services:
       redis:
         condition: service_started
 
+  # Задачи по расписанию: автопринятие сделок (раз в час), курсы валют (раз в 6 часов)
+  jobs:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+      DATABASE_URL: postgis://${POSTGRES_USER:-ilm4}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-ilm4}
+      REDIS_URL: redis://redis:6379/0
+    entrypoint: ["sh", "-c", "sleep 60; i=0; while true; do python manage.py release_due_deals; [ $$((i % 6)) -eq 0 ] && python manage.py pull_rates; i=$$((i + 1)); sleep 3600; done"]
+    volumes:
+      - ilm4_media_prod:/app/media
+    depends_on:
+      - app
+
   nginx:
     image: nginx:alpine
     restart: unless-stopped

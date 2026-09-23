@@ -1,4 +1,6 @@
 """Формы входа, регистрации (гибкие поля) и профиля."""
+import copy
+
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
@@ -54,7 +56,7 @@ class RegisterForm(forms.Form):
         for rf in (RegistrationField.objects.filter(enabled=True)
                    .order_by('order', 'id')):
             if rf.key in self.FIELD_WIDGETS:
-                field = self.FIELD_WIDGETS[rf.key]
+                field = copy.deepcopy(self.FIELD_WIDGETS[rf.key])   # общий шаблон не портим
                 field.label = rf.label
                 field.required = rf.required
                 self.fields[rf.key] = field
@@ -114,3 +116,9 @@ class ProfileForm(forms.ModelForm):
             'phone': forms.TextInput(attrs={'placeholder': '+998 90 123 45 67', 'inputmode': 'tel',
                                             'autocomplete': 'tel'}),
         }
+
+    def clean_avatar(self):
+        avatar = self.cleaned_data.get('avatar')
+        if avatar and hasattr(avatar, 'size') and avatar.size > 5 * 1024 * 1024:
+            raise forms.ValidationError('Фото больше 5 МБ')
+        return avatar

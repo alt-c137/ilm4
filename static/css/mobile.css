@@ -33,9 +33,7 @@
     background:linear-gradient(var(--bg) 70%,color-mix(in srgb,var(--bg) 0%,transparent))}
   .top__row{gap:4px;padding:5px 5px 5px 14px;border-radius:20px;min-height:52px}
   .logo--text b{font-size:23px}
-  .darktoggle{width:42px;height:24px;margin-left:6px}
-  .darktoggle::before{width:18px;height:18px}
-  html[data-theme=dark] .darktoggle::before{left:20px}
+  .top .darktoggle{--dt-w:48px;--dt-h:27px;--dt-k:21px;margin-left:6px}
   .top__act{gap:0}
   .ibtn--add,.ibtn--chat,.supp-wide,.btn--reg,.ibtn__n{display:none!important}
   .ibtn{width:40px;height:40px;padding:0;justify-content:center;border-radius:50%}
@@ -371,15 +369,11 @@
 @media (max-width:760px){.banner__cta{white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}.banner__cta .hide-d{display:inline!important}}
 
 /* v33: шапка на узких телефонах — «Поддержать» с подписью влезает */
-@media (max-width:760px){
-  .top .darktoggle{width:36px;height:22px;margin-left:4px}
-  .top .darktoggle::before{width:16px;height:16px}
-  html[data-theme=dark] .top .darktoggle::before{left:16px}
-}
 @media (max-width:380px){
   .top .top__row{gap:2px;padding-left:10px}
   .top .donate-m{padding:0 8px 0 7px;font-size:11.5px;gap:4px;margin:0 1px}
   .top .btn--login{padding:8px 11px;font-size:13px}
   .top .ibtn,.top .tbtn{width:34px;height:34px}
+  .top .darktoggle{--dt-w:44px;--dt-h:25px;--dt-k:19px;margin-left:4px}
 }
 @media (max-width:350px){.top .logo--text b{font-size:20px}.top .darktoggle{margin-left:2px}.top .uchip{margin-left:2px}}

@@ -100,6 +100,8 @@ class SiteSettings(SingletonModel):
     escrow_auto_release_days = models.PositiveSmallIntegerField(
         'автопринятие работы через, дней', default=3,
         help_text='Если заказчик не принял и не открыл спор — деньги уходят исполнителю')
+    feed_enabled = models.BooleanField('лента (/feed/) включена', default=True)
+    chat_contacts_enabled = models.BooleanField('чат: «Найти знакомых из контактов»', default=True)
     chat_photos_enabled = models.BooleanField('чат: фото', default=True)
     chat_voice_enabled = models.BooleanField('чат: голосовые сообщения', default=True)
     chat_circles_enabled = models.BooleanField('чат: видеокружки', default=True)

@@ -2,6 +2,8 @@
 Django>=5.2,<5.3
 django-environ
 django-solo
+django-taggit              # теги объявлений (market)
+praytimes                  # расчёт времени намаза (apps/prayer)
 psycopg[binary]
 Pillow                     # изображения (аватары, фазы с фото)
 whitenoise                 # статики в проде

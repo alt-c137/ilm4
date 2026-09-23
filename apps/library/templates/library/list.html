@@ -32,7 +32,11 @@
         <div class="card__f">
           <span class="price">{% if b.price == 0 %}Бесплатно{% else %}{{ b.price }} сум{% endif %}</span>
           {% if user.is_authenticated %}
+          {% if b.price == 0 or b.pk in owned %}
           <a class="btn btn--s" href="{% url 'library:download' b.pk %}">Читать</a>
+          {% else %}
+          <form method="post" action="{% url 'library:download' b.pk %}">{% csrf_token %}<button class="btn btn--s" type="submit">Купить</button></form>
+          {% endif %}
           {% else %}
           <a class="btn btn--s" href="{% url 'accounts:login' %}?next={{ request.path }}">Войти</a>
           {% endif %}
