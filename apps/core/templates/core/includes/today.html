@@ -1,0 +1,157 @@
+{% load icons prayer_tags weather humanize fx_tags %}{% comment %}
+Карточка «Сегодня»: три экрана, листаются свайпом (scroll-snap) или вкладками.
+  1) Сейчас — хадис дня + текущий намаз и отсчёт до следующего;
+  2) Намаз — расписание дня, текущий подсвечен, «Мечеть рядом»;
+  3) Погода и курс — если есть данные.
+{% endcomment %}{% prayer_widget request.COOKIES.ilm4_city as w %}{% get_weather as wx %}{% get_fx as fx %}
+<aside class="today" id="today" aria-label="Сегодня">
+  <div class="today__tabs" role="tablist">
+    <button type="button" class="today__tab on" role="tab" aria-selected="true" data-i="0">Сейчас</button>
+    <button type="button" class="today__tab" role="tab" aria-selected="false" data-i="1">Намаз</button>
+    {% if wx or fx.rates %}<button type="button" class="today__tab" role="tab" aria-selected="false" data-i="2">{% if wx %}Погода{% if fx.rates %} и курс{% endif %}{% else %}Курс валют{% endif %}</button>{% endif %}
+  </div>
+
+  <div class="today__track" id="today-track">
+    {# 1 — сейчас #}
+    <section class="today__slide" role="tabpanel" aria-label="Сейчас">
+      {% if site_settings.hadis_enabled %}
+      <div class="tnow"{% if site_settings.hadis_image %} style="--tnow-img:url('{{ site_settings.hadis_image.url }}')"{% endif %}>
+        <div class="tnow__k"><span class="hadiscard__badge"><svg viewBox="0 0 24 24"><path d="M12 6c-1.8-1.6-4.4-2-8-2v14c3.6 0 6.2.4 8 2 1.8-1.6 4.4-2 8-2V4c-3.6 0-6.2.4-8 2z"/><path d="M12 6v14"/></svg></span>Хадис дня</div>
+        <p class="tnow__t">«{{ site_settings.hadis_text|default:"Поистине, дела оцениваются по намерениям"|cut:"«"|cut:"»" }}»</p>
+        <div class="tnow__s">{{ site_settings.hadis_source }}</div>
+        {% if site_settings.hadis_details %}<button type="button" class="hadiscard__info" id="hadis-info-btn" aria-label="Разбор хадиса">i</button>{% endif %}
+      </div>
+      {% endif %}
+      <div class="tcur">
+        <div class="tcur__now">
+          <span class="tsun">{% prayer_icon w.current_key %}</span>
+          <div>
+            <div class="tcur__l">Сейчас</div>
+            <div class="tcur__v">{{ w.current_name }}</div>
+            <div class="tcur__s">с {{ w.current_time }}</div>
+          </div>
+        </div>
+        <div class="tcur__next">
+          <div class="tcur__l">Ближайший намаз</div>
+          <div class="tcur__nv">{{ w.next_name }} · {{ w.next_time }}</div>
+          <div class="tcur__cd live-cd" data-ts="{{ w.next_epoch }}">{{ w.countdown }}</div>
+        </div>
+      </div>
+      <div class="tbar" aria-hidden="true"><span style="width:{{ w.progress }}%"></span></div>
+      <div class="tlinks">
+        <a href="{% url 'core:salah' %}">{% ico 'clock' %}Как молиться</a>
+        <a href="https://www.google.com/maps/search/?api=1&amp;query=mosque" target="_blank" rel="noopener">{% ico 'pin' %}Мечеть рядом</a>
+      </div>
+    </section>
+
+    {# 2 — расписание #}
+    <section class="today__slide" role="tabpanel" aria-label="Время намаза">
+      <div class="tslide__h"><b>Время намаза — {{ w.city }}</b><a href="/prayer/">Все города →</a></div>
+      <div class="tgrid">
+        {% for it in w.items %}
+        <div class="tcell{% if it.current %} is-cur{% elif it.passed %} is-passed{% endif %}{% if it.next %} is-next{% endif %}">
+          <span class="tsun">{% prayer_icon it.key %}</span>
+          <span class="tcell__n">{{ it.label }}</span>
+          <span class="tcell__t">{{ it.time }}</span>
+          {% if it.current %}<span class="tcell__m">сейчас</span>{% elif it.next %}<span class="tcell__m">следующий</span>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <div class="tlinks">
+        <a href="https://www.google.com/maps/search/?api=1&amp;query=mosque" target="_blank" rel="noopener">{% ico 'pin' %}Мечеть рядом</a>
+        <a href="{% url 'core:salah' %}">{% ico 'clock' %}Как молиться</a>
+      </div>
+    </section>
+
+    {# 3 — погода и курс #}
+    {% if wx or fx.rates %}
+    <section class="today__slide" role="tabpanel" aria-label="Погода и курс">
+      {% if wx %}
+      <div class="twx">
+        <span class="twx__ic">{% svc_icon 'wx-'|add:wx.kind '☁' 'ipanel__wxic' %}</span>
+        <div>
+          <div class="twx__t">{{ wx.temp }}°</div>
+          <div class="twx__d">{{ wx.desc }} · Ташкент</div>
+          <div class="twx__s">днём {{ wx.tmax }}° · ночью {{ wx.tmin }}°</div>
+        </div>
+      </div>
+      {% endif %}
+      {% if fx.rates %}
+      <div class="tfx" id="tfx">
+        <div class="tfx__h">
+          <b>Курс валют</b>
+          <label class="tfx__base"><span class="sr-only">Базовая валюта</span>
+            <select id="tfx-base" aria-label="Базовая валюта">{% for c in fx.bases %}<option value="{{ c }}">{{ c }}</option>{% endfor %}</select>
+          </label>
+        </div>
+        <div class="trates" id="tfx-grid"></div>
+        <div class="tnote" id="tfx-note">{% if fx.source == 'cbu' %}Курс ЦБ Узбекистана{% else %}Ориентировочный курс, обновляется ежедневно{% endif %} · не является офертой</div>
+      </div>
+      {{ fx|json_script:"fx-data" }}
+      {% endif %}
+    </section>
+    {% endif %}
+  </div>
+  <div class="today__dots" aria-hidden="true"><i class="on"></i><i></i>{% if wx or fx.rates %}<i></i>{% endif %}</div>
+</aside>
+<script>
+/* карточка «Сегодня»: вкладки + свайп (scroll-snap) + точки */
+(function () {
+  var box = document.getElementById('today');
+  if (!box || box.dataset.ready) return;
+  box.dataset.ready = '1';
+  var track = box.querySelector('.today__track');
+  var tabs = box.querySelectorAll('.today__tab');
+  var dots = box.querySelectorAll('.today__dots i');
+  function mark(i) {
+    tabs.forEach(function (t, k) { t.classList.toggle('on', k === i); t.setAttribute('aria-selected', k === i ? 'true' : 'false'); });
+    dots.forEach(function (d, k) { d.classList.toggle('on', k === i); });
+  }
+  tabs.forEach(function (t, k) {
+    t.addEventListener('click', function () {
+      track.scrollTo({ left: k * track.clientWidth, behavior: 'smooth' });
+      mark(k);
+    });
+  });
+  var raf = 0;
+  track.addEventListener('scroll', function () {
+    if (raf) return;
+    raf = requestAnimationFrame(function () { raf = 0; mark(Math.round(track.scrollLeft / Math.max(1, track.clientWidth))); });
+  }, { passive: true });
+})();
+</script>
+<script>
+/* курсы: пересчёт в выбранную базовую валюту (по умолчанию — по часовому поясу) */
+(function () {
+  var el = document.getElementById('fx-data'), grid = document.getElementById('tfx-grid'), sel = document.getElementById('tfx-base');
+  if (!el || !grid || !sel) return;
+  var fx = JSON.parse(el.textContent), R = fx.rates;
+  var KEY = 'ilm4_fx_base';
+  function guess() {
+    var tz = ''; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {}
+    var map = {'Asia/Tashkent':'UZS','Asia/Samarkand':'UZS','Europe/Moscow':'RUB','Europe/Samara':'RUB','Asia/Yekaterinburg':'RUB',
+      'Asia/Almaty':'KZT','Asia/Qostanay':'KZT','Asia/Bishkek':'KGS','Asia/Dushanbe':'TJS','Europe/Istanbul':'TRY',
+      'Asia/Dubai':'AED','Asia/Riyadh':'SAR','Africa/Cairo':'EGP','Europe/London':'GBP'};
+    if (map[tz]) return map[tz];
+    if (/^Europe\//.test(tz)) return 'EUR';
+    if (/^America\//.test(tz)) return 'USD';
+    return 'UZS';
+  }
+  var base = null; try { base = localStorage.getItem(KEY); } catch (e) {}
+  if (!base || !R[base]) base = R[guess()] ? guess() : 'USD';
+  sel.value = base;
+  function fmt(v) {
+    var d = v >= 1000 ? 0 : v >= 10 ? 2 : 4;
+    return new Intl.NumberFormat('ru', { maximumFractionDigits: d, minimumFractionDigits: v >= 1000 ? 0 : 2 }).format(v);
+  }
+  function draw() {
+    var b = sel.value, list = fx.show.filter(function (c) { return c !== b && R[c]; }).slice(0, 4);
+    grid.innerHTML = list.map(function (c) {
+      var v = R[b] / R[c];   // сколько базовой валюты за 1 единицу c
+      return '<div><b>' + c + '</b><span>' + fmt(v) + '</span><small>' + (fx.names[b] || b) + ' за 1 ' + (fx.names[c] || c) + '</small></div>';
+    }).join('');
+  }
+  sel.addEventListener('change', function () { try { localStorage.setItem(KEY, sel.value); } catch (e) {} draw(); });
+  draw();
+})();
+</script>

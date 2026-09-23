@@ -1,7 +1,7 @@
 from django.contrib import admin
 from solo.admin import SingletonModelAdmin
 
-from .models import Banner, ModuleConfig, Notification, Rate, SiteSettings, Theme
+from .models import Banner, ModuleConfig, Notification, Rate, SiteSettings, SocialLink, Theme
 
 
 @admin.register(ModuleConfig)
@@ -32,3 +32,9 @@ class BannerAdmin(admin.ModelAdmin):
 
 admin.site.register(Rate)
 admin.site.register(SiteSettings, SingletonModelAdmin)
+
+
+@admin.register(SocialLink)
+class SocialLinkAdmin(admin.ModelAdmin):
+    list_display = ('label', 'kind', 'url', 'order', 'is_active')
+    list_editable = ('order', 'is_active')

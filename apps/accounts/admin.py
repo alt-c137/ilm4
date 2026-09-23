@@ -6,10 +6,10 @@ from .models import AuditLog, RegistrationField, User
 
 @admin.register(User)
 class Ilm4UserAdmin(UserAdmin):
-    list_display = ('username', 'email', 'role', 'is_staff', 'is_active')
-    list_filter = ('role', 'is_staff', 'is_active')
+    list_display = ('username', 'email', 'role', 'platform_verified', 'is_staff', 'is_active')
+    list_filter = ('role', 'platform_verified', 'is_staff', 'is_active')
     fieldsets = UserAdmin.fieldsets + (
-        ('Профиль ilm4', {'fields': ('nickname', 'city', 'avatar', 'role', 'theme')}),
+        ('Профиль ilm4', {'fields': ('nickname', 'city', 'avatar', 'role', 'platform_verified', 'theme')}),
     )
     add_fieldsets = UserAdmin.add_fieldsets + (
         ('Профиль ilm4', {'fields': ('email', 'role')}),

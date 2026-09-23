@@ -49,10 +49,6 @@ main{display:block;min-height:40vh}
   .banner__t{font-size:30px}
 }
 
-/* витрина: свои цвета у разделов без них */
-.app--refugee .app__ic{background:linear-gradient(140deg,#38bdf8,#0369a1)}
-.app--transport .app__ic{background:linear-gradient(140deg,#fb923c,#c2410c)}
-.app--learn .app__ic{background:linear-gradient(140deg,#2dd4bf,#0f766e)}
 
 /* ---------- главная: свежие объявления — показываем фото, если есть ---------- */
 .rcard__img{position:relative;overflow:hidden}
@@ -230,3 +226,93 @@ main{display:block;min-height:40vh}
 .page-thread main{min-height:0}
 .gallery{max-height:72vh}
 html[data-theme=dark] .mchip .mdet__cat img,html[data-theme=dark] .mside a:not(.on) .mside__svg img{filter:brightness(0) invert(1);opacity:.85}
+
+/* ================= сервисы: единый стиль иконок ================= */
+/* иконка раздела — маска из static/img/icons/<ключ>.svg, цвет = currentColor */
+.glyph{display:block;width:26px;height:26px;background:currentColor;
+  -webkit-mask:var(--ic) center/contain no-repeat;mask:var(--ic) center/contain no-repeat}
+.glyph--emoji{background:none;-webkit-mask:none;mask:none;font-size:23px;line-height:26px;text-align:center}
+.app__ic{display:grid;place-items:center;color:var(--accent-d);
+  background:linear-gradient(150deg,color-mix(in srgb,var(--accent) 17%,var(--card)),color-mix(in srgb,var(--accent) 7%,var(--card)));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 14%,transparent)}
+.app__ic svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+html[data-theme=dark] .app__ic{color:color-mix(in srgb,var(--accent) 62%,#fff);
+  background:linear-gradient(150deg,color-mix(in srgb,var(--accent) 26%,var(--card)),color-mix(in srgb,var(--accent) 10%,var(--card)))}
+
+/* витрина на главной: карточка-сетка «популярное» + «Все сервисы» */
+.svcs .apps{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:10px 6px;overflow:visible;
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius-lg);padding:18px 14px 14px;box-shadow:var(--shadow-sm)}
+.svcs .app{width:auto;min-width:0;display:flex;flex-direction:column;align-items:center;gap:9px;padding:8px 2px;border-radius:16px;transition:background .15s}
+.svcs .app__ic{width:58px;height:58px;margin:0;border-radius:18px;font-size:inherit;transition:transform .18s}
+.svcs .app:hover{background:var(--card-2)}
+.svcs .app:hover .app__ic{transform:translateY(-3px)}
+.svcs .app__n{font-size:12.5px;font-weight:600;line-height:1.25;text-align:center;color:var(--ink);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.app--all .app__ic{background:var(--card-2);box-shadow:inset 0 0 0 1px var(--line);color:var(--ink-soft)}
+.app--all .app__n{color:var(--ink-soft)}
+@media(max-width:1100px) and (min-width:761px){
+  .svcs .apps{grid-template-columns:repeat(8,minmax(0,1fr))}
+  .svcs .app:nth-child(n+8):not(.app--all){display:none}
+}
+.nav__all .navic svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.foot__more{color:var(--accent-d)!important;font-weight:600}
+
+/* ================= каталог «Все сервисы» ================= */
+.catalog{max-width:1060px;margin:0 auto;padding:18px 0 36px}
+.cat__head{display:grid;gap:14px;margin-bottom:6px}
+.cat__t{font-size:30px;font-weight:800;letter-spacing:-.02em}
+.cat__sub{color:var(--ink-soft);font-size:14px;margin-top:3px}
+.cat__search{display:flex;align-items:center;gap:10px;background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:0 16px;height:52px;box-shadow:var(--shadow-sm);transition:border-color .15s,box-shadow .15s;cursor:text}
+.cat__search svg{width:20px;height:20px;color:var(--ink-soft);flex:none}
+.cat__search input{flex:1;min-width:0;height:100%;border:0;background:transparent;outline:none;font:inherit;font-size:16px;color:var(--ink)}
+.cat__search:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+.cat__chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.cat__chips::-webkit-scrollbar{display:none}
+.cat__chips .chip{background:var(--card);color:var(--ink);border:1px solid var(--line);white-space:nowrap;flex:none;font-weight:600}
+.cat__chips .chip:hover{border-color:var(--accent);color:var(--accent-d);background:var(--card)}
+.cgroup{margin-top:24px;scroll-margin-top:96px}
+.cgroup__t{font-size:18px;font-weight:800;margin:0 4px 10px;display:flex;gap:8px;align-items:baseline}
+.cgroup__t small{font-family:var(--font);font-size:13px;font-weight:600;color:var(--ink-soft)}
+.clist{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.citem{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:var(--shadow-sm);transition:transform .15s,box-shadow .15s,border-color .15s}
+.citem:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:color-mix(in srgb,var(--accent) 35%,var(--line))}
+.citem .app__ic{width:48px;height:48px;border-radius:15px;flex:none}
+.citem .glyph{width:23px;height:23px}
+.citem__b{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.citem__n{font-weight:700;font-size:15px;line-height:1.25}
+.citem__d{font-size:12.5px;color:var(--ink-soft);line-height:1.4}
+.citem__go{width:18px;height:18px;flex:none;fill:none;stroke:var(--ink-soft);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:.55}
+.citem.is-soon .app__ic{filter:grayscale(1);opacity:.55}
+.citem.is-soon .citem__n{color:var(--ink-soft)}
+.citem__soon{font-size:10.5px;font-weight:800;color:var(--accent-d);background:var(--accent-soft);border-radius:10px;padding:2px 7px;margin-left:4px;vertical-align:1px}
+@media(max-width:980px){.clist{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* ================= баннер на компьютере: чуть компактнее ================= */
+@media(min-width:761px){
+  .banner__slide{min-height:268px;padding:36px 44px}
+  .banner__t{font-size:34px}
+}
+
+/* ================= палитра гостя: свёрнутая кнопка ================= */
+#swwrap{padding:4px;gap:0}
+.swlbl{display:none}
+.swbtn{width:40px;height:40px;border-radius:50%;border:0;background:transparent;color:var(--ink-soft);display:grid;place-items:center;cursor:pointer;flex:none}
+.swbtn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.swbtn:hover{color:var(--accent-d)}
+#swbar{display:none;padding:0 8px 0 2px}
+#swwrap.open #swbar{display:flex}
+@media(hover:hover){#swwrap:hover #swbar{display:flex}}
+@media(max-width:760px){#swwrap{display:none}}
+
+/* герой без фото: фирменный орнамент справа (восьмиконечная звезда) */
+.hero2__card{min-height:300px}
+.hero2__art{position:absolute;right:-40px;top:50%;width:380px;height:380px;transform:translateY(-50%);z-index:0;
+  animation:ilm4-spin 90s linear infinite;pointer-events:none}
+.hero2__card::after{content:"";position:absolute;right:-60px;top:50%;width:420px;height:420px;transform:translateY(-50%);
+  border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--accent) 12%,transparent),transparent 66%);z-index:0}
+@keyframes ilm4-spin{to{transform:translateY(-50%) rotate(360deg)}}
+@media(max-width:1100px){.hero2__art{width:300px;height:300px;right:-70px}}
+html[data-theme=dark] .sec__l,html[data-theme=dark] .tabbar__i.on,html[data-theme=dark] .crumb:hover{color:color-mix(in srgb,var(--accent) 65%,#fff)}
+.svcs .app--all{position:relative}
+.svcs .app--all .app__soon{margin:-4px 0 0;font-size:10px;padding:1px 7px;white-space:nowrap}
+.dkicker svg{width:16px;height:16px;flex:none}

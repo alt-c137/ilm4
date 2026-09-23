@@ -1,0 +1,5 @@
+{% load icons %}<a class="lcard" href="{{ o.website }}" target="_blank" rel="noopener nofollow" data-ext>
+  <span class="lcard__ic">{% ico 'globe' %}</span>
+  <span class="lcard__b"><span class="lcard__t">{{ o.name }}</span>{% if o.notes %}<span class="lcard__d">{{ o.notes }}</span>{% endif %}
+    <span class="lcard__u">{{ o.website|cut:'https://'|cut:'http://'|cut:'www.' }}</span></span>
+</a>

@@ -22,6 +22,8 @@
   </form>
 </div>
 
+{% include 'includes/disclaimer.html' with dkind='health' %}
+
 <div class="grid g3">
   {% for d in doctors %}
   <a class="card" href="{% url 'health:detail' d.pk %}">

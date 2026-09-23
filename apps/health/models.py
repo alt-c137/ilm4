@@ -14,7 +14,7 @@ class Doctor(BasePlace):
         ('gp', 'Терапевт / семейный'), ('cardio', 'Кардиолог'),
         ('neuro', 'Невролог'), ('pediatr', 'Педиатр'),
         ('dentist', 'Стоматолог'), ('gyneco', 'Гинеколог'),
-        ('psych', 'Психолог / психотерапевт'), ('other', 'Другое'),
+        ('psych', 'Психолог / психотерапевт'), ('hijama', 'Хиджама'), ('other', 'Другое'),
     ]
 
     category = models.CharField('специализация', max_length=30, choices=SPECIALIZATIONS)

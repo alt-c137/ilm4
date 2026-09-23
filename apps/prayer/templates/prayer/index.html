@@ -9,8 +9,9 @@
   <div class="prayer__hero">
     <div class="prayer__hero-main">
       <div class="prayer__hero-kicker"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:3px"><path d="M12 2.5c1.4 1 1.4 2.6 0 3.6M5.5 20v-6M18.5 20v-6M5.5 14a6.5 6.5 0 0 1 13 0M4 20h16M9 20v-3.2a3 3 0 0 1 6 0V20"/></svg>{{ place }}</div>
+      <div class="prayer__hero-now">Сейчас — <b>{{ sched.current_name }}</b> · с {{ sched.current_time }}</div>
       <div class="prayer__hero-next">Ближайший намаз</div>
-      <div class="prayer__hero-name">{{ next_name }}</div>
+      <div class="prayer__hero-name">{{ until.name }} <small>· {{ until.time }}</small></div>
       <div class="prayer__hero-left">
         {% if until.tomorrow %}завтра, в {{ until.time }} — <span class="live-cd" data-ts="{{ next_epoch }}">через {{ until.human }}</span>
         {% else %}<span class="live-cd" data-ts="{{ next_epoch }}">через {{ until.human }}</span>{% endif %}
@@ -20,7 +21,7 @@
     </div>
     <div class="tstrip">
       {% for it in items %}
-      <div class="tstrip__cell{% if it.soon %} on{% elif it.passed %} passed{% endif %}">
+      <div class="tstrip__cell{% if it.current %} on{% elif it.passed %} passed{% endif %}{% if it.next %} is-next{% endif %}">
         <span class="tsun tsun--{{ it.key }}">
           {% if it.key == 'fajr' %}<svg viewBox="0 0 24 24" fill="none" stroke="#7c5cd6" stroke-width="2" stroke-linecap="round"><path d="M20.4 14.2A8.5 8.5 0 1 1 9.8 3.6a7 7 0 1 0 10.6 10.6z"/></svg>
           {% elif it.key == 'sunrise' %}<svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"><path d="M4 18h16M6 14a6 6 0 0 1 12 0M12 3v4M5 7l1.5 1.5M19 7l-1.5 1.5"/></svg>
@@ -32,6 +33,7 @@
         <span class="tstrip__col">
           <span class="tstrip__n">{{ it.label }}</span>
           <span class="tstrip__t">{{ it.time }}</span>
+          {% if it.current %}<span class="tstrip__m">сейчас</span>{% elif it.next %}<span class="tstrip__m">следующий</span>{% endif %}
         </span>
       </div>
       {% endfor %}
@@ -59,6 +61,10 @@
       {% for key, name in methods.items %}
       <a class="chip{% if key == method %} chip--on{% endif %}" href="?city={{ city_key }}&method={{ key }}">{{ key }}</a>
       {% endfor %}
+    </div>
+    <div class="prayer__links">
+      <a class="btn btn--p" href="https://www.google.com/maps/search/?api=1&amp;query=mosque" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg>Мечеть рядом</a>
+      <a class="btn btn--g" href="{% url 'core:salah' %}">Как совершать намаз</a>
     </div>
     <p class="prayer__note">Расчёт идёт на сервере по координатам и дате — без внешних сервисов.
        В приложении будет считаться прямо на телефоне, даже без интернета.</p>

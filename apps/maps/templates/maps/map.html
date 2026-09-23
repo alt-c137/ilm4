@@ -21,6 +21,7 @@
     <button type="button" class="btn btn--g" id="near-btn"><svg class="mmeta" viewBox="0 0 24 24"><path d="M12 21s-6.5-5.3-6.5-10a6.5 6.5 0 0 1 13 0c0 4.7-6.5 10-6.5 10z"/><circle cx="12" cy="10.6" r="2.3"/></svg>Рядом со мной</button>
   </form>
 
+  {% include 'includes/disclaimer.html' %}
   <div id="map"></div>
 
   <div class="grid g3" style="margin-top:16px">
@@ -50,13 +51,21 @@ var map = L.map('map').setView([41.3111, 69.2797], 6);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19, attribution: '© OpenStreetMap'
 }).addTo(map);
+/* данные мест — от пользователей: экранируем всё, ссылку пускаем только http(s) */
+function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+function safeUrl(u) { return /^https?:\/\//i.test(u || '') ? esc(u) : ''; }
 markers.forEach(function (m) {
-  L.circleMarker([m.lat, m.lon], {radius: 8, color: '#5646e8', fillOpacity: .8})
+  var url = safeUrl(m.url);
+  L.circleMarker([m.lat, m.lon], {radius: m.kind === 'mosque' ? 9 : 8, color: m.kind === 'mosque' ? '#0e8f57' : '#5646e8', fillOpacity: .8})
     .addTo(map)
-    .bindPopup('<b>' + m.name + '</b><br>' + m.category + ' · ' + m.city +
-               (m.address ? '<br>' + m.address : '') +
-               (m.phone ? '<br>тел. ' + m.phone : '') +
-               (m.url ? '<br><a href="' + m.url + '" target="_blank" rel="noopener">сайт</a>' : ''));
+    .bindPopup('<b>' + esc(m.name) + '</b><br>' + esc(m.category) + ' · ' + esc(m.city) +
+               (m.brief ? '<br><span style="color:#0e8f57;font-weight:700">' + esc(m.brief) + '</span>' : '') +
+               (m.affiliation ? '<br>' + esc(m.affiliation) : '') +
+               (m.address ? '<br>' + esc(m.address) : '') +
+               (m.phone ? '<br>тел. ' + esc(m.phone) : '') +
+               (url ? '<br><a href="' + url + '" target="_blank" rel="noopener nofollow" data-ext>сайт</a>' : '') +
+               '<br><a href="/map/' + parseInt(m.id, 10) + '/"><b>Подробнее и отзывы →</b></a>')
+    .bindTooltip('<b>' + esc(m.name) + '</b>' + (m.brief ? '<br>' + esc(m.brief) : ''), {direction: 'top', offset: [0, -6]});
 });
 document.getElementById('near-btn').addEventListener('click', function () {
   navigator.geolocation.getCurrentPosition(function (pos) {

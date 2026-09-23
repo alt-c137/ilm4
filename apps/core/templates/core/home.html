@@ -3,6 +3,33 @@
 {% block content %}
 {# каждый блок в обёртке с ключом: на телефоне порядок перестраивается в mobile.css #}
 <div class="home">
+<div class="hello hide-d">
+  <span class="hello__g" id="hello-greg">{% now "l, j E" %}</span>
+  <span class="hello__h" id="hello-hijri" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.4 14.2A8.5 8.5 0 1 1 9.8 3.6a7 7 0 1 0 10.6 10.6z"/></svg><span></span></span>
+</div>
 {% for b in blocks %}<div class="hb hb--{{ b.key }}">{% include b.template %}</div>{% endfor %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* даты: день недели и число + дата по хиджре (Умм аль-Кура), если браузер умеет */
+(function () {
+  if (!window.Intl) return;
+  var now = new Date();
+  var g = document.getElementById('hello-greg'), h = document.getElementById('hello-hijri');
+  try {
+    var t = new Intl.DateTimeFormat('ru', { weekday: 'long', day: 'numeric', month: 'long' }).format(now);
+    g.textContent = t.charAt(0).toUpperCase() + t.slice(1);
+  } catch (e) {}
+  try {
+    var p = new Intl.DateTimeFormat('ru-u-ca-islamic-umalqura', { day: 'numeric', month: 'long', year: 'numeric' }).formatToParts(now);
+    var get = function (k) { var x = p.filter(function (i) { return i.type === k; })[0]; return x ? x.value : ''; };
+    if (get('month') && !/^\d+$/.test(get('month'))) {
+      h.querySelector('span').textContent = get('day') + ' ' + get('month') + ' ' + get('year') + ' г. х.';
+      h.hidden = false;
+    }
+  } catch (e) {}
+})();
+</script>
 {% endblock %}

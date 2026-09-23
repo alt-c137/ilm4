@@ -1,13 +1,44 @@
 {% extends 'base.html' %}
-{% block title %}Поддержать — {{ block.super }}{% endblock %}
+{% load icons %}
+{% block title %}Поддержать проект — {{ block.super }}{% endblock %}
+{% block extra_head %}<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">{% endblock %}
+{% block description %}Поддержите ilm4 — платформу знаний, жизни и дела для уммы. Садака джария, пока люди получают пользу.{% endblock %}
 
 {% block content %}
-<div class="page">
-  <h1>♥ Поддержать проект</h1>
-  <p>{{ site_settings.support_text }}</p>
-  <p>Приём пожертвований откроется вместе с кошельком платформы (фаза 2) —
-    с историей и прозрачными отчётами. А пока — просто возвращайся: каждый
-    пользователь уже поддержка, بارك الله فيكم.</p>
-  <a class="btn btn--p" href="{% url 'core:home' %}">На главную</a>
+<div class="guide">
+  <header class="guide__hero">
+    <div class="guide__k">{% ico 'heart' %}Садака джария</div>
+    <h1>Поддержите ilm4</h1>
+    <p>{{ site_settings.support_text|default:"ilm4 живёт на пожертвования уммы — садака джария, пока люди получают знания и пользу." }}</p>
+    <div class="guide__cta" style="justify-content:flex-start;margin-top:18px">
+      <a class="btn btn--lg donate-btn" href="{{ donate_url }}" target="_blank" rel="noopener">{% ico 'heart' %}Поддержать через Tribute</a>
+    </div>
+  </header>
+
+  <section class="gcard">
+    <h2 class="gcard__h">На что идут пожертвования</h2>
+    <ul class="checks">
+      <li>Серверы и хранение: чтобы сайт работал быстро и без перебоев</li>
+      <li>Модерация объявлений, анкет и публикаций</li>
+      <li>Новые разделы: обучение, адвокаты, развлечения и мобильное приложение</li>
+      <li>Проверка контактов организаций помощи беженцам</li>
+    </ul>
+    <p class="gcard__note">Пророк <span class="saw">ﷺ</span> сказал: «Когда человек умирает, его дела прекращаются, кроме трёх: непрерывной милостыни (садака джария), знания, которым пользуются, и праведного ребёнка, который молится за него» (Муслим).</p>
+  </section>
+
+  {% if social_links %}
+  <section class="gcard">
+    <h2 class="gcard__h">Мы в соцсетях</h2>
+    <div class="soclist">
+      {% for l in social_links %}
+      <a class="soclist__a soclist__a--{{ l.key }}" href="{{ l.url }}" target="_blank" rel="noopener">
+        <span class="soclist__ic">{% include 'includes/social_icon.html' with key=l.key %}</span>
+        <span><b>{{ l.name }}</b><small>{{ l.url|cut:'https://'|cut:'www.' }}</small></span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+  <p class="guide__note">Не хотите или не можете сейчас — ничего страшного. Возвращайтесь, делитесь сайтом с близкими: это тоже поддержка. <span dir="rtl" lang="ar">بارك الله فيكم</span></p>
 </div>
 {% endblock %}

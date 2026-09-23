@@ -9,56 +9,35 @@
         <h1>Одна платформа для всей уммы</h1>
         <p>Учись, покупай и продавай, находи работу и жильё, читай новости и получай ответы — быстро и удобно.</p>
         <div class="hero__cta">
-          <a class="btn btn--p" href="{% url 'core:soon' %}">Начать учиться <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-          <a class="btn btn--g" href="#modules">Все разделы</a>
+          <a class="btn btn--p" href="{% url 'core:catalog' %}">Все сервисы <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a class="btn btn--g" href="/buy/add/">Подать объявление</a>
         </div>
       </div>
       {% if site_settings.hero_image %}
       <img class="hero2__img" src="{{ site_settings.hero_image.url }}" alt="">
       <div class="hero2__fade"></div>
+      {% else %}
+      <svg class="hero2__art" viewBox="0 0 400 400" aria-hidden="true">
+        <defs><linearGradient id="h2g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--accent)"/><stop offset="1" stop-color="var(--accent-d)"/></linearGradient></defs>
+        <g transform="translate(200 200)" fill="none" stroke="url(#h2g)">
+          <g stroke-width="1.4" opacity=".35">
+            <rect x="-150" y="-150" width="300" height="300" rx="10"/><rect x="-150" y="-150" width="300" height="300" rx="10" transform="rotate(45)"/>
+          </g>
+          <g stroke-width="2.2" opacity=".75">
+            <rect x="-104" y="-104" width="208" height="208" rx="8"/><rect x="-104" y="-104" width="208" height="208" rx="8" transform="rotate(45)"/>
+          </g>
+          <circle r="62" stroke-width="2" opacity=".5"/>
+          <g stroke-width="3">
+            <rect x="-42" y="-42" width="84" height="84" rx="5"/><rect x="-42" y="-42" width="84" height="84" rx="5" transform="rotate(45)"/>
+          </g>
+          <circle r="186" stroke-width="1" opacity=".2" stroke-dasharray="3 9"/>
+        </g>
+        <circle cx="200" cy="200" r="16" fill="url(#h2g)"/>
+      </svg>
       {% endif %}
     </div>
 
-    <aside class="ipanel">
-      {% if site_settings.hadis_enabled %}
-      <div class="ipanel__hadis"{% if site_settings.hadis_image %} style="background-image:url('{{ site_settings.hadis_image.url }}')"{% endif %}>
-        <div class="ipanel__hadis-k"><span class="hadiscard__badge"><svg viewBox="0 0 24 24"><path d="M12 6c-1.8-1.6-4.4-2-8-2v14c3.6 0 6.2.4 8 2 1.8-1.6 4.4-2 8-2V4c-3.6 0-6.2.4-8 2z"/><path d="M12 6v14"/></svg></span>Хадис дня</div>
-        <div class="ipanel__hadis-t">«Поистине, дела оцениваются по намерениям».</div>
-        <div class="ipanel__hadis-s">{{ site_settings.hadis_source }}</div>
-        {% if site_settings.hadis_details %}
-        <button type="button" class="hadiscard__info" id="hadis-info-btn" aria-label="Подробнее о хадисе">i</button>
-        {% endif %}
-      </div>
-      {% endif %}
-
-      {% prayer_widget as w %}{% get_weather as wx %}
-      <div class="ipanel__grid">
-        <div class="ipanel__cell{% if not wx %} ipanel__cell--wide{% endif %}">
-          <span class="ipanel__ic"><svg viewBox="0 0 24 24" fill="none" stroke="#6d5efc" stroke-width="2" stroke-linecap="round"><path d="M20.4 14.2A8.5 8.5 0 1 1 9.8 3.6a7 7 0 1 0 10.6 10.6z"/></svg></span>
-          <span class="ipanel__col">
-            <span class="ipanel__lbl">Ближайший намаз</span>
-            <span class="ipanel__val">{{ w.next_name }} · {{ w.next_time }}</span>
-            <span class="ipanel__sub live-cd" data-ts="{{ w.next_epoch }}">{{ w.countdown }}</span>
-          </span>
-        </div>
-        {% if wx %}
-        <div class="ipanel__cell">
-          <span class="ipanel__ic ipanel__ic--wx">{% svc_icon 'wx-'|add:wx.kind 'uwu' 'ipanel__wxic' %}</span>
-          <span class="ipanel__col">
-            <span class="ipanel__lbl">Сейчас · {{ wx.desc }}</span>
-            <span class="ipanel__val">{{ wx.temp }}°</span>
-            <span class="ipanel__sub">день {{ wx.tmax }}° · ночь {{ wx.tmin }}°</span>
-          </span>
-        </div>
-        {% endif %}
-      </div>
-
-      {% if rates %}
-      <div class="ipanel__rates">
-        {% for r in rates %}<div><b>{{ r.code }}</b><span>{{ r.rate|intcomma }}</span></div>{% endfor %}
-      </div>
-      {% endif %}
-    </aside>
+    {% include 'core/includes/today.html' %}
   </div>
 </section>
 

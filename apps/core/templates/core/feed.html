@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load icons %}
+{% block title %}Лента — {{ block.super }}{% endblock %}
+{% block body_class %}page-feed{% endblock %}
+
+{% block content %}
+<div class="feedwrap">
+  <div class="feedtop"><b>Лента</b><span>бета · листайте вверх</span></div>
+  <div class="feedv" id="feedv">
+    {% for it in items %}
+    <article class="fcard fcard--t{{ it.tone }}" data-url="{{ it.url }}" data-id="{{ it.kind }}-{{ it.id }}">
+      {% if it.img %}<img class="fcard__img" src="{{ it.img }}" alt="" loading="lazy">{% endif %}
+      <div class="fcard__shade"></div>
+      <div class="fcard__body">
+        <span class="fcard__kind">{{ it.kind }}</span>
+        <h2 class="fcard__t">{{ it.title }}</h2>
+        {% if it.price %}<div class="fcard__price">{{ it.price }}</div>{% endif %}
+        {% if it.text %}<p class="fcard__x">{{ it.text|truncatechars:170 }}</p>{% endif %}
+        <div class="fcard__meta">{% if it.author %}{{ it.author }} · {% endif %}{{ it.meta|timesince }} назад</div>
+        <a class="fcard__open" href="{{ it.url }}">Открыть {% ico 'arrow' %}</a>
+      </div>
+      <div class="fcard__rail">
+        <button type="button" class="frail" data-like aria-label="Нравится">{% ico 'heart' %}<small>Нравится</small></button>
+        <a class="frail" href="{{ it.url }}" aria-label="Обсудить">{% ico 'chat' %}<small>Обсудить</small></a>
+        <button type="button" class="frail" data-fshare="{{ it.title }}" aria-label="Поделиться">{% ico 'send' %}<small>Поделиться</small></button>
+      </div>
+    </article>
+    {% empty %}
+    <article class="fcard fcard--t0"><div class="fcard__body"><h2 class="fcard__t">Здесь скоро будет лента</h2><p class="fcard__x">Новости, объявления, вопросы уммы — одним свайпом.</p></div></article>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  var v = document.getElementById('feedv'), KEY = 'ilm4_likes', likes = {};
+  try { likes = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
+  v.querySelectorAll('.fcard').forEach(function (c) {
+    var b = c.querySelector('[data-like]'); if (!b) return;
+    if (likes[c.dataset.id]) b.classList.add('on');
+    b.addEventListener('click', function () {
+      b.classList.toggle('on'); likes[c.dataset.id] = b.classList.contains('on');
+      try { localStorage.setItem(KEY, JSON.stringify(likes)); } catch (e) {}
+    });
+    c.addEventListener('dblclick', function () { b.classList.add('on'); likes[c.dataset.id] = true;
+      try { localStorage.setItem(KEY, JSON.stringify(likes)); } catch (e) {} });
+  });
+  v.querySelectorAll('[data-fshare]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var url = location.origin + b.closest('.fcard').dataset.url;
+      if (navigator.share) navigator.share({ title: b.dataset.fshare, url: url }).catch(function () {});
+      else if (navigator.clipboard) navigator.clipboard.writeText(url);
+    });
+  });
+  /* стрелки ↑/↓ на компьютере */
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    e.preventDefault(); v.scrollBy({ top: (e.key === 'ArrowDown' ? 1 : -1) * v.clientHeight, behavior: 'smooth' });
+  });
+})();
+</script>
+{% endblock %}

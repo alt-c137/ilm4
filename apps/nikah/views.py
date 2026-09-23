@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from apps.core.decorators import module_required
+from apps.core.decorators import module_required, pledge_required
 from apps.core.models import Moderation, SiteSettings
 from apps.wallet import services as wallet
 from apps.wallet.models import Transaction
@@ -49,6 +49,7 @@ def profile_detail(request, pk):
 
 @login_required
 @module_required('nikah')
+@pledge_required
 def profile_create(request):
     if hasattr(request.user, 'nikah_profile'):
         return redirect('nikah:mine')

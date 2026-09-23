@@ -108,6 +108,7 @@ class EscrowDeal(models.Model):
     seller = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                                related_name='escrow_sells', verbose_name='продавец')
     amount = models.DecimalField('сумма, сум', max_digits=14, decimal_places=0)
+    fee = models.DecimalField('комиссия платформы, сум', max_digits=14, decimal_places=0, default=0)
     status = models.CharField('статус', max_length=10, choices=STATUSES, default=HOLD)
     ref = models.CharField('объект', max_length=120, blank=True)
     note = models.CharField('описание спора/решения', max_length=300, blank=True)

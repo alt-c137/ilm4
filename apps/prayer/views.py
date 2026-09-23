@@ -30,26 +30,20 @@ def index(request):
         place, lat, lon, tz = CITIES[city_key]
 
     times = services.compute(lat, lon, int(tz), method=method)
-    next_key, _next_name, _left = services.next_prayer(times)
-    until = services.until_next(times)
-    progress = services.prayer_progress(times)
-    next_epoch = services.next_epoch(times)
+    now = services.local_now(tz)
+    until = services.until_next(times, now)
+    progress = services.prayer_progress(times, now)
+    next_epoch = services.next_epoch(times, now, tz)
 
-    order = list(services.PRAYER_ONLY)
-    items = []
-    for key, label in services.NAMES.items():
-        items.append({
-            'key': key, 'label': label, 'time': times[key],
-            'soon': key == until['key'] and not until['tomorrow'],
-            'passed': (key in order and next_key in order
-                       and order.index(key) < order.index(next_key)),
-        })
+    sched = services.schedule(times, now)
+    items = sched['items']
 
     def city_url(key):
         return f'?city={key}&method={method}'
 
     response = render(request, 'prayer/index.html', {
         'items': items,
+        'sched': sched,
         'progress': progress,
         'next_epoch': next_epoch,
         'until': until,

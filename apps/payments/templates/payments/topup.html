@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load icons humanize %}
+{% block title %}Пополнить баланс — {{ block.super }}{% endblock %}
+{% block content %}
+<div class="fpage">
+  <a class="crumb" href="{% url 'wallet:index' %}">{% ico 'back' %}Кошелёк</a>
+  <div class="dcard">
+    <div class="fpage__h"><span class="fpage__ic">{% ico 'plus' %}</span>
+      <div><h1>Пополнить баланс</h1><div class="fpage__sub">Баланс идёт на услуги ilm4: поднятие объявлений, анкет, безопасные сделки.</div></div></div>
+    <form method="post" class="form" style="max-width:none">{% csrf_token %}
+      <label>Сумма, сум</label>
+      <div class="tamounts">{% for a in amounts %}<label><input type="radio" name="amount" value="{{ a }}"{% if forloop.counter == 2 %} checked{% endif %}><span>{{ a|intcomma }}</span></label>{% endfor %}</div>
+      <label>Способ оплаты</label>
+      <div class="tpays">
+        {% for p in providers %}
+        <label class="tpay{% if p not in ready %} is-off{% endif %}"><input type="radio" name="provider" value="{{ p.key }}"{% if p not in ready %} disabled{% endif %}>
+          <span class="tpay__b"><b>{{ p.title }}</b><small>{{ p.hint }}</small></span>
+          {% if p not in ready %}<span class="tpay__soon">скоро</span>{% endif %}</label>
+        {% endfor %}
+      </div>
+      <button type="submit" class="btn btn--p"{% if not ready %} disabled{% endif %}>Перейти к оплате</button>
+      <div class="dnote">{% ico 'lock' %}<span>Оплата проходит на стороне платёжного сервиса — данные карты ilm4 не видит и не хранит. Баланс зачисляется сразу после подтверждения оплаты.</span></div>
+    </form>
+  </div>
+</div>
+{% endblock %}

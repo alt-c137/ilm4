@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load icons %}
+{% block title %}Настройки — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="fpage">
+  <div class="dcard">
+    <div class="fpage__h">
+      <span class="fpage__ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></span>
+      <div><h1>Настройки</h1><div class="fpage__sub">Оформление применяется сразу и запоминается{% if user.is_authenticated %} в вашем профиле{% endif %}.</div></div>
+    </div>
+
+    <form method="post" id="settings-form">{% csrf_token %}
+      <h2 class="set__h">Тема</h2>
+      <div class="set__modes">
+        <label class="set__mode"><input type="radio" name="mode" value="light"{% if not is_dark %} checked{% endif %}>
+          <span class="set__pv set__pv--light"><i></i><i></i><i></i></span><b>Светлая</b></label>
+        <label class="set__mode"><input type="radio" name="mode" value="dark"{% if is_dark %} checked{% endif %}>
+          <span class="set__pv set__pv--dark"><i></i><i></i><i></i></span><b>Тёмная</b></label>
+      </div>
+
+      <h2 class="set__h">Цвет оформления</h2>
+      <div class="set__colors">
+        {% for t in all_themes %}
+        <label class="set__color" title="{{ t.name }}">
+          <input type="radio" name="theme" value="{{ t.id }}" data-accent="{{ t.accent }}" data-accent-d="{{ t.accent_d }}" data-accent-soft="{{ t.accent_soft }}"{% if current_theme and t.id == current_theme.id %} checked{% endif %}>
+          <span style="--c:{{ t.accent }};--cd:{{ t.accent_d }}"></span><small>{{ t.name }}</small>
+        </label>
+        {% endfor %}
+      </div>
+      <noscript><button type="submit" class="btn btn--p">Сохранить</button></noscript>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* живой предпросмотр + сохранение без перезагрузки */
+(function () {
+  var form = document.getElementById('settings-form');
+  function save() {
+    fetch(form.action || location.href, { method: 'POST', body: new FormData(form), credentials: 'same-origin' });
+  }
+  form.querySelectorAll('input[name=mode]').forEach(function (r) {
+    r.addEventListener('change', function () {
+      var dark = r.value === 'dark';
+      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+      var mt = document.getElementById('meta-theme'); if (mt) mt.content = dark ? '#0e1016' : '#f2f3fb';
+      save();
+    });
+  });
+  form.querySelectorAll('input[name=theme]').forEach(function (r) {
+    r.addEventListener('change', function () {
+      var s = document.documentElement.style;
+      s.setProperty('--accent', r.dataset.accent); s.setProperty('--accent-d', r.dataset.accentD); s.setProperty('--accent-soft', r.dataset.accentSoft);
+      save();
+    });
+  });
+})();
+</script>
+{% endblock %}

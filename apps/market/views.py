@@ -7,7 +7,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from apps.core.decorators import module_required
+from apps.core.decorators import module_required, pledge_required
 from apps.core.models import Moderation, SiteSettings
 from apps.wallet import services as wallet
 from apps.wallet.models import Transaction
@@ -58,6 +58,7 @@ def listing_detail(request, pk):
 
 @login_required
 @module_required('buy')
+@pledge_required
 def listing_create(request):
     form = ListingForm(request.POST or None, request.FILES or None)
     if request.method == 'POST' and form.is_valid():

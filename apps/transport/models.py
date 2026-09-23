@@ -16,6 +16,8 @@ class Ride(models.Model):
     from_city = models.CharField('откуда', max_length=80, db_index=True)
     to_city = models.CharField('куда', max_length=80, db_index=True)
     type = models.CharField('тип', max_length=6, choices=TYPES, default='cargo')
+    company = models.CharField('перевозчик / компания', max_length=120, blank=True,
+                               help_text='Название компании или имя перевозчика')
     ride_date = models.DateField('дата поездки', null=True, blank=True,
                                  help_text='Если поездка разовая')
     price_text = models.CharField('цена (текстом)', max_length=120, blank=True)
@@ -30,6 +32,7 @@ class Ride(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [models.Index(fields=['from_city', 'to_city'])]
         verbose_name = 'перевозка'
         verbose_name_plural = 'перевозки'
 

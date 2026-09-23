@@ -90,6 +90,30 @@ class SiteSettings(SingletonModel):
     )
     news_ticker = models.BooleanField('бегущая строка новостей', default=False)
     min_payout = models.PositiveIntegerField('минимальная сумма вывода, сум', default=100_000)
+    # --- мессенджер: каждую функцию можно выключить (нагрузка, модерация, трафик) ---
+    escrow_enabled = models.BooleanField(
+        'безопасная сделка (эскроу) включена', default=False,
+        help_text='Платформа удерживает деньги заказчика до сдачи работы. Удержание чужих денег '
+                  'обычно требует лицензии или платёжного партнёра — включать после консультации юриста.')
+    escrow_fee_percent = models.DecimalField('комиссия безопасной сделки, %', max_digits=4,
+                                             decimal_places=2, default=5)
+    escrow_auto_release_days = models.PositiveSmallIntegerField(
+        'автопринятие работы через, дней', default=3,
+        help_text='Если заказчик не принял и не открыл спор — деньги уходят исполнителю')
+    chat_photos_enabled = models.BooleanField('чат: фото', default=True)
+    chat_voice_enabled = models.BooleanField('чат: голосовые сообщения', default=True)
+    chat_circles_enabled = models.BooleanField('чат: видеокружки', default=True)
+    chat_calls_enabled = models.BooleanField('чат: аудиозвонки', default=True)
+    chat_video_calls_enabled = models.BooleanField('чат: видеозвонки', default=True)
+    webrtc_turn_url = models.CharField(
+        'звонки: TURN-сервер', max_length=200, blank=True,
+        help_text='Например: turn:turn.ilm4.com:3478. Без TURN часть звонков через мобильные сети не соединится')
+    webrtc_turn_username = models.CharField('звонки: TURN логин', max_length=100, blank=True)
+    webrtc_turn_credential = models.CharField('звонки: TURN пароль', max_length=100, blank=True)
+    wallet_payouts_enabled = models.BooleanField(
+        'кошелёк: вывод средств включён', default=False,
+        help_text='Вывод и переводы между людьми делают кошелёк платёжным сервисом — '
+                  'обычно нужна лицензия. Без вывода баланс — предоплата за услуги платформы.')
     prayer_method = models.CharField(
         'метод расчёта намаза', max_length=10, default='Karachi',
         help_text='Karachi (СНГ/Азия), MWL, ISNA, Makkah, Egypt',
@@ -180,3 +204,36 @@ class Notification(models.Model):
 
     def __str__(self):
         return self.text[:60]
+
+
+class SocialLink(models.Model):
+    """Официальные соцсети и каналы ilm4 — показываются в футере и на /support/.
+
+    Добавил ссылку в админке — иконка появилась на сайте, без правки кода.
+    """
+
+    KINDS = [
+        ('telegram', 'Telegram'), ('instagram', 'Instagram'), ('facebook', 'Facebook'),
+        ('x', 'X (Twitter)'), ('youtube', 'YouTube'), ('tiktok', 'TikTok'),
+        ('whatsapp', 'WhatsApp'), ('vk', 'ВКонтакте'), ('threads', 'Threads'), ('other', 'Другое'),
+    ]
+
+    kind = models.CharField('сеть', max_length=12, choices=KINDS, default='telegram')
+    title = models.CharField('подпись', max_length=40, blank=True,
+                             help_text='Например: «новости» — будет «Telegram · новости»')
+    url = models.URLField('ссылка')
+    order = models.PositiveSmallIntegerField('порядок', default=0)
+    is_active = models.BooleanField('показывать', default=True)
+
+    class Meta:
+        ordering = ['order', 'id']
+        verbose_name = 'соцсеть'
+        verbose_name_plural = 'соцсети и каналы'
+
+    def __str__(self):
+        return self.label
+
+    @property
+    def label(self) -> str:
+        name = self.get_kind_display()
+        return f'{name} · {self.title}' if self.title else name

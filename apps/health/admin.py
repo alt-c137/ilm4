@@ -8,8 +8,9 @@ from .models import Doctor
 
 @admin.register(Doctor)
 class DoctorAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category', 'city', 'status', 'owner', 'created_at')
-    list_filter = ('status', 'category', 'city')
+    list_display = ('name', 'category', 'city', 'status', 'platform_verified', 'owner', 'created_at')
+    list_editable = ('platform_verified',)
+    list_filter = ('status', 'platform_verified', 'category', 'city')
     search_fields = ('name', 'city', 'clinic')
     actions = ('approve', 'reject')
 

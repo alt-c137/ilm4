@@ -89,3 +89,22 @@ def two_factor_verify(request):
                 return redirect('core:home')
         messages.error(request, 'Код неверный.')
     return render(request, 'accounts/2fa_verify.html')
+
+
+def public_profile(request, pk):
+    """Публичная страница участника: продавец / исполнитель / перевозчик.
+    Репутация — у человека, а не у одного объявления: рейтинг и отзывы здесь."""
+    from django.contrib.auth import get_user_model
+    from django.shortcuts import get_object_or_404
+
+    from apps.core.models import Moderation
+
+    person = get_object_or_404(get_user_model(), pk=pk, is_active=True)
+    approved = {'status': Moderation.APPROVED}
+    return render(request, 'accounts/public.html', {
+        'person': person,
+        'listings': person.listings.filter(is_active=True, **approved)[:8],
+        'rides': person.rides.filter(**approved)[:6],
+        'services': person.services.filter(**approved)[:6],
+        'vacancies': person.vacancies.filter(**approved)[:6],
+    })

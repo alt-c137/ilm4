@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
-from apps.core.decorators import module_required
+from apps.core.decorators import module_required, pledge_required
 from apps.core.models import Moderation, SiteSettings
 from apps.wallet import services as wallet_services
 from apps.wallet.models import Transaction
@@ -36,6 +36,7 @@ def detail(request, pk):
 
 @login_required
 @module_required('health')
+@pledge_required
 def add_doctor(request):
     """Публикация врача: если цена задана админом — платим с баланса."""
     price = SiteSettings.get_solo().doctor_publish_price

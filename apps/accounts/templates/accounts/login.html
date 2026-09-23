@@ -5,6 +5,7 @@
 <div class="auth">
   <h1>С возвращением!</h1>
   <p class="auth__sub">Войди — курсы, объявления и чаты ждут.</p>
+  {% include 'accounts/includes/oauth.html' %}
   <form method="post" class="form">{% csrf_token %}
     <input type="hidden" name="next" value="{{ next }}">
     {% for field in form %}

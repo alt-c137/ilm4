@@ -102,3 +102,26 @@ def test_next_epoch_future():
     times = services.compute(41.3111, 69.2797, 5)
     ts = services.next_epoch(times)
     assert ts > _time.time() - 120  # в будущем (или только что наступил)
+
+
+def test_current_prayer_is_active_period_not_next():
+    """Подсвечивается текущий намаз (наступивший), а не следующий."""
+    from datetime import datetime
+    times = {'fajr': '04:30', 'sunrise': '06:00', 'dhuhr': '12:15', 'asr': '15:40',
+             'maghrib': '18:20', 'isha': '19:50'}
+    at = lambda h, m: datetime(2026, 9, 23, h, m)
+    assert services.current_prayer(times, at(13, 0)) == 'dhuhr'
+    assert services.current_prayer(times, at(3, 0)) == 'isha'      # ночь до Фаджра — ещё Иша
+    assert services.current_prayer(times, at(7, 0)) == 'sunrise'
+    sched = services.schedule(times, at(13, 0))
+    cur = [i['key'] for i in sched['items'] if i['current']]
+    nxt = [i['key'] for i in sched['items'] if i['next']]
+    assert cur == ['dhuhr'] and nxt == ['asr']
+
+
+def test_next_epoch_respects_city_timezone():
+    """Отсчёт считается во времени города, а не сервера."""
+    times = services.compute(55.7963, 49.1088, 3)          # Казань, UTC+3
+    ts = services.next_epoch(times, tz_offset=3)
+    import time as _time
+    assert 0 < ts - _time.time() < 26 * 3600

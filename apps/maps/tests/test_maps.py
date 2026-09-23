@@ -49,7 +49,7 @@ def test_add_place_requires_login(client):
 def test_user_adds_place_pending(client):
     user = User.objects.create_user('u', 'u@x.com', 'x')
     client.force_login(user)
-    client.post('/map/add/', {
+    client.post('/map/add/', {'pledge': '1', 
         'name': 'Магазин Бисмиллах', 'category': 'shop', 'city': 'Бухара',
         'lat': '39.77', 'lon': '64.46',
     })
@@ -74,7 +74,7 @@ def test_health_pages(client):
 def test_doctor_publish_free(client):
     user = User.objects.create_user('d', 'd@x.com', 'x')
     client.force_login(user)
-    client.post('/health/add/', {
+    client.post('/health/add/', {'pledge': '1', 
         'name': 'Доктор Ахмед', 'category': 'cardio', 'city': 'Казань',
         'experience': '10', 'lat': '55.79', 'lon': '49.10',
     })
@@ -92,7 +92,7 @@ def test_doctor_publish_paid(client):
     user = User.objects.create_user('d2', 'd2@x.com', 'x')
     wallet.credit(user, 80_000, Transaction.TOPUP)
     client.force_login(user)
-    client.post('/health/add/', {
+    client.post('/health/add/', {'pledge': '1', 
         'name': 'Доктор Валид', 'category': 'gp', 'city': 'Грозный',
         'experience': '5', 'lat': '43.31', 'lon': '45.69',
     })
@@ -105,7 +105,7 @@ def test_doctor_publish_paid_insufficient(client):
     settings_obj.save()
     user = User.objects.create_user('d3', 'd3@x.com', 'x')
     client.force_login(user)
-    response = client.post('/health/add/', {
+    response = client.post('/health/add/', {'pledge': '1', 
         'name': 'Доктор Бедный', 'category': 'gp', 'city': 'Уфа',
         'experience': '3', 'lat': '54.73', 'lon': '55.97',
     })

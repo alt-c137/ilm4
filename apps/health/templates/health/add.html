@@ -17,6 +17,7 @@
       {{ field }}
       {% if field.errors %}<span class="err">{{ field.errors.0 }}</span>{% endif %}
     {% endfor %}
+    {% include 'includes/pledge.html' %}
     <button type="submit" class="btn btn--p">Отправить</button>
   </form>
 </div>

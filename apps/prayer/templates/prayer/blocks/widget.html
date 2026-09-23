@@ -1,4 +1,4 @@
-{% load prayer_tags %}{% prayer_widget as w %}
+{% load prayer_tags %}{% prayer_widget request.COOKIES.ilm4_city as w %}
 <section class="sec">
   <div class="sec__h">
     <div class="sec__t">Время намаза — {{ w.city }}</div>
@@ -6,7 +6,7 @@
   </div>
   <div class="tstrip">
     {% for it in w.items %}
-    <div class="tstrip__cell{% if it.soon %} on{% elif it.passed %} passed{% endif %}">
+    <div class="tstrip__cell{% if it.current %} on{% elif it.passed %} passed{% endif %}{% if it.next %} is-next{% endif %}">
       <span class="tsun tsun--{{ it.key }}">
         {% if it.key == 'fajr' %}<svg viewBox="0 0 24 24" fill="none" stroke="#7c5cd6" stroke-width="2" stroke-linecap="round"><path d="M20.4 14.2A8.5 8.5 0 1 1 9.8 3.6a7 7 0 1 0 10.6 10.6z"/></svg>
         {% elif it.key == 'sunrise' %}<svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"><path d="M4 18h16M6 14a6 6 0 0 1 12 0M12 3v4M5 7l1.5 1.5M19 7l-1.5 1.5"/></svg>
@@ -18,6 +18,7 @@
       <span class="tstrip__col">
         <span class="tstrip__n">{{ it.label }}</span>
         <span class="tstrip__t">{{ it.time }}</span>
+          {% if it.current %}<span class="tstrip__m">сейчас</span>{% elif it.next %}<span class="tstrip__m">следующий</span>{% endif %}
       </span>
     </div>
     {% endfor %}

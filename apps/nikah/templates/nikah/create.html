@@ -23,6 +23,7 @@
     <input type="text" name="contact_hint" maxlength="200" placeholder="telegram @ник / email / телефон">
     <label>Фото</label>
     <input type="file" name="photo" accept="image/*">
+    {% include 'includes/pledge.html' with kind='nikah' %}
     <button type="submit" class="btn btn--p">Отправить на модерацию</button>
   </form>
 </div>

@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load icons %}{% load humanize %}
+{% load icons %}{% load humanize %}{% load reviews %}
 {% block title %}{{ listing.title }} — {{ block.super }}{% endblock %}
 {% block description %}{{ listing.title }}{% if listing.city %}, {{ listing.city }}{% endif %} — {{ listing.description|truncatechars:140 }}{% endblock %}
 {% block body_class %}s-buy{% if listing.owner != request.user %} has-dbar{% endif %}{% endblock %}
@@ -43,7 +43,7 @@
           {% if listing.owner == request.user %}
             <a class="btn btn--g" href="{% url 'market:my' %}">{% ico 'edit' %}Мои объявления</a>
           {% else %}
-            <a class="btn btn--p" href="{% url 'chat:start' %}?email={{ owner.email|urlencode }}">{% ico 'chat' %}Написать продавцу</a>
+            <a class="btn btn--p" href="{% url 'chat:start' %}?user={{ owner.pk }}&amp;subject={{ listing.title|urlencode }}">{% ico 'chat' %}Написать продавцу</a>
           {% endif %}
         </div>
 
@@ -55,16 +55,19 @@
         {% endif %}
 
         <div class="sepline"></div>
-        <div class="person">
+        <a class="person person--link" href="{% url 'accounts:public' owner.pk %}">
           {% if owner.avatar %}<img class="person__ava" src="{{ owner.avatar.url }}" alt="">{% else %}<span class="person__ava">{{ owner.get_display_name|slice:":1"|upper }}</span>{% endif %}
           <div>
             <div class="person__n">{{ owner.get_display_name }}</div>
             <div class="person__s">на ilm4 с {{ owner.date_joined|date:"E Y"|lower }}</div>
           </div>
-        </div>
+          <svg class="person__go" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+        </a>
+        <div class="pcard__rep pcard__rep--left">{% rating_badge owner %}{% verified_badge owner %}</div>
       </div>
 
-      <div class="dnote">{% ico 'shield' %}<span>Не переводите предоплату незнакомым людям. Встречайтесь в людных местах и проверяйте товар до оплаты. Безопасная сделка через платформу появится позже.</span></div>
+      {% include 'includes/disclaimer.html' %}
+      <div class="dnote">{% ico 'shield' %}<span>Встречайтесь в людных местах и проверяйте товар до оплаты. Безопасная сделка через платформу появится позже.</span></div>
     </aside>
   </div>
 </div>
@@ -75,7 +78,7 @@
     <div class="dbar__v">{% if listing.price == 0 %}Даром{% else %}{{ listing.price|intcomma }} {{ listing.get_currency_display }}{% endif %}</div>
     <div class="dbar__s">{{ listing.title }}</div>
   </div>
-  <a class="btn btn--p" href="{% url 'chat:start' %}?email={{ owner.email|urlencode }}">{% ico 'chat' %}Написать</a>
+  <a class="btn btn--p" href="{% url 'chat:start' %}?user={{ owner.pk }}&amp;subject={{ listing.title|urlencode }}">{% ico 'chat' %}Написать</a>
 </div>
 {% endif %}
 {% endwith %}

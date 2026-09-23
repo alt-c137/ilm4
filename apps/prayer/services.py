@@ -3,7 +3,7 @@
 Библиотека praytimes — порт PrayTimes.org: астрономия по координатам и дате,
 методы отличаются углами Фаджр/Иша. У всех вызовов один вход — compute().
 """
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 from django.utils import timezone as dj_tz
 from praytimes import PrayTimes
@@ -47,15 +47,26 @@ def compute(lat: float, lon: float, tz_offset: int, day: date | None = None,
     return {key: times[key] for key in NAMES}
 
 
-def next_epoch(times: dict[str, str], now: datetime | None = None) -> int:
+def local_now(tz_offset: float | None = None) -> datetime:
+    """Текущее время (наивное) в зоне города: UTC + смещение.
+    Без смещения — зона проекта."""
+    if tz_offset is None:
+        return _now_naive()
+    return dj_tz.now().astimezone(timezone.utc).replace(tzinfo=None) + timedelta(hours=tz_offset)
+
+
+def next_epoch(times: dict[str, str], now: datetime | None = None,
+               tz_offset: float | None = None) -> int:
     """Unix-время следующего намаза — для живого отсчёта на клиенте."""
+    now = now or local_now(tz_offset)
     info = until_next(times, now)
     h, m = map(int, times[info['key']].split(':'))
-    base = (now or _now_naive()).date()
+    base = now.date()
     if info['tomorrow']:
         base = base + timedelta(days=1)
-    aware = datetime.combine(base, datetime.min.time()).replace(
-        hour=h, minute=m, tzinfo=dj_tz.get_default_timezone())
+    tzinfo = (timezone(timedelta(hours=tz_offset)) if tz_offset is not None
+              else dj_tz.get_default_timezone())
+    aware = datetime.combine(base, datetime.min.time()).replace(hour=h, minute=m, tzinfo=tzinfo)
     return int(aware.timestamp())
 
 
@@ -138,3 +149,44 @@ def prayer_progress(times: dict[str, str], now: datetime | None = None) -> int:
     isha, fajr = marks[-1][1], marks[0][1]
     span = (fajr + 1440) - isha
     return max(0, min(100, round((now_m - isha) / span * 100)))
+
+
+def current_prayer(times: dict[str, str], now: datetime | None = None) -> str:
+    """Текущий период: последний наступивший пункт расписания (включая восход).
+
+    До Фаджра — ещё идёт вчерашний Иша. Восход — не намаз, но это граница
+    времени Фаджра: после него «сейчас» показывается как «Восход».
+    """
+    now = now or _now_naive()
+    now_m = now.hour * 60 + now.minute
+    current = 'isha'
+    for key in NAMES:
+        if _minutes(times[key]) <= now_m:
+            current = key
+    return current
+
+
+def schedule(times: dict[str, str], now: datetime | None = None) -> dict:
+    """Расписание дня для шаблонов: пункты с флагами current / next / passed
+    + текущий и следующий намаз с отсчётом."""
+    now = now or _now_naive()
+    now_m = now.hour * 60 + now.minute
+    cur = current_prayer(times, now)
+    until = until_next(times, now)
+    items = []
+    for key, label in NAMES.items():
+        is_cur = key == cur
+        items.append({
+            'key': key, 'label': label, 'time': times[key],
+            'current': is_cur,
+            'next': key == until['key'],
+            # «прошёл» — наступил сегодня и уже не текущий
+            'passed': (not is_cur and _minutes(times[key]) <= now_m),
+            'soon': key == until['key'] and not until['tomorrow'],
+        })
+    return {
+        'items': items,
+        'current_key': cur, 'current_name': NAMES[cur], 'current_time': times[cur],
+        'next_key': until['key'], 'next_name': until['name'], 'next_time': until['time'],
+        'until': until,
+    }

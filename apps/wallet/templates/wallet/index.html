@@ -1,34 +1,48 @@
 {% extends 'base.html' %}
-{% load humanize %}
-{% block title %}Кошелёк — {{ block.super }}</div>
-{% endblock %}
+{% load humanize icons %}
+{% block title %}Кошелёк — {{ block.super }}{% endblock %}
 {% block body_class %}s-wallet{% endblock %}
 
 {% block content %}
-{% include 'includes/section_hero.html' with icon="💰" title="Кошелёк" desc="Ваш баланс и история операций платформы" class="wallet" %}
-<div class="page">
-  <div class="balance">
-    <span class="balance__label">Баланс</span>
-    <span class="balance__sum">{{ balance|intcomma }} <small>сум</small></span>
-    <a class="btn btn--p" href="{% url 'wallet:payout' %}">Вывести средства</a>
-  </div>
+<div class="svc">
+{% include 'includes/section_hero.html' with icon="💰" title="Кошелёк" desc="Баланс для услуг платформы: поднятие объявлений, анкет и публикаций" class="wallet" %}
 
-  <h2 class="page__h2">История операций</h2>
+<div class="wgrid">
+  <section class="wcard">
+    <span class="wcard__l">Баланс</span>
+    <span class="wcard__sum">{{ balance|intcomma }} <small>сум</small></span>
+    <div class="wcard__act">
+      <a class="btn wcard__btn" href="{% url 'wallet:topup' %}">{% ico 'plus' %}Пополнить</a>
+      {% if payouts %}<a class="btn wcard__btn wcard__btn--g" href="{% url 'wallet:payout' %}">Вывести</a>{% endif %}
+    </div>
+    <p class="wcard__note">Карта или криптовалюта — через платёжный сервис. Баланс — предоплата за услуги ilm4{% if not payouts %}: его нельзя вывести или перевести другому человеку{% endif %}.</p>
+  </section>
+
+  <section class="dcard">
+    <h2 class="dcard__h">На что тратить</h2>
+    <div class="kv">
+      {% for name, price in prices %}
+      <div class="kv__row"><span class="kv__ic">{% ico 'star' %}</span><div style="flex:1"><div class="kv__v">{{ name }}</div></div><b class="wprice">{% if price %}{{ price|intcomma }} сум{% else %}бесплатно{% endif %}</b></div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+<section class="dcard" style="margin-top:16px">
+  <h2 class="dcard__h">История операций</h2>
   {% if transactions %}
-  <table class="tbl">
-    <tr><th>Когда</th><th>Операция</th><th>Сумма</th><th>Баланс после</th><th>Заметка</th></tr>
+  <div class="wlist">
     {% for t in transactions %}
-    <tr>
-      <td>{{ t.created_at|date:"d.m H:i" }}</td>
-      <td>{{ t.get_kind_display }}</td>
-      <td class="{% if t.is_debit %}down{% else %}up{% endif %}">{% if t.is_debit %}−{% else %}+{% endif %}{{ t.amount|intcomma }}</td>
-      <td>{{ t.balance_after|intcomma }}</td>
-      <td class="meta">{{ t.note }}</td>
-    </tr>
+    <div class="wrow">
+      <span class="wrow__ic{% if t.is_debit %} wrow__ic--down{% endif %}">{% if t.is_debit %}−{% else %}+{% endif %}</span>
+      <div class="wrow__b"><b>{{ t.get_kind_display }}</b><span>{{ t.note|default:t.ref }} · {{ t.created_at|date:"j E, H:i" }}</span></div>
+      <div class="wrow__sum{% if t.is_debit %} down{% else %} up{% endif %}">{% if t.is_debit %}−{% else %}+{% endif %}{{ t.amount|intcomma }}<small>остаток {{ t.balance_after|intcomma }}</small></div>
+    </div>
     {% endfor %}
-  </table>
+  </div>
   {% else %}
-  <p>Операций пока нет. Пополнение откроется вместе с платёжными методами.</p>
+  <div class="empty" style="box-shadow:none;padding:26px"><div class="empty__plug">{% ico 'clock' %}</div><p style="color:var(--ink-soft)">Операций пока нет.</p></div>
   {% endif %}
+</section>
 </div>
 {% endblock %}

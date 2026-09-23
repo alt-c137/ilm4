@@ -155,3 +155,86 @@ document.querySelectorAll('[data-share]').forEach(function (b) {
     if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(location.href).then(done);
   });
 });
+
+// палитра для гостей: свёрнута в кнопку, раскрывается по клику
+(function () {
+  var w = document.getElementById('swwrap'), b = document.getElementById('swbtn');
+  if (!w || !b) return;
+  b.addEventListener('click', function (e) {
+    e.stopPropagation();
+    var open = w.classList.toggle('open');
+    b.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  document.addEventListener('click', function (e) { if (!w.contains(e.target)) { w.classList.remove('open'); b.setAttribute('aria-expanded', 'false'); } });
+})();
+
+// карточка «Сегодня» — скрипт в core/includes/today.html
+
+// ссылки на сторонние сайты (помечены data-ext): предупреждение перед переходом
+(function () {
+  var KEY = 'ilm4_ext_ok';
+  var skip = false;
+  try { skip = localStorage.getItem(KEY) === '1'; } catch (e) {}
+  var modal = null, target = '';
+  function build() {
+    modal = document.createElement('div');
+    modal.className = 'modal extmodal'; modal.hidden = true;
+    modal.innerHTML = '<div class="modal__card" role="dialog" aria-modal="true" aria-labelledby="ext-h">' +
+      '<button type="button" class="modal__close" aria-label="Закрыть">×</button>' +
+      '<div class="extmodal__ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v4.5A1.5 1.5 0 0 1 16.5 20h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/></svg></div>' +
+      '<h3 class="modal__h" id="ext-h">Вы переходите на сторонний сайт</h3>' +
+      '<span class="extmodal__url"></span>' +
+      '<p class="extmodal__txt">Это внешний сайт — не ilm4. Мы не отвечаем за его содержание, товары и услуги. Не вводите пароли и данные карт, если не уверены в сайте.</p>' +
+      '<div class="extmodal__act"><button type="button" class="btn btn--g" data-x>Остаться</button><a class="btn btn--p" data-go target="_blank" rel="noopener nofollow">Перейти</a></div>' +
+      '<label class="extmodal__skip"><input type="checkbox" data-skip> Больше не предупреждать</label></div>';
+    document.body.appendChild(modal);
+    var close = function () { modal.hidden = true; };
+    modal.querySelector('.modal__close').addEventListener('click', close);
+    modal.querySelector('[data-x]').addEventListener('click', close);
+    modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+    modal.querySelector('[data-go]').addEventListener('click', function () {
+      if (modal.querySelector('[data-skip]').checked) { try { localStorage.setItem(KEY, '1'); } catch (e) {} skip = true; }
+      setTimeout(close, 50);
+    });
+  }
+  /* делегирование: работает и для ссылок, появившихся позже (попапы карты) */
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[data-ext]');
+    if (!a || skip) return;
+    e.preventDefault();
+    if (!modal) build();
+    target = a.href;
+    modal.querySelector('.extmodal__url').textContent = target.replace(/^https?:\/\//, '');
+    modal.querySelector('[data-go]').href = target;
+    modal.hidden = false;
+  });
+})();
+
+// входящий звонок — всплывашка на любой странице сайта (личный канал /ws/me/)
+(function () {
+  if (!document.body.dataset.calls || !window.WebSocket) return;
+  var box = null, timer = null;
+  function hide() { if (box) { box.remove(); box = null; } clearTimeout(timer); }
+  function show(d) {
+    if (location.pathname === '/chat/' + d.thread + '/') return;   // диалог открыт — там свой экран звонка
+    if (!box) {
+      box = document.createElement('div');
+      box.className = 'ringtoast';
+      box.innerHTML = '<span class="ringtoast__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5h3l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.5 5.7 2 2 0 0 1 6.5 3.5z"/></svg></span>' +
+        '<span class="ringtoast__b"><b></b><small></small></span><a class="btn btn--p">Ответить</a><button type="button" class="ringtoast__x" aria-label="Скрыть">×</button>';
+      box.querySelector('.ringtoast__x').onclick = hide;
+      document.body.appendChild(box);
+    }
+    box.querySelector('b').textContent = d.from_name;
+    box.querySelector('small').textContent = d.video ? 'Видеозвонок…' : 'Звонит…';
+    box.querySelector('a').href = '/chat/' + d.thread + '/?answer=1';
+    clearTimeout(timer); timer = setTimeout(hide, 8000);   // звонящий повторяет сигнал каждые 3 с
+  }
+  function connect() {
+    var ws = new WebSocket((location.protocol === 'https:' ? 'wss' : 'ws') + '://' + location.host + '/ws/me/');
+    ws.onmessage = function (e) { var d = JSON.parse(e.data); if (d.action === 'ring') show(d); else hide(); };
+    ws.onclose = function () { setTimeout(connect, 5000); };
+  }
+  connect();
+})();

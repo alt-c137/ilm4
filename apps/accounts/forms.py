@@ -102,12 +102,15 @@ class RegisterForm(forms.Form):
 class ProfileForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ['nickname', 'first_name', 'city', 'avatar']
+        fields = ['nickname', 'first_name', 'city', 'avatar', 'phone', 'findable_by_phone']
         labels = {
             'nickname': 'Ник', 'first_name': 'Имя', 'city': 'Город',
-            'avatar': 'Аватар',
+            'avatar': 'Аватар', 'phone': 'Телефон',
+            'findable_by_phone': 'Друзья из контактов могут найти меня по номеру',
         }
         widgets = {
             # аву меняем кликом по фото в карточке — стандартная кнопка не нужна
             'avatar': forms.ClearableFileInput(attrs={'data-skip': '1'}),
+            'phone': forms.TextInput(attrs={'placeholder': '+998 90 123 45 67', 'inputmode': 'tel',
+                                            'autocomplete': 'tel'}),
         }

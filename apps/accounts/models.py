@@ -27,6 +27,15 @@ class User(AbstractUser):
     city = models.CharField('город', max_length=80, blank=True)
     avatar = models.ImageField('аватар', upload_to='avatars/', blank=True, null=True)
     role = models.CharField('роль', max_length=12, choices=ROLES, default=ROLE_USER)
+    phone = models.CharField('телефон', max_length=20, blank=True)
+    phone_key = models.CharField('ключ номера (хеш последних 9 цифр)', max_length=64, blank=True,
+                                 db_index=True, editable=False)
+    findable_by_phone = models.BooleanField(
+        'меня можно найти по номеру', default=False,
+        help_text='Друзья, у которых ваш номер в контактах, увидят, что вы на ilm4')
+    platform_verified = models.BooleanField(
+        'проверен платформой', default=False,
+        help_text='Продавец/исполнитель/заведение проверены админом (документы, контакты)')
     theme = models.ForeignKey(
         'core.Theme', verbose_name='тема оформления', null=True, blank=True,
         on_delete=models.SET_NULL, related_name='+',
@@ -48,6 +57,11 @@ class User(AbstractUser):
     @property
     def is_support_role(self) -> bool:
         return self.is_superuser or self.role in (self.ROLE_SUPPORT, self.ROLE_ADMIN, self.ROLE_SUPER)
+
+    def save(self, *args, **kwargs):
+        from .phones import phone_key
+        self.phone_key = phone_key(self.phone) if self.phone else ''
+        super().save(*args, **kwargs)
 
     def get_display_name(self) -> str:
         return self.nickname or self.first_name or self.username

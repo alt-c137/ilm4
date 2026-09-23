@@ -1,21 +1,22 @@
-{% load icons %}
-<section class="sec" id="modules">
-  <div class="railnav">
+{% load icons %}{% comment %}Витрина сервисов на главной: первые работающие разделы (порядок — из админки)
+и плитка «Все сервисы» → каталог по группам. Масштабируется на любое число разделов:
+на главной всегда один-два ряда, остальное — в каталоге.{% endcomment %}
+<section class="sec svcs" id="modules">
+  <div class="sec__h">
+    <h2 class="sec__t">Сервисы</h2>
+    <a class="sec__l" href="{% url 'core:catalog' %}">Все {{ services_total }} →</a>
+  </div>
   <div class="apps">
-    {% for m in modules %}
-    <a class="app{% if m.status == 'soon' %} soon{% endif %}"
-       href="{% if m.status == 'on' %}/{{ m.key }}/{% else %}{% url 'core:soon' %}?m={{ m.key }}{% endif %}">
-      <div class="app__wrap app--{{ m.key }}">{% svc_icon m.key m.icon 'app__ic' %}</div>
-      <div class="app__n">{{ m.name }}</div>
-      {% if m.status == 'soon' %}<div class="app__soon">скоро</div>{% endif %}
+    {% for m in popular %}
+    <a class="app" href="/{{ m.key }}/">
+      <span class="app__ic">{% svc_glyph m.key m.icon 'glyph' %}</span>
+      <span class="app__n">{{ m.name }}</span>
     </a>
     {% endfor %}
-    <a class="app app--more hide-d" href="{% url 'core:soon' %}">
-      <div class="app__wrap"><div class="app__ic"><svg viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18.5" cy="12" r="1.6"/></svg></div></div>
-      <div class="app__n">Скоро ещё</div>
+    <a class="app app--all" href="{% url 'core:catalog' %}">
+      <span class="app__ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="3.25"/></svg></span>
+      <span class="app__n">Все сервисы</span>
+      {% if services_soon %}<span class="app__soon">+{{ services_soon }} скоро</span>{% endif %}
     </a>
-  </div>
-  <button type="button" class="rail-arrow l" aria-label="Назад">‹</button>
-  <button type="button" class="rail-arrow r" aria-label="Вперёд">›</button>
   </div>
 </section>

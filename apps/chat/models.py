@@ -1,10 +1,20 @@
 from django.conf import settings
 from django.db import models
 
+from .crypto import EncryptedTextField
+
 
 class Thread(models.Model):
-    """Личный диалог двух участников (как в Авито)."""
+    """Диалог. Сейчас — личный (двое). Поля kind/title/owner — основа для групп
+    и каналов (фаза «мессенджер»): включаются без переделки таблиц."""
 
+    DIRECT, GROUP, CHANNEL = 'direct', 'group', 'channel'
+    KINDS = [(DIRECT, 'Личный'), (GROUP, 'Группа'), (CHANNEL, 'Канал')]
+
+    kind = models.CharField('вид', max_length=8, choices=KINDS, default=DIRECT, db_index=True)
+    title = models.CharField('название (группа/канал)', max_length=120, blank=True)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+                              related_name='owned_threads', verbose_name='создатель (группа/канал)')
     participants = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='chat_threads')
     subject = models.CharField('тема (например, объявление)', max_length=160, blank=True)
     updated_at = models.DateTimeField('обновлён', auto_now=True, db_index=True)
@@ -27,8 +37,17 @@ class Message(models.Model):
     thread = models.ForeignKey(Thread, on_delete=models.CASCADE, related_name='messages')
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                                related_name='sent_messages')
-    body = models.TextField('текст')
+    TEXT, PHOTO, VIDEO, VOICE, CIRCLE, FILE, SYSTEM = 'text', 'photo', 'video', 'voice', 'circle', 'file', 'system'
+    KINDS = [(TEXT, 'Текст'), (PHOTO, 'Фото'), (VIDEO, 'Видео'), (VOICE, 'Голосовое'),
+             (CIRCLE, 'Видеокружок'), (FILE, 'Файл'), (SYSTEM, 'Служебное')]
+
+    kind = models.CharField('вид', max_length=8, choices=KINDS, default=TEXT)
+    body = EncryptedTextField('текст', blank=True)  # в БД — зашифровано
+    # вложения — основа на будущее: фото/видео/голос/кружок (сейчас в интерфейсе выключены)
+    attachment = models.FileField('вложение', upload_to='chat/%Y/%m/', blank=True, null=True)
+    duration = models.PositiveIntegerField('длительность, сек (голос/кружок/видео)', null=True, blank=True)
     created_at = models.DateTimeField('создано', auto_now_add=True, db_index=True)
+    read_at = models.DateTimeField('прочитано', null=True, blank=True)
 
     class Meta:
         ordering = ['created_at']

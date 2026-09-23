@@ -3,13 +3,13 @@ import json
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 
-from apps.core.decorators import module_required
+from apps.core.decorators import module_required, pledge_required
 from apps.core.models import Moderation
 
 from .forms import HalalPlaceForm
-from .models import HalalPlace
+from .models import HalalPlace, PlaceConfirmation
 
 
 def _approved(qs, request):
@@ -38,7 +38,9 @@ def _approved(qs, request):
 def map_view(request):
     places = _approved(HalalPlace.objects.all(), request)
     markers = [
-        {'name': p.name, 'city': p.city, 'category': p.get_category_display(),
+        {'id': p.pk, 'name': p.name, 'city': p.city, 'category': p.get_category_display(),
+         'kind': p.category, 'brief': p.mosque_brief() if p.is_mosque else '',
+         'affiliation': p.affiliation if p.is_mosque else '',
          'address': p.address, 'phone': p.phone, 'url': p.url,
          'lat': float(p.lat), 'lon': float(p.lon),
          'distance': getattr(p, 'distance_km', None)}
@@ -58,6 +60,7 @@ def map_view(request):
 
 @login_required
 @module_required('map')
+@pledge_required
 def add_place(request):
     form = HalalPlaceForm(request.POST or None, request.FILES or None)
     if request.method == 'POST' and form.is_valid():
@@ -67,3 +70,36 @@ def add_place(request):
         messages.success(request, 'Спасибо! Место отправлено на модерацию.')
         return redirect('maps:map')
     return render(request, 'maps/add.html', {'form': form})
+
+
+@module_required('map')
+def place_detail(request, pk):
+    """Страница заведения: контакты, карта, отзывы и отметка «проверено»."""
+    place = get_object_or_404(HalalPlace, pk=pk, status=Moderation.APPROVED)
+    mine = (PlaceConfirmation.objects.filter(place=place, user=request.user).first()
+            if request.user.is_authenticated else None)
+    return render(request, 'maps/detail.html', {
+        'place': place,
+        'confirmed': place.confirmations.filter(is_correct=True).count(),
+        'my_confirmation': mine,
+    })
+
+
+@login_required
+@module_required('map')
+def place_confirm(request, pk):
+    """«Информация верна» или «Сообщить о неточности» (с текстом — модераторам)."""
+    place = get_object_or_404(HalalPlace, pk=pk, status=Moderation.APPROVED)
+    if request.method != 'POST':
+        return redirect('maps:detail', pk=pk)
+    correct = request.POST.get('correct') == '1'
+    note = request.POST.get('note', '').strip()[:500]
+    if not correct and not note:
+        messages.error(request, 'Опишите, что неточно, — модератор проверит.')
+        return redirect('maps:detail', pk=pk)
+    PlaceConfirmation.objects.update_or_create(
+        place=place, user=request.user,
+        defaults={'is_correct': correct, 'note': '' if correct else note, 'resolved': False})
+    messages.success(request, 'Спасибо, подтверждение учтено.' if correct
+                     else 'Спасибо! Модератор проверит и исправит.')
+    return redirect('maps:detail', pk=pk)

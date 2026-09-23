@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load icons reviews %}
+{% block title %}{{ place.name }} — {{ block.super }}{% endblock %}
+{% block description %}{{ place.name }} — {{ place.get_category_display|lower }}, {{ place.city }}. Адрес, контакты и отзывы на ilm4.{% endblock %}
+{% block body_class %}s-map{% if place.phone %} has-dbar{% endif %}{% endblock %}
+
+{% block content %}
+<div class="dpage">
+  <a class="crumb" href="/map/?city={{ place.city|urlencode }}">{% ico 'back' %}Халяль карта · {{ place.city }}</a>
+  <div class="dgrid dgrid--rev">
+    <aside class="dside">
+      <div class="dcard pcard">
+        <div class="pcard__ava">{% if place.photo %}<img src="{{ place.photo.url }}" alt="">{% elif place.is_mosque %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5c1.4 1 1.4 2.6 0 3.6M5.5 20v-6M18.5 20v-6M5.5 14a6.5 6.5 0 0 1 13 0M4 20h16M9 20v-3.2a3 3 0 0 1 6 0V20"/></svg>{% else %}{% ico 'pin' %}{% endif %}</div>
+        <h1 class="dtitle">{{ place.name }}</h1>
+        <div class="dmeta">
+          <span class="mchip mchip--acc">{{ place.get_category_display }}</span>
+          <span class="mchip">{% ico 'pin' %}{{ place.city }}</span>
+        </div>
+        {% if place.is_mosque and place.mosque_brief %}<div class="mbrief">{{ place.mosque_brief }}</div>{% endif %}
+        <div class="pcard__rep">{% if not place.is_mosque %}{% rating_badge place %}{% endif %}{% verified_badge place %}
+          {% if confirmed %}<span class="cbadge" title="Столько пользователей подтвердили, что информация верна">{% ico 'user' %}Подтвердили {{ confirmed }}</span>{% endif %}</div>
+        <div class="dact">
+          {% if place.phone %}<a class="btn btn--p" href="tel:{{ place.phone|cut:' ' }}">{% ico 'phone' %}Позвонить</a>{% endif %}
+          <a class="btn btn--g" href="https://www.google.com/maps/search/?api=1&amp;query={{ place.lat }},{{ place.lon }}" target="_blank" rel="noopener">{% ico 'pin' %}Маршрут</a>
+          {% if place.url %}<a class="btn btn--g" href="{{ place.url }}" target="_blank" rel="noopener nofollow" data-ext>{% ico 'globe' %}Сайт / соцсеть</a>{% endif %}
+        </div>
+      </div>
+    </aside>
+    <div class="dmain">
+      {% if place.is_mosque %}
+      <section class="dcard">
+        <h2 class="dcard__h">О мечети</h2>
+        <div class="minfo">
+          <div><span>Течение</span><b>{{ place.get_branch_display|default:"не указано" }}</b></div>
+          <div><span>Мазхаб</span><b>{{ place.get_madhhab_display|default:"не указан" }}</b></div>
+          <div class="minfo__wide"><span>Кому принадлежит</span><b>{{ place.affiliation|default:"не указано" }}</b></div>
+          {% if place.imam %}<div><span>Имам</span><b>{{ place.imam }}</b></div>{% endif %}
+          {% if place.khutba_lang %}<div><span>Язык хутбы</span><b>{{ place.khutba_lang }}</b></div>{% endif %}
+        </div>
+        {% if place.amenities %}<div class="mamen">{% for a in place.amenities %}<span>✓ {{ a }}</span>{% endfor %}</div>{% endif %}
+        <p class="minfo__note">Сведения собраны из открытых источников и от пользователей. Если что-то не так — сообщите ниже, модератор исправит.</p>
+      </section>
+      {% endif %}
+      <section class="dcard">
+        <h2 class="dcard__h">Контакты</h2>
+        <div class="kv">
+          <div class="kv__row"><span class="kv__ic">{% ico 'pin' %}</span><div><div class="kv__l">Адрес</div><div class="kv__v">{{ place.address|default:place.city }}</div></div></div>
+          {% if place.phone %}<div class="kv__row"><span class="kv__ic">{% ico 'phone' %}</span><div><div class="kv__l">Телефон</div><div class="kv__v"><a href="tel:{{ place.phone|cut:' ' }}">{{ place.phone }}</a></div></div></div>{% endif %}
+        </div>
+      </section>
+      {% if place.description %}<section class="dcard"><h2 class="dcard__h">О месте</h2><div class="prose">{{ place.description|linebreaks }}</div></section>{% endif %}
+      <section class="dcard confirm" id="confirm">
+        <h2 class="dcard__h">Информация верна?</h2>
+        <p class="confirm__t">{% if confirmed %}Подтвердили {{ confirmed }} {{ confirmed|ru_plural:"пользователь,пользователя,пользователей" }}.{% else %}Пока никто не подтвердил. Были здесь — помогите другим.{% endif %}</p>
+        {% if user.is_authenticated %}
+          {% if my_confirmation %}<p class="confirm__mine">{% if my_confirmation.is_correct %}✓ Вы подтвердили эти сведения{% else %}Вы сообщили о неточности — спасибо, модератор проверит{% endif %}</p>{% endif %}
+          <div class="confirm__act">
+            <form method="post" action="{% url 'maps:confirm' place.pk %}">{% csrf_token %}<input type="hidden" name="correct" value="1">
+              <button type="submit" class="btn btn--p">{% ico 'shield' %}Да, всё верно</button></form>
+            <details class="confirm__bad"><summary class="btn btn--g">Сообщить о неточности</summary>
+              <form method="post" action="{% url 'maps:confirm' place.pk %}">{% csrf_token %}<input type="hidden" name="correct" value="0">
+                <textarea name="note" rows="2" maxlength="500" required placeholder="Что не так: течение, мазхаб, адрес, телефон…"></textarea>
+                <button type="submit" class="btn btn--s">Отправить модератору</button></form>
+            </details>
+          </div>
+        {% else %}<p class="reviews__login"><a class="link" href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">Войдите</a>, чтобы подтвердить или уточнить.</p>{% endif %}
+      </section>
+      {% if place.is_mosque %}{% reviews_block place "Сообщения" %}{% else %}{% reviews_block place "Отзывы посетителей" %}{% endif %}
+      {% if not place.is_mosque %}{% include 'includes/disclaimer.html' %}{% endif %}
+    </div>
+  </div>
+</div>
+{% if place.phone %}
+<div class="dbar">
+  <div class="dbar__p"><div class="dbar__v">{{ place.name }}</div><div class="dbar__s">{{ place.get_category_display }} · {{ place.city }}</div></div>
+  <a class="btn btn--p" href="tel:{{ place.phone|cut:' ' }}">{% ico 'phone' %}Позвонить</a>
+</div>
+{% endif %}
+{% endblock %}

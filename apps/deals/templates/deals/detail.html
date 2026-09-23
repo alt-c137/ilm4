@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load icons humanize %}
+{% block title %}Сделка #{{ order.pk }} — {{ block.super }}{% endblock %}
+{% block content %}
+<div class="dpage">
+  <a class="crumb" href="{% url 'deals:index' %}">{% ico 'back' %}Все сделки</a>
+  <div class="dgrid dgrid--split">
+    <div class="dmain">
+      <section class="dcard">
+        <div class="dkicker">{% ico 'shield' %}Безопасная сделка #{{ order.pk }} · {{ order.get_kind_display }}</div>
+        <h1 class="dtitle">{{ order.title }}</h1>
+        <div class="dmeta">
+          <span class="mchip mchip--acc">{{ order.get_status_display }}</span>
+          {% if order.deadline %}<span class="mchip">{% ico 'calendar' %}срок {{ order.deadline|date:"j E" }}</span>{% endif %}
+        </div>
+        {% if step_idx >= 0 %}
+        <ol class="dprog">{% for k, label in steps %}<li class="{% if forloop.counter0 < step_idx %}done{% elif forloop.counter0 == step_idx %}now{% endif %}"><i></i><span>{{ label }}</span></li>{% endfor %}</ol>
+        {% endif %}
+      </section>
+      <section class="dcard"><h2 class="dcard__h">Условия и результат</h2><div class="prose">{{ order.terms|linebreaks }}</div></section>
+      {% if order.dispute_reason %}<section class="dcard dcard--warn"><h2 class="dcard__h">Спор</h2><p>{{ order.dispute_reason|linebreaksbr }}</p><p class="gcard__note">Модератор изучит переписку и условия и примет решение: выплата исполнителю или возврат заказчику.</p></section>{% endif %}
+      <section class="dcard"><h2 class="dcard__h">История</h2>
+        <ul class="dlog">{% for e in order.events.all %}<li><b>{{ e.label }}</b> <span>{{ e.actor.get_display_name|default:"система" }} · {{ e.created_at|date:"j E, H:i" }}</span>{% if e.note %}<em>{{ e.note }}</em>{% endif %}</li>{% endfor %}</ul>
+      </section>
+    </div>
+    <aside class="dside">
+      <div class="dcard">
+        <div class="kv__l">Сумма сделки</div>
+        <div class="dprice">{{ order.amount|intcomma }} сум</div>
+        <div class="dsum"><span>Комиссия ilm4 ({{ order.fee_percent|floatformat:"-2" }}%)</span><b>{{ order.fee|intcomma }}</b></div>
+        <div class="dsum"><span>Исполнитель получит</span><b>{{ order.payout|intcomma }}</b></div>
+        <div class="sepline"></div>
+        <div class="dsum"><span>Заказчик</span><b>{{ order.client.get_display_name }}</b></div>
+        <div class="dsum"><span>Исполнитель</span><b>{{ order.provider.get_display_name }}</b></div>
+        <div class="dact">
+          {% if role == 'provider' and order.status == 'offered' %}
+            <form method="post" action="{% url 'deals:act' order.pk 'accept' %}">{% csrf_token %}
+              {% include 'includes/pledge.html' %}
+              <button class="btn btn--p" style="width:100%;margin-top:10px">Принять заказ</button></form>
+          {% endif %}
+          {% if role == 'client' and order.status == 'accepted' %}
+            <form method="post" action="{% url 'deals:act' order.pk 'fund' %}">{% csrf_token %}
+              <button class="btn btn--p" style="width:100%">{% ico 'lock' %}Оплатить {{ order.amount|intcomma }} сум</button></form>
+            <p class="gcard__note">На балансе: {{ balance|intcomma }} сум. Деньги удерживаются, исполнитель получит их после вашего подтверждения.</p>
+          {% endif %}
+          {% if role == 'provider' and order.status == 'funded' %}
+            <form method="post" action="{% url 'deals:act' order.pk 'deliver' %}">{% csrf_token %}
+              <textarea name="note" rows="2" placeholder="Что сдаёте: ссылка, файлы в чате, комментарий"></textarea>
+              <button class="btn btn--p" style="width:100%">Сдать работу</button></form>
+          {% endif %}
+          {% if role == 'client' and order.status == 'delivered' %}
+            <form method="post" action="{% url 'deals:act' order.pk 'complete' %}">{% csrf_token %}
+              <button class="btn btn--p" style="width:100%">Принять работу и выплатить</button></form>
+            <p class="gcard__note">Если не ответить в течение {{ auto_days }} дн., работа будет принята автоматически.</p>
+          {% endif %}
+          {% if role and order.status in 'funded delivered' %}
+            <details class="confirm__bad"><summary class="btn btn--g" style="width:100%">Открыть спор</summary>
+              <form method="post" action="{% url 'deals:act' order.pk 'dispute' %}">{% csrf_token %}
+                <textarea name="reason" rows="3" required placeholder="Что не так: сроки, качество, несоответствие условиям"></textarea>
+                <button class="btn btn--s">Отправить модератору</button></form></details>
+          {% endif %}
+          {% if role and order.status in 'offered accepted' %}
+            <form method="post" action="{% url 'deals:act' order.pk 'cancel' %}">{% csrf_token %}<button class="btn btn--g" style="width:100%">Отменить</button></form>
+          {% endif %}
+          {% if order.thread %}<a class="btn btn--g" href="{% url 'chat:thread' order.thread_id %}">{% ico 'chat' %}Переписка</a>{% endif %}
+        </div>
+      </div>
+      <div class="dnote">{% ico 'shield' %}<span>Договоритесь о деталях в чате: переписка — главный довод, если понадобится спор. Не переводите деньги в обход сделки.</span></div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

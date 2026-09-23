@@ -1,0 +1,13 @@
+<script>
+/* поиск по списку диалогов */
+(function () {
+  var q = document.getElementById('tg-q');
+  if (!q) return;
+  q.addEventListener('input', function () {
+    var v = q.value.trim().toLowerCase();
+    document.querySelectorAll('#tg-list .tgrow').forEach(function (r) {
+      r.hidden = v && r.dataset.q.indexOf(v) === -1;
+    });
+  });
+})();
+</script>

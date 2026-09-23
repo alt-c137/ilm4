@@ -34,7 +34,7 @@ def test_message_via_form_and_access(client):
     alice, _bob, thread = make_thread()
     client.force_login(alice)
     client.post(f'/chat/{thread.pk}/', {'body': 'Здравствуйте! Ещё продаёте?'})
-    assert Message.objects.filter(body='Здравствуйте! Ещё продаёте?').exists()
+    assert any(m.body == 'Здравствуйте! Ещё продаёте?' for m in Message.objects.all())
 
     # чужой диалог — редирект в ящик, содержимое не показывается
     mallory = User.objects.create_user('m', 'm@x.com', 'x')
@@ -92,3 +92,85 @@ async def test_websocket_denies_stranger():
     comm.scope['user'] = stranger
     connected, _ = await comm.connect()
     assert not connected  # не участник — соединение закрыто
+
+
+@pytest.mark.django_db
+def test_message_body_encrypted_at_rest():
+    """В БД — шифр, в коде — открытый текст."""
+    from django.contrib.auth import get_user_model
+    from django.db import connection
+
+    from apps.chat.models import Message, Thread
+
+    U = get_user_model()
+    a = U.objects.create_user('enc_a', 'ea@x.com', 'pass12345')
+    t = Thread.objects.create()
+    t.participants.add(a)
+    m = Message.objects.create(thread=t, sender=a, body='Секретный текст')
+    with connection.cursor() as c:
+        c.execute('select body from chat_message where id = %s', [m.pk])
+        raw = c.fetchone()[0]
+    assert raw.startswith('enc1:') and 'Секретный' not in raw
+    assert Message.objects.get(pk=m.pk).body == 'Секретный текст'
+
+
+@pytest.fixture
+def pair(db):
+    from django.contrib.auth import get_user_model
+
+    from apps.chat.models import Thread
+    from apps.core.models import ModuleConfig
+    ModuleConfig.objects.update_or_create(key='chat', defaults={'name': 'Чат', 'status': 'on'})
+    U = get_user_model()
+    a = U.objects.create_user('ma', 'ma@x.com', 'pass12345')
+    b = U.objects.create_user('mb', 'mb@x.com', 'pass12345')
+    t = Thread.objects.create()
+    t.participants.add(a, b)
+    return a, b, t
+
+
+def _jpeg():
+    import io
+
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from PIL import Image
+    buf = io.BytesIO()
+    Image.new('RGB', (40, 30), (200, 10, 10)).save(buf, 'JPEG')
+    return SimpleUploadedFile('p.jpg', buf.getvalue(), content_type='image/jpeg')
+
+
+def test_photo_upload_and_private_access(client, pair, settings, tmp_path):
+    settings.MEDIA_ROOT = tmp_path
+    from django.contrib.auth import get_user_model
+
+    from apps.chat.models import Message
+    a, _b, t = pair
+    client.force_login(a)
+    r = client.post(f'/chat/{t.pk}/upload/', {'kind': 'photo', 'file': _jpeg()})
+    assert r.status_code == 200, r.content
+    m = Message.objects.get(pk=r.json()['id'])
+    assert m.kind == 'photo' and m.attachment.name.endswith('.jpg')
+    assert client.get(f'/chat/file/{m.pk}/').status_code == 200          # участник
+    stranger = get_user_model().objects.create_user('st', 'st@x.com', 'pass12345')
+    client.force_login(stranger)
+    assert client.get(f'/chat/file/{m.pk}/').status_code == 404          # посторонний — нет
+
+
+def test_disabled_feature_rejected(client, pair, settings, tmp_path):
+    settings.MEDIA_ROOT = tmp_path
+    from apps.core.models import SiteSettings
+    s = SiteSettings.get_solo()
+    s.chat_photos_enabled = False
+    s.save()
+    a, _b, t = pair
+    client.force_login(a)
+    assert client.post(f'/chat/{t.pk}/upload/', {'kind': 'photo', 'file': _jpeg()}).status_code == 403
+
+
+def test_voice_rejects_fake_file(client, pair, settings, tmp_path):
+    settings.MEDIA_ROOT = tmp_path
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    a, _b, t = pair
+    client.force_login(a)
+    fake = SimpleUploadedFile('v.webm', b'<script>alert(1)</script>', content_type='audio/webm')
+    assert client.post(f'/chat/{t.pk}/upload/', {'kind': 'voice', 'file': fake}).status_code == 400

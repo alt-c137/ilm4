@@ -49,9 +49,15 @@
       <label for="{{ form.city.id_for_label }}">{{ form.city.label }}</label>
       {{ form.city }}
     </div>
+    <div>
+      <label for="{{ form.phone.id_for_label }}">{{ form.phone.label }}</label>
+      {{ form.phone }}
+      <span class="hint">Номер никому не показывается. Нужен, только чтобы друзья нашли вас в ilm4.</span>
+    </div>
+    <label class="fcheck">{{ form.findable_by_phone }} {{ form.findable_by_phone.label }}</label>
     {% for err in form.non_field_errors %}<span class="err">{{ err }}</span>{% endfor %}
     <button type="submit" class="btn btn--p">Сохранить изменения</button>
-    <p class="hint">Фото меняется кликом по аватарке слева. Тема оформления — в меню под аватаром в шапке.</p>
+    <p class="hint">Фото меняется кликом по аватарке слева. Тема и цвет — в <a class="link" href="{% url 'core:settings' %}">настройках</a>. <a class="link" href="{% url 'chat:contacts' %}">Найти знакомых из контактов →</a></p>
   </section>
 </div>
 </form>

@@ -1,0 +1,45 @@
+<section class="dcard reviews" id="reviews">
+  <div class="reviews__head">
+    <h2 class="dcard__h">{{ title }}{% if items %} <small>{{ items|length }}</small>{% endif %}</h2>
+    {% if rated and s.count %}<div class="reviews__sum"><b>{{ s.avg|stringformat:'.1f' }}</b><span class="stars stars--lg" style="--r:{{ s.avg|stringformat:'.1f' }}" aria-hidden="true"></span></div>{% endif %}
+  </div>
+
+  {% if can_review %}
+  <form method="post" action="{% url 'reviews:submit' ct_id obj.pk %}" class="rform">
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    {% if rated %}<div class="rform__stars" role="radiogroup" aria-label="Оценка">
+      {% for n in "54321" %}<input type="radio" name="rating" id="rs-{{ obj.pk }}-{{ n }}" value="{{ n }}"{% if mine and mine.rating|stringformat:'d' == n %} checked{% endif %} required><label for="rs-{{ obj.pk }}-{{ n }}" title="{{ n }} из 5">★</label>{% endfor %}
+    </div>{% endif %}
+    <textarea name="text" rows="2" maxlength="2000" {% if not rated %}required {% endif %}placeholder="{% if mine %}Изменить…{% elif rated %}Расскажите, как всё прошло: честно и по делу{% else %}Сообщение: время джума-намаза, ремонт, уроки Корана, что стоит знать{% endif %}">{{ mine.text }}</textarea>
+    <button type="submit" class="btn btn--p">{% if mine %}Обновить{% elif rated %}Оставить отзыв{% else %}Отправить сообщение{% endif %}</button>
+  </form>
+  {% elif not user.is_authenticated %}
+  <p class="reviews__login"><a class="link" href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">Войдите</a>, чтобы оставить отзыв.</p>
+  {% endif %}
+
+  <div class="rlist">
+    {% for r in items %}
+    <article class="ritem">
+      <div class="ritem__h">
+        <span class="person__ava person__ava--sm">{{ r.author.get_display_name|slice:":1"|upper }}</span>
+        <div class="ritem__who"><b>{{ r.author.get_display_name }}</b>{% if r.rating %}<span class="stars" style="--r:{{ r.rating }}" aria-label="{{ r.rating }} из 5"></span>{% endif %}</div>
+        <time>{{ r.created_at|date:"j E Y" }}</time>
+      </div>
+      {% if r.text %}<p class="ritem__t">{{ r.text|linebreaksbr }}</p>{% endif %}
+      {% if r.reply %}<div class="ritem__reply"><b>Ответ владельца</b>{{ r.reply|linebreaksbr }}</div>
+      {% elif is_owner %}
+      <details class="ritem__answer"><summary>Ответить</summary>
+        <form method="post" action="{% url 'reviews:reply' r.pk %}">
+          <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"><input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <textarea name="reply" rows="2" maxlength="2000" required placeholder="Вежливый ответ на отзыв"></textarea>
+          <button type="submit" class="btn btn--s">Отправить ответ</button>
+        </form>
+      </details>{% endif %}
+    </article>
+    {% empty %}
+    <p class="reviews__empty">{% if rated %}Отзывов пока нет. Будьте первым — это помогает другим сделать выбор.{% else %}Сообщений пока нет. Поделитесь полезным: время джума-намаза, уроки, новости мечети.{% endif %}</p>
+    {% endfor %}
+  </div>
+  <p class="reviews__note">Отзывы пишут пользователи. ilm4 их не редактирует, но скрывает оскорбления, спам и ложь.</p>
+</section>

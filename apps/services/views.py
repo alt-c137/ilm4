@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 
-from apps.core.decorators import module_required
+from apps.core.decorators import module_required, pledge_required
 from apps.core.models import Moderation
 
 from .models import Service
@@ -21,6 +21,7 @@ def service_list(request):
 
 @login_required
 @module_required('services')
+@pledge_required
 def service_create(request):
     if request.method == 'POST':
         errors = []

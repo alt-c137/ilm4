@@ -1,0 +1,3 @@
+{% load icons %}{% if s.count %}<span class="rbadge{% if compact %} rbadge--c{% endif %}" title="Средняя оценка {{ s.avg }} из 5 · отзывов: {{ s.count }}">
+  <span class="stars" style="--r:{{ s.avg|stringformat:'.1f' }}" aria-hidden="true"></span><b>{{ s.avg|stringformat:'.1f' }}</b>{% if not compact %}<small>· {{ s.count }} {{ s.count|ru_plural:"отзыв,отзыва,отзывов" }}</small>{% else %}<small>({{ s.count }})</small>{% endif %}
+</span>{% elif not compact %}<span class="rbadge rbadge--none">Пока без отзывов</span>{% endif %}

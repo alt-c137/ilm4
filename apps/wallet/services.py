@@ -82,20 +82,26 @@ def escrow_hold(buyer, seller, amount, ref: str = '') -> EscrowDeal:
 
 
 @db_transaction.atomic
-def escrow_release(deal: EscrowDeal, decided_by=None) -> EscrowDeal:
-    """Выплатить продавцу (арбитраж). Повторное решение запрещено."""
+def escrow_release(deal: EscrowDeal, decided_by=None, fee=0) -> EscrowDeal:
+    """Выплатить продавцу за вычетом комиссии платформы. Повторное решение запрещено."""
+    deal = EscrowDeal.objects.select_for_update().get(pk=deal.pk)
     _assert_hold(deal)
-    credit(deal.seller, deal.amount, Transaction.ESCROW_RELEASE,
-           ref=f'escrow:{deal.id}', note=f'Эскроу-сделка #{deal.id} выплачена')
+    fee = min(max(Decimal(fee), Decimal(0)), deal.amount)
+    payout = deal.amount - fee
+    if payout > 0:
+        credit(deal.seller, payout, Transaction.ESCROW_RELEASE, ref=f'escrow:{deal.id}',
+               note=f'Эскроу-сделка #{deal.id} выплачена' + (f' (комиссия {fee})' if fee else ''))
+    deal.fee = fee
     deal.status = EscrowDeal.RELEASED
     deal.resolved_at = timezone.now()
-    deal.save(update_fields=['status', 'resolved_at', 'note'])
+    deal.save(update_fields=['status', 'resolved_at', 'note', 'fee'])
     return deal
 
 
 @db_transaction.atomic
 def escrow_refund(deal: EscrowDeal, decided_by=None) -> EscrowDeal:
     """Вернуть покупателю (арбитраж). Повторное решение запрещено."""
+    deal = EscrowDeal.objects.select_for_update().get(pk=deal.pk)
     _assert_hold(deal)
     credit(deal.buyer, deal.amount, Transaction.ESCROW_REFUND,
            ref=f'escrow:{deal.id}', note=f'Эскроу-сделка #{deal.id} возвращена')

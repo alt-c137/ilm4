@@ -30,6 +30,7 @@
         <div class="dact">
           {% if user.is_authenticated %}
           <a class="btn btn--p" href="{% url 'jobs:respond' vacancy.pk %}">{% ico 'send' %}Откликнуться</a>
+          {% if vacancy.owner != user %}<a class="btn btn--g" href="{% url 'chat:start' %}?user={{ vacancy.owner.pk }}&amp;subject={{ vacancy.title|urlencode }}">{% ico 'chat' %}Написать работодателю</a>{% endif %}
           {% else %}
           <a class="btn btn--p" href="{% url 'accounts:login' %}?next={{ request.path }}">Войти и откликнуться</a>
           {% endif %}
@@ -41,6 +42,7 @@
         </div>
         {% endif %}
       </div>
+      {% include 'includes/disclaimer.html' %}
       <div class="dnote">{% ico 'shield' %}<span>Честный работодатель не просит денег за трудоустройство. Если просят оплатить «обучение» или «оформление» — сообщите администрации.</span></div>
     </aside>
   </div>

@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
-from apps.core.decorators import module_required
+from apps.core.decorators import module_required, pledge_required
 from apps.core.models import Moderation
 
 from .forms import VacancyForm, VacancyResponseForm
@@ -36,6 +36,7 @@ def vacancy_detail(request, pk):
 
 @login_required
 @module_required('jobs')
+@pledge_required
 def vacancy_create(request):
     form = VacancyForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():

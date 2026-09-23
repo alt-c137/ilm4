@@ -26,3 +26,6 @@ STORAGES = {
     'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
     'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage'},
 }
+
+# Вложения чата отдаёт nginx после проверки участника в Django (location /protected-media/)
+CHAT_XACCEL = env('CHAT_XACCEL', default=True)

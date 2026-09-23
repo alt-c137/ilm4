@@ -1,0 +1,7 @@
+{% load icons %}{% if m.kind == 'system' %}<div class="tg__sys" data-id="{{ m.pk }}"><span>{% ico 'call' %}{{ m.body }} · {{ time }}</span></div>{% else %}<div class="bub bub--{{ m.kind }}{% if mine %} bub--me{% endif %}{% if tail %} bub--tail{% endif %}" data-id="{{ m.pk }}">
+  {% if m.kind == 'photo' %}<a class="bub__photo" href="{% url 'chat:file' m.pk %}" target="_blank" rel="noopener"><img src="{% url 'chat:file' m.pk %}" alt="Фото" loading="lazy"></a>
+  {% elif m.kind == 'voice' %}<div class="voice" data-src="{% url 'chat:file' m.pk %}"><button type="button" class="voice__play" aria-label="Слушать">{% ico 'play' %}</button><span class="voice__bar"><i></i></span><span class="voice__t">{{ dur }}</span></div>
+  {% elif m.kind == 'circle' %}<div class="circle" data-src="{% url 'chat:file' m.pk %}"><video src="{% url 'chat:file' m.pk %}" preload="metadata" playsinline></video><span class="circle__t">{{ dur }}</span><span class="circle__play">{% ico 'play' %}</span></div>{% endif %}
+  {% if m.body %}<span class="bub__t">{{ m.body|linebreaksbr }}</span>{% endif %}
+  <span class="bub__meta">{{ time }}{% if mine %}<span class="tick{% if m.read_at %} tick--2{% endif %}"></span>{% endif %}</span>
+</div>{% endif %}

@@ -22,4 +22,4 @@ class DoctorForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if 'category' in self.fields:
-            self.fields['category'].choices = [(chr(39)+chr(39), '— выберите из списка —')] + list(self.fields['category'].choices)
+            self.fields['category'].choices = [('', '— выберите из списка —')] + [c for c in self.fields['category'].choices if c[0] != '']

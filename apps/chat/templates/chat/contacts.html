@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load icons %}
+{% block title %}Найти знакомых — {{ block.super }}{% endblock %}
+{% block body_class %}s-chat page-chat{% endblock %}
+
+{% block content %}
+<div class="fpage">
+  <a class="crumb" href="{% url 'chat:inbox' %}">{% ico 'back' %}Чаты</a>
+  <div class="dcard">
+    <div class="fpage__h">
+      <span class="fpage__ic">{% ico 'user' %}</span>
+      <div><h1>Найти знакомых</h1><div class="fpage__sub">Кто из ваших контактов уже в ilm4 — как в Telegram.</div></div>
+    </div>
+
+    <div class="cfind">
+      <button type="button" class="btn btn--p btn--lg" id="pick-contacts" hidden>{% ico 'user' %}Выбрать из контактов телефона</button>
+      <p class="cfind__or" id="pick-or" hidden>или вставьте номера вручную</p>
+      <textarea id="phones" rows="4" placeholder="+998 90 123 45 67&#10;8 900 123 45 67&#10;(по одному в строке)"></textarea>
+      <button type="button" class="btn btn--g" id="find-btn">{% ico 'search' %}Найти</button>
+      <div class="dnote">{% ico 'lock' %}<span>Номера не отправляются на сервер: браузер отправляет только их зашифрованные отпечатки (SHA-256). Найдутся лишь те, кто сам разрешил поиск по номеру.</span></div>
+      {% if not has_phone %}<p class="cfind__me">Чтобы друзья нашли и вас — <a class="link" href="{% url 'accounts:profile' %}">укажите номер в профиле</a> и отметьте «можно найти по номеру».</p>{% endif %}
+    </div>
+
+    <div id="found" class="cfound"></div>
+
+    <div class="cinvite">
+      <b>Нет друзей в ilm4?</b><span>Пригласите — им пригодятся намаз, маркет и чаты.</span>
+      <button type="button" class="btn btn--s" data-share="ilm4 — платформа для уммы: намаз, маркет, чаты">{% ico 'send' %}Пригласить</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  var csrf = '{{ csrf_token }}';
+  var box = document.getElementById('found'), ta = document.getElementById('phones');
+  var pick = document.getElementById('pick-contacts');
+  if ('contacts' in navigator && 'ContactsManager' in window) { pick.hidden = false; document.getElementById('pick-or').hidden = false; }
+  function hash(num) {
+    var d = String(num).replace(/\D/g, '');
+    if (d.length < 9) return Promise.resolve(null);
+    return crypto.subtle.digest('SHA-256', new TextEncoder().encode(d.slice(-9))).then(function (buf) {
+      return Array.from(new Uint8Array(buf)).map(function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+    });
+  }
+  function esc(s) { var x = document.createElement('div'); x.textContent = s || ''; return x.innerHTML; }
+  function search(numbers) {
+    box.innerHTML = '<p class="cfind__wait">Ищем…</p>';
+    Promise.all(numbers.map(hash)).then(function (keys) {
+      keys = keys.filter(Boolean);
+      return fetch('{% url "chat:contacts_match" %}', { method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf }, body: JSON.stringify({ keys: keys }) });
+    }).then(function (r) { return r.json(); }).then(function (j) {
+      if (j.error) { box.innerHTML = '<p class="cfind__wait">' + esc(j.error) + '</p>'; return; }
+      if (!j.users.length) { box.innerHTML = '<p class="cfind__wait">Пока никого из ваших контактов нет в ilm4 — пригласите их.</p>'; return; }
+      box.innerHTML = '<h2 class="dcard__h">В ilm4 <small>' + j.users.length + '</small></h2>' + j.users.map(function (u) {
+        var ava = u.avatar ? '<img class="tava" src="' + esc(u.avatar) + '" alt="">' : '<span class="tava tava--h' + u.hue + '">' + esc(u.name.charAt(0).toUpperCase()) + '</span>';
+        return '<div class="cfound__row">' + ava + '<a class="cfound__b" href="' + u.profile + '"><b>' + esc(u.name) + '</b><span>' + esc(u.city || 'в ilm4') + '</span></a>' +
+          '<a class="btn btn--p" href="' + u.chat + '">Написать</a></div>';
+      }).join('');
+    }).catch(function () { box.innerHTML = '<p class="cfind__wait">Нет соединения. Попробуйте ещё раз.</p>'; });
+  }
+  document.getElementById('find-btn').addEventListener('click', function () {
+    var nums = ta.value.split(/[\n,;]+/).map(function (s) { return s.trim(); }).filter(Boolean);
+    if (nums.length) search(nums);
+  });
+  pick.addEventListener('click', function () {
+    navigator.contacts.select(['tel'], { multiple: true }).then(function (list) {
+      var nums = []; list.forEach(function (c) { (c.tel || []).forEach(function (t) { nums.push(t); }); });
+      if (nums.length) search(nums);
+    }).catch(function () {});
+  });
+})();
+</script>
+{% endblock %}

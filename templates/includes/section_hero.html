@@ -1,12 +1,12 @@
 {% load icons %}
 {% comment %}
-Шапка раздела: свой цвет, иконка, слоган и действие — разделы как отдельные
-сервисы. Иконку можно заменить своей: static/img/icons/<class>.svg (или .png).
+Шапка раздела: иконка (единый стиль — маска из static/img/icons/<ключ>.svg в цвете темы),
+название, слоган и действие. Иконку можно заменить своей: static/img/icons/<ключ>.svg.
 {% endcomment %}
 <div class="shero shero--{{ class }}">
-  {% if icslug %}{% svc_icon icslug icon %}{% else %}{% svc_icon class icon %}{% endif %}
+  <div class="shero__icon">{% if icslug %}{% svc_glyph icslug icon 'glyph' %}{% else %}{% svc_glyph class icon 'glyph' %}{% endif %}</div>
   <div class="shero__text">
-    <div class="shero__crumb"><a href="/">ilm4</a> · {{ title }}</div>
+    <div class="shero__crumb"><a href="/">ilm4</a> · <a href="{% url 'core:catalog' %}">Сервисы</a> · {{ title }}</div>
     <h1 class="shero__title">{{ title }}</h1>
     <p class="shero__desc">{{ desc }}</p>
   </div>

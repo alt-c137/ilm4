@@ -20,3 +20,24 @@ def module_required(key: str):
             return view(request, *args, **kwargs)
         return wrapped
     return decorator
+
+
+def pledge_required(view):
+    """Публикация (объявление, услуга, вакансия, перевозка, анкета, врач, место):
+    автор обязан принять «Договор перед Аллахом» (includes/pledge.html).
+
+    Галочка обязательна в форме (required), здесь — проверка на сервере на случай
+    обхода. Принятие фиксируется в журнале действий.
+    """
+    @wraps(view)
+    def wrapped(request, *args, **kwargs):
+        if request.method == 'POST':
+            if request.POST.get('pledge') != '1':
+                from django.contrib import messages
+                from django.shortcuts import redirect
+                messages.error(request, 'Чтобы опубликовать, примите договор автора внизу формы.')
+                return redirect(request.path)
+            from apps.accounts.audit import log_action
+            log_action(request, 'Принят договор автора', request.path)
+        return view(request, *args, **kwargs)
+    return wrapped

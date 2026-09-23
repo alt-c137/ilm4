@@ -13,6 +13,7 @@
       {% if field.errors %}<span class="err">{{ field.errors.0 }}</span>{% endif %}
       {% if field.help_text %}<span class="hint">{{ field.help_text }}</span>{% endif %}
     {% endfor %}
+    {% include 'includes/pledge.html' %}
     <button type="submit" class="btn btn--p">Отправить на модерацию</button>
   </form>
 </div>

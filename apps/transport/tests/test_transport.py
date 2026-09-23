@@ -40,10 +40,23 @@ def test_filters(client, user):
     make_ride(user)
     make_ride(user, from_city='Бухара', to_city='Дубай', type='pax',
               status=Moderation.APPROVED)
-    html = client.get('/transport/', {'type': 'pax'}).content.decode()
-    assert 'Дубай' in html and 'Хива' not in html
-    html = client.get('/transport/', {'from': 'Хива'}).content.decode()
-    assert 'Самарканд' in html and 'Дубай' not in html
+    def results(params):
+        # только список маршрутов (популярные направления и подсказки городов — отдельно)
+        html = client.get('/transport/', params).content.decode()
+        return html.split('class="rgroup"', 1)[1] if 'class="rgroup"' in html else ''
+    got = results({'type': 'pax'})
+    assert 'Дубай' in got and 'Хива' not in got
+    got = results({'from': 'Хива'})
+    assert 'Самарканд' in got and 'Дубай' not in got
+
+
+def test_one_city_matches_both_directions(client, user):
+    """Один город — все, кто возит туда ИЛИ оттуда."""
+    make_ride(user, from_city='Москва', to_city='Казань', status=Moderation.APPROVED)
+    make_ride(user, from_city='Ташкент', to_city='Москва', status=Moderation.APPROVED)
+    make_ride(user, from_city='Бухара', to_city='Дубай', status=Moderation.APPROVED)
+    html = client.get('/transport/', {'from': 'Москва'}).content.decode().split('class="rgroup"', 1)[1]
+    assert 'Казань' in html and 'Ташкент' in html and 'Дубай' not in html
 
 
 def test_create_requires_login(client):
@@ -52,7 +65,7 @@ def test_create_requires_login(client):
 
 def test_create_pending_and_moderation(client, user):
     client.force_login(user)
-    client.post('/transport/add/', {
+    client.post('/transport/add/', {'pledge': '1', 
         'type': 'cargo', 'from_city': 'Бухара', 'to_city': 'Дубай',
         'price_text': 'договорная', 'description': 'Джумбо 10 т',
         'contact': '+998 90 111 11 11',

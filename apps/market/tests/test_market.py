@@ -49,7 +49,7 @@ def test_approved_visible_with_filters(client, user, cat):
 
 def test_create_with_moderation(client, user, cat):
     client.force_login(user)
-    client.post('/buy/add/', {
+    client.post('/buy/add/', {'pledge': '1', 
         'title': 'Ноутбук ASUS', 'description': 'Рабочий',
         'price': '540', 'currency': 'USD', 'category': cat.pk, 'city': 'Ташкент',
     })
@@ -63,7 +63,7 @@ def test_create_without_moderation(client, user, cat):
     settings_obj.market_moderation = False
     settings_obj.save()
     client.force_login(user)
-    client.post('/buy/add/', {
+    client.post('/buy/add/', {'pledge': '1', 
         'title': 'Финики', 'description': 'Аджва',
         'price': '28000', 'currency': 'UZS', 'category': cat.pk, 'city': 'Бухара',
     })
@@ -103,3 +103,16 @@ def test_only_own_listing_boost(client, user, cat):
     client.force_login(user)
     response = client.post(f'/buy/{listing.pk}/boost/')
     assert response.status_code == 404
+
+
+def test_create_requires_pledge(client):
+    """Без «Договора перед Аллахом» объявление не публикуется."""
+    from apps.market.models import Listing
+    from django.contrib.auth import get_user_model
+    user = get_user_model().objects.create_user('pl', 'pl@x.com', 'pass12345')
+    client.force_login(user)
+    before = Listing.objects.count()
+    response = client.post('/buy/add/', {'title': 'Без договора', 'description': 'x', 'price': '1',
+                                         'currency': 'UZS', 'city': 'Ташкент'})
+    assert response.status_code == 302
+    assert Listing.objects.count() == before

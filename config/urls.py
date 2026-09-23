@@ -25,6 +25,8 @@ urlpatterns = [
     path('chat/', include('apps.chat.urls')),
     path('refugee/', include('apps.refugee.urls')),
     path('transport/', include('apps.transport.urls')),
+    path('reviews/', include('apps.reviews.urls')),
+    path('deals/', include('apps.deals.urls')),
     path('notifications/', include('apps.core.notification_urls')),
     path('', include('apps.core.urls')),
 ]

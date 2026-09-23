@@ -1,70 +1,98 @@
 {% extends 'base.html' %}
-{% load icons %}
-{% block title %}Диалог — {{ block.super }}{% endblock %}
-{% block body_class %}s-chat page-thread{% endblock %}
+{% load icons static %}
+{% block title %}{{ other.get_display_name }} — чат — {{ block.super }}{% endblock %}
+{% block body_class %}s-chat page-chat page-thread{% endblock %}
 
 {% block content %}
-<div class="chatwin">
-  <div class="chatwin__head">
-    <a class="chatwin__back" href="{% url 'chat:inbox' %}" aria-label="Все диалоги">{% ico 'back' %}</a>
-    <div class="person person--sm">
-      {% if other.avatar %}<img class="person__ava" src="{{ other.avatar.url }}" alt="">{% else %}<span class="person__ava">{{ other.get_display_name|slice:":1"|upper }}</span>{% endif %}
-      <div><div class="person__n">{{ other.get_display_name }}</div>{% if thread.subject %}<div class="person__s">{{ thread.subject }}</div>{% endif %}</div>
+<div class="tg tg--open">
+  {% include 'chat/_threads.html' %}
+  <section class="tg__main" id="chat-main">
+    <header class="tg__head">
+      <a class="tg__back" href="{% url 'chat:inbox' %}" aria-label="Все чаты">{% ico 'back' %}</a>
+      {% include 'chat/_ava.html' with u=other hue=hue size='sm' %}
+      <div class="tg__who">
+        <b>{{ other.get_display_name|default:"Удалённый аккаунт" }}</b>
+        <span>{% if thread.subject %}{{ thread.subject }}{% else %}{% ico 'lock' 'tg__lock' %}переписка защищена{% endif %}</span>
+      </div>
+      <div class="tg__tools">
+        {% if chat_cfg.features.calls %}<button type="button" class="tg__tool" data-call="audio" aria-label="Аудиозвонок" title="Аудиозвонок">{% ico 'call' %}</button>{% endif %}
+        {% if escrow_on and other %}<a class="tg__tool" href="{% url 'deals:new' %}?to={{ other.pk }}&amp;thread={{ thread.pk }}&amp;title={{ thread.subject|urlencode }}" aria-label="Безопасная сделка" title="Безопасная сделка">{% ico 'shield' %}</a>{% endif %}
+        {% if chat_cfg.features.video_calls %}<button type="button" class="tg__tool" data-call="video" aria-label="Видеозвонок" title="Видеозвонок">{% ico 'video' %}</button>{% endif %}
+      </div>
+    </header>
+
+    <div class="tg__log" id="chat-log">
+      {% for it in items %}
+        {% if it.day %}<div class="tg__day" data-day="{{ it.m.created_at|date:'Y-m-d' }}"><span>{{ it.day }}</span></div>{% endif %}
+        {% include 'chat/_msg.html' with m=it.m mine=it.mine tail=it.tail time=it.time dur=it.dur %}
+      {% empty %}
+        <div class="tg__first" id="chat-empty">
+          {% include 'chat/_ava.html' with u=other hue=hue size='lg' %}
+          <b>{{ other.get_display_name }}</b>
+          <span>Напишите первое сообщение — {{ other.get_display_name }} получит уведомление.</span>
+          <div class="tg__hello">
+            <button type="button" data-say="Ас-саляму алейкум!">Ас-саляму алейкум!</button>
+            {% if thread.subject %}<button type="button" data-say="Здравствуйте! Пишу по поводу «{{ thread.subject }}». Ещё актуально?">Ещё актуально?</button>{% endif %}
+          </div>
+        </div>
+      {% endfor %}
     </div>
-  </div>
-  <div class="chat__log" id="chat-log">
-    {% for m in messages %}
-    <div class="chat__msg{% if m.sender == user %} mine{% endif %}">
-      <b>{{ m.sender.get_display_name }}</b>
-      <div>{{ m.body|linebreaksbr }}</div>
-      <span class="meta">{{ m.created_at|date:"d.m H:i" }}</span>
+
+    {# панель записи голосового (вместо поля ввода) #}
+    <div class="tg__rec" id="rec-bar" hidden>
+      <button type="button" class="tg__tool tg__tool--del" id="rec-cancel" aria-label="Отменить запись">{% ico 'trash' %}</button>
+      <span class="tg__rec-dot"></span><span class="tg__rec-t" id="rec-time">0:00</span>
+      <span class="tg__rec-hint">Идёт запись…</span>
+      <button type="button" class="tg__send" id="rec-send" aria-label="Отправить голосовое">{% ico 'send' %}</button>
     </div>
-    {% empty %}
-    <div class="chat__empty" id="chat-empty">Напишите первое сообщение — {{ other.get_display_name }} получит уведомление.</div>
-    {% endfor %}
-  </div>
-  <form method="post" action="{% url 'chat:thread' thread.pk %}" class="chat__form" id="chat-form">
-    {% csrf_token %}
-    <input type="text" name="body" id="chat-body" placeholder="Сообщение…" autocomplete="off" enterkeyhint="send" required>
-    <button type="submit" class="btn btn--p chat__send" aria-label="Отправить">{% ico 'send' %}</button>
-  </form>
+
+    <form method="post" action="{% url 'chat:thread' thread.pk %}" class="tg__compose" id="chat-form">
+      {% csrf_token %}
+      {% if chat_cfg.features.photo %}
+      <label class="tg__tool" title="Фото" aria-label="Отправить фото">{% ico 'clip' %}<input type="file" id="photo-input" accept="image/*" data-skip="1" hidden></label>
+      {% endif %}
+      <textarea name="body" id="chat-body" rows="1" maxlength="2000" placeholder="Сообщение" autocomplete="off" enterkeyhint="send" required aria-label="Сообщение"></textarea>
+      {% if chat_cfg.features.circle %}<button type="button" class="tg__tool" id="circle-btn" aria-label="Видеокружок" title="Видеокружок">{% ico 'circlecam' %}</button>{% endif %}
+      {% if chat_cfg.features.voice %}<button type="button" class="tg__send tg__send--mic" id="mic-btn" aria-label="Голосовое сообщение" title="Голосовое сообщение">{% ico 'mic' %}</button>{% endif %}
+      <button type="submit" class="tg__send" id="send-btn" aria-label="Отправить">{% ico 'send' %}</button>
+    </form>
+  </section>
 </div>
+
+{# запись видеокружка #}
+<div class="circlerec" id="circle-rec" hidden>
+  <div class="circlerec__box">
+    <div class="circlerec__view"><video id="circle-preview" autoplay muted playsinline></video>
+      <svg class="circlerec__ring" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" id="circle-ring"/></svg></div>
+    <div class="circlerec__t" id="circle-time">0:00 / 1:00</div>
+    <div class="circlerec__act">
+      <button type="button" class="btn btn--g" id="circle-cancel">Отмена</button>
+      <button type="button" class="btn btn--p" id="circle-send">{% ico 'send' %}Отправить</button>
+    </div>
+  </div>
+</div>
+
+{# звонок #}
+<div class="call" id="call" hidden>
+  <video class="call__remote" id="call-remote" autoplay playsinline></video>
+  <video class="call__local" id="call-local" autoplay playsinline muted></video>
+  <div class="call__info">
+    {% include 'chat/_ava.html' with u=other hue=hue size='lg' %}
+    <b>{{ other.get_display_name }}</b>
+    <span class="call__state" id="call-state">Звоним…</span>
+  </div>
+  <div class="call__btns">
+    <button type="button" class="call__b" id="call-mute" aria-label="Микрофон">{% ico 'mic' %}</button>
+    <button type="button" class="call__b" id="call-cam" aria-label="Камера" hidden>{% ico 'video' %}</button>
+    <button type="button" class="call__b call__b--ok" id="call-accept" aria-label="Ответить" hidden>{% ico 'call' %}</button>
+    <button type="button" class="call__b call__b--end" id="call-end" aria-label="Завершить">{% ico 'hangup' %}</button>
+  </div>
+</div>
+<audio id="call-audio" autoplay></audio>
+{{ chat_cfg|json_script:"chat-cfg" }}
 {% endblock %}
 
 {% block extra_js %}
-<script>
-// WebSocket: сообщения доставляются без перезагрузки; форма работает и как fallback
-(function () {
-  var proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
-  var sock = new WebSocket(proto + '://' + window.location.host +
-                           '/ws/chat/{{ thread.pk }}/');
-  var log = document.getElementById('chat-log');
-  var form = document.getElementById('chat-form');
-  var input = document.getElementById('chat-body');
-
-  sock.onmessage = function (e) {
-    var d = JSON.parse(e.data);
-    var div = document.createElement('div');
-    div.className = 'chat__msg' + (d.sender_id === {{ user.id }} ? ' mine' : '');
-    div.innerHTML = '<b>' + escapeHtml(d.sender_name) + '</b><div>' +
-                    escapeHtml(d.body) + '</div><span class="meta">' + d.created_at + '</span>';
-    var em = document.getElementById('chat-empty'); if (em) em.remove();
-    log.appendChild(div);
-    log.scrollTop = log.scrollHeight;
-  };
-  form.addEventListener('submit', function (e) {
-    if (sock.readyState === 1 && input.value.trim()) {
-      e.preventDefault();
-      sock.send(JSON.stringify({body: input.value}));
-      input.value = '';
-    } // иначе — обычная отправка формы (fallback)
-  });
-  function escapeHtml(s) {
-    var d = document.createElement('div');
-    d.textContent = s;
-    return d.innerHTML;
-  }
-  log.scrollTop = log.scrollHeight;
-})();
-</script>
+{% include 'chat/_js_list.html' %}
+<script src="{% static 'js/chat.js' %}?v={{ asset_v }}"></script>
 {% endblock %}

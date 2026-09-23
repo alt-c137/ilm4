@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% load icons %}
+{% block title %}Новая безопасная сделка — {{ block.super }}{% endblock %}
+{% block content %}
+<div class="fpage">
+  <a class="crumb" href="{% url 'deals:index' %}">{% ico 'back' %}Сделки</a>
+  <div class="dcard">
+    <div class="fpage__h">
+      <span class="fpage__ic">{% ico 'shield' %}</span>
+      <div><h1>Безопасная сделка</h1><div class="fpage__sub">{% if provider %}Исполнитель: <b>{{ provider.get_display_name }}</b>{% else %}Откройте сделку из чата или со страницы исполнителя{% endif %}</div></div>
+    </div>
+    {% if not enabled %}{% include 'deals/_off.html' %}
+    {% elif provider %}
+    <ol class="dsteps">
+      <li>Вы описываете задачу и сумму</li><li>Исполнитель принимает условия</li>
+      <li>Вы оплачиваете — деньги удерживает ilm4</li><li>Исполнитель сдаёт работу</li>
+      <li>Вы принимаете — деньги уходят исполнителю</li>
+    </ol>
+    <form method="post" class="form fgrid">{% csrf_token %}
+      <input type="hidden" name="to" value="{{ provider.pk }}"><input type="hidden" name="thread" value="{{ thread }}">
+      <div class="field field--wide"><label>Что нужно сделать <span class="req">*</span></label><input name="title" maxlength="160" required value="{{ post.title|default:title }}" placeholder="Например: логотип для магазина"></div>
+      <div class="field field--wide"><label>Условия и результат <span class="req">*</span></label><textarea name="terms" rows="5" required placeholder="Что именно сдаётся, объём, формат, сколько правок. Чем точнее — тем проще решить спор.">{{ post.terms }}</textarea></div>
+      <div class="field"><label>Сумма, сум <span class="req">*</span></label><input name="amount" inputmode="numeric" required value="{{ post.amount }}" placeholder="500000"></div>
+      <div class="field"><label>Срок сдачи</label><input type="date" name="deadline" value="{{ post.deadline }}"></div>
+      <div class="field"><label>Вид</label><select name="kind">{% for k, v in kinds %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
+      <div class="field"><span class="hint" style="margin-top:28px">Комиссия платформы — {{ fee_percent|floatformat:"-2" }}%, удерживается из выплаты исполнителю.</span></div>
+      {% include 'includes/pledge.html' %}
+      <button type="submit" class="btn btn--p">{% ico 'send' %}Предложить сделку</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

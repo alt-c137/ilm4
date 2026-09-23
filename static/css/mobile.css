@@ -73,60 +73,74 @@
   /* --- главная: свой порядок блоков --- */
   .home{display:flex;flex-direction:column}
   .hb{order:50}
-  .hb--banner{order:1}
+  .hb--hero{order:1}
   .hb--modules{order:2}
-  .hb--prayer_widget{order:3}
-  .hb--hero{order:4}
+  .hb--banner{order:3}
+  .hb--basics{order:4}
   .hb--market_recent{order:5}
   .hb--map_recent{order:6}
   .hb--forum_recent{order:7}
   .hb--news_recent{order:8}
   .hb--support{order:9}
 
-  /* баннер: фото сверху, текст на цвете слайда снизу, свайп вместо стрелок */
-  .banner{margin:8px 0 4px;border-radius:24px;box-shadow:0 18px 40px -22px rgba(30,40,140,.55)}
-  .banner__window{align-items:stretch}
-  .banner__slide{min-height:0;padding:0;justify-content:flex-start}
-  .banner__slide:not(.has-img) .banner__body{padding:30px 22px 44px}
-  .banner__slide.has-img::before{display:none}
-  .banner__media{position:relative;inset:auto;z-index:0;aspect-ratio:860/500;flex:none}
-  .banner__media img{object-position:center}
-  .banner__media::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:48%;
-    background:linear-gradient(to bottom,transparent,var(--slide-c-d,#2f3fb8))}
-  .banner__slide.has-img .banner__body{flex:1;max-width:none;padding:0 20px 42px;margin-top:-14px;z-index:1}
-  .banner__k{font-size:11px;margin-bottom:6px;letter-spacing:.14em}
-  .banner__t{font-size:23px;line-height:1.15;margin-bottom:8px}
-  .banner__d{font-size:14px;line-height:1.45;opacity:.9}
-  .banner__cta{margin-top:14px;padding:10px 16px;font-size:13.5px}
+  /* баннер: компактная промо-карточка — текст слева, фото справа (≈180px) */
+  .banner{margin:6px 0 2px;border-radius:22px;box-shadow:0 14px 32px -20px rgba(30,40,140,.55)}
+  .banner__slide{min-height:0;height:184px;padding:0;justify-content:center}
+  .banner__slide:not(.has-img) .banner__body{padding:18px 18px 28px;max-width:none}
+  .banner__slide.has-img::before{background:linear-gradient(90deg,var(--slide-c-d) 0%,var(--slide-c-d) 33%,color-mix(in srgb,var(--slide-c-d) 0%,transparent) 66%)}
+  .banner__media{left:auto;width:67%}
+  .banner__media img{object-position:62% center}
+  .banner__slide.has-img .banner__body{padding:16px 0 28px 18px;max-width:62%}
+  .banner__k{font-size:10px;margin-bottom:5px;letter-spacing:.14em}
+  .banner__t{font-size:18.5px;line-height:1.2;margin-bottom:0;letter-spacing:-.01em}
+  .banner__d{display:none}
+  .banner__cta{margin-top:12px;padding:8px 13px;font-size:12.5px;gap:6px}
+  .banner__cta svg{width:15px;height:15px}
   .banner__edge{display:none}
-  .banner__lines{bottom:16px;width:34%;gap:5px}
+  .banner__lines{left:18px;transform:none;bottom:12px;width:60px;gap:4px}
   .banner__line{height:3px}
 
-  /* витрина разделов: сетка 4 в ряд на карточке (как в суперприложениях) */
-  .hb--modules .sec{padding-top:12px}
-  .apps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px 4px;overflow:visible;
-    background:var(--card);border:1px solid var(--line);border-radius:24px;padding:16px 8px 14px;box-shadow:var(--shadow-sm)}
-  .app{width:auto;min-width:0}
-  .app__ic{width:56px;height:56px;border-radius:18px;margin-bottom:7px;box-shadow:0 8px 18px -10px rgba(21,23,42,.45)}
-  .app__ic img{width:26px;height:26px}
-  .app__n{font-size:11.5px;line-height:1.22;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;padding:0 2px;overflow-wrap:anywhere;hyphens:auto}
-  .app__soon{font-size:9.5px;padding:1px 7px;margin-top:3px}
-  .hb--modules .rail-arrow{display:none}
-  .apps .app.soon{display:none}
-  .app--more .app__ic{background:var(--card-2);border:1px dashed color-mix(in srgb,var(--accent) 45%,var(--line));box-shadow:none}
-  .app--more .app__ic svg{width:26px;height:26px;fill:var(--accent-d);stroke:none}
-  .app--more .app__n{color:var(--ink-soft)}
+  /* приветствие с датой (григорианская + хиджра) */
+  .hello{order:0;padding:6px 2px 4px}
+  .hello__t{font-family:var(--disp);font-size:21px;font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  .hello__d{font-size:12.5px;color:var(--ink-soft);margin-top:2px}
+
+  /* сервисы: 7 популярных + «Все сервисы» = ровно 2 ряда */
+  .svcs{padding-top:12px}
+  .svcs .apps{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px 4px;padding:16px 6px 12px;border-radius:22px}
+  .svcs .app:nth-child(n+8):not(.app--all){display:none}
+  .svcs .app{padding:2px 0;gap:7px}
+  .svcs .app__ic{width:54px;height:54px;border-radius:17px}
+  .svcs .app__n{font-size:11.5px;line-height:1.22;-webkit-line-clamp:2}
+  .page-catalog .nav{display:none}
+  .catalog{padding:6px 0 20px}
+  .cat__t{font-size:25px}
+  .cat__head{gap:12px}
+  .cat__search{height:48px;border-radius:14px}
+  .cat__chips{margin:0 -14px;padding:0 14px 2px}
+  .cgroup{margin-top:20px;scroll-margin-top:76px}
+  .cgroup__t{font-size:16px;margin-bottom:8px}
+  .clist{grid-template-columns:1fr;gap:0;background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:var(--shadow-sm)}
+  .citem{border:0;border-radius:0;box-shadow:none;padding:12px 14px;gap:12px}
+  .citem:hover{transform:none;box-shadow:none}
+  .citem+.citem{border-top:1px solid var(--line)}
+  .citem .app__ic{width:44px;height:44px;border-radius:14px}
+  .citem .glyph{width:22px;height:22px}
+  .citem__n{font-size:15px}
+  .citem__d{font-size:12.5px}
+  .citem:active{background:var(--card-2)}
 
   /* время намаза: компактная сетка 3×2 */
   .tstrip{grid-template-columns:repeat(3,1fr);border-radius:20px}
-  .tstrip .tstrip__cell:nth-child(n){flex-direction:column;align-items:center;text-align:center;gap:6px;padding:12px 4px 11px;border-left:1px solid var(--line);border-top:0}
+  .tstrip .tstrip__cell:nth-child(n){flex-direction:column;align-items:center;text-align:center;gap:4px;padding:10px 4px 9px;border-left:1px solid var(--line);border-top:0}
   .tstrip .tstrip__cell:nth-child(3n+1){border-left:0}
   .tstrip .tstrip__cell:nth-child(n+4){border-top:1px solid var(--line)}
   .tstrip__col{align-items:center}
-  .tsun{width:32px;height:32px;border-radius:10px}
-  .tsun svg{width:17px;height:17px}
+  .tsun{width:28px;height:28px;border-radius:9px}
+  .tsun svg{width:16px;height:16px}
   .tstrip__n{font-size:12px}
-  .tstrip__t{font-size:17px}
+  .tstrip__t{font-size:16.5px}
+  .tstrip__n{line-height:1.2}
   .prayer__next{font-size:12.5px;margin-top:8px;padding:0 2px}
 
   /* инфопанель (хадис · погода · курс): без героя-приветствия и без дубля намаза */
@@ -179,6 +193,7 @@
   .shero{padding:16px;gap:12px 14px;margin:8px 0 12px;border-radius:22px;align-items:flex-start}
   .shero__icon{width:48px;height:48px;border-radius:15px}
   .shero__icon img{width:26px;height:26px}
+  .shero__icon .glyph{width:24px;height:24px}
   .shero__text{min-width:0;flex:1 1 calc(100% - 62px)}
   .shero__crumb{display:none}
   .shero__title{font-size:21px}
@@ -290,17 +305,6 @@
   .tbl{font-size:13px}
   .tbl th,.tbl td{padding:9px 8px}
 
-  /* чат: окно на весь экран без футера */
-  .page-thread .foot,.page-thread .nav{display:none}
-  .page-thread{padding-bottom:0}
-  .page-thread .tabbar{display:none}
-  .page-thread .wrap{padding:0}
-  .page-thread .top{padding-left:14px;padding-right:14px}
-  .chatwin{margin:0;border-radius:0;border-left:0;border-right:0;border-bottom:0;box-shadow:none;
-    height:calc(100dvh - 64px - env(safe-area-inset-top))}
-  .chatwin .chat__form{padding-bottom:calc(10px + env(safe-area-inset-bottom))}
-  .chatwin .chat__msg{max-width:84%}
-
   /* футер: компактный, бренд на всю ширину */
   .foot{margin-top:24px;padding:26px 0 18px;border-radius:26px 26px 0 0}
   .foot__g{grid-template-columns:1fr 1fr;gap:18px 14px;margin-bottom:16px}
@@ -348,10 +352,11 @@
   .logo--text b{font-size:22px}
   .darktoggle{margin-left:4px}
   .ibtn,.tbtn{width:38px;height:38px}
-  .apps{gap:14px 2px;padding:14px 4px 12px}
-  .app__ic{width:52px;height:52px;border-radius:16px}
-  .app__n{font-size:11px}
-  .banner__t{font-size:21px}
+  .svcs .apps{gap:12px 2px;padding:14px 4px 10px}
+  .svcs .app__ic{width:50px;height:50px;border-radius:16px}
+  .svcs .app__n{font-size:11px}
+  .banner__t{font-size:17.5px}
+  .banner__slide.has-img .banner__body{max-width:64%}
   .tstrip__t{font-size:16px}
   .sec__t{font-size:18px}
   .grid5 .card__t{font-size:12.5px}
@@ -362,3 +367,19 @@
 @media (display-mode:standalone){
   .top{padding-top:calc(4px + env(safe-area-inset-top))}
 }
+
+@media (max-width:760px){.banner__cta{white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}.banner__cta .hide-d{display:inline!important}}
+
+/* v33: шапка на узких телефонах — «Поддержать» с подписью влезает */
+@media (max-width:760px){
+  .top .darktoggle{width:36px;height:22px;margin-left:4px}
+  .top .darktoggle::before{width:16px;height:16px}
+  html[data-theme=dark] .top .darktoggle::before{left:16px}
+}
+@media (max-width:380px){
+  .top .top__row{gap:2px;padding-left:10px}
+  .top .donate-m{padding:0 8px 0 7px;font-size:11.5px;gap:4px;margin:0 1px}
+  .top .btn--login{padding:8px 11px;font-size:13px}
+  .top .ibtn,.top .tbtn{width:34px;height:34px}
+}
+@media (max-width:350px){.top .logo--text b{font-size:20px}.top .darktoggle{margin-left:2px}.top .uchip{margin-left:2px}}

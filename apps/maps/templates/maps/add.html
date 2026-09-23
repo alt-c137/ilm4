@@ -1,18 +1,45 @@
 {% extends 'base.html' %}
-{% block title %}Добавить халяль-место — {{ block.super }}{% endblock %}
+{% load icons %}
+{% block title %}Добавить место — {{ block.super }}{% endblock %}
+{% block body_class %}s-map{% endblock %}
 
 {% block content %}
-<div class="page">
-  <h1>Добавить халяль-место</h1>
-  <p>Кафе, магазин, отель, лавка — всё, что поможет братьям и сёстрам.
-     После отправки место проверит модератор.</p>
-  <form method="post" enctype="multipart/form-data" class="form form--wide">{% csrf_token %}
-    {% for field in form %}
-      <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span class="req">*</span>{% endif %}</label>
-      {{ field }}
-      {% if field.errors %}<span class="err">{{ field.errors.0 }}</span>{% endif %}
-    {% endfor %}
-    <button type="submit" class="btn btn--p">Отправить на модерацию</button>
-  </form>
+<div class="fpage">
+  <a class="crumb" href="/map/">{% ico 'back' %}Халяль карта</a>
+  <div class="dcard">
+    <div class="fpage__h">
+      <span class="fpage__ic">{% ico 'pin' %}</span>
+      <div><h1>Добавить место</h1>
+        <div class="fpage__sub">Мечеть, кафе, магазин, отель, лавка — всё, что поможет братьям и сёстрам. Место проверит модератор.</div></div>
+    </div>
+    <form method="post" enctype="multipart/form-data" class="form fgrid" id="place-form">{% csrf_token %}
+      {% for field in form %}
+      {% if field.name == 'branch' %}<div class="field field--wide mosque-only fsep"><b>О мечети</b><span class="hint">Заполните, что знаете. Остальное уточнят пользователи.</span></div>{% endif %}
+      <div class="field{% if field.name in 'name address description photo affiliation' %} field--wide{% endif %}{% if field.name in 'branch madhhab affiliation imam khutba_lang has_jumua has_women has_wudu has_parking accessible' %} mosque-only{% endif %}{% if field.field.widget.input_type == 'checkbox' %} field--check{% endif %}{% if field.errors %} field--err{% endif %}">
+        {% if field.field.widget.input_type == 'checkbox' %}<label class="fcheck">{{ field }} {{ field.label }}</label>{% else %}
+        <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span class="req">*</span>{% endif %}</label>
+        {{ field }}{% endif %}
+        {% if field.errors %}<span class="err">{{ field.errors.0 }}</span>{% endif %}
+        {% if field.help_text %}<span class="hint">{{ field.help_text }}</span>{% endif %}
+      </div>
+      {% endfor %}
+      {% include 'includes/pledge.html' %}
+      <button type="submit" class="btn btn--p">{% ico 'send' %}Отправить на модерацию</button>
+    </form>
+  </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* поля мечети — только при категории «Мечеть» */
+(function () {
+  var cat = document.querySelector('#place-form [name=category]');
+  if (!cat) return;
+  function sync() {
+    document.querySelectorAll('.mosque-only').forEach(function (el) { el.hidden = cat.value !== 'mosque'; });
+  }
+  cat.addEventListener('change', sync); sync();
+})();
+</script>
 {% endblock %}

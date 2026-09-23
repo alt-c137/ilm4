@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load icons %}
+{% block title %}Все сервисы — {{ block.super }}{% endblock %}
+{% block description %}Все сервисы ilm4 в одном месте: намаз, халяль-маркет, карта, никах, работа, новости и другие.{% endblock %}
+{% block body_class %}page-catalog{% endblock %}
+
+{% block content %}
+<div class="catalog">
+  <header class="cat__head">
+    <div>
+      <h1 class="cat__t">Все сервисы</h1>
+      <p class="cat__sub">{{ services_on }} работают{% if services_soon %} · ещё {{ services_soon }} скоро{% endif %}</p>
+    </div>
+    <label class="cat__search">
+      {% ico 'search' %}
+      <input type="search" id="cat-q" placeholder="Найти сервис: намаз, работа, врач…" autocomplete="off" enterkeyhint="search" aria-label="Поиск сервиса">
+    </label>
+    <nav class="cat__chips" aria-label="Группы">
+      {% for g in groups %}<a class="chip" href="#g-{{ g.key }}">{{ g.name }}</a>{% endfor %}
+    </nav>
+  </header>
+
+  {% for g in groups %}
+  <section class="cgroup" id="g-{{ g.key }}">
+    <h2 class="cgroup__t">{{ g.name }} <small>{{ g.items|length }}</small></h2>
+    <div class="clist">
+      {% for m in g.items %}
+      <a class="citem{% if m.status == 'soon' %} is-soon{% endif %}"
+         href="{% if m.url %}{{ m.url }}{% elif m.status == 'on' %}/{{ m.key }}/{% else %}{% url 'core:soon' %}?m={{ m.key }}{% endif %}"
+         {% if m.external %}target="_blank" rel="noopener"{% endif %}
+         data-q="{{ m.name|lower }} {{ m.descr|lower }} {{ m.key }}">
+        <span class="app__ic">{% if m.ui_icon %}{% ico m.ui_icon 'glyph-svg' %}{% else %}{% svc_glyph m.key m.icon 'glyph' %}{% endif %}</span>
+        <span class="citem__b">
+          <span class="citem__n">{{ m.name }}{% if m.status == 'soon' %} <span class="citem__soon">скоро</span>{% endif %}</span>
+          {% if m.descr %}<span class="citem__d">{{ m.descr }}</span>{% endif %}
+        </span>
+        <svg class="citem__go" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+
+  <div class="empty" id="cat-empty" hidden>
+    <div class="empty__plug">{% ico 'search' %}</div>
+    <h3 style="font-size:17px;font-weight:800">Ничего не нашли</h3>
+    <p style="color:var(--ink-soft)">Попробуйте другое слово — например, «еда», «врач» или «работа».</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* поиск по сервисам: фильтрует строки, пустые группы прячет */
+(function () {
+  var q = document.getElementById('cat-q');
+  if (!q) return;
+  var groups = document.querySelectorAll('.cgroup');
+  var empty = document.getElementById('cat-empty');
+  q.addEventListener('input', function () {
+    var v = q.value.trim().toLowerCase(), any = false;
+    groups.forEach(function (g) {
+      var shown = 0;
+      g.querySelectorAll('.citem').forEach(function (it) {
+        var ok = !v || it.dataset.q.indexOf(v) !== -1;
+        it.hidden = !ok; if (ok) shown++;
+      });
+      g.hidden = !shown; if (shown) any = true;
+    });
+    empty.hidden = any;
+  });
+})();
+</script>
+{% endblock %}

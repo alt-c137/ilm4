@@ -6,8 +6,6 @@ class PrayerConfig(AppConfig):
     name = 'apps.prayer'
     verbose_name = 'Время намаза'
 
-    def ready(self):
-        # Блок на главную сразу после hero (§3.2)
-        from apps.core.blocks import register_block
-
-        register_block(key='prayer_widget', template='prayer/blocks/widget.html', order=15)
+    # Отдельный блок на главной больше не регистрируется: расписание, текущий
+    # намаз и отсчёт живут в карточке «Сегодня» (core/includes/today.html).
+    # Шаблон prayer/blocks/widget.html оставлен для других страниц.

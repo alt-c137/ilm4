@@ -50,6 +50,9 @@ INSTALLED_APPS = [
     'apps.chat',
     'apps.refugee',
     'apps.transport',
+    'apps.reviews',
+    'apps.deals',
+    'apps.payments',
 ]
 
 MIDDLEWARE = [
@@ -114,6 +117,21 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 LOGIN_URL = '/accounts/login/'
+
+# Вход через Google (apps/accounts/google.py): ключи из Google Cloud Console
+GOOGLE_OAUTH_CLIENT_ID = env('GOOGLE_OAUTH_CLIENT_ID', default='')
+GOOGLE_OAUTH_CLIENT_SECRET = env('GOOGLE_OAUTH_CLIENT_SECRET', default='')
+
+# Шифрование переписки в БД (apps/chat/crypto.py). В проде — свой ключ и его резервная копия!
+CHAT_ENCRYPTION_KEY = env('CHAT_ENCRYPTION_KEY', default='')
+
+# Платёжные провайдеры (apps/payments/providers.py): способ включается, когда заданы ключи
+PAYME_MERCHANT_ID = env('PAYME_MERCHANT_ID', default='')
+PAYME_SECRET = env('PAYME_SECRET', default='')
+STRIPE_SECRET_KEY = env('STRIPE_SECRET_KEY', default='')
+STRIPE_WEBHOOK_SECRET = env('STRIPE_WEBHOOK_SECRET', default='')
+CRYPTO_GATEWAY_KEY = env('CRYPTO_GATEWAY_KEY', default='')
+CRYPTO_GATEWAY_SECRET = env('CRYPTO_GATEWAY_SECRET', default='')
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 

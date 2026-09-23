@@ -1,55 +1,83 @@
 {% extends 'base.html' %}
+{% load icons %}
 {% block title %}Помощь беженцам — {{ block.super }}{% endblock %}
+{% block description %}Помощь беженцам: УВКБ ООН, МОМ, Красный Крест и Полумесяц, организации по странам Азии и Европы, юридическая помощь.{% endblock %}
 {% block body_class %}s-migration{% endblock %}
 
 {% block content %}
 <div class="svc">
-{% include 'includes/section_hero.html' with icon="🕊️" icslug="refugee" title="Помощь беженцам" desc="Контакты УВКБ ООН, посольств и организаций по странам — телефоны, адреса, сайты" class="migration" %}
+{% include 'includes/section_hero.html' with icon="🕊️" icslug="refugee" title="Помощь беженцам" desc="Международные организации, контакты по странам и юридическая помощь — проверенные официальные источники" class="migration" %}
 
-  <div class="toolbar">
-    <div class="chips">
-      <a class="chip{% if not country %} chip--on{% endif %}" href="/refugee/">Все страны</a>
-      {% for c in countries %}
-      <a class="chip{% if c == country %} chip--on{% endif %}" href="?country={{ c|urlencode }}">{{ c }}</a>
+  <nav class="rtabs" aria-label="Разделы справочника">
+    <a class="rtab{% if not tab and not q %} on{% endif %}" href="/refugee/">Обзор</a>
+    <a class="rtab{% if tab == 'intl' %} on{% endif %}" href="?tab=intl">{% ico 'globe' %}Международные</a>
+    {% for key, name in regions %}<a class="rtab{% if tab == key %} on{% endif %}" href="?tab={{ key }}">{{ name }}</a>{% endfor %}
+    <a class="rtab{% if tab == 'lawyer' %} on{% endif %}" href="?tab=lawyer">{% ico 'shield' %}Адвокаты{% if lawyers_count %} <small>{{ lawyers_count }}</small>{% endif %}</a>
+  </nav>
+
+  <form method="get" class="rsearch" role="search">
+    {% ico 'search' %}<input type="search" name="q" value="{{ q }}" placeholder="Организация, страна или город…" aria-label="Поиск по справочнику">
+    {% if q %}<a class="rsearch__x" href="/refugee/" aria-label="Сбросить">×</a>{% endif %}
+  </form>
+
+  {% if q %}
+    <h2 class="rsec__t">Найдено: {{ results|length }}</h2>
+    <div class="grid g2">{% for o in results %}{% if o.kind == 'intl' %}{% include 'refugee/_link.html' %}{% else %}{% include 'refugee/_org.html' %}{% endif %}{% empty %}
+      <div class="empty" style="grid-column:1/-1"><h3 style="font-size:17px;font-weight:800">Ничего не нашли</h3><p style="color:var(--ink-soft)">Попробуйте название страны или организации.</p></div>{% endfor %}</div>
+
+  {% elif not tab %}
+    <section class="rstart">
+      <h2 class="rsec__t">С чего начать</h2>
+      <ol class="rsteps">
+        <li><b>Обратитесь в УВКБ ООН</b> или миграционную службу страны, где вы находитесь, — только там оформляют статус.</li>
+        <li><b>Сохраните документы</b>: паспорт, свидетельства, справки. Сделайте фото и копии в облаке.</li>
+        <li><b>Не платите посредникам.</b> Регистрация в УВКБ ООН и помощь посольств — бесплатны.</li>
+        <li><b>Ищите бесплатную юрпомощь</b> — в разделе «Адвокаты» и у общественных организаций.</li>
+      </ol>
+    </section>
+
+    <section>
+      <div class="rsec__h"><h2 class="rsec__t">Международные организации</h2>{% if intl_total > 6 %}<a class="sec__l" href="?tab=intl">Все {{ intl_total }} →</a>{% endif %}</div>
+      <div class="lgrid">{% for o in intl %}{% include 'refugee/_link.html' %}{% endfor %}</div>
+    </section>
+
+    {% for g in groups %}
+    <section>
+      <div class="rsec__h"><h2 class="rsec__t">{{ g.name }}</h2>{% if g.key %}<a class="sec__l" href="?tab={{ g.key }}">По странам →</a>{% endif %}</div>
+      <div class="grid g2">{% for o in g.items %}{% include 'refugee/_org.html' %}{% endfor %}</div>
+    </section>
+    {% endfor %}
+
+  {% elif tab == 'intl' %}
+    <h2 class="rsec__t">Международные организации</h2>
+    <div class="lgrid">{% for o in intl %}{% include 'refugee/_link.html' %}{% endfor %}</div>
+
+  {% else %}
+    <div class="rsec__h"><h2 class="rsec__t">{% if tab == 'lawyer' %}Адвокаты и юридическая помощь{% else %}{{ tab_name }}{% endif %}</h2></div>
+    {% if countries %}
+    <div class="toolbar"><div class="chips">
+      <a class="chip{% if not country %} chip--on{% endif %}" href="?tab={{ tab }}">Все страны</a>
+      {% for c in countries %}<a class="chip{% if c == country %} chip--on{% endif %}" href="?tab={{ tab }}&amp;country={{ c|urlencode }}">{{ c }}</a>{% endfor %}
+    </div></div>
+    {% endif %}
+    <div class="grid g2">
+      {% for o in orgs %}{% include 'refugee/_org.html' %}
+      {% empty %}
+      <div class="empty" style="grid-column:1/-1">
+        <div class="empty__plug">{% if tab == 'lawyer' %}{% ico 'shield' %}{% else %}{% ico 'globe' %}{% endif %}</div>
+        {% if tab == 'lawyer' %}
+        <h3 style="font-size:18px;font-weight:800">Раздел пополняется</h3>
+        <p style="color:var(--ink-soft)">Мы собираем проверенных адвокатов и юристов, которые помогают беженцам и мигрантам. Вы юрист и готовы помогать? Напишите нам.</p>
+        {% for l in social_links %}<a class="btn btn--p" href="{{ l.url }}" target="_blank" rel="noopener">Наш канал в Telegram</a>{% endfor %}
+        {% else %}
+        <h3 style="font-size:18px;font-weight:800">Контакты по этому региону скоро появятся</h3>
+        <p style="color:var(--ink-soft)">Пока посмотрите <a class="link" href="?tab=intl">международные организации</a> — у УВКБ ООН есть страница помощи почти для каждой страны.</p>
+        {% endif %}
+      </div>
       {% endfor %}
     </div>
-    <form method="get" class="map__form" style="margin-top:12px">
-      <input type="hidden" name="country" value="{{ country }}">
-      <input type="text" name="q" value="{{ q }}" placeholder="Организация или город…">
-      <button type="submit" class="btn btn--p">Найти</button>
-    </form>
-  </div>
+  {% endif %}
 
-  <div class="grid g2">
-    {% for o in orgs %}
-    <div class="panel org">
-      <div class="org__head">
-        <span class="org__kind">{{ o.get_kind_display }}</span>
-        <span class="meta">{{ o.country }}{% if o.city %} · {{ o.city }}{% endif %}</span>
-      </div>
-      <h3 class="org__name">{{ o.name }}</h3>
-      {% if o.address %}<p class="org__row"><svg class="mmeta" viewBox="0 0 24 24"><path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg>{{ o.address }}</p>{% endif %}
-      {% if o.phones %}
-      <div class="org__phones">
-        {% for p in o.phone_list %}
-        <a class="btn btn--p" href="tel:{{ p|cut:' ' }}"><svg class="mmeta" viewBox="0 0 24 24" style="stroke:currentColor"><path d="M6.5 3.5h3l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.5 5.7 2 2 0 0 1 6.5 3.5z"/></svg>{{ p }}</a>
-        {% endfor %}
-      </div>
-      {% endif %}
-      {% if o.website %}<p><a class="link" href="{{ o.website }}" target="_blank" rel="noopener">{{ o.website }}</a></p>{% endif %}
-      {% if o.notes %}<p class="org__notes">{{ o.notes }}</p>{% endif %}
-    </div>
-    {% empty %}
-    <div class="empty" style="grid-column:1/-1">
-      <div class="empty__plug"><svg viewBox="0 0 24 24"><path d="M12 20s-6-4.2-8-8a4 4 0 0 1 8-1 4 4 0 0 1 8 1c-2 3.8-8 8-8 8z"/></svg></div>
-      <h3 style="font-size:18px;font-weight:800">Записей пока нет</h3>
-      <p style="color:var(--ink-soft)">Контакты по странам добавляет администрация — проверенные
-        телефоны и адреса, чтобы не подавать неверную информацию.</p>
-    </div>
-    {% endfor %}
-  </div>
-
-  <p class="page__hint">⚠ Контакты организаций меняются часто — перед визитом обязательно
-     уточняйте актуальность на официальных сайтах (unhcr.org и сайты посольств).</p>
+  {% include 'includes/disclaimer.html' with dkind='refugee' %}
 </div>
 {% endblock %}

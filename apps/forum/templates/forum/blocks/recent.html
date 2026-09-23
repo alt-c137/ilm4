@@ -1,4 +1,4 @@
-{% load forum_tags %}{% recent_topics 6 as recent %}
+{% load forum_tags icons %}{% recent_topics 6 as recent %}
 {% if recent %}
 <section class="sec">
   <div class="sec__h">
@@ -14,7 +14,7 @@
         <div class="qa__t">{{ t.title }}</div>
         <div class="qa__meta">{{ t.created_at|date:"d.m H:i" }}</div>
       </div>
-      <div class="qa__count"><b>{{ t.replies.count }}</b><span>ответ{{ t.replies.count|pluralize:"а,ов" }}</span></div>
+      <div class="qa__count"><b>{{ t.replies.count }}</b><span>{{ t.replies.count|ru_plural:"ответ,ответа,ответов" }}</span></div>
     </a>
     {% endfor %}
   </div>
