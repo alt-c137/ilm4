@@ -1,7 +1,7 @@
 from django.urls import path
 from django.views.generic import TemplateView
 
-from . import my_views, views
+from . import moderation, my_views, views
 
 app_name = 'core'
 
@@ -16,6 +16,9 @@ urlpatterns = [
     path('my/<slug:key>/<int:pk>/delete/', my_views.my_delete, name='my_delete'),
     path('my/<slug:key>/<int:pk>/toggle/', my_views.my_toggle, name='my_toggle'),
     path('report/', my_views.report, name='report'),
+    path('moderation/', moderation.queue, name='moderation'),
+    path('moderation/<slug:key>/<int:pk>/', moderation.act, name='moderation_act'),
+    path('moderation/report/<int:ct>/<int:pk>/', moderation.report_act, name='moderation_report'),
     path('lang/', views.set_language, name='set_lang'),
     path('catalog/', views.catalog, name='catalog'),
     path('settings/', views.settings_view, name='settings'),

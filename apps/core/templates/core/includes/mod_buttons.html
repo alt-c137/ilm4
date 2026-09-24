@@ -1,0 +1,17 @@
+{% load i18n %}{% load icons %}
+<div class="modc__act">
+  <form method="post" action="{% url 'core:moderation_act' key pk %}">{% csrf_token %}
+    <input type="hidden" name="do" value="approve"><input type="hidden" name="next" value="{{ next|default:request.get_full_path }}">
+    <button class="btn btn--s btn--p modc__yes" type="submit">✓ {% translate "Одобрить" %}</button>
+  </form>
+  <details class="modc__rej">
+    <summary class="btn btn--s modc__no">✕ {% translate "Отклонить" %}</summary>
+    <form method="post" action="{% url 'core:moderation_act' key pk %}" class="modc__rejform">{% csrf_token %}
+      <input type="hidden" name="do" value="reject"><input type="hidden" name="next" value="{{ next|default:request.get_full_path }}">
+      <label>{% translate "Причина — автор увидит её в уведомлении" %}</label>
+      <input type="text" name="reason" maxlength="300" list="mod-reasons" placeholder="{% translate 'Например: уберите номер телефона из описания' %}">
+      <button class="btn btn--s modc__no" type="submit">{% translate "Отклонить" %}</button>
+    </form>
+  </details>
+  {% if url and not hide_open %}<a class="btn btn--s btn--g" href="{{ url }}">{% ico 'eye' %}{% translate "Как на сайте" %}</a>{% endif %}
+</div>

@@ -8,6 +8,7 @@ from django.utils.translation import gettext as _
 
 from apps.core.decorators import module_required, pledge_required
 from apps.core.models import Moderation
+from apps.core.moderation import visible
 
 from .forms import HalalPlaceForm
 from .models import HalalPlace, PlaceConfirmation
@@ -81,7 +82,7 @@ def add_place(request):
 def place_detail(request, pk):
     """Страница заведения: контакты, карта, отзывы и отметка «проверено»."""
     place = get_object_or_404(HalalPlace.objects.prefetch_related('confirmations__user'),
-                              pk=pk, status=Moderation.APPROVED)
+                              pk=pk, **visible(request))
     mine = (PlaceConfirmation.objects.filter(place=place, user=request.user).first()
             if request.user.is_authenticated else None)
     return render(request, 'maps/detail.html', {

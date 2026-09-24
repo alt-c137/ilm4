@@ -1,52 +1,179 @@
 {% extends "admin/base.html" %}
+{% load i18n %}
 {% comment %}
-Фирменная тема админки ilm4: переопределяем CSS-переменные Django-admin
-на палитру «Апп» + шрифт Inter. Стандартный Django-вид исчезает.
+Фирменная тема админки ilm4: палитра сайта (фиолетовый акцент) + шрифт Inter,
+светлая и тёмная тема (переключатель Django справа вверху: авто / светлая / тёмная).
+Все цвета — через переменные, поэтому текст нигде не сливается с фоном.
 {% endcomment %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | ilm4{% endblock %}
+
+{% block branding %}
+<div id="site-name"><a href="{% url 'admin:index' %}" class="ilm-brand"><span class="ilm-brand__logo">ilm<i>4</i></span><span class="ilm-brand__sub">{% translate "управление" %}</span></a></div>
+{% if user.is_anonymous %}{% include "admin/color_theme_toggle.html" %}{% endif %}
+{% endblock %}
+
+{% block usertools %}
+{% if has_permission %}
+<div id="user-tools">
+  <a class="ilm-top" href="/moderation/">{% translate "Модерация" %}</a>
+  <a class="ilm-top" href="/">{% translate "На сайт" %}</a>
+  <span class="ilm-top ilm-top--me">{% firstof user.get_short_name user.get_username %}</span>
+  {% if user.has_usable_password %}<a class="ilm-top" href="{% url 'admin:password_change' %}">{% translate "Пароль" %}</a>{% endif %}
+  <form id="logout-form" method="post" action="{% url 'admin:logout' %}">{% csrf_token %}<button type="submit">{% translate "Выйти" %}</button></form>
+  {% include "admin/color_theme_toggle.html" %}
+</div>
+{% endif %}
+{% endblock %}
 
 {% block extrastyle %}{{ block.super }}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+  /* ---------- светлая тема ---------- */
   :root{
-    --primary:#6d5efc; --primary-fg:#ffffff; --secondary:#ece9ff; --accent:#5646e8;
-    --body-fg:#1b1d2b; --body-medium-color:#4b4e63; --body-quiet-color:#6a6d80;
-    --body-loud-color:#1b1d2b;
-    --header-color:#ffffff; --header-branding-color:#ffffff;
-    --header-bg:#5646e8; --header-link-color:#ffffff;
-    --link-fg:#5646e8; --link-hover-color:#5646e8; --link-selected-fg:#6d5efc;
-    --hairline-color:#e5e7f0; --border-color:#eceef4; --error-fg:#dc2626;
-    --message-success-bg:#e8f8f0; --message-warning-bg:#fdf3e0; --message-error-bg:#fdecec;
-    --button-fg:#5646e8; --button-hover-bg:#ece9ff; --button-bg:#fff;
-    --default-button-bg:#6d5efc; --default-button-hover-bg:#5646e8; --default-button-fg:#fff;
-    --cancel-button-bg:#f4f5fb; --cancel-button-hover-bg:#e9ebf5; --cancel-button-fg:#4b4e63;
-    --close-button-bg:#f4f5fb; --close-button-hover-bg:#e9ebf5; --close-button-fg:#4b4e63;
+    --ilm-accent:#6d5efc; --ilm-accent-d:#5646e8;
+    --ilm-soft:#efedff; --ilm-soft-fg:#4535c9;        /* плашки разделов: тёмный текст на светлом */
+    --ilm-card:#ffffff; --ilm-card-2:#f6f6fb; --ilm-row-hover:#f7f6ff; --ilm-shadow:0 1px 2px rgba(20,20,50,.05),0 8px 24px -12px rgba(20,20,50,.12);
+    --ilm-ok-bg:#e3f6ec; --ilm-ok:#0b7a4b; --ilm-warn-bg:#fff4d6; --ilm-warn:#8a6400; --ilm-bad-bg:#fdecec; --ilm-bad:#c0392b;
+
+    --primary:#6d5efc; --primary-fg:#ffffff; --secondary:#5646e8; --accent:#c9c2ff;
+    --body-bg:#f4f5fa; --body-fg:#1b1d2b; --body-medium-color:#44475c; --body-quiet-color:#6a6d80; --body-loud-color:#11131f;
+    --header-color:#ffffff; --header-branding-color:#ffffff; --header-bg:#5646e8; --header-link-color:#ffffff;
+    --breadcrumbs-fg:#6a6d80; --breadcrumbs-link-fg:#5646e8; --breadcrumbs-bg:transparent;
+    --link-fg:#5646e8; --link-hover-color:#3b2dc4; --link-selected-fg:#6d5efc;
+    --hairline-color:#e6e7f0; --border-color:#dcdfeb;
+    --error-fg:#c0392b;
+    --message-success-bg:#e3f6ec; --message-warning-bg:#fff4d6; --message-error-bg:#fdecec;
+    --darkened-bg:#f6f6fb; --selected-bg:#efedff; --selected-row:#fbf6d9;
+    --button-fg:#ffffff; --button-bg:#6d5efc; --button-hover-bg:#5646e8;
+    --default-button-bg:#5646e8; --default-button-hover-bg:#3b2dc4;
+    --close-button-bg:#8b8ea3; --close-button-hover-bg:#6a6d80;
     --delete-button-bg:#dc2626; --delete-button-hover-bg:#b91c1c;
-    --object-tools-fg:#5646e8; --object-tools-hover-bg:#ece9ff;
-    --font-family:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
-    --border-radius:12px;
-    font-family:var(--font-family);
+    --object-tools-fg:#ffffff; --object-tools-bg:#6d5efc; --object-tools-hover-bg:#5646e8;
+    --font-family-primary:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
   }
-  #header{padding:14px 20px;box-shadow:0 10px 30px -14px rgba(30,34,60,.45)}
-  #branding h1{font-weight:800;letter-spacing:-.3px;font-size:19px}
-  #branding h1 a{color:#fff}
-  .module h2,.module caption,.inline-group h2{
-    background:#ece9ff;color:#5646e8;font-weight:700;border-radius:10px 10px 0 0}
-  .module{border-radius:10px;overflow:hidden}
-  #changelist table tbody tr:hover{background:#f7f6ff}
-  .button,a.button,.submit-row input,.object-tools a{
-    border-radius:10px!important;font-weight:600;transition:.15s}
+  /* ---------- тёмная тема (авто по системе или выбрана вручную) ---------- */
+  @media (prefers-color-scheme: dark){
+    html:not([data-theme="light"]){
+      --ilm-soft:#2a2550; --ilm-soft-fg:#d4ceff; --ilm-card:#1b1c28; --ilm-card-2:#232433; --ilm-row-hover:#26273a;
+      --ilm-shadow:0 1px 2px rgba(0,0,0,.4); --ilm-ok-bg:rgba(52,211,153,.14); --ilm-ok:#34d399;
+      --ilm-warn-bg:rgba(224,161,0,.16); --ilm-warn:#f3c95a; --ilm-bad-bg:rgba(229,72,77,.16); --ilm-bad:#ff8a8f;
+      --primary:#8b7fff; --secondary:#3b2f9e; --accent:#8b7fff; --header-bg:#2b2470;
+      --body-bg:#12131b; --body-fg:#e8e9f1; --body-medium-color:#c9cad6; --body-quiet-color:#9a9cb0; --body-loud-color:#ffffff;
+      --breadcrumbs-fg:#9a9cb0; --breadcrumbs-link-fg:#b3aaff;
+      --link-fg:#b3aaff; --link-hover-color:#d4ceff; --link-selected-fg:#d4ceff;
+      --hairline-color:#2a2b3b; --border-color:#34364a;
+      --message-success-bg:#0f3d2b; --message-warning-bg:#4a3a0c; --message-error-bg:#4a1717;
+      --darkened-bg:#1b1c28; --selected-bg:#2a2550; --selected-row:#3a3514;
+      --button-bg:#6d5efc; --button-hover-bg:#8b7fff; --default-button-bg:#6d5efc; --default-button-hover-bg:#8b7fff;
+      --close-button-bg:#4b4d63; --close-button-hover-bg:#66687f;
+      --object-tools-bg:#3b2f9e; --object-tools-hover-bg:#6d5efc;
+      color-scheme:dark;
+    }
+  }
+  html[data-theme="dark"]{
+    --ilm-soft:#2a2550; --ilm-soft-fg:#d4ceff; --ilm-card:#1b1c28; --ilm-card-2:#232433; --ilm-row-hover:#26273a;
+    --ilm-shadow:0 1px 2px rgba(0,0,0,.4); --ilm-ok-bg:rgba(52,211,153,.14); --ilm-ok:#34d399;
+    --ilm-warn-bg:rgba(224,161,0,.16); --ilm-warn:#f3c95a; --ilm-bad-bg:rgba(229,72,77,.16); --ilm-bad:#ff8a8f;
+    --primary:#8b7fff; --secondary:#3b2f9e; --accent:#8b7fff; --header-bg:#2b2470;
+    --body-bg:#12131b; --body-fg:#e8e9f1; --body-medium-color:#c9cad6; --body-quiet-color:#9a9cb0; --body-loud-color:#ffffff;
+    --breadcrumbs-fg:#9a9cb0; --breadcrumbs-link-fg:#b3aaff;
+    --link-fg:#b3aaff; --link-hover-color:#d4ceff; --link-selected-fg:#d4ceff;
+    --hairline-color:#2a2b3b; --border-color:#34364a;
+    --message-success-bg:#0f3d2b; --message-warning-bg:#4a3a0c; --message-error-bg:#4a1717;
+    --darkened-bg:#1b1c28; --selected-bg:#2a2550; --selected-row:#3a3514;
+    --button-bg:#6d5efc; --button-hover-bg:#8b7fff; --default-button-bg:#6d5efc; --default-button-hover-bg:#8b7fff;
+    --close-button-bg:#4b4d63; --close-button-hover-bg:#66687f;
+    --object-tools-bg:#3b2f9e; --object-tools-hover-bg:#6d5efc;
+    color-scheme:dark;
+  }
+
+  body{font-family:var(--font-family-primary);background:var(--body-bg)}
+  /* шапка */
+  #header{background:linear-gradient(120deg,var(--header-bg),#7c5cff);padding:12px 24px;box-shadow:0 10px 30px -18px rgba(30,34,60,.6)}
+  .ilm-brand{display:flex;align-items:baseline;gap:10px;text-decoration:none!important}
+  .ilm-brand__logo{font-size:22px;font-weight:800;letter-spacing:-.4px;color:#fff}
+  .ilm-brand__logo i{font-style:normal;color:#ffd166}
+  .ilm-brand__sub{font-size:12px;font-weight:600;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:.8px}
+  #user-tools{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;text-transform:none;letter-spacing:0}
+  #user-tools a.ilm-top,#user-tools .ilm-top--me,#logout-form button{color:#fff!important;border:0!important;text-decoration:none!important;
+    padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.14);font-weight:600;font-size:13px;text-transform:none}
+  #user-tools a.ilm-top:hover,#logout-form button:hover{background:rgba(255,255,255,.28)}
+  #user-tools .ilm-top--me{background:transparent;opacity:.85}
+  #logout-form{display:inline}
+  #header .theme-toggle{background:rgba(255,255,255,.14)!important;border:0!important;border-radius:999px;width:32px;height:32px;
+    display:inline-grid;place-items:center;padding:0;cursor:pointer;vertical-align:middle;box-shadow:none}
+  #header .theme-toggle:hover{background:rgba(255,255,255,.28)!important}
+  #header .theme-toggle svg{width:18px;height:18px;fill:#fff!important;color:transparent}   /* color — фон значка (в Django он currentColor) */
+
+  /* хлебные крошки */
+  div.breadcrumbs{background:transparent;color:var(--breadcrumbs-fg);padding:12px 24px 0;border:0}
+  div.breadcrumbs a{color:var(--breadcrumbs-link-fg)}
+
+  /* блоки разделов: тёмный текст на светлой плашке (раньше был белый на светлом — не читалось) */
+  .module{background:var(--ilm-card);border-radius:14px;overflow:hidden;box-shadow:var(--ilm-shadow);border:1px solid var(--hairline-color)}
+  .module h2,.module caption,.inline-group h2{background:var(--ilm-soft);color:var(--ilm-soft-fg);font-weight:800;padding:10px 14px;
+    font-size:12px;letter-spacing:.6px}
+  .module h2 a,.module caption a,.module caption a.section,a.section:link,a.section:visited,.inline-group h2 a{color:var(--ilm-soft-fg)!important}
+  .module caption a.section:hover{text-decoration:underline}
+  .dashboard .module table th,.dashboard .module table td{padding:10px 14px}
+  .dashboard .module table th a{font-weight:600}
+  .module table tr:hover td,.module table tr:hover th,#changelist table tbody tr:hover td{background:var(--ilm-row-hover)}
+  td,th{border-bottom-color:var(--hairline-color)}
+  a.addlink,a.changelink,a.viewlink{font-weight:600}
+  #content-related .module h2{background:var(--ilm-soft);color:var(--ilm-soft-fg);border-radius:0}
+  #content-related{background:transparent}
+  #content-related .module{background:var(--ilm-card)}
+
+  /* кнопки и поля */
+  .button,input[type=submit],input[type=button],.submit-row input,a.button,.object-tools a{border-radius:10px!important;font-weight:600;transition:.15s}
+  .submit-row{background:var(--ilm-card-2);border:1px solid var(--hairline-color);border-radius:14px}
   .submit-row input.default{box-shadow:0 8px 18px -8px rgba(109,94,252,.6)}
-  input[type=text],input[type=password],input[type=email],input[type=url],
-  input[type=number],textarea,select,vLargeTextField,vTextField{
-    border-radius:10px!important;border-color:#dcdfeb!important}
-  input:focus,textarea:focus,select:focus{
-    border-color:#6d5efc!important;box-shadow:0 0 0 3px rgba(109,94,252,.15)!important}
-  #nav-sidebar{border-color:#eceef4}
-  .toggle-nav-sidebar{border-radius:0 12px 12px 0}
-  .selector-chosen h2{background:#5646e8!important;color:#fff!important}
-  .breadcrumbs{background:transparent;padding:10px 0}
+  .object-tools a{border-radius:999px!important;padding:6px 14px}
+  input[type=text],input[type=password],input[type=email],input[type=url],input[type=number],input[type=tel],input[type=search],
+  textarea,select,.vTextField,.vLargeTextField{border-radius:10px!important;border:1px solid var(--border-color)!important;
+    background:var(--ilm-card);color:var(--body-fg);padding:7px 10px}
+  input:focus,textarea:focus,select:focus{border-color:var(--ilm-accent)!important;outline:0;box-shadow:0 0 0 3px rgba(109,94,252,.18)!important}
+  fieldset.module{padding:0}
+  .form-row{border-bottom-color:var(--hairline-color)}
+  .help,p.help,div.help{color:var(--body-quiet-color)!important}
+
+  /* списки */
+  #changelist .actions{background:var(--ilm-card-2);border-radius:12px;border:1px solid var(--hairline-color);padding:10px}
+  #changelist-filter{border-radius:14px;overflow:hidden;background:var(--ilm-card);border:1px solid var(--hairline-color)}
+  #changelist-filter h2{background:var(--ilm-soft);color:var(--ilm-soft-fg)}
+  #changelist-filter li.selected a{color:var(--ilm-accent-d)!important;font-weight:700}
+  #toolbar{background:transparent;border:0}
+  .paginator{border-top:0}
+  ul.messagelist li{border-radius:12px;margin:0 0 8px;color:var(--body-fg)}
+
+  /* боковое меню */
+  #nav-sidebar{background:var(--ilm-card);border-right:1px solid var(--hairline-color)}
+  #nav-sidebar .module{box-shadow:none;border-radius:0;border:0}
+  #nav-filter{border-radius:10px;border:1px solid var(--border-color);background:var(--ilm-card-2)}
+  .toggle-nav-sidebar{border-radius:0 12px 12px 0;background:var(--ilm-card);border-color:var(--hairline-color)}
+  .selector-chosen h2{background:var(--ilm-accent-d)!important;color:#fff!important}
+
+  /* сводка на главной админки (templates/admin/index.html) */
+  .ilm-dash{margin:0 0 22px}
+  .ilm-dash__hi{font-size:22px;font-weight:800;margin:0 0 4px;color:var(--body-loud-color)}
+  .ilm-dash__sub{color:var(--body-quiet-color);margin:0 0 16px}
+  .ilm-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-bottom:14px}
+  .ilm-card{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:14px;background:var(--ilm-card);
+    border:1px solid var(--hairline-color);box-shadow:var(--ilm-shadow);text-decoration:none!important;color:var(--body-fg)!important;transition:.15s}
+  .ilm-card:hover{transform:translateY(-1px);border-color:var(--ilm-accent)}
+  .ilm-card b{font-size:26px;font-weight:800;line-height:1.1}
+  .ilm-card span{font-size:13px;color:var(--body-quiet-color)}
+  .ilm-card--warn{background:var(--ilm-warn-bg);border-color:transparent}.ilm-card--warn b{color:var(--ilm-warn)}
+  .ilm-card--bad{background:var(--ilm-bad-bg);border-color:transparent}.ilm-card--bad b{color:var(--ilm-bad)}
+  .ilm-card--ok b{color:var(--ilm-ok)}
+  .ilm-quick{display:flex;gap:8px;flex-wrap:wrap}
+  .ilm-quick a{padding:8px 14px;border-radius:999px;background:var(--ilm-soft);color:var(--ilm-soft-fg)!important;font-weight:700;text-decoration:none!important;font-size:13px}
+  .ilm-quick a:hover{background:var(--ilm-accent);color:#fff!important}
+  .ilm-quick a.is-main{background:var(--ilm-accent);color:#fff!important}
+  @media (max-width:767px){#header{padding:10px 14px}.ilm-brand__sub{display:none}#user-tools{justify-content:flex-start}}
 </style>
 {% endblock %}
 

@@ -29,6 +29,9 @@ def _notify(sender, instance, created, **kwargs):
     from apps.core.models import Notification
     with translation.override(getattr(owner, 'language', '') or settings.LANGUAGE_CODE):
         text = str(TEXT[new]).format(t=pub.title_of(instance)[:80])
+        reason = getattr(instance, '_reject_reason', '')
+        if reason and new == Moderation.REJECTED:
+            text += f"\n{_lazy('Причина')}: {reason}"
     Notification.objects.create(user=owner, text=text, url=pub.url_of(instance) if new == Moderation.APPROVED
                                 else '/my/')
     from apps.accounts.telegram import send_message

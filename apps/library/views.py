@@ -8,8 +8,10 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import content_disposition_header
 from django.utils.translation import gettext as _
 
+from apps.accounts import phone_verify
 from apps.core.decorators import module_required
 from apps.core.models import Moderation
+from apps.core.moderation import visible
 from apps.core.uploads import clean_image
 from apps.wallet import services as wallet
 from apps.wallet.models import Transaction
@@ -52,7 +54,7 @@ def _serve_book(book):
 def book_download(request, pk):
     """Бесплатно — сразу; платная — покупка один раз (только POST, со списанием с баланса),
     потом скачивание без повторной оплаты."""
-    book = get_object_or_404(Book, pk=pk, status=Moderation.APPROVED)
+    book = get_object_or_404(Book, pk=pk, **visible(request))
     free = book.price <= 0 or request.user.is_superuser or book.owner_id == request.user.pk
     if free or BookPurchase.objects.filter(book=book, user=request.user).exists():
         return _serve_book(book)
@@ -73,6 +75,7 @@ def book_download(request, pk):
 
 @login_required
 @module_required('library')
+@phone_verify.required('publish')
 def book_add(request):
     """Добавление книги: название + файл (+цена). Проверка типа и размера."""
     if request.method == 'POST':

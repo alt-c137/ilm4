@@ -72,13 +72,15 @@ def approve(p: NikahProfile) -> None:
         NikahProfile.objects.filter(pk=p.pk).update(ref_bonus_given=True)
 
 
-def reject(p: NikahProfile) -> None:
+def reject(p: NikahProfile, reason: str = '') -> None:
     from .services import notify
 
     p.status = Moderation.REJECTED
     p.save(update_fields=['status'])
-    notify(p, _lazy('Анкета не прошла проверку. Уберите контакты и лишнее, дополните описание — и отправьте снова.'),
-           '/nikah/edit/')
+    text = _lazy('Анкета не прошла проверку. Уберите контакты и лишнее, дополните описание — и отправьте снова.')
+    if reason:
+        text = format_lazy('{t}\n{label}: {r}', t=text, label=_lazy('Причина'), r=reason)
+    notify(p, text, '/nikah/edit/')
 
 
 # ---------- верификация кружком ----------

@@ -13,6 +13,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import Http404, JsonResponse
 from django.utils import translation
 from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _lazy
 from django.views.decorators.csrf import csrf_exempt
 
 PAGE_SIZE = 20
@@ -42,6 +43,22 @@ def _lang(request, user) -> str:
         if code in langs:
             return code
     return settings.LANGUAGE_CODE
+
+
+PHONE_TEXT = {
+    'nikah': _lazy('Никях — только с подтверждённым номером: один номер — одна анкета.'),
+    'publish': _lazy('Публиковать можно только с подтверждённым номером — так на ilm4 нет спама и ботов.'),
+}
+
+
+def need_phone(user, where: str) -> bool:
+    from apps.accounts import phone_verify
+    return phone_verify.needed(user, where)
+
+
+def require_phone(user, where: str) -> None:
+    if need_phone(user, where):
+        raise ApiError(str(PHONE_TEXT[where]), 403, 'phone')
 
 
 def module_on(key: str) -> bool:
@@ -85,6 +102,8 @@ def api(methods=('GET',), auth=False, module=None):
                     return JsonResponse({'error': _('Войдите в аккаунт'), 'code': 'auth'}, status=401)
                 if module and not module_on(MODULE_OF.get(module, module)):
                     return JsonResponse({'error': _('Раздел сейчас выключен'), 'code': 'module_off'}, status=404)
+                if module == 'nikah' and need_phone(request.user, 'nikah'):
+                    return JsonResponse({'error': str(PHONE_TEXT['nikah']), 'code': 'phone', 'why': 'nikah'}, status=403)
                 request.data = {}
                 if request.content_type == 'application/json' and request.body:
                     try:

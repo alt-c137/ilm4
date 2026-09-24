@@ -6,11 +6,18 @@ from .models import AuditLog, RegistrationField, User
 
 @admin.register(User)
 class Ilm4UserAdmin(UserAdmin):
-    list_display = ('username', 'email', 'role', 'platform_verified', 'is_staff', 'is_active')
-    list_filter = ('role', 'platform_verified', 'is_staff', 'is_active')
+    list_display = ('username', 'email', 'role', 'phone_ok', 'platform_verified', 'is_staff', 'is_active')
+    list_filter = ('role', 'platform_verified', 'is_staff', 'is_active',
+                   ('phone_verified_at', admin.EmptyFieldListFilter))
+    search_fields = UserAdmin.search_fields + ('phone', 'telegram_username')
     fieldsets = UserAdmin.fieldsets + (
         ('Профиль ilm4', {'fields': ('nickname', 'city', 'avatar', 'role', 'platform_verified', 'theme')}),
+        ('Номер и Telegram', {'fields': ('phone', 'phone_verified_at', 'telegram_id', 'telegram_username')}),
     )
+
+    @admin.display(description='номер', boolean=True, ordering='phone_verified_at')
+    def phone_ok(self, obj):
+        return obj.phone_verified
     add_fieldsets = UserAdmin.add_fieldsets + (
         ('Профиль ilm4', {'fields': ('email', 'role')}),
     )

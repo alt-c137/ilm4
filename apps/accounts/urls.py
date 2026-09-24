@@ -20,6 +20,8 @@ urlpatterns = [
     path('u/<int:pk>/block/', views.block_toggle, name='block'),
     path('blocked/', views.blocked_list, name='blocked'),
     path('delete/', views.delete_account, name='delete'),
+    path('phone/', views.phone, name='phone'),
+    path('phone/status/', views.phone_status, name='phone_status'),
     path('2fa/', views.two_factor_setup, name='two_factor_setup'),
     path('2fa/verify/', views.two_factor_verify, name='two_factor_verify'),
 ]

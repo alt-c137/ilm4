@@ -1,11 +1,13 @@
 {% extends 'base.html' %}
 {% load i18n %}
+{% load staff %}
 {% load icons reviews %}{% load reports %}
 {% block title %}{{ doctor.name }} — {{ block.super }}{% endblock %}
 {% block description %}{{ doctor.name }} — {{ doctor.specialization }}, {{ doctor.city }}{% translate ". Контакты врача на ilm4." %}{% endblock %}
 {% block body_class %}s-health{% if doctor.phone %} has-dbar{% endif %}{% endblock %}
 
 {% block content %}
+{% staff_bar doctor %}
 <div class="dpage">
   <a class="crumb" href="{% url 'health:index' %}">{% ico 'back' %}{% translate "Все врачи" %}</a>
   <div class="dgrid dgrid--rev">

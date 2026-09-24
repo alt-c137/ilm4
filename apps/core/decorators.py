@@ -38,6 +38,9 @@ def pledge_required(view):
     """
     @wraps(view)
     def wrapped(request, *args, **kwargs):
+        from apps.accounts import phone_verify
+        if phone_verify.needed(request.user, 'publish'):      # один номер — один аккаунт (против ботов)
+            return phone_verify.redirect_to_verify(request, 'publish')
         if request.method == 'POST':
             from django.core.cache import cache
             key = f'publish:{request.user.pk}'

@@ -31,6 +31,10 @@ class User(AbstractUser):
     phone = models.CharField('телефон', max_length=20, blank=True)
     phone_key = models.CharField('ключ номера (хеш последних 9 цифр)', max_length=64, blank=True,
                                  db_index=True, editable=False)
+    phone_verified_at = models.DateTimeField(
+        'номер подтверждён', null=True, blank=True,
+        help_text='Когда номер подтверждён через Telegram (кнопка «Отправить мой номер»). '
+                  'Один номер — один аккаунт: так боты не плодят объявления и анкеты')
     findable_by_phone = models.BooleanField(
         'меня можно найти по номеру', default=False,
         help_text='Друзья, у которых ваш номер в контактах, увидят, что вы на ilm4')
@@ -68,6 +72,10 @@ class User(AbstractUser):
         from .phones import phone_key
         self.phone_key = phone_key(self.phone) if self.phone else ''
         super().save(*args, **kwargs)
+
+    @property
+    def phone_verified(self) -> bool:
+        return self.phone_verified_at is not None
 
     def get_display_name(self) -> str:
         return self.nickname or self.first_name or self.username

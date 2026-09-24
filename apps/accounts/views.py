@@ -273,3 +273,34 @@ def _wipe_user(user) -> None:
     user.is_active = False
     user.set_unusable_password()
     user.save()
+
+
+# ---------- подтверждение номера через Telegram (apps/accounts/phone_verify.py) ----------
+
+def _safe(request, url: str, default: str = '/') -> str:
+    return url if url and url_has_allowed_host_and_scheme(url, allowed_hosts={request.get_host()}) else default
+
+
+@login_required
+def phone(request):
+    from . import phone_verify
+    next_url = _safe(request, request.GET.get('next', ''), reverse_lazy('accounts:profile'))
+    if request.user.phone_verified:
+        if request.GET.get('next'):
+            return redirect(next_url)
+        return render(request, 'accounts/phone.html', {'done': True, 'masked': phone_verify.mask(request.user.phone)})
+    if not phone_verify.available():
+        messages.info(request, _('Подтверждение номера пока не подключено.'))
+        return redirect(next_url)
+    link = phone_verify.create(request.user)
+    return render(request, 'accounts/phone.html', {'link': link, 'next': next_url,
+                                                   'why': request.GET.get('why', '')})
+
+
+@login_required
+def phone_status(request):
+    from django.http import JsonResponse
+
+    from . import phone_verify
+    return JsonResponse(phone_verify.status(request.user, request.GET.get('nonce', '')[:40]))
+

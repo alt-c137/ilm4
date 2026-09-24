@@ -18,6 +18,7 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
+from apps.accounts import phone_verify
 from apps.accounts.audit import log_action
 from apps.core.decorators import module_required
 from apps.core.models import Moderation, SiteSettings
@@ -44,6 +45,8 @@ def profile_required(view):
     @login_required
     @module_required('nikah')
     def wrapped(request, *args, **kwargs):
+        if phone_verify.needed(request.user, 'nikah'):      # один номер — одна анкета
+            return phone_verify.redirect_to_verify(request, 'nikah')
         me = _me(request)
         if me is None:
             messages.info(request, _('Сначала заполните анкету — это займёт около 5 минут.'))
@@ -84,6 +87,8 @@ def home(request):
     me = _me(request)
     if me is None:
         return render(request, 'nikah/intro.html', _ctx(request, 'feed', minutes=services.photo_minutes()))
+    if phone_verify.needed(request.user, 'nikah'):
+        return phone_verify.redirect_to_verify(request, 'nikah')
     request.nikah = me
     return feed(request)
 
@@ -172,8 +177,22 @@ def premium(request):
         restore_price=st.nikah_restore_price))
 
 
-@profile_required
+@login_required
+@module_required('nikah')
 def detail(request, pk):
+    """Анкета. Модератор видит любую (на проверке, того же пола) — с кнопками «Одобрить / Отклонить»."""
+    from apps.core import moderation
+    if moderation.can_moderate(request.user, NikahProfile):
+        p = get_object_or_404(NikahProfile, pk=pk)
+        me = _me(request)
+        if me is None or (p.pk != me.pk and (p.gender == me.gender or not p.is_published)):
+            p.compat, p.why = None, []
+            return render(request, 'nikah/detail.html', _ctx(request, 'feed', p=p, moderating=True))
+    return _detail(request, pk)
+
+
+@profile_required
+def _detail(request, pk):
     me = request.nikah
     p = get_object_or_404(NikahProfile, pk=pk)
     from apps.accounts.models import UserBlock
@@ -378,6 +397,7 @@ def mine(request):
 
 @login_required
 @module_required('nikah')
+@phone_verify.required('nikah')
 def create(request):
     if _me(request):
         return redirect('nikah:edit')

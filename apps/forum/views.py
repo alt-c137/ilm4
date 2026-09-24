@@ -3,8 +3,10 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
 
+from apps.accounts import phone_verify
 from apps.core.decorators import module_required
 from apps.core.models import Moderation
+from apps.core.moderation import visible
 
 from .forms import ReplyForm, TopicForm
 from .models import Topic
@@ -19,7 +21,7 @@ def topic_list(request):
 
 @module_required('forum')
 def topic_detail(request, pk):
-    topic = get_object_or_404(Topic, pk=pk, status=Moderation.APPROVED)
+    topic = get_object_or_404(Topic, pk=pk, **visible(request))
     form = ReplyForm()
     return render(request, 'forum/detail.html', {
         'topic': topic, 'replies': topic.replies.select_related('author'), 'form': form,
@@ -28,6 +30,7 @@ def topic_detail(request, pk):
 
 @login_required
 @module_required('forum')
+@phone_verify.required('publish')
 def topic_create(request):
     form = TopicForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():

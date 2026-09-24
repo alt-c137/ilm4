@@ -719,3 +719,75 @@ html[data-theme=dark] .mypub__st--bad{background:rgba(229,72,77,.14);color:#ff8a
 .jobkind a{flex:1;text-align:center;padding:9px 8px;border-radius:12px;font-weight:800;color:var(--ink-soft);text-decoration:none;line-height:1.2}
 .jobkind a small{display:block;font-weight:600;font-size:11.5px}
 .jobkind a.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow-sm)}
+
+/* ---------- подтверждение номера (accounts/phone.html) ---------- */
+.phonev{text-align:center}
+.phonev__ico{width:64px;height:64px;margin:0 auto 12px;border-radius:20px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-d)}
+.phonev__ico svg{width:34px;height:34px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.phonev__steps{text-align:left;margin:4px auto 18px;padding-left:22px;max-width:380px;color:var(--ink-soft);line-height:1.6}
+.phonev__go{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;max-width:380px}
+.phonev__go svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.phonev__wait{display:flex;align-items:center;justify-content:center;gap:8px;color:var(--ink-soft);margin:12px 0 0}
+.phonev__dot{width:9px;height:9px;border-radius:50%;background:var(--accent);animation:phonevPulse 1.2s ease-in-out infinite}
+@keyframes phonevPulse{50%{opacity:.25;transform:scale(.7)}}
+
+/* ---------- модерация на сайте (core/moderation.html, панель staff_bar) ---------- */
+.uchip{position:relative}
+.uchip__dot{position:absolute;top:0;left:26px;width:10px;height:10px;border-radius:50%;background:#e5484d;border:2px solid var(--card)}
+.modq__top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.modq__tabs{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 16px}
+.modq__tabs .chip b{margin-left:4px;font-weight:800}
+.modq__tabs .chip.is-on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.modq__h{font-size:18px;font-weight:800;margin:18px 0 10px}
+.modq__h small{color:var(--ink-soft);font-weight:600;margin-left:4px}
+.modc{margin-bottom:12px}
+.modc__head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.modc__title{display:flex;flex-direction:column;gap:3px;min-width:0}
+.modc__title b{font-size:16px;overflow-wrap:anywhere}
+.modc__meta{font-size:13px;color:var(--ink-soft)}
+.modc__ok{display:inline-block;margin-left:4px;font-size:12px;font-weight:700;color:#0b7a4b}
+.modc__ai{font-size:12px;font-weight:700;padding:4px 10px;border-radius:var(--pill);background:var(--card-2);color:var(--ink-soft);white-space:nowrap}
+.modc__ai--ok{background:#e3f6ec;color:#0b7a4b}
+.modc__ai--review{background:#fff4d6;color:#8a6400}
+.modc__ai--reject{background:#fdecec;color:#c0392b}
+.modc__why{font-size:13px;color:#8a6400;margin:8px 0 0}
+.modc__imgs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 0}
+.modc__imgs img{width:120px;height:120px;object-fit:cover;border-radius:12px;border:1px solid var(--line)}
+.modc__fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px 16px;margin:14px 0 0}
+.modc__fields div{min-width:0}
+.modc__fields .is-long{grid-column:1/-1}
+.modc__fields dt{font-size:12px;color:var(--ink-soft);font-weight:600}
+.modc__fields dd{margin:2px 0 0;overflow-wrap:anywhere}
+.modc__faith{margin:12px 0 0;font-size:14px}
+.modc__faith summary{cursor:pointer;font-weight:700;color:var(--accent-d)}
+.modc__faith table{width:100%;border-collapse:collapse;margin-top:8px}
+.modc__faith td{padding:6px 4px;border-top:1px solid var(--line);vertical-align:top}
+.modc__faith tr.is-bad td{color:#c0392b}
+.modc__flag{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:50%;background:#e5484d;color:#fff;font-size:12px}
+.modc__reports{margin:10px 0 0;padding-left:18px;line-height:1.6}
+.modc__act{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.modc__act form{margin:0}
+.btn.modc__no{background:#fdecec;color:#c0392b;border-color:transparent}
+.btn.modc__no:hover{background:#f9d7d7}
+.modc__rej{position:relative}
+.modc__rej>summary{list-style:none;cursor:pointer}
+.modc__rej>summary::-webkit-details-marker{display:none}
+.modc__rejform{display:flex;flex-direction:column;gap:6px;margin-top:8px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--card);min-width:min(320px,80vw)}
+.modc__rejform label{font-size:12px;color:var(--ink-soft)}
+.modq__empty{text-align:center;padding:40px 16px}
+.modq__done{width:64px;height:64px;margin:0 auto 10px;border-radius:50%;display:grid;place-items:center;font-size:30px;font-weight:800;background:#e3f6ec;color:#0b7a4b}
+.staffbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px;padding:10px 14px;border-radius:14px;border:1px dashed var(--accent);background:var(--accent-soft)}
+.staffbar--pending{border-color:#e0a100;background:#fff8e6}
+.staffbar--rejected{border-color:#e5484d;background:#fdf1f1}
+.staffbar__info{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px}
+.staffbar__badge{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;padding:3px 8px;border-radius:var(--pill);background:var(--ink);color:var(--card)}
+.staffbar__hint{color:var(--ink-soft);font-size:13px}
+.staffbar__act{display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start}
+.staffbar__act form{margin:0}
+html[data-theme=dark] .modc__ok{color:#34d399}
+html[data-theme=dark] .modc__ai--ok,html[data-theme=dark] .modq__done{background:rgba(52,211,153,.12);color:#34d399}
+html[data-theme=dark] .modc__ai--review{background:rgba(224,161,0,.14);color:#f3c95a}
+html[data-theme=dark] .modc__ai--reject,html[data-theme=dark] .btn.modc__no{background:rgba(229,72,77,.14);color:#ff8a8f}
+html[data-theme=dark] .modc__why{color:#f3c95a}
+html[data-theme=dark] .staffbar--pending{background:rgba(224,161,0,.1)}
+html[data-theme=dark] .staffbar--rejected{background:rgba(229,72,77,.1)}

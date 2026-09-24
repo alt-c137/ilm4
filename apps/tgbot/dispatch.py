@@ -71,6 +71,10 @@ def _handle(update: dict) -> None:
             if (msg.get('text') or '').startswith('/id'):
                 reply(chat['id'], _('id этого чата: {v1}\nВпишите его в .env: TELEGRAM_MODERATION_CHAT_ID').format(v1=chat['id']))
             return
+        if msg.get('contact'):                                      # подтверждение номера
+            from apps.accounts import phone_verify
+            phone_verify.bot_contact(msg)
+            return
         if msg.get('video_note') or msg.get('video'):
             nikah_bot.video_note(msg)
             return
@@ -94,6 +98,10 @@ def start(msg, param: str) -> None:
     if param.startswith('ref_') and param[4:].isdigit():
         cache.set(f'tgref:{tg_id}', int(param[4:]), 30 * 86400)    # приглашение друга
     if param == 'verify' and nikah_bot.send_verify_instructions(tg_id):
+        return
+    if param.startswith('phone_'):                                  # подтверждение номера
+        from apps.accounts import phone_verify
+        phone_verify.bot_start(chat_id, tg_id, param[6:])
         return
     if param.startswith('login_'):                                  # вход в мобильное приложение
         from apps.api import tglogin

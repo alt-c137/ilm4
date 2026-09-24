@@ -5,6 +5,7 @@ from django.utils.translation import gettext as _
 
 from apps.core.decorators import module_required, pledge_required
 from apps.core.models import Moderation
+from apps.core.moderation import visible
 
 from .models import Story
 
@@ -18,7 +19,7 @@ def story_list(request):
 
 @module_required('migration')
 def story_detail(request, pk):
-    story = get_object_or_404(Story, pk=pk, status=Moderation.APPROVED)
+    story = get_object_or_404(Story, pk=pk, **visible(request))
     return render(request, 'migration/detail.html', {'story': story})
 
 

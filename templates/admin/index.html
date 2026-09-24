@@ -1,0 +1,22 @@
+{% extends "admin/index.html" %}
+{% load i18n staff %}
+{% block content %}
+{% ilm_dashboard as d %}
+<section class="ilm-dash">
+  <h1 class="ilm-dash__hi">{% translate "Ассаляму алейкум" %}, {% firstof user.get_short_name user.get_username %}!</h1>
+  <p class="ilm-dash__sub">{% translate "Проверять анкеты и объявления удобнее прямо на сайте — страница «Модерация». Здесь — все данные и настройки." %}</p>
+  <div class="ilm-cards">
+    <a class="ilm-card{% if d.nikah %} ilm-card--warn{% endif %}" href="/moderation/?tab=nikah"><b>{{ d.nikah }}</b><span>{% translate "анкет никяха ждут проверки" %}</span></a>
+    <a class="ilm-card{% if d.pubs %} ilm-card--warn{% endif %}" href="/moderation/"><b>{{ d.pubs }}</b><span>{% translate "публикаций ждут проверки" %}</span></a>
+    <a class="ilm-card{% if d.reports %} ilm-card--bad{% endif %}" href="/moderation/?tab=reports"><b>{{ d.reports }}</b><span>{% translate "жалоб не разобрано" %}</span></a>
+    <a class="ilm-card ilm-card--ok" href="{% url 'admin:accounts_user_changelist' %}"><b>{{ d.users }}</b><span>{% translate "пользователей" %} · +{{ d.users_week }} {% translate "за неделю" %} · {{ d.phones }} {% translate "с номером" %}</span></a>
+  </div>
+  <div class="ilm-quick">
+    <a class="is-main" href="/moderation/">{% translate "Открыть модерацию" %}</a>
+    <a href="{% url 'admin:core_sitesettings_changelist' %}">{% translate "Настройки сайта (выключатели)" %}</a>
+    <a href="{% url 'admin:core_moduleconfig_changelist' %}">{% translate "Разделы: вкл / выкл / скоро" %}</a>
+    <a href="{% url 'admin:accounts_auditlog_changelist' %}">{% translate "Журнал действий" %}</a>
+  </div>
+</section>
+{{ block.super }}
+{% endblock %}

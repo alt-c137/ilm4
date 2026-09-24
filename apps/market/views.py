@@ -11,6 +11,7 @@ from django.views.decorators.http import require_POST
 
 from apps.core.decorators import module_required, pledge_required
 from apps.core.models import Moderation, SiteSettings
+from apps.core.moderation import visible
 from apps.wallet import services as wallet
 from apps.wallet.models import Transaction
 from apps.wallet.services import InsufficientFunds
@@ -53,7 +54,7 @@ def listing_list(request):
 
 @module_required('buy')
 def listing_detail(request, pk):
-    listing = get_object_or_404(Listing, pk=pk, status=Moderation.APPROVED, is_active=True)
+    listing = get_object_or_404(Listing, pk=pk, **visible(request, is_active=True))
     Listing.objects.filter(pk=pk).update(views=F('views') + 1)
     return render(request, 'market/detail.html', {'listing': listing})
 

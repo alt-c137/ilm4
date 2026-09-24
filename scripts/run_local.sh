@@ -31,15 +31,29 @@ trap cleanup EXIT INT TERM
 
 $PY manage.py migrate --noinput
 
-echo "Запускаю туннель…"
-"$CF" tunnel --no-autoupdate --protocol http2 --url http://127.0.0.1:8000 >"$LOG/tunnel.log" 2>&1 &
+# https-адрес для Telegram и телефона: сначала Cloudflare, не вышло — localhost.run (тоже без регистрации)
+find_url() { grep -oE "$1" "$2" 2>/dev/null | grep -v '//api\.' | head -1 || true; }
 URL=""
-for _ in $(seq 1 40); do
-  URL=$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' "$LOG/tunnel.log" | grep -v '//api\.' | head -1 || true)
+echo "Запускаю туннель Cloudflare…"
+"$CF" tunnel --no-autoupdate --protocol http2 --url http://127.0.0.1:8000 >"$LOG/tunnel.log" 2>&1 &
+for _ in $(seq 1 30); do
+  URL=$(find_url 'https://[a-z0-9-]+\.trycloudflare\.com' "$LOG/tunnel.log")
   [ -n "$URL" ] && break
   sleep 1
 done
-[ -n "$URL" ] || { echo "Туннель не поднялся, лог: $LOG/tunnel.log"; exit 1; }
+if [ -z "$URL" ]; then
+  echo "Cloudflare не ответил (последние строки лога):"
+  tail -n 5 "$LOG/tunnel.log" | sed 's/^/    /'
+  echo "Пробую запасной туннель localhost.run…"
+  ssh -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 \
+      -o ExitOnForwardFailure=yes -R 80:127.0.0.1:8000 nokey@localhost.run >"$LOG/tunnel2.log" 2>&1 &
+  for _ in $(seq 1 30); do
+    URL=$(find_url 'https://[a-z0-9-]+\.lhr\.life' "$LOG/tunnel2.log")
+    [ -n "$URL" ] && break
+    sleep 1
+  done
+fi
+[ -n "$URL" ] || { echo "Туннель не поднялся ни через Cloudflare, ни через localhost.run. Проверьте интернет. Логи: $LOG"; exit 1; }
 
 export SITE_URL="$URL"          # переменная окружения важнее .env — файл не меняем
 $PY manage.py runserver 127.0.0.1:8000 >"$LOG/server.log" 2>&1 &

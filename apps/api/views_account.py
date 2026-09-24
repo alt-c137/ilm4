@@ -4,6 +4,7 @@ from django.contrib.auth import authenticate, get_user_model
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext as _
 
+from apps.accounts import phone_verify
 from apps.accounts.views import LOGIN_MAX_PER_IP, LOGIN_MAX_PER_LOGIN, LOGIN_WINDOW, client_ip
 
 from . import tglogin
@@ -84,6 +85,8 @@ def me_json(request, user) -> dict:
         'email': '' if user.email.endswith('.ilm4.local') else user.email,
         'city': user.city, 'phone': user.phone, 'language': user.language, 'avatar': file_url(request, user.avatar),
         'telegram': bool(user.telegram_id), 'verified': user.platform_verified,
+        'phone_verified': user.phone_verified,
+        'needs_phone': {w: phone_verify.needed(user, w) for w in ('publish', 'nikah')},
         'balance': int(balance_of(user)) if module_on('wallet') else None,
         'nikah': {'id': nk.pk, 'status': nk.status, 'active': nk.is_active, 'gender': nk.gender} if nk else None,
     }
@@ -160,6 +163,22 @@ def telegram_poll(request):
     if user is None:
         return {'status': 'pending'}
     return {'status': 'ok', **_issue(request, user)}
+
+
+@api(methods=('POST',), auth=True)
+def phone_start(request):
+    """Подтверждение номера: ссылка на бота (t.me/…?start=phone_…), дальше — опрос phone_status."""
+    if request.user.phone_verified:
+        return {'verified': True}
+    if not phone_verify.available():
+        raise ApiError(_('Подтверждение номера пока не подключено.'), 400, 'tg_off')
+    limit(f'api_phone:{request.user.pk}', 20, 3600)
+    return {'verified': False, **phone_verify.create(request.user)}
+
+
+@api(auth=True)
+def phone_status(request):
+    return phone_verify.status(request.user, str(request.GET.get('nonce', ''))[:40])
 
 
 @api(methods=('POST',))

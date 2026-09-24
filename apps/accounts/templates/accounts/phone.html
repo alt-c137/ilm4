@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% translate "Подтверждение номера —" %} {{ block.super }}{% endblock %}
+{% block content %}
+<div class="auth phonev">
+  <div class="phonev__ico" aria-hidden="true">
+    <svg viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3"/><path d="m9.5 10.5 1.8 1.8 3.4-3.6"/></svg>
+  </div>
+  {% if done %}
+    <h1>{% translate "Номер подтверждён" %}</h1>
+    <p class="auth__sub">{{ masked }} — {% translate "можно подавать объявления и пользоваться никяхом." %}</p>
+    <a class="btn btn--p" href="{% url 'core:home' %}">{% translate "На главную" %}</a>
+  {% else %}
+    <h1>{% translate "Подтвердите номер телефона" %}</h1>
+    <p class="auth__sub">
+      {% if why == 'nikah' %}{% translate "Никях открыт только людям с подтверждённым номером: один номер — одна анкета. Так в ленте нет ботов и фейков." %}
+      {% else %}{% translate "Публиковать можно только с подтверждённым номером: один номер — один аккаунт. Так на ilm4 нет спама и ботов." %}{% endif %}
+      {% translate "Смотреть объявления можно и без этого." %}
+    </p>
+    <ol class="phonev__steps">
+      <li>{% translate "Нажмите кнопку ниже — откроется наш бот в Telegram." %}</li>
+      <li>{% translate "В боте нажмите «📱 Отправить мой номер»." %}</li>
+      <li>{% translate "Вернитесь сюда — страница откроется сама." %}</li>
+    </ol>
+    <a class="btn btn--p phonev__go" id="phonev-go" href="{{ link.url }}" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4 3 11l6 2 2 6 3-4 5 4z"/><path d="m9 13 8-6"/></svg>
+      {% translate "Подтвердить через Telegram" %}
+    </a>
+    <p class="phonev__wait" id="phonev-wait" hidden><span class="phonev__dot"></span>{% translate "Ждём подтверждения из Telegram…" %}</p>
+    <p class="err" id="phonev-err" hidden></p>
+    <p class="auth__hint">{% translate "Номер не видят другие люди. Нет Telegram? Напишите в" %} <a class="link" href="{% url 'core:support' %}">{% translate "поддержку" %}</a>.</p>
+  {% endif %}
+</div>
+{% if not done %}
+<script>
+(function () {
+  var nonce = '{{ link.nonce|escapejs }}', next = '{{ next|escapejs }}';
+  var go = document.getElementById('phonev-go'), wait = document.getElementById('phonev-wait'),
+      err = document.getElementById('phonev-err'), timer = null;
+  function poll() {
+    fetch('{% url "accounts:phone_status" %}?nonce=' + encodeURIComponent(nonce), {credentials: 'same-origin'})
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.verified) { clearInterval(timer); location.href = next; return; }
+        if (d.error) { err.textContent = d.error; err.hidden = false; }
+      }).catch(function () {});
+  }
+  function start() { wait.hidden = false; if (!timer) timer = setInterval(poll, 2000); }
+  var tg = window.Telegram && window.Telegram.WebApp;
+  go.addEventListener('click', function (e) {
+    // внутри мини-приложения Telegram — одна кнопка, без перехода в бота
+    if (tg && tg.initData && tg.requestContact) {
+      e.preventDefault();
+      tg.requestContact(function (ok) { if (ok) { start(); poll(); } });
+      return;
+    }
+    start();
+  });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && timer) poll(); });
+})();
+</script>
+{% endif %}
+{% endblock %}

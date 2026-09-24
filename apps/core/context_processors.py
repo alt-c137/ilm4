@@ -68,11 +68,19 @@ def site(request):
     # Активная тема: профиль → кука → дефолт из настроек
     current = None
     user = getattr(request, 'user', None)
-    unread = 0
+    unread = mod_pending = 0
     if user is not None and user.is_authenticated:
         if user.theme_id:
             current = user.theme
         unread = user.notifications.filter(read=False).count()
+        if user.is_staff:
+            from django.core.cache import cache
+
+            from .moderation import pending_count
+            mod_pending = cache.get(f'modpending:{user.pk}')
+            if mod_pending is None:
+                mod_pending = pending_count(user)
+                cache.set(f'modpending:{user.pk}', mod_pending, 60)
     if current is None:
         theme_id = request.COOKIES.get('ilm4_theme')
         current = (themes.filter(id=theme_id).first()
@@ -108,13 +116,13 @@ def site(request):
         'calls_on': (settings_obj.chat_calls_enabled or settings_obj.chat_video_calls_enabled)
         and any(m.key == 'chat' for m in modules),
         'unread_notifications': unread,
+        'mod_pending': mod_pending,
         'active_section': active_section,
         'menu_more_keys': [m.key for m in more],
         'is_home': is_home,
         'is_dark': request.COOKIES.get('ilm4_dark') == '1',
-        # кнопка Google: в проде — только когда ключи заданы; в деве видна всегда
-        'google_login': bool(django_settings.GOOGLE_OAUTH_CLIENT_ID and django_settings.GOOGLE_OAUTH_CLIENT_SECRET)
-        or django_settings.DEBUG,
+        # кнопка Google — только когда ключи заданы (иначе она вела обратно на вход и путала)
+        'google_login': bool(django_settings.GOOGLE_OAUTH_CLIENT_ID and django_settings.GOOGLE_OAUTH_CLIENT_SECRET),
         'social_links': social_links(),
         'donate_url': DONATE_URL,
         'map_cfg': {'maptiler': settings_obj.map_maptiler_key},

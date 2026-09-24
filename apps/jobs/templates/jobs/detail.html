@@ -1,11 +1,13 @@
 {% extends 'base.html' %}
 {% load i18n %}
+{% load staff %}
 {% load icons %}{% load reports %}
 {% block title %}{{ vacancy.title }} — {{ block.super }}{% endblock %}
 {% block description %}{{ vacancy.title }} — {{ vacancy.company }}, {{ vacancy.city }}. {% if vacancy.is_resume %}{% translate "Резюме" %}{% else %}{% translate "Вакансия" %}{% endif %} {% translate "на ilm4." %}{% endblock %}
 {% block body_class %}s-jobs has-dbar{% endblock %}
 
 {% block content %}
+{% staff_bar vacancy %}
 <div class="dpage">
   <a class="crumb" href="{% url 'jobs:list' %}">{% ico 'back' %}{% translate "Все вакансии" %}</a>
   <div class="dgrid dgrid--split">

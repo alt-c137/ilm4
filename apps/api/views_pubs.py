@@ -16,7 +16,7 @@ from apps.core.decorators import PUBLISH_PER_DAY
 from apps.core.models import Moderation, SiteSettings
 from apps.core.publications import BY_KEY, PUBLICATIONS
 
-from .base import MODULE_OF, ApiError, api, file_url, module_on
+from .base import MODULE_OF, ApiError, api, file_url, module_on, require_phone
 
 PLEDGE = [
     _lazy('Я публикую правдивые сведения — без обмана, скрытых недостатков и завышенных обещаний.'),
@@ -89,6 +89,7 @@ def schema(request, form, instance=None) -> list:
 @api(auth=True)
 def form_schema(request, key):
     pub = _pub(key)
+    require_phone(request.user, 'publish')
     obj = None
     pk = request.GET.get('id')
     if pk:
@@ -104,6 +105,7 @@ def form_schema(request, key):
 def save(request, key):
     """Создать (с договором автора) или изменить свою публикацию. После правки — снова на проверку."""
     pub = _pub(key)
+    require_phone(request.user, 'publish')
     model = pub.get_model()
     pk = request.data.get('id')
     obj = get_object_or_404(model, pk=pk, **{pub.owner: request.user}) if pk else None

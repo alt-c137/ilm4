@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load icons %}
+{% block title %}{% translate "Модерация —" %} {{ block.super }}{% endblock %}
+{% block content %}
+<div class="dpage modq">
+  <div class="modq__top">
+    <div>
+      <h1 class="mypubs__h">{% translate "Модерация" %}</h1>
+      <p class="mypubs__sub">{% translate "Всё, что ждёт решения: анкеты никяха, публикации и жалобы. Одобрили или отклонили — автор сразу получает уведомление." %}</p>
+    </div>
+    <a class="btn btn--s btn--g" href="/admin/">{% ico 'shield' %}{% translate "Админка" %}</a>
+  </div>
+
+  {% if tabs %}
+  <nav class="modq__tabs" aria-label="{% translate 'Разделы' %}">
+    <a class="chip{% if not tab %} is-on{% endif %}" href="?">{% translate "Всё" %} <b>{{ total }}</b></a>
+    {% for key, label, n in tabs %}<a class="chip{% if tab == key %} is-on{% endif %}" href="?tab={{ key }}">{{ label }} <b>{{ n }}</b></a>{% endfor %}
+  </nav>
+  {% endif %}
+
+  {% for sec in sections %}
+  <h2 class="modq__h">{{ sec.src.label }} <small>{{ sec.count }}</small></h2>
+  {% for it in sec.items %}
+  <article class="dcard modc" id="m-{{ sec.src.key }}-{{ it.obj.pk }}">
+    <header class="modc__head">
+      <div class="modc__title">
+        <b>{{ it.title }}</b>
+        <span class="modc__meta">
+          {% if it.author %}<a class="link" href="{% url 'accounts:public' it.author.pk %}">{{ it.author.get_display_name }}</a>
+            {% if it.author.phone_verified %}<span class="modc__ok" title="{% translate 'Номер подтверждён' %}">✓ {% translate "номер" %}</span>{% endif %}
+          · {% endif %}{% if it.created %}{{ it.created|date:"j E, H:i" }}{% endif %}
+        </span>
+      </div>
+      {% if it.ai %}<span class="modc__ai modc__ai--{{ it.ai.verdict }}" title="{{ it.ai.reasons|join:'; ' }}">{% translate "ИИ" %}: {{ it.ai.get_verdict_display }}</span>{% endif %}
+    </header>
+    {% if it.ai.reasons %}<p class="modc__why">{{ it.ai.reasons|join:" · " }}</p>{% endif %}
+
+    {% if it.images %}<div class="modc__imgs">{% for src in it.images %}<a href="{{ src }}" target="_blank" rel="noopener"><img src="{{ src }}" alt="" loading="lazy"></a>{% endfor %}</div>{% endif %}
+
+    <dl class="modc__fields">
+      {% for label, value, long in it.fields %}<div class="{% if long %}is-long{% endif %}"><dt>{{ label }}</dt><dd>{{ value|linebreaksbr }}</dd></div>{% endfor %}
+    </dl>
+
+    {% if it.file_url %}<p><a class="link" href="{{ it.file_url }}">{% translate "Скачать файл книги для проверки" %}</a></p>{% endif %}
+    {% if it.faith %}
+    <details class="modc__faith"><summary>{% translate "Закрытые ответы (видит только модератор)" %}{% if it.red %} <span class="modc__flag" title="{% translate 'тревожных ответов' %}">{{ it.red }}</span>{% endif %}</summary>
+      <table>{% for q, a, bad in it.faith %}<tr class="{% if bad %}is-bad{% endif %}"><td>{{ q }}</td><td><b>{{ a }}</b></td></tr>{% endfor %}</table>
+    </details>
+    {% if it.has_photo %}<p><a class="link" href="{% url 'nikah:admin_photo' it.obj.pk %}" target="_blank" rel="noopener">{% translate "Посмотреть фото (запишется в журнал)" %}</a></p>{% endif %}
+    {% endif %}
+
+    {% include 'core/includes/mod_buttons.html' with key=sec.src.key pk=it.obj.pk url=it.url %}
+  </article>
+  {% endfor %}
+  {% endfor %}
+
+  {% if reports %}
+  <h2 class="modq__h">{% translate "Жалобы" %} <small>{{ reports|length }}</small></h2>
+  {% for g in reports %}
+  <article class="dcard modc">
+    <header class="modc__head">
+      <div class="modc__title">
+        {% if g.url %}<a class="link" href="{{ g.url }}"><b>{{ g.title }}</b></a>{% else %}<b>{{ g.title }}</b>{% endif %}
+        <span class="modc__meta">{{ g.src.label|default:g.ct.name }} · {% translate "жалоб" %}: {{ g.reports|length }}</span>
+      </div>
+    </header>
+    <ul class="modc__reports">
+      {% for r in g.reports %}<li><b>{{ r.get_reason_display }}</b>{% if r.text %} — {{ r.text }}{% endif %} <span class="modc__meta">{{ r.created_at|date:"j E" }}</span></li>{% endfor %}
+    </ul>
+    <div class="modc__act">
+      <form method="post" action="{% url 'core:moderation_report' g.ct.pk g.id %}">{% csrf_token %}
+        <input type="hidden" name="do" value="remove"><input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button class="btn btn--s modc__no" type="submit">{% translate "Снять с публикации" %}</button></form>
+      <form method="post" action="{% url 'core:moderation_report' g.ct.pk g.id %}">{% csrf_token %}
+        <input type="hidden" name="do" value="dismiss"><input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button class="btn btn--s btn--g" type="submit">{% translate "Жалобы необоснованны" %}</button></form>
+    </div>
+  </article>
+  {% endfor %}
+  {% endif %}
+
+  <datalist id="mod-reasons">{% for r in reasons %}<option value="{{ r }}">{% endfor %}</datalist>
+
+  {% if not sections and not reports %}
+  <div class="empty modq__empty">
+    <div class="modq__done">✓</div>
+    <h3>{% translate "Всё проверено" %}</h3>
+    <p>{% translate "Новых анкет, публикаций и жалоб нет. Альхамдулиллях!" %}</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

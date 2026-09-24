@@ -6,6 +6,7 @@ from django.utils.translation import gettext as _
 
 from apps.core.decorators import module_required, pledge_required
 from apps.core.models import Moderation, SiteSettings
+from apps.core.moderation import visible
 from apps.wallet import services as wallet_services
 from apps.wallet.models import Transaction
 
@@ -31,7 +32,7 @@ def index(request):
 
 @module_required('health')
 def detail(request, pk):
-    doctor = get_object_or_404(Doctor, pk=pk, status=Moderation.APPROVED)
+    doctor = get_object_or_404(Doctor, pk=pk, **visible(request))
     return render(request, 'health/detail.html', {'doctor': doctor})
 
 

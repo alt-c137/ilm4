@@ -66,7 +66,7 @@ window._t = (function () { var d = {}; try { d = JSON.parse(document.getElementB
       <div class="usermenu" id="usermenu">
         <button type="button" class="uchip" id="uchip" aria-haspopup="true" aria-expanded="false" aria-label="{% translate 'Меню профиля' %}">
           {% if user.avatar %}<img class="uchip__ava" src="{{ user.avatar.url }}" alt="">{% else %}<span class="uchip__ava uchip__ava--txt">{{ user.get_display_name|slice:":1"|upper }}</span>{% endif %}
-          <span class="uchip__c">▾</span>
+          <span class="uchip__c">▾</span>{% if mod_pending %}<span class="uchip__dot" title="{% translate 'Ждут модерации' %}: {{ mod_pending }}"></span>{% endif %}
         </button>
         <div class="umenu" role="menu">
           <div class="umenu__head">
@@ -87,7 +87,8 @@ window._t = (function () { var d = {}; try { d = JSON.parse(document.getElementB
           <div class="umenu__sep"></div>
           <a href="{% url 'core:settings' %}"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>{% translate "Настройки" %}</a>
           <div class="umenu__sep"></div>
-          {% if user.is_staff %}<a href="/admin/"><svg viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></svg>{% translate "Админка" %}</a>{% endif %}
+          {% if user.is_staff %}<a href="{% url 'core:moderation' %}"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg>{% translate "Модерация" %}{% if mod_pending %} <span class="umenu__badge">{{ mod_pending }}</span>{% endif %}</a>
+          <a href="/admin/"><svg viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></svg>{% translate "Админка" %}</a>{% endif %}
           <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
             <button type="submit" class="umenu__exit"><svg viewBox="0 0 24 24"><path d="M14 4h4a1.5 1.5 0 0 1 1.5 1.5v13A1.5 1.5 0 0 1 18 20h-4"/><path d="M9 8l-4 4 4 4M5 12h10"/></svg>{% translate "Выйти" %}</button>
           </form>
@@ -131,7 +132,7 @@ window._t = (function () { var d = {}; try { d = JSON.parse(document.getElementB
     </div>
     <div><h4>{% translate "Статус" %}</h4>
       <a href="{% url 'core:soon' %}">{% translate "Что откроется дальше" %}</a>
-      {% if user.is_staff %}<a href="/admin/">{% translate "Управление" %}</a>{% endif %}
+      {% if user.is_staff %}<a href="{% url 'core:moderation' %}">{% translate "Модерация" %}</a><a href="/admin/">{% translate "Управление" %}</a>{% endif %}
     </div>
   </div>
   <div class="foot__bot"><span>© 2026 ilm4 · <span dir="rtl" lang="ar">بارك الله فيكم</span></span>

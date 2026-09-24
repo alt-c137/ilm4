@@ -1,9 +1,10 @@
 {% extends 'nikah/_base.html' %}
 {% load i18n %}
-{% load nikah_tags reports %}
+{% load nikah_tags reports staff %}
 {% block nk_title %}{{ p.display_name }}, {{ p.age }} {% translate "· Никях" %}{% endblock %}
 {% block nk_back %}<a class="nkback" href="{% url 'nikah:home' %}" data-back>{% nk_icon 'back' %}{% translate "Назад" %}</a>{% endblock %}
 {% block nk %}
+{% if moderating %}{% staff_bar p %}{% endif %}
 <div class="nkprof">
   <header class="nkprof__head">
     <span class="nkava nkava--lg nkava--{{ p.gender }}">{% if p.gender == 'M' %}{% nk_icon 'brother' %}{% else %}{% nk_icon 'sister' %}{% endif %}</span>
@@ -51,7 +52,7 @@
     </div>
   </section>
 
-  {% if p.pk != me.pk %}
+  {% if p.pk != me.pk and not moderating %}
   <div class="personact">{% report_button p _('Пожаловаться на анкету') %}
     <form method="post" action="{% url 'accounts:block' p.user_id %}" onsubmit="return confirm('{{ _("Заблокировать? Вы перестанете видеть друг друга в никяхе и не сможете писать.")|escapejs }}')">{% csrf_token %}<input type="hidden" name="next" value="{% url 'nikah:home' %}">
       <button class="linkbtn" type="submit">{% translate "Заблокировать" %}</button></form></div>

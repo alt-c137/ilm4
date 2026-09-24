@@ -20,6 +20,8 @@ urlpatterns = [
     path('auth/telegram/poll/', a.telegram_poll),
     path('auth/web-link/', a.web_link),
     path('auth/web/<str:code>/', a.web_enter),
+    path('auth/phone/', a.phone_start),
+    path('auth/phone/status/', a.phone_status),
     path('me/', a.me),
     path('push/', a.push_register),
     path('notifications/', a.notifications),

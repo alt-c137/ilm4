@@ -5,6 +5,7 @@ from django.utils.translation import gettext as _
 
 from apps.core.decorators import module_required, pledge_required
 from apps.core.models import Moderation
+from apps.core.moderation import visible
 
 from .forms import VacancyForm, VacancyResponseForm
 from .models import Vacancy
@@ -34,7 +35,7 @@ def vacancy_list(request):
 
 @module_required('jobs')
 def vacancy_detail(request, pk):
-    vacancy = get_object_or_404(Vacancy, pk=pk, status=Moderation.APPROVED)
+    vacancy = get_object_or_404(Vacancy, pk=pk, **visible(request))
     return render(request, 'jobs/detail.html', {'vacancy': vacancy})
 
 

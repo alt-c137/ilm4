@@ -1,0 +1,28 @@
+{% load i18n %}
+<div class="staffbar staffbar--{{ status }}" role="region" aria-label="{% translate 'Панель модератора' %}">
+  <div class="staffbar__info">
+    <span class="staffbar__badge">{% translate "Модератор" %}</span>
+    <span>{% translate "Статус" %}: <b>{{ status_label }}</b></span>
+    {% if status != 'approved' %}<span class="staffbar__hint">{% translate "Обычные посетители эту страницу пока не видят." %}</span>{% endif %}
+  </div>
+  <div class="staffbar__act">
+    {% if status != 'approved' %}
+    <form method="post" action="{% url 'core:moderation_act' key obj.pk %}">{% csrf_token %}
+      <input type="hidden" name="do" value="approve"><input type="hidden" name="next" value="{{ next }}">
+      <button class="btn btn--s btn--p" type="submit">✓ {% translate "Одобрить" %}</button></form>
+    {% endif %}
+    {% if status != 'rejected' %}
+    <details class="modc__rej">
+      <summary class="btn btn--s modc__no">{% if status == 'approved' %}{% translate "Снять с публикации" %}{% else %}✕ {% translate "Отклонить" %}{% endif %}</summary>
+      <form method="post" action="{% url 'core:moderation_act' key obj.pk %}" class="modc__rejform">{% csrf_token %}
+        <input type="hidden" name="do" value="reject"><input type="hidden" name="next" value="{{ next }}">
+        <label>{% translate "Причина — автор увидит её в уведомлении" %}</label>
+        <input type="text" name="reason" maxlength="300">
+        <button class="btn btn--s modc__no" type="submit">{% translate "Подтвердить" %}</button>
+      </form>
+    </details>
+    {% endif %}
+    <a class="btn btn--s btn--g" href="{% url 'core:moderation' %}">{% translate "Очередь" %}</a>
+    {% if admin_url %}<a class="btn btn--s btn--g" href="{{ admin_url }}">{% translate "Изменить" %}</a>{% endif %}
+  </div>
+</div>

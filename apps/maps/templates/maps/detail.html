@@ -1,11 +1,13 @@
 {% extends 'base.html' %}
 {% load i18n %}
+{% load staff %}
 {% load icons reviews %}{% load reports %}
 {% block title %}{{ place.name }} — {{ block.super }}{% endblock %}
 {% block description %}{{ place.name }} — {{ place.get_category_display|lower }}, {{ place.city }}{% translate ". Адрес, контакты и отзывы на ilm4." %}{% endblock %}
 {% block body_class %}s-map{% if place.phone %} has-dbar{% endif %}{% endblock %}
 
 {% block content %}
+{% staff_bar place %}
 <div class="dpage">
   <a class="crumb" href="/map/?city={{ place.city|urlencode }}">{% ico 'back' %}{% translate "Халяль карта ·" %} {{ place.city }}</a>
   <div class="dgrid dgrid--rev">
