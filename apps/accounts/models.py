@@ -122,3 +122,30 @@ class AuditLog(models.Model):
 
     def __str__(self):
         return f'{self.user or "система"}: {self.action}'
+
+
+class UserBlock(models.Model):
+    """Блокировка: заблокированный не может писать и не видит вас в никяхе (и наоборот)."""
+
+    blocker = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='blocks_made')
+    blocked = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='blocked_by')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('blocker', 'blocked')
+        verbose_name = 'блокировка'
+        verbose_name_plural = 'блокировки'
+
+    @staticmethod
+    def between(a, b) -> bool:
+        """Есть ли блокировка в любую сторону."""
+        if not (a and b and getattr(a, 'pk', None) and getattr(b, 'pk', None)):
+            return False
+        return UserBlock.objects.filter(models.Q(blocker=a, blocked=b) | models.Q(blocker=b, blocked=a)).exists()
+
+    @staticmethod
+    def ids_for(user) -> set:
+        """id всех, с кем у пользователя блокировка (в любую сторону)."""
+        pairs = UserBlock.objects.filter(models.Q(blocker=user) | models.Q(blocked=user)).values_list('blocker_id',
+                                                                                                        'blocked_id')
+        return {x for pair in pairs for x in pair} - {user.pk}

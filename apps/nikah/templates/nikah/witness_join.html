@@ -1,0 +1,11 @@
+{% extends 'nikah/_base.html' %}
+{% load nikah_tags %}
+{% block nk_title %}Стать свидетелем · Никях{% endblock %}
+{% block nk %}
+<section class="nkhero nkhero--sm"><span class="nkhero__ic">{% nk_icon 'shield' %}</span>
+  <h1>Стать свидетелем</h1>
+  <p>{{ p.display_name }} приглашает вас свидетелем (махрамом) в переписку никяха. Вы будете видеть все сообщения в её/его чатах знакомства и сможете писать. По адабу — это отец, брат или другой махрам.</p>
+  <form method="post" class="nkhero__act">{% csrf_token %}<button class="btn btn--p btn--lg" type="submit">Принять</button>
+    <a class="btn btn--g btn--lg" href="{% url 'nikah:home' %}">Отказаться</a></form>
+</section>
+{% endblock %}

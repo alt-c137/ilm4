@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from apps.accounts.audit import log_action
 from apps.core.models import Moderation
+from apps.core.signals import set_status
 
 from .models import HalalPlace, PlaceConfirmation
 
@@ -24,12 +25,12 @@ class HalalPlaceAdmin(admin.ModelAdmin):
 
     @admin.action(description='Одобрить (опубликовать)')
     def approve(self, request, queryset):
-        queryset.update(status=Moderation.APPROVED)
+        set_status(queryset, Moderation.APPROVED)
         log_action(request, 'Одобрены халяль-места', f'{queryset.count()} шт.')
 
     @admin.action(description='Отклонить')
     def reject(self, request, queryset):
-        queryset.update(status=Moderation.REJECTED)
+        set_status(queryset, Moderation.REJECTED)
         log_action(request, 'Отклонены халяль-места', f'{queryset.count()} шт.')
 
 

@@ -2,13 +2,20 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path
+
+from apps.core import seo
 
 admin.site.site_header = 'ilm4 — управление'
 admin.site.site_title = 'ilm4 админ'
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('robots.txt', seo.robots),
+    path('sitemap.xml', sitemap, {'sitemaps': seo.SITEMAPS}, name='sitemap'),
+    path('sw.js', seo.service_worker),
+    path('offline/', seo.offline),
     path('accounts/', include('apps.accounts.urls')),
     path('wallet/', include('apps.wallet.urls')),
     path('prayer/', include('apps.prayer.urls')),

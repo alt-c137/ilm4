@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}Страница не найдена — {{ block.super }}{% endblock %}
+{% block content %}
+<div class="empty" style="margin:40px auto;max-width:520px">
+  <div style="font-size:64px;font-weight:800;color:var(--accent)">404</div>
+  <h1 style="font-size:22px;font-weight:800">Такой страницы нет</h1>
+  <p style="color:var(--ink-soft)">Возможно, публикацию удалили или сняли с модерации. Проверьте адрес или вернитесь на главную.</p>
+  <a class="btn btn--p" href="/">На главную</a>
+</div>
+{% endblock %}

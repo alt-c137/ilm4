@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.humanize',
+    'django.contrib.sitemaps',
     'daphne',   # ASGI-runserver (WebSocket чата); обязан стоять до staticfiles
     'django.contrib.staticfiles',
     # сторонние

@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load icons %}
+{% load icons %}{% load reports %}
 {% block title %}{{ story.title }} — {{ block.super }}{% endblock %}
 {% block description %}{{ story.title }}: история переезда {{ story.country_from }} → {{ story.country_to }} на ilm4.{% endblock %}
 {% block body_class %}s-migration{% endblock %}
@@ -24,6 +24,7 @@
         <a class="btn btn--g" href="{% url 'migration:list' %}">{% ico 'back' %}Все истории</a>
         <a class="btn btn--s" href="{% url 'migration:create' %}">{% ico 'edit' %}Рассказать свою</a>
       </div>
+      {% report_button story %}
     </div>
   </article>
 </div>

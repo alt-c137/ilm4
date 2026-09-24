@@ -81,9 +81,10 @@ def thread_detail(request, pk):
     thread = get_object_or_404(Thread, pk=pk)
     if request.user not in thread.participants.all():
         return redirect('chat:inbox')  # чужой диалог — не показываем и без 404
+    blocked = _blocked(thread, request.user)
     if request.method == 'POST':  # fallback без JS: отправить обычной формой
         body = request.POST.get('body', '').strip()[:2000]
-        if body:
+        if body and not blocked:
             Message.objects.create(thread=thread, sender=request.user, body=body)
         return redirect('chat:thread', pk=pk)
     # открыл диалог — входящие прочитаны
@@ -114,6 +115,8 @@ def thread_detail(request, pk):
         'hue': (other.pk if other else 0) % 7,
         'items': items,
         'rows': _rows(request.user),
+        'blocked': blocked,
+        'witnesses': [u.get_display_name() for u in thread.observers.exclude(pk=request.user.pk)],
         'chat_cfg': {'me': request.user.id, 'thread': thread.pk,
                      'other': other.get_display_name() if other else '', 'features': _flags()},
     })
@@ -131,6 +134,10 @@ def thread_start(request):
         email = User.objects.filter(pk=int(uid), is_active=True).values_list('email', flat=True).first() or ''
     if email and email != request.user.email.lower():
         other = User.objects.filter(email__iexact=email).first()
+        from apps.accounts.models import UserBlock
+        if other and UserBlock.between(request.user, other):
+            messages.error(request, 'Переписка недоступна: один из вас заблокировал другого.')
+            return redirect('chat:inbox')
         if other:
             thread = (Thread.objects.filter(participants=request.user)
                       .filter(participants=other).first())
@@ -145,6 +152,12 @@ def thread_start(request):
             return redirect('chat:thread', pk=thread.pk)
         messages.error(request, 'Пользователь с таким email не найден.')
     return render(request, 'chat/start.html', {'email': email})
+
+
+def _blocked(thread, user) -> bool:
+    """Кто-то из участников заблокировал другого — писать нельзя."""
+    from apps.accounts.models import UserBlock
+    return any(UserBlock.between(user, p) for p in thread.participants.exclude(pk=user.pk))
 
 
 def _flags():
@@ -170,6 +183,8 @@ def upload(request, pk):
     thread = get_object_or_404(Thread, pk=pk)
     if request.user not in thread.participants.all():
         return JsonResponse({'error': 'Нет доступа'}, status=403)
+    if _blocked(thread, request.user):
+        return JsonResponse({'error': 'Переписка недоступна: блокировка'}, status=403)
     kind = request.POST.get('kind', '')
     if not _flags().get(kind):
         return JsonResponse({'error': 'Эта функция сейчас отключена'}, status=403)

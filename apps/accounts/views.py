@@ -173,4 +173,84 @@ def public_profile(request, pk):
         'rides': person.rides.filter(**approved)[:6],
         'services': person.services.filter(**approved)[:6],
         'vacancies': person.vacancies.filter(**approved)[:6],
+        'is_blocked': request.user.is_authenticated and person.blocked_by.filter(blocker=request.user).exists(),
     })
+
+
+@login_required
+def block_toggle(request, pk):
+    """Заблокировать / разблокировать человека: не пишет вам, вы не видите друг друга в никяхе."""
+    from django.contrib.auth import get_user_model
+    from django.shortcuts import get_object_or_404
+
+    from .models import UserBlock
+
+    if request.method != 'POST':
+        return redirect('accounts:blocked')
+    other = get_object_or_404(get_user_model(), pk=pk)
+    nxt = request.POST.get('next', '')
+    nxt = nxt if url_has_allowed_host_and_scheme(nxt, allowed_hosts={request.get_host()}) else ''
+    if other == request.user:
+        return redirect(nxt or 'accounts:profile')
+    obj, created = UserBlock.objects.get_or_create(blocker=request.user, blocked=other)
+    if not created:
+        obj.delete()
+        messages.success(request, f'{other.get_display_name()} разблокирован(а).')
+    else:
+        log_action(request, 'Заблокирован пользователь', f'#{other.pk}')
+        messages.success(request, f'{other.get_display_name()} заблокирован(а): не сможет писать вам. '
+                                  'Разблокировать — Профиль → Заблокированные.')
+    return redirect(nxt or 'accounts:blocked')
+
+
+@login_required
+def blocked_list(request):
+    return render(request, 'accounts/blocked.html', {
+        'blocks': request.user.blocks_made.select_related('blocked')})
+
+
+@login_required
+def delete_account(request):
+    """Удаление аккаунта (требование App Store / Google Play и закона о данных).
+    Личные данные стираются, публикации снимаются, анкета никяха и фото удаляются.
+    Финансовые записи (оплаты) сохраняются обезличенными — этого требует бухгалтерия."""
+    from django.contrib.auth import logout
+
+    if request.method == 'POST':
+        if request.POST.get('confirm', '').strip().lower() != 'удалить':
+            messages.error(request, 'Напишите слово «удалить», чтобы подтвердить.')
+            return redirect('accounts:delete')
+        user = request.user
+        _wipe_user(user)
+        log_action(request, 'Аккаунт удалён владельцем', f'#{user.pk}')
+        logout(request)
+        messages.success(request, 'Аккаунт удалён. Да вознаградит вас Аллах благом.')
+        return redirect('core:home')
+    return render(request, 'accounts/delete.html')
+
+
+def _wipe_user(user) -> None:
+    from apps.core.models import Moderation
+    from apps.core.publications import PUBLICATIONS
+
+    profile = getattr(user, 'nikah_profile', None)
+    if profile is not None:
+        if profile.photo_private:
+            profile.photo_private.delete(save=False)
+        profile.delete()
+    for pub in PUBLICATIONS:
+        model = pub.get_model()
+        qs = model.objects.filter(**{pub.owner: user})
+        if hasattr(model, 'status'):
+            qs.update(status=Moderation.REJECTED)
+    if user.avatar:
+        user.avatar.delete(save=False)
+    user.email = f'deleted-{user.pk}@deleted.ilm4.local'
+    user.username = f'deleted-{user.pk}'
+    user.first_name = user.last_name = user.nickname = user.city = user.phone = ''
+    user.findable_by_phone = False
+    user.telegram_id = None
+    user.telegram_username = ''
+    user.is_active = False
+    user.set_unusable_password()
+    user.save()

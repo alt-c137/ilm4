@@ -78,6 +78,10 @@ class NikahProfile(models.Model):
     referred_by = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL,
                                     related_name='invited', verbose_name='пригласил(а)')
     ref_bonus_given = models.BooleanField('бонус за приглашение начислен', default=False, editable=False)
+    witness = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+                                related_name='nikah_witness_for', verbose_name='свидетель (махрам)',
+                                help_text='Видит переписку во всех чатах никяха этой анкеты')
+    witness_token = models.CharField(max_length=32, blank=True, editable=False)
     last_seen = models.DateTimeField('был(а) в сети', null=True, blank=True)
     created_at = models.DateTimeField('создано', auto_now_add=True)
     updated_at = models.DateTimeField('изменено', auto_now=True)

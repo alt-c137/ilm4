@@ -1,5 +1,5 @@
 {% extends 'nikah/_base.html' %}
-{% load nikah_tags %}
+{% load nikah_tags reports %}
 {% block nk_title %}{{ p.display_name }}, {{ p.age }} · Никях{% endblock %}
 {% block nk_back %}<a class="nkback" href="{% url 'nikah:home' %}" data-back>{% nk_icon 'back' %}Назад</a>{% endblock %}
 {% block nk %}
@@ -51,6 +51,9 @@
   </section>
 
   {% if p.pk != me.pk %}
+  <div class="personact">{% report_button p 'Пожаловаться на анкету' %}
+    <form method="post" action="{% url 'accounts:block' p.user_id %}" onsubmit="return confirm('Заблокировать? Вы перестанете видеть друг друга в никяхе и не сможете писать.')">{% csrf_token %}<input type="hidden" name="next" value="{% url 'nikah:home' %}">
+      <button class="linkbtn" type="submit">Заблокировать</button></form></div>
   <div class="nkdock">
     <form method="post" action="{% url 'nikah:save' p.pk %}">{% csrf_token %}<input type="hidden" name="back" value="{{ request.path }}">
       <button class="nkicon nkicon--lg{% if saved %} on{% endif %}" type="submit" aria-label="Сохранить" title="{% if saved %}Убрать из сохранённых{% else %}Сохранить{% endif %}">{% nk_icon 'star' %}</button></form>

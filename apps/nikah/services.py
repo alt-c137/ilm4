@@ -148,6 +148,9 @@ def send_interest(me: NikahProfile, other: NikahProfile) -> NikahMatch | None:
     """Поставить «❤». Встречный интерес уже есть — создаётся пара."""
     if me.gender == other.gender or me.pk == other.pk:
         raise ValueError('Интерес можно проявить только к анкете противоположного пола')
+    from apps.accounts.models import UserBlock
+    if UserBlock.between(me.user, other.user):
+        raise ValueError('Анкета недоступна')
     _, created = NikahInterest.objects.get_or_create(from_profile=me, to_profile=other)
     if not NikahInterest.objects.filter(from_profile=other, to_profile=me).exists():
         if created:
@@ -291,6 +294,10 @@ def _ensure_chat(match: NikahMatch):
 
     thread = Thread.objects.create(subject='Никях · знакомство')
     thread.participants.add(match.sister.user, match.brother.user)
+    for p in (match.sister, match.brother):          # свидетели (махрам) видят переписку
+        if p.witness_id:
+            thread.participants.add(p.witness_id)
+            thread.observers.add(p.witness_id)
     Message.objects.create(thread=thread, sender=match.sister.user, kind=Message.SYSTEM,
                            body='Чат никяха открыт. Помните об адабе: цель — никях, контакты и фото — '
                                 'по взаимному согласию. Бойтесь Аллаха.')
@@ -314,3 +321,34 @@ def pay_chat(match: NikahMatch, user) -> None:
     match.chat_paid = True
     match.save(update_fields=['chat_paid'])
     _ensure_chat(match)
+
+
+# --- свидетель (махрам) ---
+def witness_threads(profile):
+    from django.db.models import Q
+    return [m.thread for m in NikahMatch.objects.filter(Q(sister=profile) | Q(brother=profile), thread__isnull=False)
+            .select_related('thread')]
+
+
+def set_witness(profile, user) -> None:
+    """Свидетель принял приглашение: добавить во все текущие и будущие чаты никяха."""
+    if profile.witness_id and profile.witness_id != user.pk:
+        remove_witness(profile)
+    profile.witness = user
+    profile.witness_token = ''
+    profile.save(update_fields=['witness', 'witness_token'])
+    for t in witness_threads(profile):
+        t.participants.add(user)
+        t.observers.add(user)
+    notify(profile, f'{user.get_display_name()} теперь свидетель в ваших чатах никяха.', '/nikah/settings/')
+
+
+def remove_witness(profile) -> None:
+    uid = profile.witness_id
+    if not uid:
+        return
+    for t in witness_threads(profile):
+        t.observers.remove(uid)
+        t.participants.remove(uid)
+    profile.witness = None
+    profile.save(update_fields=['witness'])

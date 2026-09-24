@@ -15,6 +15,9 @@ def vacancy_list(request):
     city = request.GET.get('city', '').strip()
     q = request.GET.get('q', '').strip()
     cat = request.GET.get('cat', '').strip()
+    kind = request.GET.get('kind', Vacancy.VACANCY)
+    kind = kind if kind in dict(Vacancy.KINDS) else Vacancy.VACANCY
+    qs = qs.filter(kind=kind)
     if cat in dict(Vacancy.CATEGORIES):
         qs = qs.filter(category=cat)
     if city:
@@ -24,7 +27,7 @@ def vacancy_list(request):
     return render(request, 'jobs/list.html', {
         'vacancies': qs.select_related('owner')[:50],
         'categories': Vacancy.CATEGORIES, 'cat': cat,
-        'city': city, 'q': q,
+        'city': city, 'q': q, 'kind': kind,
     })
 
 
@@ -38,7 +41,7 @@ def vacancy_detail(request, pk):
 @module_required('jobs')
 @pledge_required
 def vacancy_create(request):
-    form = VacancyForm(request.POST or None)
+    form = VacancyForm(request.POST or None, initial={'kind': request.GET.get('kind', Vacancy.VACANCY)})
     if request.method == 'POST' and form.is_valid():
         vacancy = form.save(commit=False)
         vacancy.owner = request.user

@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load icons reviews %}
+{% load icons reviews %}{% load reports %}
 {% block title %}{{ place.name }} — {{ block.super }}{% endblock %}
 {% block description %}{{ place.name }} — {{ place.get_category_display|lower }}, {{ place.city }}. Адрес, контакты и отзывы на ilm4.{% endblock %}
 {% block body_class %}s-map{% if place.phone %} has-dbar{% endif %}{% endblock %}
@@ -85,6 +85,7 @@
       </section>
       {% if place.is_mosque %}{% reviews_block place "Комментарии" %}{% else %}{% reviews_block place "Отзывы посетителей" %}{% endif %}
       {% if not place.is_mosque %}{% include 'includes/disclaimer.html' %}{% endif %}
+      {% report_button place %}
     </div>
   </div>
 </div>

@@ -63,4 +63,11 @@
   </section>
 </div>
 </form>
+<nav class="profnav">
+  <a class="profnav__i" href="{% url 'core:my' %}"><b>Мои публикации</b><span>Объявления, вакансии, услуги — изменить или удалить</span></a>
+  <a class="profnav__i" href="{% url 'wallet:index' %}"><b>Кошелёк</b><span>Баланс и история платежей</span></a>
+  <a class="profnav__i" href="{% url 'accounts:blocked' %}"><b>Заблокированные</b><span>Кого вы заблокировали</span></a>
+  <a class="profnav__i" href="{% url 'core:settings' %}"><b>Оформление</b><span>Тема и цвет</span></a>
+  <a class="profnav__i profnav__i--danger" href="{% url 'accounts:delete' %}"><b>Удалить аккаунт</b><span>Стереть личные данные навсегда</span></a>
+</nav>
 {% endblock %}

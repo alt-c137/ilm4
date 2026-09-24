@@ -12,7 +12,7 @@
       {% include 'chat/_ava.html' with u=other hue=hue size='sm' %}
       <div class="tg__who">
         <b>{{ other.get_display_name|default:"Удалённый аккаунт" }}</b>
-        <span>{% if thread.subject %}{{ thread.subject }}{% else %}{% ico 'lock' 'tg__lock' %}переписка защищена{% endif %}</span>
+        <span>{% if thread.subject %}{{ thread.subject }}{% else %}{% ico 'lock' 'tg__lock' %}переписка защищена{% endif %}{% if witnesses %} · 👁 свидетель: {{ witnesses|join:", " }}{% endif %}</span>
       </div>
       <div class="tg__tools">
         {% if chat_cfg.features.calls %}<button type="button" class="tg__tool" data-call="audio" aria-label="Аудиозвонок" title="Аудиозвонок">{% ico 'call' %}</button>{% endif %}
@@ -46,6 +46,7 @@
       <button type="button" class="tg__send" id="rec-send" aria-label="Отправить голосовое">{% ico 'send' %}</button>
     </div>
 
+    {% if blocked %}<div class="tg__compose tg__blocked">Переписка недоступна: один из вас заблокировал другого. Разблокировать — Профиль → Заблокированные.</div>{% else %}
     <form method="post" action="{% url 'chat:thread' thread.pk %}" class="tg__compose" id="chat-form">
       {% csrf_token %}
       {% if chat_cfg.features.photo %}
@@ -55,7 +56,7 @@
       {% if chat_cfg.features.circle %}<button type="button" class="tg__tool" id="circle-btn" aria-label="Видеокружок" title="Видеокружок">{% ico 'circlecam' %}</button>{% endif %}
       {% if chat_cfg.features.voice %}<button type="button" class="tg__send tg__send--mic" id="mic-btn" aria-label="Голосовое сообщение" title="Голосовое сообщение">{% ico 'mic' %}</button>{% endif %}
       <button type="submit" class="tg__send" id="send-btn" aria-label="Отправить">{% ico 'send' %}</button>
-    </form>
+    </form>{% endif %}
   </section>
 </div>
 

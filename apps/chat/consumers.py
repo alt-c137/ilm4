@@ -63,6 +63,9 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         body = (content.get('body') or '').strip()
         if not body or len(body) > 2000:
             return
+        if await self._blocked():
+            await self.send_json({'type': 'error', 'error': 'Переписка недоступна: блокировка'})
+            return
         payload = await self._save_message(body)
         await self.channel_layer.group_send(self.group, {'type': 'chat.message', 'payload': payload})
         await self._notify_recipient(body)
@@ -105,6 +108,14 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
         st = SiteSettings.get_solo()
         return st.chat_video_calls_enabled if video else (st.chat_calls_enabled or st.chat_video_calls_enabled)
+
+    @database_sync_to_async
+    def _blocked(self):
+        from apps.accounts.models import UserBlock
+
+        from .models import Thread
+        others = Thread.objects.get(pk=self.thread_id).participants.exclude(pk=self.user.pk)
+        return any(UserBlock.between(self.user, o) for o in others)
 
     @database_sync_to_async
     def _is_participant(self):

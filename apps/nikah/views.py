@@ -102,13 +102,7 @@ def feed(request):
         limit=st.nikah_daily_limit, skipped=deck.skipped_count(me), restore_price=st.nikah_restore_price,
         premium_price=st.nikah_premium_price, premium_days=st.nikah_premium_days,
         nation_groups=[(g, label) for g, label, _k in deck.NATION_GROUPS], geo=_geo(),
-        range_rows=[
-            {'name': 'age', 'label': 'Возраст', 'unit': 'лет', 'values': range(18, 81),
-             'a': (f.get('age') or [18, 80])[0], 'b': (f.get('age') or [18, 80])[1]},
-            {'name': 'height', 'label': 'Рост', 'unit': 'см', 'values': range(120, 231, 5),
-             'a': (f.get('height') or [120, 230])[0], 'b': (f.get('height') or [120, 230])[1]},
-            {'name': 'weight', 'label': 'Вес', 'unit': 'кг', 'values': range(40, 201, 5),
-             'a': (f.get('weight') or [40, 200])[0], 'b': (f.get('weight') or [40, 200])[1]}],
+
         other_gender='F' if me.gender == 'M' else 'M',
         opts={'madhhab': C.MADHHAB, 'aqida': C.AQIDA, 'prayer': C.PRAYER, 'ready_when': C.READY,
               'marital': [m for m in C.MARITAL if not (me.gender == 'M' and m[0] == 'married')],
@@ -181,7 +175,8 @@ def premium(request):
 def detail(request, pk):
     me = request.nikah
     p = get_object_or_404(NikahProfile, pk=pk)
-    if p.pk != me.pk and (p.gender == me.gender or not p.is_published):
+    from apps.accounts.models import UserBlock
+    if p.pk != me.pk and (p.gender == me.gender or not p.is_published or UserBlock.between(me.user, p.user)):
         raise Http404
     p.compat, p.why = services.compatibility(me, p) if p.pk != me.pk else (None, [])
     match = NikahMatch.objects.filter(Q(sister=me, brother=p) | Q(sister=p, brother=me)).first()
@@ -242,9 +237,12 @@ def save_toggle(request, pk):
 @profile_required
 def interests(request):
     me = request.nikah
+    from apps.accounts.models import UserBlock
+    blocked = UserBlock.ids_for(request.user)
     sent_ids = set(me.interests_sent.values_list('to_profile_id', flat=True))
     incoming = [i.from_profile for i in NikahInterest.objects.filter(to_profile=me).select_related('from_profile')
-                if i.from_profile_id not in sent_ids and i.from_profile.is_published]
+                if i.from_profile_id not in sent_ids and i.from_profile.is_published
+                and i.from_profile.user_id not in blocked]
     sent = [i.to_profile for i in me.interests_sent.select_related('to_profile')
             if not NikahInterest.objects.filter(from_profile=i.to_profile, to_profile=me).exists()]
     matches = [services.refresh(m) for m in NikahMatch.objects.filter(Q(sister=me) | Q(brother=me))
@@ -592,3 +590,38 @@ def admin_photo(request, pk):
     resp = HttpResponse(services.watermarked_photo(p, request.user), content_type='image/jpeg')
     resp['Cache-Control'] = 'no-store, private'
     return resp
+
+
+@profile_required
+@require_POST
+def witness_invite(request):
+    """Создать ссылку-приглашение для свидетеля (или убрать свидетеля)."""
+    import secrets
+    me = request.nikah
+    if request.POST.get('remove') == '1':
+        services.remove_witness(me)
+        messages.success(request, 'Свидетель убран из ваших чатов.')
+    else:
+        me.witness_token = secrets.token_urlsafe(16)[:24]
+        me.save(update_fields=['witness_token'])
+        messages.success(request, 'Ссылка готова — отправьте её махраму. Она одноразовая.')
+    return redirect(reverse('nikah:settings') + '#witness')
+
+
+@login_required
+@module_required('nikah')
+def witness_join(request, token):
+    """Махрам открыл ссылку: подтверждает, что становится свидетелем."""
+    p = NikahProfile.objects.filter(witness_token=token).exclude(witness_token='').first()
+    if p is None:
+        messages.error(request, 'Ссылка недействительна или уже использована.')
+        return redirect('nikah:home')
+    if p.user_id == request.user.pk:
+        messages.info(request, 'Это ваша ссылка — отправьте её махраму.')
+        return redirect('nikah:settings')
+    if request.method == 'POST':
+        services.set_witness(p, request.user)
+        log_action(request, 'Никях: стал свидетелем', f'анкета #{p.pk}')
+        messages.success(request, f'Вы свидетель в чатах никяха: {p.display_name}. Чаты — в разделе «Чаты» сайта.')
+        return redirect('chat:inbox')
+    return render(request, 'nikah/witness_join.html', _ctx(request, 'me', p=p))

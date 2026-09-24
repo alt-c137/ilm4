@@ -261,3 +261,39 @@ class SocialLink(models.Model):
     def label(self) -> str:
         name = self.get_kind_display()
         return f'{name} · {self.title}' if self.title else name
+
+
+class Report(models.Model):
+    """Жалоба на публикацию, анкету или человека. Три разных жалобы — объект скрывается
+    до решения модератора (как у крупных площадок: быстрее, чем ждать модерацию)."""
+
+    REASONS = [
+        ('spam', 'Спам или реклама'), ('fraud', 'Мошенничество, просят предоплату'),
+        ('haram', 'Харам, неприличное содержание'), ('fake', 'Фейк, чужие фото, обман'),
+        ('contacts', 'Контакты в анкете / уводят в другие мессенджеры'),
+        ('abuse', 'Оскорбления, угрозы'), ('other', 'Другое'),
+    ]
+    NEW, RESOLVED, DISMISSED = 'new', 'resolved', 'dismissed'
+    STATUSES = [(NEW, 'новая'), (RESOLVED, 'меры приняты'), (DISMISSED, 'отклонена')]
+
+    content_type = models.ForeignKey('contenttypes.ContentType', on_delete=models.CASCADE)
+    object_id = models.PositiveBigIntegerField()
+    reporter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reports_sent')
+    reason = models.CharField('причина', max_length=10, choices=REASONS)
+    text = models.CharField('подробности', max_length=500, blank=True)
+    status = models.CharField('статус', max_length=10, choices=STATUSES, default=NEW, db_index=True)
+    created_at = models.DateTimeField('когда', auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'жалоба'
+        verbose_name_plural = 'жалобы'
+        constraints = [models.UniqueConstraint(fields=['content_type', 'object_id', 'reporter'],
+                                               name='one_report_per_user')]
+
+    def __str__(self):
+        return f'{self.get_reason_display()} — {self.content_type.model}#{self.object_id}'
+
+    @property
+    def target(self):
+        return self.content_type.get_object_for_this_type(pk=self.object_id)

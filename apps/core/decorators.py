@@ -25,6 +25,9 @@ def module_required(key: str):
     return decorator
 
 
+PUBLISH_PER_DAY = 15   # публикаций (попыток) в сутки на человека — против спама
+
+
 def pledge_required(view):
     """Публикация (объявление, услуга, вакансия, перевозка, анкета, врач, место):
     автор обязан принять «Договор перед Аллахом» (includes/pledge.html).
@@ -35,6 +38,14 @@ def pledge_required(view):
     @wraps(view)
     def wrapped(request, *args, **kwargs):
         if request.method == 'POST':
+            from django.core.cache import cache
+            key = f'publish:{request.user.pk}'
+            if cache.get(key, 0) >= PUBLISH_PER_DAY and not request.user.is_staff:
+                from django.contrib import messages
+                from django.shortcuts import redirect
+                messages.error(request, 'На сегодня лимит публикаций исчерпан — защита от спама. Завтра можно снова.')
+                return redirect(request.path)
+            cache.set(key, cache.get(key, 0) + 1, 86400)
             if request.POST.get('pledge') != '1':
                 from django.contrib import messages
                 from django.shortcuts import redirect

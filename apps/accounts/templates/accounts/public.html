@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load icons reviews humanize %}
+{% load icons reviews humanize %}{% load reports %}
 {% block title %}{{ person.get_display_name }} — {{ block.super }}{% endblock %}
 {% block description %}{{ person.get_display_name }} на ilm4: отзывы, рейтинг, объявления и услуги.{% endblock %}
 
@@ -39,6 +39,9 @@
         <div class="plist">{% for v in vacancies %}<a class="plist__i" href="{% url 'jobs:detail' v.pk %}"><b>{{ v.title }}</b><span>{{ v.company }} · {{ v.city }}</span></a>{% endfor %}</div>
       </section>{% endif %}
       {% reviews_block person "Отзывы об участнике" %}
+      <div class="personact">{% report_button person 'Пожаловаться на участника' %}
+        {% if user.is_authenticated and user != person %}<form method="post" action="{% url 'accounts:block' person.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}">
+          <button class="linkbtn" type="submit">{% if is_blocked %}Разблокировать{% else %}Заблокировать{% endif %}</button></form>{% endif %}</div>
     </div>
   </div>
 </div>

@@ -5,16 +5,21 @@
 
 {% block content %}
 <div class="svc">
-{% include 'includes/section_hero.html' with icon="💼" title="Работа" desc="Вакансии от своих: честные работодатели, без серых схем" class="jobs" cta="Добавить вакансию" cta_url="/jobs/add/" %}
+{% include 'includes/section_hero.html' with icon="💼" title="Работа" desc="Вакансии и резюме от своих: честные работодатели и соискатели, без серых схем" class="jobs" cta="Разместить вакансию или резюме" cta_url="/jobs/add/" %}
 
 <div class="toolbar">
+    <div class="jobkind">
+      <a class="{% if kind == 'vacancy' %}on{% endif %}" href="?kind=vacancy">Вакансии <small>ищу работника</small></a>
+      <a class="{% if kind == 'resume' %}on{% endif %}" href="?kind=resume">Резюме <small>ищу работу</small></a>
+    </div>
     <div class="chips" style="margin-bottom:12px">
-      <a class="chip{% if not cat %} chip--on{% endif %}" href="/jobs/">Все разделы</a>
+      <a class="chip{% if not cat %} chip--on{% endif %}" href="?kind={{ kind }}">Все разделы</a>
       {% for key, label in categories %}
-      <a class="chip{% if key == cat %} chip--on{% endif %}" href="?cat={{ key }}">{{ label }}</a>
+      <a class="chip{% if key == cat %} chip--on{% endif %}" href="?kind={{ kind }}&amp;cat={{ key }}">{{ label }}</a>
       {% endfor %}
     </div>
   <form method="get" class="map__form">
+    <input type="hidden" name="kind" value="{{ kind }}">
     <input type="text" name="q" value="{{ q }}" placeholder="Должность: программист, водитель…">
     <input type="text" name="city" value="{{ city }}" placeholder="Город">
     <button type="submit" class="btn btn--p">Найти</button>
@@ -28,7 +33,7 @@
     <div class="card__b">
       <div class="card__c">{{ v.get_category_display|upper }}</div>
       <div class="card__t">{{ v.title }}</div>
-      <div class="card__d">{{ v.company }} · {{ v.city }}</div>
+      <div class="card__d">{% if v.is_resume %}Резюме{% else %}{{ v.company }}{% endif %} · {{ v.city }}</div>
       <div class="card__f">
         <span class="price">{{ v.salary|default:'договорная' }}</span>
         <span class="meta">{{ v.created_at|date:"d.m" }}</span>

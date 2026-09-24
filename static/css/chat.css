@@ -239,3 +239,5 @@ html[data-theme=dark] .bub--me .tick{color:#fff}
 .cinvite span{flex:1;font-size:13.5px;color:var(--ink-soft)}
 .cinvite .btn svg{width:16px;height:16px}
 .tg__heads{display:flex;gap:6px}
+
+.tg__blocked{justify-content:center;color:var(--ink-soft);font-size:13.5px;text-align:center;padding:16px}

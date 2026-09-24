@@ -32,6 +32,17 @@
     {% endif %}
   </section>
 
+  <section class="nkfs" id="witness"><h4>Свидетель (махрам)</h4>
+    {% if p.witness %}<p class="nkok">👁 {{ p.witness.get_display_name }} — свидетель во всех ваших чатах никяха.</p>
+      <form method="post" action="{% url 'nikah:witness' %}">{% csrf_token %}<input type="hidden" name="remove" value="1"><button class="linkbtn" type="submit">Убрать свидетеля</button></form>
+    {% else %}
+      <p class="nkstep__sub">Добавьте махрама (отца, брата) — он будет видеть переписку в ваших чатах никяха и сможет писать. Так общение остаётся в рамках адаба.</p>
+      {% if p.witness_token %}<div class="nkcopy"><input type="text" readonly id="nk-witness" value="{{ request.scheme }}://{{ request.get_host }}{% url 'nikah:witness_join' p.witness_token %}"><button type="button" class="btn btn--p" data-copy="#nk-witness">Копировать</button></div>
+        <p class="nkmeta">Отправьте ссылку махраму. Ему нужен аккаунт ilm4 (или вход через Telegram).</p>
+      {% else %}<form method="post" action="{% url 'nikah:witness' %}">{% csrf_token %}<button class="btn btn--p" type="submit">{% nk_icon 'user' %}Пригласить свидетеля</button></form>{% endif %}
+    {% endif %}
+  </section>
+
   <section class="nkfs"><h4>Уведомления</h4>
     {% if user.telegram_id %}<p class="nkok">✅ Telegram подключён{% if user.telegram_username %} (@{{ user.telegram_username }}){% endif %} — о симпатиях и сообщениях пишет бот.</p>
     {% elif tg_bot %}<p class="nkstep__sub">Откройте никях через бота — уведомления будут приходить в Telegram.</p><a class="btn btn--g" href="https://t.me/{{ tg_bot }}" target="_blank" rel="noopener">{% nk_icon 'telegram' %}Открыть бота</a>

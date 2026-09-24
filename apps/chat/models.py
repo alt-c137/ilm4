@@ -16,6 +16,9 @@ class Thread(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
                               related_name='owned_threads', verbose_name='создатель (группа/канал)')
     participants = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='chat_threads')
+    # свидетели (махрам в никяхе): тоже участники, но не «собеседник» в заголовке диалога
+    observers = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='observed_threads', blank=True,
+                                       verbose_name='свидетели')
     subject = models.CharField('тема (например, объявление)', max_length=160, blank=True)
     updated_at = models.DateTimeField('обновлён', auto_now=True, db_index=True)
 
@@ -28,7 +31,8 @@ class Thread(models.Model):
         return f'Диалог #{self.pk} ({self.participants.count()} участников)'
 
     def other_participant(self, user):
-        return self.participants.exclude(pk=user.pk).first()
+        others = self.participants.exclude(pk=user.pk)
+        return others.exclude(pk__in=self.observers.values('pk')).first() or others.first()
 
 
 class Message(models.Model):

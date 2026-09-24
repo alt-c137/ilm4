@@ -1,0 +1,13 @@
+{% load icons %}{% if user.is_authenticated and user != owner %}
+<details class="report">
+  <summary>{% ico 'info' %}{{ label|default:"Пожаловаться" }}</summary>
+  <form method="post" action="{% url 'core:report' %}" class="report__f">{% csrf_token %}
+    <input type="hidden" name="ct" value="{{ ct_id }}"><input type="hidden" name="id" value="{{ obj_id }}">
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <p class="report__h">Что не так? Автор не узнает, кто пожаловался.</p>
+    {% for key, text in reasons %}<label class="report__r"><input type="radio" name="reason" value="{{ key }}" required> {{ text }}</label>{% endfor %}
+    <textarea name="text" rows="2" maxlength="500" placeholder="Подробности (необязательно)"></textarea>
+    <button class="btn btn--s btn--p" type="submit">Отправить модератору</button>
+  </form>
+</details>
+{% endif %}

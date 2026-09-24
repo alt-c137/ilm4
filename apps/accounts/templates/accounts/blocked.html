@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% load icons %}
+{% block title %}Заблокированные — {{ block.super }}{% endblock %}
+{% block content %}
+<div class="fpage"><a class="crumb" href="{% url 'accounts:profile' %}">{% ico 'back' %}Профиль</a>
+  <div class="dcard"><h1 class="dcard__h">Заблокированные</h1>
+    <p class="fpage__sub">Они не могут писать вам и не видят вас в никяхе (и вы их).</p>
+    {% for b in blocks %}
+    <div class="mypub"><div class="mypub__b"><b>{{ b.blocked.get_display_name }}</b><span class="mypub__st">с {{ b.created_at|date:"d.m.Y" }}</span></div>
+      <form method="post" action="{% url 'accounts:block' b.blocked_id %}">{% csrf_token %}<button class="btn btn--s btn--g" type="submit">Разблокировать</button></form></div>
+    {% empty %}<p>Список пуст.</p>{% endfor %}
+  </div></div>
+{% endblock %}

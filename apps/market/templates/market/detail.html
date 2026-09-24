@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load icons %}{% load humanize %}{% load reviews %}
+{% load icons %}{% load humanize %}{% load reviews %}{% load reports %}
 {% block title %}{{ listing.title }} — {{ block.super }}{% endblock %}
 {% block description %}{{ listing.title }}{% if listing.city %}, {{ listing.city }}{% endif %} — {{ listing.description|truncatechars:140 }}{% endblock %}
 {% block body_class %}s-buy{% if listing.owner != request.user %} has-dbar{% endif %}{% endblock %}
@@ -67,6 +67,7 @@
       </div>
 
       {% include 'includes/disclaimer.html' %}
+      {% report_button listing %}
       <div class="dnote">{% ico 'shield' %}<span>Встречайтесь в людных местах и проверяйте товар до оплаты. Безопасная сделка через платформу появится позже.</span></div>
     </aside>
   </div>

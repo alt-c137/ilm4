@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load icons reviews %}
+{% load icons reviews %}{% load reports %}
 {% block title %}{{ doctor.name }} — {{ block.super }}{% endblock %}
 {% block description %}{{ doctor.name }} — {{ doctor.specialization }}, {{ doctor.city }}. Контакты врача на ilm4.{% endblock %}
 {% block body_class %}s-health{% if doctor.phone %} has-dbar{% endif %}{% endblock %}
@@ -43,6 +43,7 @@
       {% endif %}
       {% reviews_block doctor "Отзывы пациентов" %}
       {% include 'includes/disclaimer.html' with dkind='health' %}
+      {% report_button doctor %}
     </div>
   </div>
 </div>

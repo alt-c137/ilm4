@@ -126,8 +126,10 @@ def candidates(me: NikahProfile, f: dict):
     decided += list(NikahInterest.objects.filter(from_profile=me).values_list('to_profile_id', flat=True))
     matched = NikahMatch.objects.filter(Q(sister=me) | Q(brother=me)).values_list('sister_id', 'brother_id')
     decided += [x for pair in matched for x in pair]
+    from apps.accounts.models import UserBlock
     qs = (NikahProfile.objects.filter(status=Moderation.APPROVED, is_active=True)
-          .exclude(gender=me.gender).exclude(pk=me.pk).exclude(pk__in=decided))
+          .exclude(gender=me.gender).exclude(pk=me.pk).exclude(pk__in=decided)
+          .exclude(user_id__in=UserBlock.ids_for(me.user)))
     return apply_filters(qs, f, me)
 
 

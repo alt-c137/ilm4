@@ -13,10 +13,15 @@ class Vacancy(models.Model):
         ('edu', 'Образование'), ('trade', 'Торговля'), ('other', 'Другое'),
     ]
 
+    VACANCY, RESUME = 'vacancy', 'resume'
+    KINDS = [(VACANCY, 'Вакансия — ищу работника'), (RESUME, 'Резюме — ищу работу')]
+
+    kind = models.CharField('тип', max_length=8, choices=KINDS, default=VACANCY, db_index=True)
     title = models.CharField('должность', max_length=160)
     category = models.CharField('раздел', max_length=20, choices=CATEGORIES,
                                 default='other')
-    company = models.CharField('компания', max_length=160)
+    company = models.CharField('компания', max_length=160, blank=True,
+                               help_text='Для вакансии. В резюме можно оставить пустым')
     city = models.CharField('город', max_length=80)
     salary = models.CharField('зарплата', max_length=80, blank=True,
                               help_text='Например: 5 000 000 сум или договорная')
@@ -34,7 +39,11 @@ class Vacancy(models.Model):
         verbose_name_plural = 'вакансии'
 
     def __str__(self):
-        return f'{self.title} — {self.company}'
+        return f'{self.title} — {self.company or self.get_kind_display()}'
+
+    @property
+    def is_resume(self) -> bool:
+        return self.kind == self.RESUME
 
 
 class VacancyResponse(models.Model):
