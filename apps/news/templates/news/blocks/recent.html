@@ -1,9 +1,9 @@
-{% load news_tags %}{% load humanize %}{% recent_news 10 as recent %}
+{% load i18n %}{% load news_tags %}{% load humanize %}{% recent_news 10 as recent %}
 {% if recent %}
 <section class="sec">
   <div class="sec__h">
-    <div class="sec__t">Новости</div>
-    <a class="sec__l" href="/news/">Все новости →</a>
+    <div class="sec__t">{% translate "Новости" %}</div>
+    <a class="sec__l" href="/news/">{% translate "Все новости →" %}</a>
   </div>
   <div class="newsline-grid">
     {% for p in recent %}

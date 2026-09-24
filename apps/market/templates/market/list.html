@@ -1,30 +1,31 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons %}{% load humanize %}
-{% block title %}ilmbuy — купля-продажа — {{ block.super }}{% endblock %}
+{% block title %}{% translate "ilmbuy — купля-продажа —" %} {{ block.super }}{% endblock %}
 {% block body_class %}s-buy{% endblock %}
 
 {% block content %}
 <div class="svc">
-{% include 'includes/section_hero.html' with icon="🛒" title="ilmbuy — купля-продажа" desc="Халяль-маркетплейс уммы: от телефонов до фиников, от своих — для своих" class="buy" cta="Подать объявление" cta_url="/buy/add/" %}
+{% include 'includes/section_hero.html' with icon="🛒" title=_("ilmbuy — купля-продажа") desc=_("Халяль-маркетплейс уммы: от телефонов до фиников, от своих — для своих") class="buy" cta=_("Подать объявление") cta_url="/buy/add/" %}
 
 <div class="market">
   <aside class="mside">
-    <div class="mside__h">Категории</div>
-    <a href="/buy/"{% if not cat %} class="on"{% endif %}><svg viewBox="0 0 24 24" class="mside__svg"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Все объявления</a>
+    <div class="mside__h">{% translate "Категории" %}</div>
+    <a href="/buy/"{% if not cat %} class="on"{% endif %}><svg viewBox="0 0 24 24" class="mside__svg"><path d="M4 6h16M4 12h16M4 18h16"/></svg>{% translate "Все объявления" %}</a>
     {% for c in categories %}
-    <a href="/buy/?cat={{ c.slug }}"{% if c.slug == cat %} class="on"{% endif %}>{% svc_icon 'cat-'|add:c.slug c.icon 'mside__svg' %}{{ c.name }}</a>
+    <a href="/buy/?cat={{ c.slug }}"{% if c.slug == cat %} class="on"{% endif %}>{% svc_icon 'cat-'|add:c.slug c.icon 'mside__svg' %}{{ c.name|tr }}</a>
     {% endfor %}
     {% if user.is_authenticated %}
-    <div class="mside__h" style="margin-top:10px">Кабинет</div>
-    <a href="{% url 'market:my' %}"><svg viewBox="0 0 24 24" class="mside__svg"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M9 4v16"/></svg>Мои объявления</a>
+    <div class="mside__h" style="margin-top:10px">{% translate "Кабинет" %}</div>
+    <a href="{% url 'market:my' %}"><svg viewBox="0 0 24 24" class="mside__svg"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M9 4v16"/></svg>{% translate "Мои объявления" %}</a>
     {% endif %}
   </aside>
 
   <section>
     <form method="get" class="map__form" style="margin-bottom:14px">
-      <input type="text" name="q" value="{{ q }}" placeholder="Что ищете? Например: iPhone…">
-      <input type="text" name="city" value="{{ city }}" placeholder="Город">
-      <button type="submit" class="btn btn--p">Найти</button>
+      <input type="text" name="q" value="{{ q }}" placeholder="{% translate 'Что ищете? Например: iPhone…' %}">
+      <input type="text" name="city" value="{{ city }}" placeholder="{% translate 'Город' %}">
+      <button type="submit" class="btn btn--p">{% translate "Найти" %}</button>
     </form>
 
     <div class="grid g3">
@@ -36,20 +37,20 @@
         <div class="card__i" style="background:linear-gradient(135deg,#eceaff,#f4f3fd);display:grid;place-items:center">{% svc_icon 'cat-'|add:l.category.slug l.category.icon 'rcard__emoji' %}</div>
         {% endif %}
         <div class="card__b">
-          {% if l.is_boosted %}<div class="card__c"><span class="badge" style="position:static">ТОП</span></div>{% else %}<div class="card__c">{{ l.category.name|upper }}</div>{% endif %}
+          {% if l.is_boosted %}<div class="card__c"><span class="badge" style="position:static">{% translate "ТОП" %}</span></div>{% else %}<div class="card__c">{{ l.category.name|tr|upper }}</div>{% endif %}
           <div class="card__t">{{ l.title }}</div>
           <div class="card__d">{{ l.city }}</div>
           <div class="card__f">
-            <span class="price">{% if l.price == 0 %}Даром{% else %}{{ l.price|intcomma }} {{ l.get_currency_display }}{% endif %}</span>
+            <span class="price">{% if l.price == 0 %}{% translate "Даром" %}{% else %}{{ l.price|intcomma }} {{ l.get_currency_display }}{% endif %}</span>
             <span class="meta"><svg class="mmeta" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>{{ l.views }}</span>
           </div>
         </div>
       </a>
       {% empty %}
       <div class="page" style="grid-column:1/-1;text-align:center;padding:46px">
-        <h3 style="font-size:18px;font-weight:800">Здесь пока пусто</h3>
-        <p style="color:var(--ink-soft);margin-bottom:6px">Станьте первым — подайте объявление, это займёт минуту.</p>
-        <a class="btn btn--p" href="{% url 'market:create' %}">Подать объявление</a>
+        <h3 style="font-size:18px;font-weight:800">{% translate "Здесь пока пусто" %}</h3>
+        <p style="color:var(--ink-soft);margin-bottom:6px">{% translate "Станьте первым — подайте объявление, это займёт минуту." %}</p>
+        <a class="btn btn--p" href="{% url 'market:create' %}">{% translate "Подать объявление" %}</a>
       </div>
       {% endfor %}
     </div>

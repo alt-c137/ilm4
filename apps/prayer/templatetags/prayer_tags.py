@@ -1,5 +1,6 @@
 """Тег виджета времён намаза для блока главной: {% prayer_widget as w %}."""
 from django import template
+from django.utils.translation import gettext as _
 
 from .. import services
 from ..cities import CITIES, DEFAULT_CITY
@@ -24,9 +25,9 @@ def prayer_widget(city_key: str = '') -> dict:
     items = sched['items']
 
     if until['tomorrow']:
-        countdown = f'завтра, в {until["time"]} — через {until["human"]}'
+        countdown = _('завтра, в {v1} — через {v3}').format(v1=until['time'], v3=until['human'])
     else:
-        countdown = f'через {until["human"]}'
+        countdown = _('через {v1}').format(v1=until['human'])
 
     next_epoch = services.next_epoch(times, now, tz)
     return {

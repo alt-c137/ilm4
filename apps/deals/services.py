@@ -8,6 +8,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from apps.wallet import services as wallet
 
@@ -33,26 +34,26 @@ def _locked(order):
 
 def _need(order, user, role, *statuses):
     if role and order.role_of(user) != role:
-        raise DealError('Это действие доступно другой стороне сделки')
+        raise DealError(_('Это действие доступно другой стороне сделки'))
     if statuses and order.status not in statuses:
-        raise DealError(f'Нельзя в статусе «{order.get_status_display()}»')
+        raise DealError(_('Нельзя в статусе «{v1}»').format(v1=order.get_status_display()))
 
 
 @transaction.atomic
 def create(client, provider, title, terms, amount, deadline=None, kind='freelance', thread=None) -> Order:
     st = settings_()
     if not st.escrow_enabled:
-        raise DealError('Безопасная сделка пока не включена')
+        raise DealError(_('Безопасная сделка пока не включена'))
     if client.pk == provider.pk:
-        raise DealError('Нельзя заказать у самого себя')
+        raise DealError(_('Нельзя заказать у самого себя'))
     try:
         amount = Decimal(str(amount)).quantize(Decimal(1))
     except (InvalidOperation, TypeError):
-        raise DealError('Укажите сумму числом') from None
+        raise DealError(_('Укажите сумму числом')) from None
     if amount <= 0:
-        raise DealError('Сумма должна быть больше нуля')
+        raise DealError(_('Сумма должна быть больше нуля'))
     if not title.strip() or not terms.strip():
-        raise DealError('Опишите задачу и результат')
+        raise DealError(_('Опишите задачу и результат'))
     if kind not in dict(Order.KINDS):
         kind = 'freelance'
     order = Order.objects.create(client=client, provider=provider, title=title.strip()[:160],
@@ -104,7 +105,7 @@ def complete(order, user=None, auto=False):
     if not auto:
         _need(order, user, 'client', Order.DELIVERED)
     elif order.status != Order.DELIVERED:
-        raise DealError('Автопринятие — только для сданной работы')
+        raise DealError(_('Автопринятие — только для сданной работы'))
     wallet.escrow_release(order.escrow, fee=order.fee)
     order.status = Order.COMPLETED
     order.closed_at = timezone.now()
@@ -117,10 +118,10 @@ def complete(order, user=None, auto=False):
 def dispute(order, user, reason):
     order = _locked(order)
     if order.role_of(user) is None:
-        raise DealError('Вы не участник сделки')
+        raise DealError(_('Вы не участник сделки'))
     _need(order, user, None, Order.FUNDED, Order.DELIVERED)
     if not reason.strip():
-        raise DealError('Опишите, что пошло не так')
+        raise DealError(_('Опишите, что пошло не так'))
     order.status = Order.DISPUTED
     order.dispute_reason = reason.strip()
     order.save(update_fields=['status', 'dispute_reason'])
@@ -150,7 +151,7 @@ def cancel(order, user):
     """Отмена до оплаты — любой стороной; деньги ещё не списаны."""
     order = _locked(order)
     if order.role_of(user) is None:
-        raise DealError('Вы не участник сделки')
+        raise DealError(_('Вы не участник сделки'))
     _need(order, user, None, Order.OFFERED, Order.ACCEPTED)
     order.status = Order.CANCELLED
     order.closed_at = timezone.now()

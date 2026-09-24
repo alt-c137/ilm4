@@ -1,16 +1,17 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons %}{% load reports %}
 {% block title %}{{ vacancy.title }} — {{ block.super }}{% endblock %}
-{% block description %}{{ vacancy.title }} — {{ vacancy.company }}, {{ vacancy.city }}. {% if vacancy.is_resume %}Резюме{% else %}Вакансия{% endif %} на ilm4.{% endblock %}
+{% block description %}{{ vacancy.title }} — {{ vacancy.company }}, {{ vacancy.city }}. {% if vacancy.is_resume %}{% translate "Резюме" %}{% else %}{% translate "Вакансия" %}{% endif %} {% translate "на ilm4." %}{% endblock %}
 {% block body_class %}s-jobs has-dbar{% endblock %}
 
 {% block content %}
 <div class="dpage">
-  <a class="crumb" href="{% url 'jobs:list' %}">{% ico 'back' %}Все вакансии</a>
+  <a class="crumb" href="{% url 'jobs:list' %}">{% ico 'back' %}{% translate "Все вакансии" %}</a>
   <div class="dgrid dgrid--split">
     <div class="dmain">
       <section class="dcard">
-        <div class="dkicker">{% ico 'briefcase' %}Вакансия</div>
+        <div class="dkicker">{% ico 'briefcase' %}{% translate "Вакансия" %}</div>
         <h1 class="dtitle">{{ vacancy.title }}</h1>
         <div class="dmeta">
           {% if vacancy.company %}<span class="mchip mchip--acc">{% ico 'building' %}{{ vacancy.company }}</span>{% endif %}
@@ -19,37 +20,37 @@
         </div>
       </section>
       <section class="dcard">
-        <h2 class="dcard__h">Описание</h2>
+        <h2 class="dcard__h">{% translate "Описание" %}</h2>
         <div class="prose">{{ vacancy.description|linebreaks }}</div>
       </section>
     </div>
     <aside class="dside">
       <div class="dcard">
-        <div class="kv__l">Зарплата</div>
-        <div class="dprice">{{ vacancy.salary|default:"по договорённости" }}</div>
+        <div class="kv__l">{% translate "Зарплата" %}</div>
+        <div class="dprice">{{ vacancy.salary|default:_("по договорённости") }}</div>
         <div class="dact">
           {% if user.is_authenticated %}
-          <a class="btn btn--p" href="{% url 'jobs:respond' vacancy.pk %}">{% ico 'send' %}{% if vacancy.is_resume %}Предложить работу{% else %}Откликнуться{% endif %}</a>
-          {% if vacancy.owner != user %}<a class="btn btn--g" href="{% url 'chat:start' %}?user={{ vacancy.owner.pk }}&amp;subject={{ vacancy.title|urlencode }}">{% ico 'chat' %}Написать работодателю</a>{% endif %}
+          <a class="btn btn--p" href="{% url 'jobs:respond' vacancy.pk %}">{% ico 'send' %}{% if vacancy.is_resume %}{% translate "Предложить работу" %}{% else %}{% translate "Откликнуться" %}{% endif %}</a>
+          {% if vacancy.owner != user %}<a class="btn btn--g" href="{% url 'chat:start' %}?user={{ vacancy.owner.pk }}&amp;subject={{ vacancy.title|urlencode }}">{% ico 'chat' %}{% translate "Написать работодателю" %}</a>{% endif %}
           {% else %}
-          <a class="btn btn--p" href="{% url 'accounts:login' %}?next={{ request.path }}">Войти и откликнуться</a>
+          <a class="btn btn--p" href="{% url 'accounts:login' %}?next={{ request.path }}">{% translate "Войти и откликнуться" %}</a>
           {% endif %}
         </div>
         {% if vacancy.contact %}
         <div class="contactbox">
-          <div class="contactbox__v"><span class="contactbox__l">{% if vacancy.is_resume %}Контакт соискателя{% else %}Контакт работодателя{% endif %}</span>{{ vacancy.contact }}</div>
-          <button type="button" class="copybtn" data-copy="{{ vacancy.contact }}">Копировать</button>
+          <div class="contactbox__v"><span class="contactbox__l">{% if vacancy.is_resume %}{% translate "Контакт соискателя" %}{% else %}{% translate "Контакт работодателя" %}{% endif %}</span>{{ vacancy.contact }}</div>
+          <button type="button" class="copybtn" data-copy="{{ vacancy.contact }}">{% translate "Копировать" %}</button>
         </div>
         {% endif %}
       </div>
       {% include 'includes/disclaimer.html' %}
       {% report_button vacancy %}
-      <div class="dnote">{% ico 'shield' %}<span>Честный работодатель не просит денег за трудоустройство. Если просят оплатить «обучение» или «оформление» — сообщите администрации.</span></div>
+      <div class="dnote">{% ico 'shield' %}<span>{% translate "Честный работодатель не просит денег за трудоустройство. Если просят оплатить «обучение» или «оформление» — сообщите администрации." %}</span></div>
     </aside>
   </div>
 </div>
 <div class="dbar">
-  <div class="dbar__p"><div class="dbar__v">{{ vacancy.salary|default:"по договорённости" }}</div><div class="dbar__s">{{ vacancy.title }}</div></div>
-  {% if user.is_authenticated %}<a class="btn btn--p" href="{% url 'jobs:respond' vacancy.pk %}">{% if vacancy.is_resume %}Предложить работу{% else %}Откликнуться{% endif %}</a>{% else %}<a class="btn btn--p" href="{% url 'accounts:login' %}?next={{ request.path }}">{% if vacancy.is_resume %}Предложить работу{% else %}Откликнуться{% endif %}</a>{% endif %}
+  <div class="dbar__p"><div class="dbar__v">{{ vacancy.salary|default:_("по договорённости") }}</div><div class="dbar__s">{{ vacancy.title }}</div></div>
+  {% if user.is_authenticated %}<a class="btn btn--p" href="{% url 'jobs:respond' vacancy.pk %}">{% if vacancy.is_resume %}{% translate "Предложить работу" %}{% else %}{% translate "Откликнуться" %}{% endif %}</a>{% else %}<a class="btn btn--p" href="{% url 'accounts:login' %}?next={{ request.path }}">{% if vacancy.is_resume %}{% translate "Предложить работу" %}{% else %}{% translate "Откликнуться" %}{% endif %}</a>{% endif %}
 </div>
 {% endblock %}

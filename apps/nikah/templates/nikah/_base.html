@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static nikah_tags %}
-{% block title %}{% block nk_title %}Никях{% endblock %} — {{ block.super }}{% endblock %}
-{% block description %}Никях на ilm4 — знакомство для брака по Корану и Сунне: анкеты без фото в ленте, совместимость по убеждениям, обмен фото только при взаимной симпатии.{% endblock %}
+{% block title %}{% block nk_title %}{% translate "Никях" %}{% endblock %} — {{ block.super }}{% endblock %}
+{% block description %}{% translate "Никях на ilm4 — знакомство для брака по Корану и Сунне: анкеты без фото в ленте, совместимость по убеждениям, обмен фото только при взаимной симпатии." %}{% endblock %}
 {% block body_class %}s-nikah nk-page{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/nikah.css' %}?v={{ asset_v }}">
@@ -19,15 +20,15 @@ document.addEventListener('click', function (e) {
 <div class="nk{% if me %} nk--app{% endif %}">
   {% if me %}
   <aside class="nkside">
-    <a class="nkside__logo" href="{% url 'nikah:home' %}">{% nk_icon 'moon' %}<b>Никях</b></a>
-    <nav class="nktabs" aria-label="Никях">
-      <a class="nktab{% if tab == 'feed' %} on{% endif %}" href="{% url 'nikah:home' %}">{% nk_icon 'feed' %}<span>Лента</span></a>
-      <a class="nktab{% if tab == 'interests' %} on{% endif %}" href="{% url 'nikah:interests' %}">{% nk_icon 'heart' %}<span>Интересы</span>{% if badges.incoming or badges.waiting %}<i class="nktab__n">{{ badges.incoming|add:badges.waiting }}</i>{% endif %}</a>
-      <a class="nktab{% if tab == 'saved' %} on{% endif %}" href="{% url 'nikah:saved' %}">{% nk_icon 'star' %}<span>Сохранённые</span></a>
-      <a class="nktab{% if tab == 'chats' %} on{% endif %}" href="{% url 'nikah:chats' %}">{% nk_icon 'chat' %}<span>Чаты</span></a>
-      <a class="nktab{% if tab == 'me' %} on{% endif %}" href="{% url 'nikah:mine' %}">{% nk_icon 'user' %}<span>Я</span></a>
+    <a class="nkside__logo" href="{% url 'nikah:home' %}">{% nk_icon 'moon' %}<b>{% translate "Никях" %}</b></a>
+    <nav class="nktabs" aria-label="{% translate 'Никях' %}">
+      <a class="nktab{% if tab == 'feed' %} on{% endif %}" href="{% url 'nikah:home' %}">{% nk_icon 'feed' %}<span>{% translate "Лента" %}</span></a>
+      <a class="nktab{% if tab == 'interests' %} on{% endif %}" href="{% url 'nikah:interests' %}">{% nk_icon 'heart' %}<span>{% translate "Интересы" %}</span>{% if badges.incoming or badges.waiting %}<i class="nktab__n">{{ badges.incoming|add:badges.waiting }}</i>{% endif %}</a>
+      <a class="nktab{% if tab == 'saved' %} on{% endif %}" href="{% url 'nikah:saved' %}">{% nk_icon 'star' %}<span>{% translate "Сохранённые" %}</span></a>
+      <a class="nktab{% if tab == 'chats' %} on{% endif %}" href="{% url 'nikah:chats' %}">{% nk_icon 'chat' %}<span>{% translate "Чаты" %}</span></a>
+      <a class="nktab{% if tab == 'me' %} on{% endif %}" href="{% url 'nikah:mine' %}">{% nk_icon 'user' %}<span>{% translate "Я" %}</span></a>
     </nav>
-    <a class="nkside__bal" href="{% url 'wallet:topup' %}?next={{ request.path|urlencode }}">{% nk_icon 'lock' %}<span>Баланс</span><b>{{ balance|floatformat:0 }} сум</b></a>
+    <a class="nkside__bal" href="{% url 'wallet:topup' %}?next={{ request.path|urlencode }}">{% nk_icon 'lock' %}<span>{% translate "Баланс" %}</span><b>{{ balance|floatformat:0 }} {% translate "сум" %}</b></a>
   </aside>
   {% endif %}
   <main class="nkmain">
@@ -36,8 +37,8 @@ document.addEventListener('click', function (e) {
     <div class="nkbar">
       <div class="nkbar__l">{% block nk_bar_left %}{% endblock %}</div>
       <div class="nkbar__r">
-        {% if premium_on %}<a class="nkbar__btn nkbar__btn--prem{% if me.is_premium %} on{% endif %}" href="{% url 'nikah:premium' %}">{% nk_icon 'star' %}<span>{% if me.is_premium %}Премиум до {{ me.premium_until|date:"d.m" }}{% else %}Премиум{% endif %}</span></a>{% endif %}
-        <a class="nkbar__btn nkbar__btn--bal" href="{% url 'wallet:topup' %}?next={{ request.path|urlencode }}" title="Пополнить баланс">{% nk_icon 'lock' %}<span>Баланс <b>{{ balance|floatformat:0 }}</b> сум</span></a>
+        {% if premium_on %}<a class="nkbar__btn nkbar__btn--prem{% if me.is_premium %} on{% endif %}" href="{% url 'nikah:premium' %}">{% nk_icon 'star' %}<span>{% if me.is_premium %}{% translate "Премиум до" %} {{ me.premium_until|date:"d.m" }}{% else %}{% translate "Премиум" %}{% endif %}</span></a>{% endif %}
+        <a class="nkbar__btn nkbar__btn--bal" href="{% url 'wallet:topup' %}?next={{ request.path|urlencode }}" title="{% translate 'Пополнить баланс' %}">{% nk_icon 'lock' %}<span>{% translate "Баланс" %} <b>{{ balance|floatformat:0 }}</b> {% translate "сум" %}</span></a>
       </div>
     </div>
     {% endif %}

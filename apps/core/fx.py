@@ -9,6 +9,7 @@ import time
 from decimal import Decimal
 
 import requests
+from django.utils.translation import gettext_lazy as _lazy
 
 FIAT_URL = 'https://open.er-api.com/v6/latest/USD'
 CRYPTO_URL = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd'
@@ -18,9 +19,9 @@ TTL, RETRY = 3600, 600
 BASES = ['UZS', 'RUB', 'KZT', 'KGS', 'TJS', 'TRY', 'AED', 'SAR', 'EGP', 'EUR', 'GBP', 'USD']
 SHOW = ['USD', 'EUR', 'RUB', 'BTC', 'GBP', 'TRY', 'AED']
 NAMES = {
-    'UZS': 'сум', 'RUB': 'рубль', 'KZT': 'тенге', 'KGS': 'сом', 'TJS': 'сомони', 'TRY': 'лира',
-    'AED': 'дирхам', 'SAR': 'риял', 'EGP': 'ег. фунт', 'EUR': 'евро', 'GBP': 'фунт',
-    'USD': 'доллар', 'BTC': 'биткоин', 'ETH': 'эфир',
+    'UZS': _lazy('сум'), 'RUB': _lazy('рубль'), 'KZT': _lazy('тенге'), 'KGS': _lazy('сом'), 'TJS': _lazy('сомони'), 'TRY': _lazy('лира'),
+    'AED': _lazy('дирхам'), 'SAR': _lazy('риял'), 'EGP': _lazy('ег. фунт'), 'EUR': _lazy('евро'), 'GBP': _lazy('фунт'),
+    'USD': _lazy('доллар'), 'BTC': _lazy('биткоин'), 'ETH': _lazy('эфир'),
 }
 
 _cache = {'data': None, 'ts': 0.0, 'ok': False}

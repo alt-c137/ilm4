@@ -1,9 +1,9 @@
-{% load forum_tags icons %}{% recent_topics 6 as recent %}
+{% load i18n %}{% load forum_tags icons %}{% recent_topics 6 as recent %}
 {% if recent %}
 <section class="sec">
   <div class="sec__h">
-    <div class="sec__t">Вопросы и ответы</div>
-    <a class="sec__l" href="/forum/">Весь форум →</a>
+    <div class="sec__t">{% translate "Вопросы и ответы" %}</div>
+    <a class="sec__l" href="/forum/">{% translate "Весь форум →" %}</a>
   </div>
   <div class="railnav">
   <div class="rail">
@@ -14,12 +14,12 @@
         <div class="qa__t">{{ t.title }}</div>
         <div class="qa__meta">{{ t.created_at|date:"d.m H:i" }}</div>
       </div>
-      <div class="qa__count"><b>{{ t.replies.count }}</b><span>{{ t.replies.count|ru_plural:"ответ,ответа,ответов" }}</span></div>
+      <div class="qa__count"><b>{{ t.replies.count }}</b><span>{{ t.replies.count|ru_plural:_("ответ,ответа,ответов") }}</span></div>
     </a>
     {% endfor %}
   </div>
-  <button type="button" class="rail-arrow l" aria-label="Назад">‹</button>
-  <button type="button" class="rail-arrow r" aria-label="Вперёд">›</button>
+  <button type="button" class="rail-arrow l" aria-label="{% translate 'Назад' %}">‹</button>
+  <button type="button" class="rail-arrow r" aria-label="{% translate 'Вперёд' %}">›</button>
   </div>
 </section>
 {% endif %}

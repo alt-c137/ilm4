@@ -1,9 +1,10 @@
 {% extends 'nikah/_base.html' %}
+{% load i18n %}
 {% load nikah_tags %}
-{% block nk_title %}Сохранённые · Никях{% endblock %}
+{% block nk_title %}{% translate "Сохранённые · Никях" %}{% endblock %}
 {% block nk %}
 <div class="nkgrid">
   {% for p in profiles %}{% include 'nikah/_card.html' %}
-  {% empty %}<div class="nkempty">{% nk_icon 'star' %}<h3>Сохранённых нет</h3><p>Нажмите ☆ на анкете — она появится здесь. Видите только вы.</p></div>{% endfor %}
+  {% empty %}<div class="nkempty">{% nk_icon 'star' %}<h3>{% translate "Сохранённых нет" %}</h3><p>{% translate "Нажмите ☆ на анкете — она появится здесь. Видите только вы." %}</p></div>{% endfor %}
 </div>
 {% endblock %}

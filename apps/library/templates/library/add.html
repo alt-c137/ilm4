@@ -1,28 +1,29 @@
 {% extends 'base.html' %}
-{% block title %}Добавить книгу — {{ block.super }}{% endblock %}
+{% load i18n %}
+{% block title %}{% translate "Добавить книгу —" %} {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="page">
-  <h1>Добавить книгу</h1>
-  <p>Форматы: {{ allowed }}. Бесплатные скачивают все, платные — после покупки с баланса.</p>
+  <h1>{% translate "Добавить книгу" %}</h1>
+  <p>{% translate "Форматы:" %} {{ allowed }}{% translate ". Бесплатные скачивают все, платные — после покупки с баланса." %}</p>
   <form method="post" enctype="multipart/form-data" class="form form--wide">{% csrf_token %}
-    <label>Раздел</label>
+    <label>{% translate "Раздел" %}</label>
     <select name="category">
       {% for key, label in categories %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
     </select>
-    <label>Название <span class="req">*</span></label>
+    <label>{% translate "Название" %} <span class="req">*</span></label>
     <input type="text" name="title" maxlength="200" required>
-    <label>Автор</label>
+    <label>{% translate "Автор" %}</label>
     <input type="text" name="author" maxlength="160">
-    <label>Описание</label>
+    <label>{% translate "Описание" %}</label>
     <textarea name="description" rows="3"></textarea>
-    <label>Обложка</label>
+    <label>{% translate "Обложка" %}</label>
     <input type="file" name="cover" accept="image/*">
-    <label>Файл книги <span class="req">*</span></label>
+    <label>{% translate "Файл книги" %} <span class="req">*</span></label>
     <input type="file" name="file" required>
-    <label>Цена, сум (0 — бесплатно)</label>
+    <label>{% translate "Цена, сум (0 — бесплатно)" %}</label>
     <input type="number" name="price" min="0" value="0">
-    <button type="submit" class="btn btn--p">Отправить на модерацию</button>
+    <button type="submit" class="btn btn--p">{% translate "Отправить на модерацию" %}</button>
   </form>
 </div>
 {% endblock %}

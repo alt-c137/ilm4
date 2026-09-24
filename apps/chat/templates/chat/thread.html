@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons static %}
-{% block title %}{{ other.get_display_name }} — чат — {{ block.super }}{% endblock %}
+{% block title %}{{ other.get_display_name }} {% translate "— чат —" %} {{ block.super }}{% endblock %}
 {% block body_class %}s-chat page-chat page-thread{% endblock %}
 
 {% block content %}
@@ -8,16 +9,16 @@
   {% include 'chat/_threads.html' %}
   <section class="tg__main" id="chat-main">
     <header class="tg__head">
-      <a class="tg__back" href="{% url 'chat:inbox' %}" aria-label="Все чаты">{% ico 'back' %}</a>
+      <a class="tg__back" href="{% url 'chat:inbox' %}" aria-label="{% translate 'Все чаты' %}">{% ico 'back' %}</a>
       {% include 'chat/_ava.html' with u=other hue=hue size='sm' %}
       <div class="tg__who">
-        <b>{{ other.get_display_name|default:"Удалённый аккаунт" }}</b>
-        <span>{% if thread.subject %}{{ thread.subject }}{% else %}{% ico 'lock' 'tg__lock' %}переписка защищена{% endif %}{% if witnesses %} · 👁 свидетель: {{ witnesses|join:", " }}{% endif %}</span>
+        <b>{{ other.get_display_name|default:_("Удалённый аккаунт") }}</b>
+        <span>{% if thread.subject %}{{ thread.subject }}{% else %}{% ico 'lock' 'tg__lock' %}{% translate "переписка защищена" %}{% endif %}{% if witnesses %} {% translate "· 👁 свидетель:" %} {{ witnesses|join:", " }}{% endif %}</span>
       </div>
       <div class="tg__tools">
-        {% if chat_cfg.features.calls %}<button type="button" class="tg__tool" data-call="audio" aria-label="Аудиозвонок" title="Аудиозвонок">{% ico 'call' %}</button>{% endif %}
-        {% if escrow_on and other %}<a class="tg__tool" href="{% url 'deals:new' %}?to={{ other.pk }}&amp;thread={{ thread.pk }}&amp;title={{ thread.subject|urlencode }}" aria-label="Безопасная сделка" title="Безопасная сделка">{% ico 'shield' %}</a>{% endif %}
-        {% if chat_cfg.features.video_calls %}<button type="button" class="tg__tool" data-call="video" aria-label="Видеозвонок" title="Видеозвонок">{% ico 'video' %}</button>{% endif %}
+        {% if chat_cfg.features.calls %}<button type="button" class="tg__tool" data-call="audio" aria-label="{% translate 'Аудиозвонок' %}" title="{% translate 'Аудиозвонок' %}">{% ico 'call' %}</button>{% endif %}
+        {% if escrow_on and other %}<a class="tg__tool" href="{% url 'deals:new' %}?to={{ other.pk }}&amp;thread={{ thread.pk }}&amp;title={{ thread.subject|urlencode }}" aria-label="{% translate 'Безопасная сделка' %}" title="{% translate 'Безопасная сделка' %}">{% ico 'shield' %}</a>{% endif %}
+        {% if chat_cfg.features.video_calls %}<button type="button" class="tg__tool" data-call="video" aria-label="{% translate 'Видеозвонок' %}" title="{% translate 'Видеозвонок' %}">{% ico 'video' %}</button>{% endif %}
       </div>
     </header>
 
@@ -29,10 +30,10 @@
         <div class="tg__first" id="chat-empty">
           {% include 'chat/_ava.html' with u=other hue=hue size='lg' %}
           <b>{{ other.get_display_name }}</b>
-          <span>Напишите первое сообщение — {{ other.get_display_name }} получит уведомление.</span>
+          <span>{% translate "Напишите первое сообщение —" %} {{ other.get_display_name }} {% translate "получит уведомление." %}</span>
           <div class="tg__hello">
-            <button type="button" data-say="Ас-саляму алейкум!">Ас-саляму алейкум!</button>
-            {% if thread.subject %}<button type="button" data-say="Здравствуйте! Пишу по поводу «{{ thread.subject }}». Ещё актуально?">Ещё актуально?</button>{% endif %}
+            <button type="button" data-say="Ас-саляму алейкум!">{% translate "Ас-саляму алейкум!" %}</button>
+            {% if thread.subject %}<button type="button" data-say="Здравствуйте! Пишу по поводу «{{ thread.subject }}». Ещё актуально?">{% translate "Ещё актуально?" %}</button>{% endif %}
           </div>
         </div>
       {% endfor %}
@@ -40,22 +41,22 @@
 
     {# панель записи голосового (вместо поля ввода) #}
     <div class="tg__rec" id="rec-bar" hidden>
-      <button type="button" class="tg__tool tg__tool--del" id="rec-cancel" aria-label="Отменить запись">{% ico 'trash' %}</button>
+      <button type="button" class="tg__tool tg__tool--del" id="rec-cancel" aria-label="{% translate 'Отменить запись' %}">{% ico 'trash' %}</button>
       <span class="tg__rec-dot"></span><span class="tg__rec-t" id="rec-time">0:00</span>
-      <span class="tg__rec-hint">Идёт запись…</span>
-      <button type="button" class="tg__send" id="rec-send" aria-label="Отправить голосовое">{% ico 'send' %}</button>
+      <span class="tg__rec-hint">{% translate "Идёт запись…" %}</span>
+      <button type="button" class="tg__send" id="rec-send" aria-label="{% translate 'Отправить голосовое' %}">{% ico 'send' %}</button>
     </div>
 
-    {% if blocked %}<div class="tg__compose tg__blocked">Переписка недоступна: один из вас заблокировал другого. Разблокировать — Профиль → Заблокированные.</div>{% else %}
+    {% if blocked %}<div class="tg__compose tg__blocked">{% translate "Переписка недоступна: один из вас заблокировал другого. Разблокировать — Профиль → Заблокированные." %}</div>{% else %}
     <form method="post" action="{% url 'chat:thread' thread.pk %}" class="tg__compose" id="chat-form">
       {% csrf_token %}
-      {% if chat_cfg.features.photo %}
-      <label class="tg__tool" title="Фото" aria-label="Отправить фото">{% ico 'clip' %}<input type="file" id="photo-input" accept="image/*" data-skip="1" hidden></label>
+      {% if chat_cfg.features.photo or chat_cfg.features.video %}
+      <label class="tg__tool" title="{% if chat_cfg.features.photo and chat_cfg.features.video %}{% translate 'Фото или видео' %}{% elif chat_cfg.features.video %}{% translate 'Видео' %}{% else %}{% translate 'Фото' %}{% endif %}" aria-label="{% translate 'Отправить файл' %}">{% ico 'clip' %}<input type="file" id="photo-input" accept="{% if chat_cfg.features.photo %}image/*{% endif %}{% if chat_cfg.features.photo and chat_cfg.features.video %},{% endif %}{% if chat_cfg.features.video %}video/mp4,video/webm,video/quicktime{% endif %}" data-skip="1" hidden></label>
       {% endif %}
-      <textarea name="body" id="chat-body" rows="1" maxlength="2000" placeholder="Сообщение" autocomplete="off" enterkeyhint="send" required aria-label="Сообщение"></textarea>
-      {% if chat_cfg.features.circle %}<button type="button" class="tg__tool" id="circle-btn" aria-label="Видеокружок" title="Видеокружок">{% ico 'circlecam' %}</button>{% endif %}
-      {% if chat_cfg.features.voice %}<button type="button" class="tg__send tg__send--mic" id="mic-btn" aria-label="Голосовое сообщение" title="Голосовое сообщение">{% ico 'mic' %}</button>{% endif %}
-      <button type="submit" class="tg__send" id="send-btn" aria-label="Отправить">{% ico 'send' %}</button>
+      <textarea name="body" id="chat-body" rows="1" maxlength="2000" placeholder="{% translate 'Сообщение' %}" autocomplete="off" enterkeyhint="send" required aria-label="{% translate 'Сообщение' %}"></textarea>
+      {% if chat_cfg.features.circle %}<button type="button" class="tg__tool" id="circle-btn" aria-label="{% translate 'Видеокружок' %}" title="{% translate 'Видеокружок' %}">{% ico 'circlecam' %}</button>{% endif %}
+      {% if chat_cfg.features.voice %}<button type="button" class="tg__send tg__send--mic" id="mic-btn" aria-label="{% translate 'Голосовое сообщение' %}" title="{% translate 'Голосовое сообщение' %}">{% ico 'mic' %}</button>{% endif %}
+      <button type="submit" class="tg__send" id="send-btn" aria-label="{% translate 'Отправить' %}">{% ico 'send' %}</button>
     </form>{% endif %}
   </section>
 </div>
@@ -67,8 +68,8 @@
       <svg class="circlerec__ring" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" id="circle-ring"/></svg></div>
     <div class="circlerec__t" id="circle-time">0:00 / 1:00</div>
     <div class="circlerec__act">
-      <button type="button" class="btn btn--g" id="circle-cancel">Отмена</button>
-      <button type="button" class="btn btn--p" id="circle-send">{% ico 'send' %}Отправить</button>
+      <button type="button" class="btn btn--g" id="circle-cancel">{% translate "Отмена" %}</button>
+      <button type="button" class="btn btn--p" id="circle-send">{% ico 'send' %}{% translate "Отправить" %}</button>
     </div>
   </div>
 </div>
@@ -80,13 +81,13 @@
   <div class="call__info">
     {% include 'chat/_ava.html' with u=other hue=hue size='lg' %}
     <b>{{ other.get_display_name }}</b>
-    <span class="call__state" id="call-state">Звоним…</span>
+    <span class="call__state" id="call-state">{% translate "Звоним…" %}</span>
   </div>
   <div class="call__btns">
-    <button type="button" class="call__b" id="call-mute" aria-label="Микрофон">{% ico 'mic' %}</button>
-    <button type="button" class="call__b" id="call-cam" aria-label="Камера" hidden>{% ico 'video' %}</button>
-    <button type="button" class="call__b call__b--ok" id="call-accept" aria-label="Ответить" hidden>{% ico 'call' %}</button>
-    <button type="button" class="call__b call__b--end" id="call-end" aria-label="Завершить">{% ico 'hangup' %}</button>
+    <button type="button" class="call__b" id="call-mute" aria-label="{% translate 'Микрофон' %}">{% ico 'mic' %}</button>
+    <button type="button" class="call__b" id="call-cam" aria-label="{% translate 'Камера' %}" hidden>{% ico 'video' %}</button>
+    <button type="button" class="call__b call__b--ok" id="call-accept" aria-label="{% translate 'Ответить' %}" hidden>{% ico 'call' %}</button>
+    <button type="button" class="call__b call__b--end" id="call-end" aria-label="{% translate 'Завершить' %}">{% ico 'hangup' %}</button>
   </div>
 </div>
 <audio id="call-audio" autoplay></audio>

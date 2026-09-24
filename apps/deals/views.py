@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from apps.core.decorators import pledge_required
@@ -44,7 +45,7 @@ def new(request):
         except (services.DealError, ValueError) as exc:
             messages.error(request, str(exc))
         else:
-            messages.success(request, 'Заказ отправлен исполнителю. Когда он примет условия — оплатите.')
+            messages.success(request, _('Заказ отправлен исполнителю. Когда он примет условия — оплатите.'))
             return redirect('deals:detail', pk=order.pk)
     return render(request, 'deals/new.html', {
         'provider': provider, 'enabled': st.escrow_enabled, 'fee_percent': st.escrow_fee_percent,
@@ -58,8 +59,8 @@ def detail(request, pk):
     role = order.role_of(request.user)
     if role is None and not request.user.is_staff:
         raise Http404
-    steps = [('offered', 'Предложен'), ('accepted', 'Принят'), ('funded', 'Оплачен'),
-             ('delivered', 'Сдан'), ('completed', 'Выплачен')]
+    steps = [('offered', _('Предложен')), ('accepted', _('Принят')), ('funded', _('Оплачен')),
+             ('delivered', _('Сдан')), ('completed', _('Выплачен'))]
     order_idx = [k for k, _ in steps].index(order.status) if order.status in dict(steps) else -1
     return render(request, 'deals/detail.html', {
         'order': order, 'role': role, 'steps': steps, 'step_idx': order_idx,
@@ -83,21 +84,21 @@ def act(request, pk, action):
     if action not in handlers:
         raise Http404
     if action == 'accept' and request.POST.get('pledge') != '1':
-        messages.error(request, 'Чтобы принять заказ, примите договор исполнителя.')
+        messages.error(request, _('Чтобы принять заказ, примите договор исполнителя.'))
         return redirect('deals:detail', pk=pk)
     try:
         handlers[action]()
     except wallet.InsufficientFunds:
-        messages.error(request, 'На балансе не хватает средств — пополните кошелёк.')
+        messages.error(request, _('На балансе не хватает средств — пополните кошелёк.'))
     except (services.DealError, ValueError) as exc:
         messages.error(request, str(exc))
     else:
         messages.success(request, {
-            'accept': 'Заказ принят. Ждём оплату от заказчика.',
-            'fund': 'Оплачено. Деньги удержаны платформой до сдачи работы.',
-            'deliver': 'Работа сдана. Заказчик проверит и примет.',
-            'complete': 'Готово! Деньги выплачены исполнителю.',
-            'dispute': 'Спор открыт. Модератор свяжется с обеими сторонами.',
-            'cancel': 'Заказ отменён.',
+            'accept': _('Заказ принят. Ждём оплату от заказчика.'),
+            'fund': _('Оплачено. Деньги удержаны платформой до сдачи работы.'),
+            'deliver': _('Работа сдана. Заказчик проверит и примет.'),
+            'complete': _('Готово! Деньги выплачены исполнителю.'),
+            'dispute': _('Спор открыт. Модератор свяжется с обеими сторонами.'),
+            'cancel': _('Заказ отменён.'),
         }[action])
     return redirect('deals:detail', pk=pk)

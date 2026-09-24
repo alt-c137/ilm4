@@ -55,15 +55,18 @@ INSTALLED_APPS = [
     'apps.deals',
     'apps.payments',
     'apps.tgbot',
+    'apps.api',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',   # язык: кука → Accept-Language браузера
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'apps.core.middleware.UserLanguageMiddleware',  # язык из профиля (с другого устройства, из Telegram)
     'django_otp.middleware.OTPMiddleware',
     'apps.accounts.middleware.Staff2FARequired',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -85,6 +88,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'apps.core.context_processors.site',
             ],
+            'builtins': ['apps.core.templatetags.dbtr'],   # {{ x|tr }} — перевод текстов из базы
         },
     },
 ]
@@ -119,6 +123,15 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 LOGIN_URL = '/accounts/login/'
+
+# Капча Cloudflare Turnstile (apps/core/captcha.py). Без ключей — выключена
+TURNSTILE_SITE_KEY = env('TURNSTILE_SITE_KEY', default='')
+TURNSTILE_SECRET_KEY = env('TURNSTILE_SECRET_KEY', default='')
+
+# ИИ-модерация (apps/core/ai_moderation.py): Claude (Anthropic) — основной, OpenAI moderation — запасной
+ANTHROPIC_API_KEY = env('ANTHROPIC_API_KEY', default='')
+AI_MODERATION_MODEL = env('AI_MODERATION_MODEL', default='claude-haiku-4-5')
+OPENAI_API_KEY = env('OPENAI_API_KEY', default='')
 
 # Вход через Google (apps/accounts/google.py): ключи из Google Cloud Console
 GOOGLE_OAUTH_CLIENT_ID = env('GOOGLE_OAUTH_CLIENT_ID', default='')
@@ -166,6 +179,13 @@ LOGOUT_REDIRECT_URL = '/'
 OTP_TOTP_ISSUER = 'ilm4'
 
 LANGUAGE_CODE = 'ru'
+# Языки интерфейса. Новый язык: добавить сюда + locale/<код>.json → scripts/i18n_build.py
+LANGUAGES = [
+    ('ru', 'Русский'),
+    ('uz', 'Oʻzbekcha'),
+    ('en', 'English'),
+]
+LANGUAGE_COOKIE_AGE = 365 * 86400
 TIME_ZONE = 'Asia/Tashkent'
 USE_I18N = True
 USE_TZ = True

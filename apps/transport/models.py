@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils.translation import gettext_lazy as _lazy
 
 from apps.core.models import Moderation
 
@@ -8,9 +9,9 @@ class Ride(models.Model):
     """Перевозка: груз, пассажиры или оба. Публикуется после модерации."""
 
     TYPES = [
-        ('cargo', 'Грузоперевозка'),
-        ('pax', 'Пассажирская перевозка'),
-        ('both', 'Груз и пассажиры'),
+        ('cargo', _lazy('Грузоперевозка')),
+        ('pax', _lazy('Пассажирская перевозка')),
+        ('both', _lazy('Груз и пассажиры')),
     ]
 
     from_city = models.CharField('откуда', max_length=80, db_index=True)

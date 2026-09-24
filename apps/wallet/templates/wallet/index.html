@@ -1,47 +1,48 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load humanize icons %}
-{% block title %}Кошелёк — {{ block.super }}{% endblock %}
+{% block title %}{% translate "Кошелёк —" %} {{ block.super }}{% endblock %}
 {% block body_class %}s-wallet{% endblock %}
 
 {% block content %}
 <div class="svc">
-{% include 'includes/section_hero.html' with icon="💰" title="Кошелёк" desc="Баланс для услуг платформы: поднятие объявлений, анкет и публикаций" class="wallet" %}
+{% include 'includes/section_hero.html' with icon="💰" title=_("Кошелёк") desc=_("Баланс для услуг платформы: поднятие объявлений, анкет и публикаций") class="wallet" %}
 
 <div class="wgrid">
   <section class="wcard">
-    <span class="wcard__l">Баланс</span>
-    <span class="wcard__sum">{{ balance|intcomma }} <small>сум</small></span>
+    <span class="wcard__l">{% translate "Баланс" %}</span>
+    <span class="wcard__sum">{{ balance|intcomma }} <small>{% translate "сум" %}</small></span>
     <div class="wcard__act">
-      <a class="btn wcard__btn" href="{% url 'wallet:topup' %}">{% ico 'plus' %}Пополнить</a>
-      {% if payouts %}<a class="btn wcard__btn wcard__btn--g" href="{% url 'wallet:payout' %}">Вывести</a>{% endif %}
+      <a class="btn wcard__btn" href="{% url 'wallet:topup' %}">{% ico 'plus' %}{% translate "Пополнить" %}</a>
+      {% if payouts %}<a class="btn wcard__btn wcard__btn--g" href="{% url 'wallet:payout' %}">{% translate "Вывести" %}</a>{% endif %}
     </div>
-    <p class="wcard__note">Карта или криптовалюта — через платёжный сервис. Баланс — предоплата за услуги ilm4{% if not payouts %}: его нельзя вывести или перевести другому человеку{% endif %}.</p>
+    <p class="wcard__note">{% translate "Карта или криптовалюта — через платёжный сервис. Баланс — предоплата за услуги ilm4" %}{% if not payouts %}{% translate ": его нельзя вывести или перевести другому человеку" %}{% endif %}.</p>
   </section>
 
   <section class="dcard">
-    <h2 class="dcard__h">На что тратить</h2>
+    <h2 class="dcard__h">{% translate "На что тратить" %}</h2>
     <div class="kv">
       {% for name, price in prices %}
-      <div class="kv__row"><span class="kv__ic">{% ico 'star' %}</span><div style="flex:1"><div class="kv__v">{{ name }}</div></div><b class="wprice">{% if price %}{{ price|intcomma }} сум{% else %}бесплатно{% endif %}</b></div>
+      <div class="kv__row"><span class="kv__ic">{% ico 'star' %}</span><div style="flex:1"><div class="kv__v">{{ name }}</div></div><b class="wprice">{% if price %}{{ price|intcomma }} {% translate "сум" %}{% else %}{% translate "бесплатно" %}{% endif %}</b></div>
       {% endfor %}
     </div>
   </section>
 </div>
 
 <section class="dcard" style="margin-top:16px">
-  <h2 class="dcard__h">История операций</h2>
+  <h2 class="dcard__h">{% translate "История операций" %}</h2>
   {% if transactions %}
   <div class="wlist">
     {% for t in transactions %}
     <div class="wrow">
       <span class="wrow__ic{% if t.is_debit %} wrow__ic--down{% endif %}">{% if t.is_debit %}−{% else %}+{% endif %}</span>
       <div class="wrow__b"><b>{{ t.get_kind_display }}</b><span>{{ t.note|default:t.ref }} · {{ t.created_at|date:"j E, H:i" }}</span></div>
-      <div class="wrow__sum{% if t.is_debit %} down{% else %} up{% endif %}">{% if t.is_debit %}−{% else %}+{% endif %}{{ t.amount|intcomma }}<small>остаток {{ t.balance_after|intcomma }}</small></div>
+      <div class="wrow__sum{% if t.is_debit %} down{% else %} up{% endif %}">{% if t.is_debit %}−{% else %}+{% endif %}{{ t.amount|intcomma }}<small>{% translate "остаток" %} {{ t.balance_after|intcomma }}</small></div>
     </div>
     {% endfor %}
   </div>
   {% else %}
-  <div class="empty" style="box-shadow:none;padding:26px"><div class="empty__plug">{% ico 'clock' %}</div><p style="color:var(--ink-soft)">Операций пока нет.</p></div>
+  <div class="empty" style="box-shadow:none;padding:26px"><div class="empty__plug">{% ico 'clock' %}</div><p style="color:var(--ink-soft)">{% translate "Операций пока нет." %}</p></div>
   {% endif %}
 </section>
 </div>

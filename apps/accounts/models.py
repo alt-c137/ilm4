@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils.translation import gettext_lazy as _lazy
 
 
 class User(AbstractUser):
@@ -16,10 +17,10 @@ class User(AbstractUser):
     ROLE_ADMIN = 'admin'
     ROLE_SUPER = 'super_admin'
     ROLES = [
-        (ROLE_USER, 'Участник'),
-        (ROLE_SUPPORT, 'Поддержка'),
-        (ROLE_ADMIN, 'Админ'),
-        (ROLE_SUPER, 'Супер-админ'),
+        (ROLE_USER, _lazy('Участник')),
+        (ROLE_SUPPORT, _lazy('Поддержка')),
+        (ROLE_ADMIN, _lazy('Админ')),
+        (ROLE_SUPER, _lazy('Супер-админ')),
     ]
 
     email = models.EmailField('email', unique=True)
@@ -36,6 +37,8 @@ class User(AbstractUser):
     telegram_id = models.BigIntegerField('Telegram ID', null=True, blank=True, unique=True,
                                          help_text='Заполняется при входе из Telegram (мини-приложение)')
     telegram_username = models.CharField('Telegram @', max_length=64, blank=True)
+    language = models.CharField('язык интерфейса', max_length=8, blank=True,
+                                help_text='Уведомления и сообщения бота приходят на этом языке')
     platform_verified = models.BooleanField(
         'проверен платформой', default=False,
         help_text='Продавец/исполнитель/заведение проверены админом (документы, контакты)')
@@ -81,9 +84,9 @@ class RegistrationField(models.Model):
     """
 
     KEYS = [
-        ('nickname', 'Ник'),
-        ('city', 'Город'),
-        ('first_name', 'Имя'),
+        ('nickname', _lazy('Ник')),
+        ('city', _lazy('Город')),
+        ('first_name', _lazy('Имя')),
     ]
     key = models.CharField('поле', max_length=20, choices=KEYS, unique=True)
     label = models.CharField('подпись', max_length=60)

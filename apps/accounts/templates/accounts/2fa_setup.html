@@ -1,17 +1,18 @@
 {% extends 'base.html' %}
-{% block title %}Подключение 2FA — {{ block.super }}{% endblock %}
+{% load i18n %}
+{% block title %}{% translate "Подключение 2FA —" %} {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="page">
-  <h1>Подключение 2FA</h1>
-  <p>1. Откройте приложение-аутентификатор (Google Authenticator, Aegis, 1Password…).</p>
-  <p>2. Отсканируйте QR-код:</p>
-  <img class="qr" src="data:image/png;base64,{{ qr_data }}" alt="QR-код 2FA" width="220" height="220">
-  <p>3. Введите шестизначный код из приложения:</p>
+  <h1>{% translate "Подключение 2FA" %}</h1>
+  <p>{% translate "1. Откройте приложение-аутентификатор (Google Authenticator, Aegis, 1Password…)." %}</p>
+  <p>{% translate "2. Отсканируйте QR-код:" %}</p>
+  <img class="qr" src="data:image/png;base64,{{ qr_data }}" alt="{% translate 'QR-код 2FA' %}" width="220" height="220">
+  <p>{% translate "3. Введите шестизначный код из приложения:" %}</p>
   <form method="post" class="form">{% csrf_token %}
     <input class="form__code" type="text" name="code" inputmode="numeric" autocomplete="one-time-code"
            placeholder="000000" maxlength="6" required autofocus>
-    <button type="submit" class="btn btn--p">Подтвердить</button>
+    <button type="submit" class="btn btn--p">{% translate "Подтвердить" %}</button>
   </form>
 </div>
 {% endblock %}

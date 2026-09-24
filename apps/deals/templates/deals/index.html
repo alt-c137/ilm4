@@ -1,21 +1,22 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons humanize %}
-{% block title %}Безопасные сделки — {{ block.super }}{% endblock %}
+{% block title %}{% translate "Безопасные сделки —" %} {{ block.super }}{% endblock %}
 {% block content %}
 <div class="fpage fpage--wide">
   <div class="fpage__h">
     <span class="fpage__ic">{% ico 'shield' %}</span>
-    <div><h1>Безопасные сделки</h1><div class="fpage__sub">Оплата удерживается платформой, пока работа не сдана и не принята.</div></div>
+    <div><h1>{% translate "Безопасные сделки" %}</h1><div class="fpage__sub">{% translate "Оплата удерживается платформой, пока работа не сдана и не принята." %}</div></div>
   </div>
   {% if not enabled and not orders %}{% include 'deals/_off.html' %}{% endif %}
   <div class="olist">
     {% for o in orders %}
     <a class="orow" href="{% url 'deals:detail' o.pk %}">
       <span class="orow__st orow__st--{{ o.status }}">{{ o.get_status_display }}</span>
-      <span class="orow__b"><b>{{ o.title }}</b><small>{% if o.client == user %}Исполнитель: {{ o.provider.get_display_name }}{% else %}Заказчик: {{ o.client.get_display_name }}{% endif %} · {{ o.created_at|date:"j E" }}</small></span>
-      <span class="orow__sum">{{ o.amount|intcomma }} <small>сум</small></span>
+      <span class="orow__b"><b>{{ o.title }}</b><small>{% if o.client == user %}{% translate "Исполнитель:" %} {{ o.provider.get_display_name }}{% else %}{% translate "Заказчик:" %} {{ o.client.get_display_name }}{% endif %} · {{ o.created_at|date:"j E" }}</small></span>
+      <span class="orow__sum">{{ o.amount|intcomma }} <small>{% translate "сум" %}</small></span>
     </a>
-    {% empty %}{% if enabled %}<div class="empty"><div class="empty__plug">{% ico 'shield' %}</div><p style="color:var(--ink-soft)">Сделок пока нет. Начните с кнопки «Безопасная сделка» в чате или на странице исполнителя.</p></div>{% endif %}
+    {% empty %}{% if enabled %}<div class="empty"><div class="empty__plug">{% ico 'shield' %}</div><p style="color:var(--ink-soft)">{% translate "Сделок пока нет. Начните с кнопки «Безопасная сделка» в чате или на странице исполнителя." %}</p></div>{% endif %}
     {% endfor %}
   </div>
 </div>

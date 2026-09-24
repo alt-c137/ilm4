@@ -36,6 +36,7 @@ urlpatterns = [
     path('deals/', include('apps.deals.urls')),
     path('payments/', include('apps.payments.urls')),
     path('tg/', include('apps.tgbot.urls')),
+    path('api/v1/', include('apps.api.urls')),
     path('notifications/', include('apps.core.notification_urls')),
     path('', include('apps.core.urls')),
 ]

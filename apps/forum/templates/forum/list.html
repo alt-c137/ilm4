@@ -1,11 +1,12 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons %}
-{% block title %}Форум — {{ block.super }}{% endblock %}
+{% block title %}{% translate "Форум —" %} {{ block.super }}{% endblock %}
 {% block body_class %}s-forum{% endblock %}
 
 {% block content %}
 <div class="svc">
-{% include 'includes/section_hero.html' with icon="💬" title="Форум" desc="Задай вопрос — получи ответ. Знания с пониманием, сообща" class="forum" cta="Задать вопрос" cta_url="/forum/ask/" %}
+{% include 'includes/section_hero.html' with icon="💬" title=_("Форум") desc=_("Задай вопрос — получи ответ. Знания с пониманием, сообща") class="forum" cta=_("Задать вопрос") cta_url="/forum/ask/" %}
 
 <div class="feed">
   {% for t in topics %}
@@ -13,16 +14,16 @@
     <div class="qa__ava">{{ t.author.get_display_name|slice:":1"|upper }}</div>
     <div class="qa__body">
       <div class="qa__t">{{ t.title }}</div>
-      <div class="qa__meta">{{ t.author.get_display_name }} · {{ t.created_at|date:"d.m H:i" }}{% if t.body %} · есть подробности{% endif %}</div>
+      <div class="qa__meta">{{ t.author.get_display_name }} · {{ t.created_at|date:"d.m H:i" }}{% if t.body %} {% translate "· есть подробности" %}{% endif %}</div>
     </div>
-    <div class="qa__count"><b>{{ t.replies.count }}</b><span>{{ t.replies.count|ru_plural:"ответ,ответа,ответов" }}</span></div>
+    <div class="qa__count"><b>{{ t.replies.count }}</b><span>{{ t.replies.count|ru_plural:_("ответ,ответа,ответов") }}</span></div>
   </a>
   {% empty %}
   <div class="page" style="text-align:center;padding:46px">
     <div class="empty__plug">{% svc_icon 'forum' '🤲' '' %}</div>
-    <h3 style="font-size:18px;font-weight:800">Спросите первым</h3>
-    <p style="color:var(--ink-soft)">Здесь появятся вопросы уммы — от фикха путника до выбора медресе.</p>
-    <a class="btn btn--p" href="{% url 'forum:create' %}">Задать вопрос</a>
+    <h3 style="font-size:18px;font-weight:800">{% translate "Спросите первым" %}</h3>
+    <p style="color:var(--ink-soft)">{% translate "Здесь появятся вопросы уммы — от фикха путника до выбора медресе." %}</p>
+    <a class="btn btn--p" href="{% url 'forum:create' %}">{% translate "Задать вопрос" %}</a>
   </div>
   {% endfor %}
 </div>

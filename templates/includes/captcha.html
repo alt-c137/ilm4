@@ -1,0 +1,2 @@
+{% if captcha_site_key %}<div class="cf-turnstile" data-sitekey="{{ captcha_site_key }}" data-language="{{ LANGUAGE_CODE|default:'ru' }}" data-theme="auto" style="margin:6px 0 4px"></div>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>{% endif %}

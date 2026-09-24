@@ -2,6 +2,8 @@
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _lazy
 from taggit.managers import TaggableManager
 
 from apps.core.models import Moderation
@@ -27,7 +29,7 @@ class Category(models.Model):
 class Listing(models.Model):
     """Объявление ilmbuy."""
 
-    CURRENCIES = [('UZS', 'сум'), ('USD', '$'), ('RUB', '₽')]
+    CURRENCIES = [('UZS', _lazy('сум')), ('USD', '$'), ('RUB', '₽')]
 
     title = models.CharField('заголовок', max_length=140)
     description = models.TextField('описание')
@@ -67,7 +69,7 @@ class Listing(models.Model):
 
     @property
     def price_display(self) -> str:
-        return 'Даром' if self.price == 0 else str(self.price)
+        return _('Даром') if self.price == 0 else str(self.price)
 
     @property
     def visible(self) -> bool:

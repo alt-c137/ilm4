@@ -1,29 +1,30 @@
 {% extends 'nikah/_base.html' %}
+{% load i18n %}
 {% load nikah_tags %}
 {% block nk %}
 <section class="nkhero">
   <span class="nkhero__ic">{% nk_icon 'moon' %}</span>
-  <h1>Никях</h1>
-  <p>Знакомство для брака — по Корану и Сунне. Без харама, без случайных переписок, с уважением к сёстрам и братьям.</p>
+  <h1>{% translate "Никях" %}</h1>
+  <p>{% translate "Знакомство для брака — по Корану и Сунне. Без харама, без случайных переписок, с уважением к сёстрам и братьям." %}</p>
   <div class="nkhero__act">
     {% if user.is_authenticated %}
-    <a class="btn btn--p btn--lg" href="{% url 'nikah:create' %}">Заполнить анкету</a>
+    <a class="btn btn--p btn--lg" href="{% url 'nikah:create' %}">{% translate "Заполнить анкету" %}</a>
     {% else %}
-    <a class="btn btn--p btn--lg" href="{% url 'accounts:register' %}?next={% url 'nikah:create' %}">Начать</a>
-    <a class="btn btn--g btn--lg" href="{% url 'accounts:login' %}?next={% url 'nikah:home' %}">У меня есть аккаунт</a>
+    <a class="btn btn--p btn--lg" href="{% url 'accounts:register' %}?next={% url 'nikah:create' %}">{% translate "Начать" %}</a>
+    <a class="btn btn--g btn--lg" href="{% url 'accounts:login' %}?next={% url 'nikah:home' %}">{% translate "У меня есть аккаунт" %}</a>
     {% endif %}
   </div>
-  {% if tg_bot %}<a class="nkhero__tg" href="https://t.me/{{ tg_bot }}" target="_blank" rel="noopener">{% nk_icon 'telegram' %}Открыть в Telegram</a>{% endif %}
+  {% if tg_bot %}<a class="nkhero__tg" href="https://t.me/{{ tg_bot }}" target="_blank" rel="noopener">{% nk_icon 'telegram' %}{% translate "Открыть в Telegram" %}</a>{% endif %}
 </section>
 
-<h2 class="nkh2">Как устроен сервис</h2>
+<h2 class="nkh2">{% translate "Как устроен сервис" %}</h2>
 <div class="nkprinc">
-  <div class="nkp">{% nk_icon 'moon' 'nkp__ic' %}<div><b>Только ради никяха</b><p>Здесь ищут супруга, а не собеседника. Цель у всех одна — халяльная семья.</p></div></div>
-  <div class="nkp">{% nk_icon 'eye_off' 'nkp__ic' %}<div><b>В ленте нет фото</b><p>Сначала — убеждения, характер и цели. Внешность — потом и только по взаимному согласию.</p></div></div>
-  <div class="nkp">{% nk_icon 'gauge' 'nkp__ic' %}<div><b>Совместимость в процентах</b><p>Сразу видно, насколько совпадают акыда, мазхаб, намаз, возраст и планы на семью.</p></div></div>
-  <div class="nkp">{% nk_icon 'heart' 'nkp__ic' %}<div><b>Чат — только при взаимности</b><p>Писать можно, когда интерес проявили оба. Никто не напишет вам без вашего согласия.</p></div></div>
-  <div class="nkp">{% nk_icon 'shield' 'nkp__ic' %}<div><b>Живая модерация</b><p>Каждую анкету проверяет модератор. Телефоны, ссылки и ники в анкетах запрещены.</p></div></div>
-  <div class="nkp">{% nk_icon 'lock' 'nkp__ic' %}<div><b>Защита фото</b><p>Фото хранится зашифрованным, показывается один раз на {{ minutes|default:10 }} минут с вашим ID на снимке. Сестра смотрит первой.</p></div></div>
+  <div class="nkp">{% nk_icon 'moon' 'nkp__ic' %}<div><b>{% translate "Только ради никяха" %}</b><p>{% translate "Здесь ищут супруга, а не собеседника. Цель у всех одна — халяльная семья." %}</p></div></div>
+  <div class="nkp">{% nk_icon 'eye_off' 'nkp__ic' %}<div><b>{% translate "В ленте нет фото" %}</b><p>{% translate "Сначала — убеждения, характер и цели. Внешность — потом и только по взаимному согласию." %}</p></div></div>
+  <div class="nkp">{% nk_icon 'gauge' 'nkp__ic' %}<div><b>{% translate "Совместимость в процентах" %}</b><p>{% translate "Сразу видно, насколько совпадают акыда, мазхаб, намаз, возраст и планы на семью." %}</p></div></div>
+  <div class="nkp">{% nk_icon 'heart' 'nkp__ic' %}<div><b>{% translate "Чат — только при взаимности" %}</b><p>{% translate "Писать можно, когда интерес проявили оба. Никто не напишет вам без вашего согласия." %}</p></div></div>
+  <div class="nkp">{% nk_icon 'shield' 'nkp__ic' %}<div><b>{% translate "Живая модерация" %}</b><p>{% translate "Каждую анкету проверяет модератор. Телефоны, ссылки и ники в анкетах запрещены." %}</p></div></div>
+  <div class="nkp">{% nk_icon 'lock' 'nkp__ic' %}<div><b>{% translate "Защита фото" %}</b><p>{% translate "Фото хранится зашифрованным, показывается один раз на" %} {{ minutes|default:10 }} {% translate "минут с вашим ID на снимке. Сестра смотрит первой." %}</p></div></div>
 </div>
-<p class="nkmore"><a class="link" href="{% url 'nikah:how' %}">Подробнее о защите фото и правилах →</a></p>
+<p class="nkmore"><a class="link" href="{% url 'nikah:how' %}">{% translate "Подробнее о защите фото и правилах →" %}</a></p>
 {% endblock %}

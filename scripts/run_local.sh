@@ -45,11 +45,15 @@ export SITE_URL="$URL"          # переменная окружения важ
 $PY manage.py runserver 127.0.0.1:8000 >"$LOG/server.log" 2>&1 &
 sleep 3
 
+# мобильное приложение (mobile/) на телефоне будет ходить на этот же адрес
+echo "EXPO_PUBLIC_API_URL=$URL" > mobile/.env.local
+
 echo
 echo "  Сайт:      $URL        (и http://127.0.0.1:8000)"
 echo "  Никях:     $URL/nikah/"
 echo "  Админка:   $URL/admin/"
 echo "  Логи:      $LOG"
+echo "  Приложение: во втором окне Ubuntu — bash scripts/run_app.sh (адрес уже прописан)"
 echo
 
 if grep -qE '^TELEGRAM_BOT_TOKEN=.+' .env 2>/dev/null; then

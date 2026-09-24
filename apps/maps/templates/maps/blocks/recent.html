@@ -1,9 +1,9 @@
-{% load maps_tags %}{% recent_places 8 as r %}
+{% load i18n %}{% load maps_tags %}{% recent_places 8 as r %}
 {% if r.total %}
 <section class="sec">
   <div class="sec__h">
-    <div class="sec__t">Халяль рядом</div>
-    <a class="sec__l" href="/map/">Открыть карту →</a>
+    <div class="sec__t">{% translate "Халяль рядом" %}</div>
+    <a class="sec__l" href="/map/">{% translate "Открыть карту →" %}</a>
   </div>
   <div class="railnav">
   <div class="rail">
@@ -26,8 +26,8 @@
     </a>
     {% endfor %}
   </div>
-  <button type="button" class="rail-arrow l" aria-label="Назад">‹</button>
-  <button type="button" class="rail-arrow r" aria-label="Вперёд">›</button>
+  <button type="button" class="rail-arrow l" aria-label="{% translate 'Назад' %}">‹</button>
+  <button type="button" class="rail-arrow r" aria-label="{% translate 'Вперёд' %}">›</button>
   </div>
 </section>
 {% endif %}

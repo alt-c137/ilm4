@@ -2,6 +2,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.translation import gettext as _
 
 from apps.core.decorators import module_required, pledge_required
 from apps.core.models import Moderation, SiteSettings
@@ -49,9 +50,9 @@ def add_doctor(request):
                 wallet_services.debit(request.user, price, Transaction.PURCHASE,
                                        ref='health:doctor', note='Публикация врача')
             except wallet_services.InsufficientFunds:
-                messages.error(request, 'Недостаточно средств для платной публикации.')
+                messages.error(request, _('Недостаточно средств для платной публикации.'))
                 return render(request, 'health/add.html', {'form': form, 'price': price})
         doctor.save()
-        messages.success(request, 'Анкета отправлена — после модерации появится в каталоге.')
+        messages.success(request, _('Анкета отправлена — после модерации появится в каталоге.'))
         return redirect('health:index')
     return render(request, 'health/add.html', {'form': form, 'price': price})

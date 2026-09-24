@@ -24,8 +24,8 @@ class RedFlagFilter(admin.SimpleListFilter):
 
 @admin.register(NikahProfile)
 class NikahProfileAdmin(admin.ModelAdmin):
-    list_display = ('display_name', 'user', 'gender', 'age', 'city', 'country', 'aqida', 'status', 'verified',
-                    'has_photo', 'flags', 'created_at')
+    list_display = ('display_name', 'user', 'gender', 'age', 'city', 'country', 'aqida', 'status', 'ai_verdict',
+                    'verified', 'has_photo', 'flags', 'created_at')
     list_filter = ('status', 'verified', 'gender', 'aqida', 'madhhab', RedFlagFilter)
     search_fields = ('user__email', 'name', 'city', 'country', 'about', 'manhaj_text')
     readonly_fields = ('faith_table', 'photo_link', 'agreed_at', 'created_at', 'updated_at')
@@ -40,6 +40,17 @@ class NikahProfileAdmin(admin.ModelAdmin):
         ('Тексты', {'fields': ('about', 'partner_expectations')}),
         ('Фото и закрытые ответы', {'fields': ('photo_mode', 'photo_link', 'faith_table', 'agreed_at')}),
     )
+
+    @admin.display(description='ИИ')
+    def ai_verdict(self, obj):
+        from django.contrib.contenttypes.models import ContentType
+
+        from apps.core.models import AIReview
+        r = AIReview.objects.filter(content_type=ContentType.objects.get_for_model(obj), object_id=obj.pk).first()
+        if not r:
+            return '—'
+        icon = {'ok': '✅', 'review': '🟡', 'reject': '⛔', 'error': '⚠️'}.get(r.verdict, '')
+        return format_html('<span title="{}">{} {}</span>', '; '.join(r.reasons), icon, r.get_verdict_display())
 
     @admin.display(description='тревожные')
     def flags(self, obj):

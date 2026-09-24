@@ -15,11 +15,13 @@ import uuid
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.http import FileResponse, HttpResponse, StreamingHttpResponse
+from django.utils.translation import gettext as _
 
 LIMITS = {  # kind: (макс. байт, макс. секунд)
     'photo': (10 * 1024 * 1024, None),
     'voice': (6 * 1024 * 1024, 300),
     'circle': (25 * 1024 * 1024, 60),
+    'video': (50 * 1024 * 1024, 300),
 }
 
 
@@ -43,10 +45,10 @@ def _sniff(head: bytes) -> str:
 def prepare(kind: str, upload, duration) -> tuple[ContentFile, int | None]:
     """Проверить и подготовить файл. Возвращает (файл, длительность)."""
     if kind not in LIMITS:
-        raise MediaError('Неизвестный тип вложения')
+        raise MediaError(_('Неизвестный тип вложения'))
     max_bytes, max_sec = LIMITS[kind]
     if upload.size > max_bytes:
-        raise MediaError(f'Файл больше {max_bytes // (1024 * 1024)} МБ')
+        raise MediaError(_('Файл больше {v1} МБ').format(v1=max_bytes // (1024 * 1024)))
     name = uuid.uuid4().hex
 
     if kind == 'photo':
@@ -57,7 +59,7 @@ def prepare(kind: str, upload, duration) -> tuple[ContentFile, int | None]:
             upload.seek(0)
             img = ImageOps.exif_transpose(Image.open(upload))
         except Exception as exc:
-            raise MediaError('Это не изображение') from exc
+            raise MediaError(_('Это не изображение')) from exc
         img = img.convert('RGB')
         img.thumbnail((2048, 2048))
         buf = io.BytesIO()
@@ -67,9 +69,9 @@ def prepare(kind: str, upload, duration) -> tuple[ContentFile, int | None]:
     head = upload.read(16)
     upload.seek(0)
     fmt = _sniff(head)
-    allowed = {'voice': {'webm', 'ogg', 'mp4', 'mp3'}, 'circle': {'webm', 'mp4'}}[kind]
+    allowed = {'voice': {'webm', 'ogg', 'mp4', 'mp3'}, 'circle': {'webm', 'mp4'}, 'video': {'webm', 'mp4'}}[kind]
     if fmt not in allowed:
-        raise MediaError('Неподдерживаемый формат файла')
+        raise MediaError(_('Неподдерживаемый формат файла'))
     try:
         sec = max(0, min(int(float(duration or 0)), max_sec))
     except (TypeError, ValueError):

@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.translation import gettext as _
 
 from apps.core.decorators import module_required, pledge_required
 from apps.core.models import Moderation
@@ -35,7 +36,7 @@ def story_create(request):
                 country_from=request.POST.get('country_from', '').strip()[:60],
                 country_to=request.POST.get('country_to', '').strip()[:60],
             )
-            messages.success(request, 'История отправлена — после проверки появится в разделе.')
+            messages.success(request, _('История отправлена — после проверки появится в разделе.'))
             return redirect('migration:list')
-        messages.error(request, 'Заполните заголовок и текст истории.')
+        messages.error(request, _('Заполните заголовок и текст истории.'))
     return render(request, 'migration/create.html')

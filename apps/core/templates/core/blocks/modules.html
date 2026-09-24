@@ -1,22 +1,20 @@
-{% load icons %}{% comment %}Витрина сервисов на главной: первые работающие разделы (порядок — из админки)
-и плитка «Все сервисы» → каталог по группам. Масштабируется на любое число разделов:
-на главной всегда один-два ряда, остальное — в каталоге.{% endcomment %}
+{% load i18n %}{% load icons %}{% comment %}{% translate "Витрина сервисов на главной: первые работающие разделы (порядок — из админки) и плитка «Все сервисы» → каталог по группам. Масштабируется на любое число разделов: на главной всегда один-два ряда, остальное — в каталоге." %}{% endcomment %}
 <section class="sec svcs" id="modules">
   <div class="sec__h">
-    <h2 class="sec__t">Сервисы</h2>
-    <a class="sec__l" href="{% url 'core:catalog' %}">Все {{ services_total }} →</a>
+    <h2 class="sec__t">{% translate "Сервисы" %}</h2>
+    <a class="sec__l" href="{% url 'core:catalog' %}">{% translate "Все" %} {{ services_total }} →</a>
   </div>
   <div class="apps">
     {% for m in popular %}
     <a class="app" href="/{{ m.key }}/">
       <span class="app__ic">{% svc_glyph m.key m.icon 'glyph' %}</span>
-      <span class="app__n">{{ m.name }}</span>
+      <span class="app__n">{{ m.name|tr }}</span>
     </a>
     {% endfor %}
     <a class="app app--all" href="{% url 'core:catalog' %}">
       <span class="app__ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="3.25"/></svg></span>
-      <span class="app__n">Все сервисы</span>
-      {% if services_soon %}<span class="app__soon">+{{ services_soon }} скоро</span>{% endif %}
+      <span class="app__n">{% translate "Все сервисы" %}</span>
+      {% if services_soon %}<span class="app__soon">+{{ services_soon }} {% translate "скоро" %}</span>{% endif %}
     </a>
   </div>
 </section>

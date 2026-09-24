@@ -2,6 +2,7 @@
 {% verified_badge obj %} — «Проверено ilm4» / «Не проверено» с пояснением."""
 from django import template
 from django.contrib.contenttypes.models import ContentType
+from django.utils.translation import gettext as _
 
 from ..services import can_review, is_rated, owner_of, reviews_for, summary
 
@@ -14,7 +15,8 @@ def rating_badge(obj, compact=False):
 
 
 @register.inclusion_tag('reviews/_block.html', takes_context=True)
-def reviews_block(context, obj, title='Отзывы'):
+def reviews_block(context, obj, title=None):
+    title = title or _('Отзывы')
     request = context['request']
     user = request.user
     items = list(reviews_for(obj)[:30])

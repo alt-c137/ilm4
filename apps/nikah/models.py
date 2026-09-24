@@ -12,6 +12,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _lazy
 
 from apps.core.models import Moderation
 
@@ -19,7 +20,7 @@ from . import choices as C
 
 
 class NikahProfile(models.Model):
-    GENDERS = [('M', 'Брат'), ('F', 'Сестра')]
+    GENDERS = [('M', _lazy('Брат')), ('F', _lazy('Сестра'))]
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                                 related_name='nikah_profile')
@@ -46,7 +47,7 @@ class NikahProfile(models.Model):
     quran = models.CharField('чтение Корана', max_length=10, choices=C.model_choices(C.QURAN), blank=True)
     where_allah = models.CharField('где Аллах', max_length=10, choices=C.model_choices(C.WHERE_ALLAH), blank=True)
 
-    has_children = models.CharField('есть свои дети', max_length=4, choices=[('no', 'Нет'), ('yes', 'Есть')],
+    has_children = models.CharField('есть свои дети', max_length=4, choices=[('no', _lazy('Нет')), ('yes', _lazy('Есть'))],
                                     blank=True)
     children_want = models.CharField('хочет детей', max_length=8, choices=C.model_choices(C.CHILDREN_WANT), blank=True)
     children_accept = models.CharField('примет детей партнёра', max_length=8,
@@ -126,7 +127,11 @@ class NikahProfile(models.Model):
 
     @property
     def place(self) -> str:
-        return ', '.join(x for x in (self.city, self.country) if x)
+        from django.utils.translation import get_language
+
+        from .geo import country_name
+        country = country_name(self.country, (get_language() or 'ru')[:2])
+        return ', '.join(x for x in (self.city, country) if x)
 
     @property
     def is_boosted(self) -> bool:
@@ -201,7 +206,7 @@ class NikahMatch(models.Model):
     """
 
     PHOTOS, CHAT, CLOSED = 'photos', 'chat', 'closed'
-    STAGES = [(PHOTOS, 'обмен фото'), (CHAT, 'чат открыт'), (CLOSED, 'не сложилось')]
+    STAGES = [(PHOTOS, _lazy('обмен фото')), (CHAT, _lazy('чат открыт')), (CLOSED, _lazy('не сложилось'))]
 
     sister = models.ForeignKey(NikahProfile, on_delete=models.CASCADE, related_name='matches_as_sister')
     brother = models.ForeignKey(NikahProfile, on_delete=models.CASCADE, related_name='matches_as_brother')

@@ -1,5 +1,7 @@
 from django.conf import settings
 from django.db import models
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _lazy
 
 from apps.core.models import Moderation
 
@@ -45,27 +47,27 @@ class BasePlace(models.Model):
 class HalalPlace(BasePlace):
     """Халяль-место: кафе, ресторан, магазин, отель."""
 
-    CAFES = 'кафе'
+    CAFES = _lazy('кафе')
     CATEGORIES = [
-        ('mosque', 'Мечеть'), ('cafe', 'Кафе / ресторан'), ('shop', 'Магазин продуктов'),
-        ('hotel', 'Отель'), ('butcher', 'Мясная лавка'), ('other', 'Другое'),
+        ('mosque', _lazy('Мечеть')), ('cafe', _lazy('Кафе / ресторан')), ('shop', _lazy('Магазин продуктов')),
+        ('hotel', _lazy('Отель')), ('butcher', _lazy('Мясная лавка')), ('other', _lazy('Другое')),
     ]
     category = models.CharField('категория', max_length=30, choices=CATEGORIES)
 
     # --- мечеть: краткая справка (заполняется, если категория «Мечеть») ---
-    BRANCHES = [('sunni', 'Суннитская'), ('shia', 'Шиитская'), ('other', 'Другое')]
+    BRANCHES = [('sunni', _lazy('Суннитская')), ('shia', _lazy('Шиитская')), ('other', _lazy('Другое'))]
     MADHHABS = [
-        ('hanafi', 'Ханафитский'), ('shafii', 'Шафиитский'), ('maliki', 'Маликитский'),
-        ('hanbali', 'Ханбалитский'), ('jafari', 'Джафаритский'), ('mixed', 'Разные мазхабы'),
+        ('hanafi', _lazy('Ханафитский')), ('shafii', _lazy('Шафиитский')), ('maliki', _lazy('Маликитский')),
+        ('hanbali', _lazy('Ханбалитский')), ('jafari', _lazy('Джафаритский')), ('mixed', _lazy('Разные мазхабы')),
     ]
     MANHAJS = [
-        ('sunna', 'Ахлю-с-Сунна (без уточнения)'), ('ashari', 'Ашариты / матуридиты'),
-        ('athari', 'Асариты / саляфиты'), ('sufi', 'Суфийская (тарикат)'),
-        ('tabligh', 'Таблиг'), ('other', 'Другое'),
+        ('sunna', _lazy('Ахлю-с-Сунна (без уточнения)')), ('ashari', _lazy('Ашариты / матуридиты')),
+        ('athari', _lazy('Асариты / саляфиты')), ('sufi', _lazy('Суфийская (тарикат)')),
+        ('tabligh', _lazy('Таблиг')), ('other', _lazy('Другое')),
     ]
     KINDS = [
-        ('official', 'Официальная (муфтият / духовное управление)'),
-        ('community', 'Общинная / частная'), ('foundation', 'Фонд / организация'), ('other', 'Другое'),
+        ('official', _lazy('Официальная (муфтият / духовное управление)')),
+        ('community', _lazy('Общинная / частная')), ('foundation', _lazy('Фонд / организация')), ('other', _lazy('Другое')),
     ]
     branch = models.CharField('течение', max_length=8, choices=BRANCHES, blank=True)
     madhhab = models.CharField('мазхаб', max_length=8, choices=MADHHABS, blank=True)
@@ -94,7 +96,7 @@ class HalalPlace(BasePlace):
         """«Суннитская · ханафитский мазхаб» — для подсказки на карте."""
         parts = [self.get_branch_display()] if self.branch else []
         if self.madhhab:
-            parts.append(f'{self.get_madhhab_display().lower()} мазхаб')
+            parts.append(_('{v0} мазхаб').format(v0=self.get_madhhab_display().lower()))
         return ' · '.join(parts)
 
     def verification(self) -> dict:
@@ -104,17 +106,17 @@ class HalalPlace(BasePlace):
         disputed = any(not c.is_correct and not c.resolved for c in self.confirmations.all())
         names = [c.user.get_display_name() for c in confirmed[:2]]
         if self.platform_verified:
-            level, label = 'ilm4', 'Проверено ilm4'
+            level, label = 'ilm4', _('Проверено ilm4')
         elif confirmed:
-            level, label = 'users', f'Проверили пользователи: {len(confirmed)}'
+            level, label = 'users', _('Проверили пользователи: {v1}').format(v1=len(confirmed))
         else:
-            level, label = 'none', 'Не проверено'
-        who = ', '.join(names) + (f' и ещё {len(confirmed) - len(names)}' if len(confirmed) > len(names) else '')
+            level, label = 'none', _('Не проверено')
+        who = ', '.join(names) + (_(' и ещё {v1}').format(v1=len(confirmed) - len(names)) if len(confirmed) > len(names) else '')
         return {'level': level, 'label': label, 'count': len(confirmed), 'who': who, 'disputed': disputed}
 
     def amenities(self) -> list[str]:
-        flags = [('has_jumua', 'Джума'), ('has_women', 'Женский зал'), ('has_wudu', 'Омовение'),
-                 ('has_parking', 'Парковка'), ('accessible', 'Для колясок')]
+        flags = [('has_jumua', _('Джума')), ('has_women', _('Женский зал')), ('has_wudu', _('Омовение')),
+                 ('has_parking', _('Парковка')), ('accessible', _('Для колясок'))]
         return [label for field, label in flags if getattr(self, field)]
 
 

@@ -5,6 +5,7 @@
 """
 from django import forms
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext as _
 
 MAX_IMAGE_MB = 10
 
@@ -14,7 +15,7 @@ def clean_image(upload, max_mb: int = MAX_IMAGE_MB):
     if not upload:
         return None
     if upload.size > max_mb * 1024 * 1024:
-        raise ValidationError(f'Фото больше {max_mb} МБ')
+        raise ValidationError(_('Фото больше {max_mb} МБ').format(max_mb=max_mb))
     field = forms.ImageField()   # Pillow + разрешённые расширения (jpg, png, webp…)
     upload = field.clean(upload)
     for validator in field.default_validators:

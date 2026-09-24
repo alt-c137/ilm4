@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils.translation import gettext_lazy as _lazy
 
 from apps.core.models import Moderation
 
@@ -8,11 +9,11 @@ class Service(models.Model):
     """Услуга: нотариальные переводы, исламские юристы, туры (хадж/умра), прочее."""
 
     KINDS = [
-        ('translate', 'Переводы документов (нотариальные)'),
-        ('lawyer', 'Исламский юрист / консультация'),
-        ('freelance', 'Фриланс: удалённая работа'),
-        ('tour', 'Туры: хадж и умра'),
-        ('other', 'Другая услуга'),
+        ('translate', _lazy('Переводы документов (нотариальные)')),
+        ('lawyer', _lazy('Исламский юрист / консультация')),
+        ('freelance', _lazy('Фриланс: удалённая работа')),
+        ('tour', _lazy('Туры: хадж и умра')),
+        ('other', _lazy('Другая услуга')),
     ]
 
     name = models.CharField('название', max_length=160)

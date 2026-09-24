@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.translation import gettext as _
 
 from apps.core.decorators import module_required
 
@@ -34,11 +35,11 @@ def topup(request):
             amount = Decimal(0)
         error = ''
         if not provider or provider not in ready:
-            error = 'Этот способ пока недоступен.'
+            error = _('Этот способ пока недоступен.')
         elif not MIN_AMOUNT <= amount <= MAX_AMOUNT:
-            error = f'Сумма — от {MIN_AMOUNT:,} сум.'.replace(',', ' ')
+            error = _('Сумма — от {MIN_AMOUNT:,} сум.').format(MIN_AMOUNT=MIN_AMOUNT).replace(',', ' ')
         elif provider is Stars and not request.user.telegram_id:
-            error = 'Оплата звёздами — из Telegram: откройте ilm4 через бота.'
+            error = _('Оплата звёздами — из Telegram: откройте ilm4 через бота.')
         if not error:
             t = TopUp.objects.create(user=request.user, amount=amount, provider=provider.key)
             try:

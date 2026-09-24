@@ -1,12 +1,13 @@
 {% extends 'nikah/_base.html' %}
+{% load i18n %}
 {% load nikah_tags %}
-{% block nk_title %}Чаты · Никях{% endblock %}
+{% block nk_title %}{% translate "Чаты · Никях" %}{% endblock %}
 {% block nk %}
-<p class="nkhint">Чат открывается только при взаимной симпатии{% if price %}; для брата — после оплаты {{ price }} сум{% endif %}. Помните об адабе: цель — никях, в переписке участвуйте с намерением ради Аллаха.</p>
+<p class="nkhint">{% translate "Чат открывается только при взаимной симпатии" %}{% if price %}{% translate "; для брата — после оплаты" %} {{ price }} {% translate "сум" %}{% endif %}{% translate ". Помните об адабе: цель — никях, в переписке участвуйте с намерением ради Аллаха." %}</p>
 {% for m in matches %}
 <a class="nkrow" href="{% if m.thread_id %}{% url 'chat:thread' m.thread_id %}{% else %}{% url 'nikah:match' m.pk %}{% endif %}">
   <span class="nkava nkava--{{ m.partner.gender }}">{% if m.partner.gender == 'M' %}{% nk_icon 'brother' %}{% else %}{% nk_icon 'sister' %}{% endif %}</span>
-  <div class="nkrow__b"><b>{{ m.partner.display_name }}, {{ m.partner.age }}</b><small>{% if m.thread_id %}Открыть переписку{% elif me.gender == 'M' %}Откройте чат{% else %}Ждём, пока брат откроет чат{% endif %}</small></div>{% nk_icon 'arrow' 'nkrow__go' %}
+  <div class="nkrow__b"><b>{{ m.partner.display_name }}, {{ m.partner.age }}</b><small>{% if m.thread_id %}{% translate "Открыть переписку" %}{% elif me.gender == 'M' %}{% translate "Откройте чат" %}{% else %}{% translate "Ждём, пока брат откроет чат" %}{% endif %}</small></div>{% nk_icon 'arrow' 'nkrow__go' %}
 </a>
-{% empty %}<div class="nkempty">{% nk_icon 'chat' %}<h3>Чатов пока нет</h3><p>Здесь появятся переписки с теми, с кем симпатия взаимна.</p></div>{% endfor %}
+{% empty %}<div class="nkempty">{% nk_icon 'chat' %}<h3>{% translate "Чатов пока нет" %}</h3><p>{% translate "Здесь появятся переписки с теми, с кем симпатия взаимна." %}</p></div>{% endfor %}
 {% endblock %}

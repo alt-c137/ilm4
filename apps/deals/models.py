@@ -7,17 +7,18 @@ offered/accepted → cancelled
 """
 from django.conf import settings
 from django.db import models
+from django.utils.translation import gettext_lazy as _lazy
 
 
 class Order(models.Model):
     OFFERED, ACCEPTED, FUNDED, DELIVERED = 'offered', 'accepted', 'funded', 'delivered'
     COMPLETED, DISPUTED, REFUNDED, CANCELLED = 'completed', 'disputed', 'refunded', 'cancelled'
     STATUSES = [
-        (OFFERED, 'Предложен'), (ACCEPTED, 'Принят исполнителем'), (FUNDED, 'Оплачен, деньги удержаны'),
-        (DELIVERED, 'Работа сдана'), (COMPLETED, 'Завершён, выплачено'), (DISPUTED, 'Спор'),
-        (REFUNDED, 'Деньги возвращены'), (CANCELLED, 'Отменён'),
+        (OFFERED, _lazy('Предложен')), (ACCEPTED, _lazy('Принят исполнителем')), (FUNDED, _lazy('Оплачен, деньги удержаны')),
+        (DELIVERED, _lazy('Работа сдана')), (COMPLETED, _lazy('Завершён, выплачено')), (DISPUTED, _lazy('Спор')),
+        (REFUNDED, _lazy('Деньги возвращены')), (CANCELLED, _lazy('Отменён')),
     ]
-    KINDS = [('freelance', 'Фриланс / услуга'), ('ad', 'Реклама'), ('transport', 'Перевозка'), ('other', 'Другое')]
+    KINDS = [('freelance', _lazy('Фриланс / услуга')), ('ad', _lazy('Реклама')), ('transport', _lazy('Перевозка')), ('other', _lazy('Другое'))]
 
     kind = models.CharField('вид', max_length=10, choices=KINDS, default='freelance')
     client = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='orders_placed',
@@ -70,10 +71,10 @@ class Order(models.Model):
 
 class OrderEvent(models.Model):
     LABELS = {
-        'offered': 'Заказ предложен', 'accepted': 'Исполнитель принял условия', 'funded': 'Оплачено, деньги удержаны',
-        'delivered': 'Работа сдана', 'completed': 'Работа принята, выплачено', 'auto_completed': 'Автопринятие, выплачено',
-        'disputed': 'Открыт спор', 'resolved_provider': 'Спор решён: выплата исполнителю',
-        'resolved_refund': 'Спор решён: возврат заказчику', 'cancelled': 'Заказ отменён',
+        'offered': _lazy('Заказ предложен'), 'accepted': _lazy('Исполнитель принял условия'), 'funded': _lazy('Оплачено, деньги удержаны'),
+        'delivered': _lazy('Работа сдана'), 'completed': _lazy('Работа принята, выплачено'), 'auto_completed': _lazy('Автопринятие, выплачено'),
+        'disputed': _lazy('Открыт спор'), 'resolved_provider': _lazy('Спор решён: выплата исполнителю'),
+        'resolved_refund': _lazy('Спор решён: возврат заказчику'), 'cancelled': _lazy('Заказ отменён'),
     }
 
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='events')

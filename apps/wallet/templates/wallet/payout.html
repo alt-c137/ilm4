@@ -1,17 +1,18 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load humanize %}
-{% block title %}Вывод средств — {{ block.super }}{% endblock %}
+{% block title %}{% translate "Вывод средств —" %} {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="page">
-  <h1>Вывод средств</h1>
-  <p>Баланс: <b>{{ balance|intcomma }} сум</b>. Минимальная сумма вывода:
-     <b>{{ min_amount|intcomma }} сум</b>.</p>
-  <p>Заявка обрабатывается админом вручную; при отклонении деньги возвращаются на баланс.</p>
+  <h1>{% translate "Вывод средств" %}</h1>
+  <p>{% translate "Баланс:" %} <b>{{ balance|intcomma }} {% translate "сум" %}</b>{% translate ". Минимальная сумма вывода:" %}
+     <b>{{ min_amount|intcomma }} {% translate "сум" %}</b>.</p>
+  <p>{% translate "Заявка обрабатывается админом вручную; при отклонении деньги возвращаются на баланс." %}</p>
   <form method="post" class="form">{% csrf_token %}
-    <label for="amount">Сумма вывода, сум</label>
+    <label for="amount">{% translate "Сумма вывода, сум" %}</label>
     <input type="number" name="amount" id="amount" min="{{ min_amount }}" required>
-    <button type="submit" class="btn btn--p">Создать заявку</button>
+    <button type="submit" class="btn btn--p">{% translate "Создать заявку" %}</button>
   </form>
 </div>
 {% endblock %}

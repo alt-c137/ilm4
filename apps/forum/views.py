@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.translation import gettext as _
 
 from apps.core.decorators import module_required
 from apps.core.models import Moderation
@@ -33,7 +34,7 @@ def topic_create(request):
         topic = form.save(commit=False)
         topic.author = request.user
         topic.save()
-        messages.success(request, 'Вопрос отправлен — после проверки появится на форуме.')
+        messages.success(request, _('Вопрос отправлен — после проверки появится на форуме.'))
         return redirect('forum:list')
     return render(request, 'forum/create.html', {'form': form})
 

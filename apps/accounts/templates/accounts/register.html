@@ -1,11 +1,12 @@
 {% extends 'base.html' %}
-{% block title %}Регистрация — {{ block.super }}{% endblock %}
+{% load i18n %}
+{% block title %}{% translate "Регистрация —" %} {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="auth auth--wide">
-  <h1>Создать аккаунт</h1>
-  <p class="auth__sub">Пара шагов — и ты с нами.</p>
-  {% include 'accounts/includes/oauth.html' with label="Продолжить с Google" %}
+  <h1>{% translate "Создать аккаунт" %}</h1>
+  <p class="auth__sub">{% translate "Пара шагов — и ты с нами." %}</p>
+  {% include 'accounts/includes/oauth.html' with label=_("Продолжить с Google") %}
   <form method="post" class="form">{% csrf_token %}
     <input type="hidden" name="next" value="{{ next }}">
     {% for field in form %}
@@ -15,9 +16,10 @@
       {% if field.help_text %}<span class="hint">{{ field.help_text }}</span>{% endif %}
     {% endfor %}
     {% if form.non_field_errors %}<span class="err">{{ form.non_field_errors.0 }}</span>{% endif %}
-    <button type="submit" class="btn btn--p">Создать аккаунт</button>
+    {% include 'includes/captcha.html' %}
+    <button type="submit" class="btn btn--p">{% translate "Создать аккаунт" %}</button>
   </form>
-  <p class="auth__legal">Регистрируясь, вы принимаете <a class="link" href="{% url 'core:rules' %}">Правила</a> и <a class="link" href="{% url 'core:privacy' %}">Политику конфиденциальности</a>.</p>
-  <p class="auth__hint">Уже есть аккаунт? <a href="{% url 'accounts:login' %}{% if next %}?next={{ next|urlencode }}{% endif %}" class="link">Войти</a></p>
+  <p class="auth__legal">{% translate "Регистрируясь, вы принимаете" %} <a class="link" href="{% url 'core:rules' %}">{% translate "Правила" %}</a> {% translate "и" %} <a class="link" href="{% url 'core:privacy' %}">{% translate "Политику конфиденциальности" %}</a>.</p>
+  <p class="auth__hint">{% translate "Уже есть аккаунт?" %} <a href="{% url 'accounts:login' %}{% if next %}?next={{ next|urlencode }}{% endif %}" class="link">{% translate "Войти" %}</a></p>
 </div>
 {% endblock %}

@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
+from django.utils.translation import gettext as _
 
 from apps.core.decorators import module_required, pledge_required
 from apps.core.models import Moderation
@@ -34,14 +35,14 @@ def service_create(request):
             'contact': request.POST.get('contact', '').strip()[:120],
         }
         if not data['name'] or not data['description'] or not data['contact']:
-            errors.append('Название, описание и контакт обязательны.')
+            errors.append(_('Название, описание и контакт обязательны.'))
         if data['kind'] not in dict(Service.KINDS):
-            errors.append('Выберите вид услуги из списка.')
+            errors.append(_('Выберите вид услуги из списка.'))
         if errors:
             for e in errors:
                 messages.error(request, e)
         else:
             Service.objects.create(owner=request.user, **data)
-            messages.success(request, 'Услуга отправлена на модерацию.')
+            messages.success(request, _('Услуга отправлена на модерацию.'))
             return redirect('services:list')
     return render(request, 'services/create.html', {'kinds': Service.KINDS})

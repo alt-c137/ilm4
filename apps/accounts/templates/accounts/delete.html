@@ -1,15 +1,16 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons %}
-{% block title %}Удалить аккаунт — {{ block.super }}{% endblock %}
+{% block title %}{% translate "Удалить аккаунт —" %} {{ block.super }}{% endblock %}
 {% block content %}
 <div class="auth">
-  <h1>Удалить аккаунт</h1>
-  <p class="auth__sub">Это нельзя отменить. Будут удалены: имя, email, телефон, аватар, анкета никяха и фото, привязка Telegram. Ваши объявления и публикации снимутся с сайта. Переписка останется у собеседников без вашего имени. Записи об оплатах хранятся обезличенно — этого требует закон.</p>
+  <h1>{% translate "Удалить аккаунт" %}</h1>
+  <p class="auth__sub">{% translate "Это нельзя отменить. Будут удалены: имя, email, телефон, аватар, анкета никяха и фото, привязка Telegram. Ваши объявления и публикации снимутся с сайта. Переписка останется у собеседников без вашего имени. Записи об оплатах хранятся обезличенно — этого требует закон." %}</p>
   <form method="post" class="form">{% csrf_token %}
-    <label for="confirm">Напишите <b>удалить</b>, чтобы подтвердить</label>
+    <label for="confirm">{% translate "Напишите" %} <b>{% translate "удалить" %}</b>{% translate ", чтобы подтвердить" %}</label>
     <input id="confirm" name="confirm" type="text" autocomplete="off" required>
-    <button type="submit" class="btn btn--p" style="background:#c0392b;border-color:#c0392b">Удалить аккаунт навсегда</button>
+    <button type="submit" class="btn btn--p" style="background:#c0392b;border-color:#c0392b">{% translate "Удалить аккаунт навсегда" %}</button>
   </form>
-  <p class="auth__hint"><a href="{% url 'accounts:profile' %}" class="link">← Передумал(а)</a></p>
+  <p class="auth__hint"><a href="{% url 'accounts:profile' %}" class="link">{% translate "← Передумал(а)" %}</a></p>
 </div>
 {% endblock %}

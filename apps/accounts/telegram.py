@@ -19,6 +19,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth import login as auth_login
 from django.http import JsonResponse
+from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 MAX_AGE = 24 * 3600   # initData старше суток не принимаем
@@ -49,7 +50,7 @@ def webapp_url(path: str = '/nikah/') -> str:
     return site + path if site.startswith('https://') else ''
 
 
-def open_button(text: str = 'Открыть никях', path: str = '/nikah/') -> dict | None:
+def open_button(text: str = _('Открыть никях'), path: str = '/nikah/') -> dict | None:
     url = webapp_url(path)
     return {'inline_keyboard': [[{'text': text, 'web_app': {'url': url}}]]} if url else None
 
@@ -75,6 +76,12 @@ def verify_init_data(init_data: str, token: str | None = None, now: float | None
     return user if user.get('id') else None
 
 
+def _tg_lang(tg: dict) -> str:
+    """Язык Telegram (ru, uz, en…) → язык интерфейса, если мы его поддерживаем."""
+    code = (tg.get('language_code') or '').split('-')[0].lower()
+    return code if code in dict(settings.LANGUAGES) else ''
+
+
 def _user_for(tg: dict):
     User = get_user_model()
     user = User.objects.filter(telegram_id=tg['id']).first()
@@ -86,6 +93,7 @@ def _user_for(tg: dict):
             last_name=(tg.get('last_name') or '')[:150],
             telegram_id=tg['id'],
             telegram_username=(tg.get('username') or '')[:64],
+            language=_tg_lang(tg),
         )
         user.set_unusable_password()
         user.save()
@@ -96,7 +104,7 @@ def _user_for(tg: dict):
 def webapp_login(request):
     tg = verify_init_data(request.POST.get('init_data', ''))
     if tg is None:
-        return JsonResponse({'ok': False, 'error': 'Не удалось подтвердить вход из Telegram'}, status=403)
+        return JsonResponse({'ok': False, 'error': _('Не удалось подтвердить вход из Telegram')}, status=403)
     if request.user.is_authenticated:
         # уже вошёл на сайте — привязываем Telegram к этому аккаунту (для уведомлений)
         user = request.user
@@ -108,9 +116,13 @@ def webapp_login(request):
         return JsonResponse({'ok': True, 'reload': False})
     user = _user_for(tg)
     if not user.is_active:
-        return JsonResponse({'ok': False, 'error': 'Аккаунт заблокирован'}, status=403)
+        return JsonResponse({'ok': False, 'error': _('Аккаунт заблокирован')}, status=403)
     auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-    return JsonResponse({'ok': True, 'reload': True})
+    response = JsonResponse({'ok': True, 'reload': True})
+    if user.language and settings.LANGUAGE_COOKIE_NAME not in request.COOKIES:
+        response.set_cookie(settings.LANGUAGE_COOKIE_NAME, user.language, max_age=settings.LANGUAGE_COOKIE_AGE,
+                            samesite='Lax')
+    return response
 
 
 def send_message(user, text: str, url: str = '') -> bool:
@@ -118,18 +130,18 @@ def send_message(user, text: str, url: str = '') -> bool:
     token = bot_token()
     if not token or not getattr(user, 'telegram_id', None):
         return False
-    payload = {'chat_id': user.telegram_id, 'text': text}
+    payload = {'chat_id': user.telegram_id, 'text': str(text)}
     site = getattr(settings, 'SITE_URL', '').rstrip('/')
     if url and site.startswith('https://'):
         payload['reply_markup'] = json.dumps({'inline_keyboard': [[
-            {'text': 'Открыть', 'web_app': {'url': site + url}}]]})
+            {'text': _('Открыть'), 'web_app': {'url': site + url}}]]})
     try:
         return requests.post(f'https://api.telegram.org/bot{token}/sendMessage', data=payload, timeout=5).ok
     except requests.RequestException:
         return False
 
 
-def _webapp_markup(url: str, text: str = 'Открыть') -> dict:
+def _webapp_markup(url: str, text: str = _('Открыть')) -> dict:
     site = getattr(settings, 'SITE_URL', '').rstrip('/')
     if url and site.startswith('https://'):
         return {'reply_markup': json.dumps({'inline_keyboard': [[{'text': text, 'web_app': {'url': site + url}}]]})}
@@ -143,7 +155,7 @@ def send_protected_photo(user, jpeg: bytes, caption: str, url: str = '') -> int 
     if not token or not getattr(user, 'telegram_id', None):
         return None
     data = {'chat_id': user.telegram_id, 'caption': caption, 'protect_content': 'true', 'has_spoiler': 'true',
-            **_webapp_markup(url, 'Решить')}
+            **_webapp_markup(url, _('Решить'))}
     try:
         r = requests.post(f'https://api.telegram.org/bot{token}/sendPhoto', data=data,
                           files={'photo': ('photo.jpg', jpeg, 'image/jpeg')}, timeout=15)

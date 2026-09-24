@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons reviews humanize %}{% load reports %}
 {% block title %}{{ person.get_display_name }} — {{ block.super }}{% endblock %}
-{% block description %}{{ person.get_display_name }} на ilm4: отзывы, рейтинг, объявления и услуги.{% endblock %}
+{% block description %}{{ person.get_display_name }} {% translate "на ilm4: отзывы, рейтинг, объявления и услуги." %}{% endblock %}
 
 {% block content %}
 <div class="dpage">
@@ -12,36 +13,36 @@
         <h1 class="dtitle">{{ person.get_display_name }}</h1>
         <div class="dmeta">
           {% if person.city %}<span class="mchip">{% ico 'pin' %}{{ person.city }}</span>{% endif %}
-          <span class="mchip">{% ico 'calendar' %}на ilm4 с {{ person.date_joined|date:"E Y"|lower }}</span>
+          <span class="mchip">{% ico 'calendar' %}{% translate "на ilm4 с" %} {{ person.date_joined|date:"E Y"|lower }}</span>
         </div>
         <div class="pcard__rep">{% rating_badge person %}{% verified_badge person %}</div>
         {% if user.is_authenticated and user != person %}
-        <div class="dact"><a class="btn btn--p" href="{% url 'chat:start' %}?user={{ person.pk }}">{% ico 'chat' %}Написать</a>
-          {% if escrow_on %}<a class="btn btn--g" href="{% url 'deals:new' %}?to={{ person.pk }}">{% ico 'shield' %}Заказать с гарантией</a>{% endif %}</div>
+        <div class="dact"><a class="btn btn--p" href="{% url 'chat:start' %}?user={{ person.pk }}">{% ico 'chat' %}{% translate "Написать" %}</a>
+          {% if escrow_on %}<a class="btn btn--g" href="{% url 'deals:new' %}?to={{ person.pk }}">{% ico 'shield' %}{% translate "Заказать с гарантией" %}</a>{% endif %}</div>
         {% endif %}
       </div>
     </aside>
     <div class="dmain">
       {% if listings %}
-      <section class="dcard"><h2 class="dcard__h">Объявления <small>{{ listings|length }}</small></h2>
-        <div class="plist">{% for l in listings %}<a class="plist__i" href="{% url 'market:detail' l.pk %}"><b>{{ l.title }}</b><span>{% if l.price == 0 %}Даром{% else %}{{ l.price|intcomma }} {{ l.get_currency_display }}{% endif %} · {{ l.city }}</span></a>{% endfor %}</div>
+      <section class="dcard"><h2 class="dcard__h">{% translate "Объявления" %} <small>{{ listings|length }}</small></h2>
+        <div class="plist">{% for l in listings %}<a class="plist__i" href="{% url 'market:detail' l.pk %}"><b>{{ l.title }}</b><span>{% if l.price == 0 %}{% translate "Даром" %}{% else %}{{ l.price|intcomma }} {{ l.get_currency_display }}{% endif %} · {{ l.city }}</span></a>{% endfor %}</div>
       </section>{% endif %}
       {% if rides %}
-      <section class="dcard"><h2 class="dcard__h">Перевозки <small>{{ rides|length }}</small></h2>
+      <section class="dcard"><h2 class="dcard__h">{% translate "Перевозки" %} <small>{{ rides|length }}</small></h2>
         <div class="plist">{% for r in rides %}<a class="plist__i" href="/transport/?from={{ r.from_city|urlencode }}&amp;to={{ r.to_city|urlencode }}"><b>{{ r.from_city }} → {{ r.to_city }}</b><span>{{ r.get_type_display }}{% if r.price_text %} · {{ r.price_text }}{% endif %}</span></a>{% endfor %}</div>
       </section>{% endif %}
       {% if services %}
-      <section class="dcard"><h2 class="dcard__h">Услуги <small>{{ services|length }}</small></h2>
+      <section class="dcard"><h2 class="dcard__h">{% translate "Услуги" %} <small>{{ services|length }}</small></h2>
         <div class="plist">{% for x in services %}<div class="plist__i"><b>{{ x.name }}</b><span>{{ x.get_kind_display }}{% if x.price_text %} · {{ x.price_text }}{% endif %}</span></div>{% endfor %}</div>
       </section>{% endif %}
       {% if vacancies %}
-      <section class="dcard"><h2 class="dcard__h">Вакансии <small>{{ vacancies|length }}</small></h2>
+      <section class="dcard"><h2 class="dcard__h">{% translate "Вакансии" %} <small>{{ vacancies|length }}</small></h2>
         <div class="plist">{% for v in vacancies %}<a class="plist__i" href="{% url 'jobs:detail' v.pk %}"><b>{{ v.title }}</b><span>{{ v.company }} · {{ v.city }}</span></a>{% endfor %}</div>
       </section>{% endif %}
-      {% reviews_block person "Отзывы об участнике" %}
-      <div class="personact">{% report_button person 'Пожаловаться на участника' %}
+      {% reviews_block person _("Отзывы об участнике") %}
+      <div class="personact">{% report_button person _('Пожаловаться на участника') %}
         {% if user.is_authenticated and user != person %}<form method="post" action="{% url 'accounts:block' person.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}">
-          <button class="linkbtn" type="submit">{% if is_blocked %}Разблокировать{% else %}Заблокировать{% endif %}</button></form>{% endif %}</div>
+          <button class="linkbtn" type="submit">{% if is_blocked %}{% translate "Разблокировать" %}{% else %}{% translate "Заблокировать" %}{% endif %}</button></form>{% endif %}</div>
     </div>
   </div>
 </div>

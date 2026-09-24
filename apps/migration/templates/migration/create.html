@@ -1,21 +1,22 @@
 {% extends 'base.html' %}
-{% block title %}Рассказать историю — {{ block.super }}{% endblock %}
+{% load i18n %}
+{% block title %}{% translate "Рассказать историю —" %} {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="page">
-  <h1>Рассказать историю переезда</h1>
-  <p>Ваш опыт поможет тем, кто только собирается: визы, работа, жильё, ошибки и находки.</p>
+  <h1>{% translate "Рассказать историю переезда" %}</h1>
+  <p>{% translate "Ваш опыт поможет тем, кто только собирается: визы, работа, жильё, ошибки и находки." %}</p>
   <form method="post" class="form form--wide">{% csrf_token %}
-    <label>Заголовок <span class="req">*</span></label>
+    <label>{% translate "Заголовок" %} <span class="req">*</span></label>
     <input type="text" name="title" maxlength="200" required>
     <div style="display:flex;gap:10px">
-      <div style="flex:1"><label>Откуда</label><input type="text" name="country_from" maxlength="60"></div>
-      <div style="flex:1"><label>Куда</label><input type="text" name="country_to" maxlength="60"></div>
+      <div style="flex:1"><label>{% translate "Откуда" %}</label><input type="text" name="country_from" maxlength="60"></div>
+      <div style="flex:1"><label>{% translate "Куда" %}</label><input type="text" name="country_to" maxlength="60"></div>
     </div>
-    <label>История <span class="req">*</span></label>
+    <label>{% translate "История" %} <span class="req">*</span></label>
     <textarea name="body" rows="8" required></textarea>
     {% include 'includes/pledge.html' %}
-    <button type="submit" class="btn btn--p">Отправить на модерацию</button>
+    <button type="submit" class="btn btn--p">{% translate "Отправить на модерацию" %}</button>
   </form>
 </div>
 {% endblock %}

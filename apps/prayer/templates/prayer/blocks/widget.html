@@ -1,8 +1,8 @@
-{% load prayer_tags %}{% prayer_widget request.COOKIES.ilm4_city as w %}
+{% load i18n %}{% load prayer_tags %}{% prayer_widget request.COOKIES.ilm4_city as w %}
 <section class="sec">
   <div class="sec__h">
-    <div class="sec__t">Время намаза — {{ w.city }}</div>
-    <a class="sec__l" href="/prayer/">Все города<span class="hide-m"> и GPS</span> →</a>
+    <div class="sec__t">{% translate "Время намаза —" %} {{ w.city|tr }}</div>
+    <a class="sec__l" href="/prayer/">{% translate "Все города" %}<span class="hide-m"> {% translate "и GPS" %}</span> →</a>
   </div>
   <div class="tstrip">
     {% for it in w.items %}
@@ -18,10 +18,10 @@
       <span class="tstrip__col">
         <span class="tstrip__n">{{ it.label }}</span>
         <span class="tstrip__t">{{ it.time }}</span>
-          {% if it.current %}<span class="tstrip__m">сейчас</span>{% elif it.next %}<span class="tstrip__m">следующий</span>{% endif %}
+          {% if it.current %}<span class="tstrip__m">{% translate "сейчас" %}</span>{% elif it.next %}<span class="tstrip__m">{% translate "следующий" %}</span>{% endif %}
       </span>
     </div>
     {% endfor %}
   </div>
-  <p class="prayer__next">Ближайший намаз: <b>{{ w.next_name }}</b> — <span class="live-cd" data-ts="{{ w.next_epoch }}">{{ w.countdown }}</span></p>
+  <p class="prayer__next">{% translate "Ближайший намаз:" %} <b>{{ w.next_name }}</b> — <span class="live-cd" data-ts="{{ w.next_epoch }}">{{ w.countdown }}</span></p>
 </section>

@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
-{% block title %}Добавить перевозку — {{ block.super }}{% endblock %}
+{% load i18n %}
+{% block title %}{% translate "Добавить перевозку —" %} {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="page">
-  <h1>Добавить перевозку</h1>
-  <p>Грузоперевозка, пассажирская поездка или попутчик — заполни карточку маршрута.
-     После модерации она появится в списке.</p>
+  <h1>{% translate "Добавить перевозку" %}</h1>
+  <p>{% translate "Грузоперевозка, пассажирская поездка или попутчик — заполни карточку маршрута. После модерации она появится в списке." %}</p>
   <form method="post" class="form form--wide">{% csrf_token %}
     {% for field in form %}
       <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span class="req">*</span>{% endif %}</label>
@@ -14,7 +14,7 @@
       {% if field.help_text %}<span class="hint">{{ field.help_text }}</span>{% endif %}
     {% endfor %}
     {% include 'includes/pledge.html' %}
-    <button type="submit" class="btn btn--p">Отправить на модерацию</button>
+    <button type="submit" class="btn btn--p">{% translate "Отправить на модерацию" %}</button>
   </form>
 </div>
 {% endblock %}

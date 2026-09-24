@@ -31,8 +31,9 @@
   function msgHTML(d, mine) {
     if (d.kind === 'system') return '<div class="tg__sys" data-id="' + d.id + '"><span>' + ICON.call + esc(d.body) + ' · ' + esc(d.time) + '</span></div>';
     var media = '';
-    if (d.kind === 'photo') media = '<a class="bub__photo" href="' + d.url + '" target="_blank" rel="noopener"><img src="' + d.url + '" alt="Фото"></a>';
-    if (d.kind === 'voice') media = '<div class="voice" data-src="' + d.url + '"><button type="button" class="voice__play" aria-label="Слушать">' + ICON.play + '</button><span class="voice__bar"><i></i></span><span class="voice__t">' + mmss(d.duration) + '</span></div>';
+    if (d.kind === 'photo') media = '<a class="bub__photo" href="' + d.url + '" target="_blank" rel="noopener"><img src="' + d.url + '" alt="' + _t('Фото') + '"></a>';
+    if (d.kind === 'voice') media = '<div class="voice" data-src="' + d.url + '"><button type="button" class="voice__play" aria-label="' + _t('Слушать') + '">' + ICON.play + '</button><span class="voice__bar"><i></i></span><span class="voice__t">' + mmss(d.duration) + '</span></div>';
+    if (d.kind === 'video') media = '<div class="bub__video"><video src="' + d.url + '" controls preload="metadata" playsinline></video></div>';
     if (d.kind === 'circle') media = '<div class="circle" data-src="' + d.url + '"><video src="' + d.url + '" preload="metadata" playsinline></video><span class="circle__t">' + mmss(d.duration) + '</span><span class="circle__play">' + ICON.play + '</span></div>';
     return '<div class="bub bub--' + d.kind + (mine ? ' bub--me' : '') + ' bub--tail" data-id="' + d.id + '">' + media +
       (d.body ? '<span class="bub__t">' + esc(d.body) + '</span>' : '') +
@@ -44,7 +45,7 @@
     var em = document.getElementById('chat-empty'); if (em) em.remove();
     if (d.day && d.day !== lastDay()) {
       var day = document.createElement('div'); day.className = 'tg__day'; day.dataset.day = d.day;
-      day.innerHTML = '<span>Сегодня</span>'; log.appendChild(day);
+      day.innerHTML = '<span>' + _t('Сегодня') + '</span>'; log.appendChild(day);
     }
     var mine = d.sender_id === cfg.me;
     var prev = log.lastElementChild;
@@ -111,17 +112,28 @@
     var fd = new FormData();
     fd.append('kind', kind); fd.append('file', blob, name || kind);
     if (duration) fd.append('duration', String(Math.round(duration)));
-    var bar = document.createElement('div'); bar.className = 'tg__uploading'; bar.textContent = 'Отправка…';
+    var bar = document.createElement('div'); bar.className = 'tg__uploading'; bar.textContent = _t('Отправка…');
     log.appendChild(bar); toBottom();
     return fetch('/chat/' + cfg.thread + '/upload/', { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-CSRFToken': csrf } })
       .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
-      .then(function (res) { bar.remove(); if (!res.ok) { toast(res.j.error || 'Не удалось отправить'); return; } add(res.j); })
-      .catch(function () { bar.remove(); toast('Нет соединения — попробуйте ещё раз'); });
+      .then(function (res) { bar.remove(); if (!res.ok) { toast(res.j.error || _t('Не удалось отправить')); return; } add(res.j); })
+      .catch(function () { bar.remove(); toast(_t('Нет соединения — попробуйте ещё раз')); });
   }
   var photoInput = document.getElementById('photo-input');
   if (photoInput) photoInput.addEventListener('change', function () {
-    if (photoInput.files[0]) upload('photo', photoInput.files[0], 0, photoInput.files[0].name);
+    var f = photoInput.files[0];
     photoInput.value = '';
+    if (!f) return;
+    if (!/^video\//.test(f.type)) { upload('photo', f, 0, f.name); return; }
+    if (f.size > 50 * 1024 * 1024) { toast(_t('Видео больше 50 МБ')); return; }
+    // длительность — из метаданных файла (сервер всё равно ограничит 5 минутами)
+    var v = document.createElement('video'), u = URL.createObjectURL(f), done = false;
+    function go(sec) { if (done) return; done = true; URL.revokeObjectURL(u); upload('video', f, sec, f.name); }
+    v.preload = 'metadata';
+    v.onloadedmetadata = function () { go(isFinite(v.duration) ? v.duration : 0); };
+    v.onerror = function () { go(0); };
+    setTimeout(function () { go(0); }, 3000);
+    v.src = u;
   });
 
   function pickMime(list) {
@@ -136,7 +148,7 @@
   function stopTracks(stream) { if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); }
   function startVoice() {
     var mime = pickMime(['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus']);
-    if (mime === null || !navigator.mediaDevices) { toast('Запись голоса не поддерживается в этом браузере'); return; }
+    if (mime === null || !navigator.mediaDevices) { toast(_t('Запись голоса не поддерживается в этом браузере')); return; }
     navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
       var chunks = [], mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined), t0 = Date.now();
       mr.ondataavailable = function (e) { if (e.data.size) chunks.push(e.data); };
@@ -156,7 +168,7 @@
         if (s >= 300) { rec.send = true; mr.stop(); return; }
         setTimeout(tick, 250);
       })();
-    }).catch(function () { toast('Нет доступа к микрофону — разрешите его в настройках браузера'); });
+    }).catch(function () { toast(_t('Нет доступа к микрофону — разрешите его в настройках браузера')); });
   }
   if (micBtn) micBtn.addEventListener('click', startVoice);
   var recSend = document.getElementById('rec-send'), recCancel = document.getElementById('rec-cancel');
@@ -168,7 +180,7 @@
   var circleBox = document.getElementById('circle-rec');
   function startCircle() {
     var mime = pickMime(['video/mp4;codecs=avc1,mp4a', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm']);
-    if (mime === null || !navigator.mediaDevices) { toast('Видеозапись не поддерживается в этом браузере'); return; }
+    if (mime === null || !navigator.mediaDevices) { toast(_t('Видеозапись не поддерживается в этом браузере')); return; }
     navigator.mediaDevices.getUserMedia({ audio: true, video: { facingMode: 'user', width: { ideal: 480 }, height: { ideal: 480 } } }).then(function (stream) {
       var prev = document.getElementById('circle-preview'); prev.srcObject = stream;
       var chunks = [], mr = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 900000 } : undefined), t0 = Date.now();
@@ -191,7 +203,7 @@
         if (s >= 60) { crec.send = true; mr.stop(); return; }
         requestAnimationFrame(tick);
       })();
-    }).catch(function () { toast('Нет доступа к камере или микрофону'); });
+    }).catch(function () { toast(_t('Нет доступа к камере или микрофону')); });
   }
   if (circleBtn) circleBtn.addEventListener('click', startCircle);
   var cSend = document.getElementById('circle-send'), cCancel = document.getElementById('circle-cancel');
@@ -262,7 +274,7 @@
       pc.onconnectionstatechange = function () {
         if (!c) return;
         if (pc.connectionState === 'connected' && !c.start) { c.start = Date.now(); tick(); }
-        if (pc.connectionState === 'failed') { toast('Не удалось соединиться. Возможно, нужна настройка TURN-сервера.'); finish(true); }
+        if (pc.connectionState === 'failed') { toast(_t('Не удалось соединиться. Возможно, нужна настройка TURN-сервера.')); finish(true); }
       };
       c.pc = pc;
       return pc;
@@ -293,26 +305,26 @@
 
     function start(video) {
       if (c) return;
-      if (!window.RTCPeerConnection || !navigator.mediaDevices) { toast('Звонки не поддерживаются в этом браузере'); return; }
+      if (!window.RTCPeerConnection || !navigator.mediaDevices) { toast(_t('Звонки не поддерживаются в этом браузере')); return; }
       c = { role: 'caller', video: video, pendingIce: [] };
-      ui('ringing', 'Доступ к ' + (video ? 'камере…' : 'микрофону…'));
+      ui('ringing', video ? _t('Доступ к камере…') : _t('Доступ к микрофону…'));
       media(video).then(function (stream) {
         if (!c) { stopTracks(stream); return; }
         c.local = stream; if (video) localV.srcObject = stream;
-        ui('ringing', 'Звоним…');
+        ui('ringing', _t('Звоним…'));
         var ring = function () { wsSend({ type: 'signal', action: 'ring', video: video }); };
         ring(); c.ringT = setInterval(ring, 3000);   // повтор: собеседник мог открыть страницу позже
-        c.timeoutT = setTimeout(function () { finish(true, 'missed'); toast('Не отвечает'); }, 45000);
-      }).catch(function () { cleanup(); toast('Нет доступа к ' + (video ? 'камере' : 'микрофону')); });
+        c.timeoutT = setTimeout(function () { finish(true, 'missed'); toast(_t('Не отвечает')); }, 45000);
+      }).catch(function () { cleanup(); toast(video ? _t('Нет доступа к камере') : _t('Нет доступа к микрофону')); });
     }
     function accept() {
       if (!c || c.role !== 'callee') return;
-      ui('connecting', 'Соединение…');
+      ui('connecting', _t('Соединение…'));
       media(c.video).then(function (stream) {
         if (!c) { stopTracks(stream); return; }
         c.local = stream; if (c.video) localV.srcObject = stream;
         wsSend({ type: 'signal', action: 'accept' });
-      }).catch(function () { toast('Нет доступа к ' + (c.video ? 'камере' : 'микрофону')); decline(); });
+      }).catch(function () { toast(c.video ? _t('Нет доступа к камере') : _t('Нет доступа к микрофону')); decline(); });
     }
     function decline() { if (!c) return; wsSend({ type: 'signal', action: 'decline' }); cleanup(); }
 
@@ -321,14 +333,14 @@
       if (a === 'ring') {
         if (c) return;                       // уже в звонке / повтор сигнала
         c = { role: 'callee', video: !!d.video, pendingIce: [] };
-        ui('incoming', (d.video ? 'Видеозвонок' : 'Аудиозвонок') + ' · входящий');
+        ui('incoming', d.video ? _t('Входящий видеозвонок') : _t('Входящий аудиозвонок'));
         if (autoAnswer) { autoAnswer = false; accept(); }
         return;
       }
       if (!c) return;
       if (a === 'accept' && c.role === 'caller' && !c.pc) {
         clearInterval(c.ringT); clearTimeout(c.timeoutT);
-        ui('connecting', 'Соединение…');
+        ui('connecting', _t('Соединение…'));
         var pc = peer();
         pc.createOffer().then(function (o) { return pc.setLocalDescription(o); })
           .then(function () { wsSend({ type: 'signal', action: 'offer', sdp: pc.localDescription }); });
@@ -343,7 +355,7 @@
         if (c.pc && c.pc.remoteDescription) c.pc.addIceCandidate(d.candidate).catch(function () {});
         else c.pendingIce.push(d.candidate);
       } else if (a === 'decline') {
-        toast('Звонок отклонён'); finish(false, 'declined');
+        toast(_t('Звонок отклонён')); finish(false, 'declined');
       } else if (a === 'end') {
         finish(false);
       }

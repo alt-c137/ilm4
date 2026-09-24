@@ -6,6 +6,7 @@ from django.db import transaction
 from django.http import FileResponse, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import content_disposition_header
+from django.utils.translation import gettext as _
 
 from apps.core.decorators import module_required
 from apps.core.models import Moderation
@@ -56,7 +57,7 @@ def book_download(request, pk):
     if free or BookPurchase.objects.filter(book=book, user=request.user).exists():
         return _serve_book(book)
     if request.method != 'POST':
-        messages.info(request, f'«{book.title}» — платная книга: нажмите «Купить».')
+        messages.info(request, _('«{v1}» — платная книга: нажмите «Купить».').format(v1=book.title))
         return redirect('library:list')
     try:
         with transaction.atomic():
@@ -65,7 +66,7 @@ def book_download(request, pk):
                 wallet.debit(request.user, book.price, Transaction.PURCHASE,
                              ref=f'library:book:{pk}', note=f'Покупка книги «{book.title}»')
     except InsufficientFunds:
-        messages.error(request, 'Недостаточно средств — пополните кошелёк.')
+        messages.error(request, _('Недостаточно средств — пополните кошелёк.'))
         return redirect('wallet:index')
     return _serve_book(book)
 
@@ -80,27 +81,26 @@ def book_add(request):
         upload = request.FILES.get('file')
         errors = []
         if not title:
-            errors.append('Укажите название.')
+            errors.append(_('Укажите название.'))
         if not upload:
-            errors.append('Загрузите файл книги.')
+            errors.append(_('Загрузите файл книги.'))
         else:
             from pathlib import PurePosixPath
 
             ext = ''.join(PurePosixPath(upload.name).suffix.lower())
             if ext not in ALLOWED_EXT:
-                errors.append(f'Формат {ext or "неизвестный"} не поддерживается '
-                              f'(можно: {", ".join(sorted(ALLOWED_EXT))}).')
+                errors.append(_('Формат {v1} не поддерживается (можно: {v3}).').format(v1=ext or 'неизвестный', v3=', '.join(sorted(ALLOWED_EXT))))
             elif upload.size > MAX_FILE_MB * 1024 * 1024:
-                errors.append(f'Файл больше {MAX_FILE_MB} МБ.')
+                errors.append(_('Файл больше {MAX_FILE_MB} МБ.').format(MAX_FILE_MB=MAX_FILE_MB))
         try:
             cover = clean_image(request.FILES.get('cover'))
         except ValidationError as exc:
             cover = None
-            errors.append('Обложка: ' + (exc.messages[0] if exc.messages else 'нужна картинка JPG или PNG.'))
+            errors.append(_('Обложка: ') + (exc.messages[0] if exc.messages else _('нужна картинка JPG или PNG.')))
         try:
             price_val = max(0, int(price))
         except ValueError:
-            errors.append('Цена — целое число.')
+            errors.append(_('Цена — целое число.'))
             price_val = 0
         if errors:
             for e in errors:
@@ -117,6 +117,6 @@ def book_add(request):
                 cover=cover,
                 file=upload, price=price_val, owner=request.user,
             )
-            messages.success(request, 'Книга отправлена на модерацию.')
+            messages.success(request, _('Книга отправлена на модерацию.'))
             return redirect('library:list')
     return render(request, 'library/add.html', {'allowed': ', '.join(sorted(ALLOWED_EXT))})

@@ -1,7 +1,18 @@
 from django.contrib import admin
 from solo.admin import SingletonModelAdmin
 
-from .models import Banner, Moderation, ModuleConfig, Notification, Rate, Report, SiteSettings, SocialLink, Theme
+from .models import (
+    AIReview,
+    Banner,
+    Moderation,
+    ModuleConfig,
+    Notification,
+    Rate,
+    Report,
+    SiteSettings,
+    SocialLink,
+    Theme,
+)
 
 
 @admin.register(ModuleConfig)
@@ -76,3 +87,24 @@ class ReportAdmin(admin.ModelAdmin):
     @admin.action(description='Жалобы необоснованны — закрыть')
     def dismiss(self, request, queryset):
         queryset.update(status=Report.DISMISSED)
+
+
+@admin.register(AIReview)
+class AIReviewAdmin(admin.ModelAdmin):
+    list_display = ('checked_at', 'verdict', 'object_link', 'short_reasons', 'model_name')
+    list_filter = ('verdict', 'content_type')
+    readonly_fields = ('content_type', 'object_id', 'verdict', 'reasons', 'model_name', 'checked_at', 'object_link')
+
+    @admin.display(description='что проверено')
+    def object_link(self, obj):
+        from django.urls import NoReverseMatch, reverse
+        from django.utils.html import format_html
+        try:
+            url = reverse(f'admin:{obj.content_type.app_label}_{obj.content_type.model}_change', args=[obj.object_id])
+        except NoReverseMatch:
+            return f'{obj.content_type.model} #{obj.object_id}'
+        return format_html('<a href="{}">{} #{}</a>', url, obj.content_type.model, obj.object_id)
+
+    @admin.display(description='причины')
+    def short_reasons(self, obj):
+        return '; '.join(obj.reasons)[:120] or '—'

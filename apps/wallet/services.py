@@ -8,6 +8,7 @@ from decimal import Decimal
 
 from django.db import transaction as db_transaction
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from .models import EscrowDeal, PayoutRequest, Transaction, Wallet
 
@@ -18,13 +19,13 @@ class InsufficientFunds(Exception):
 
 def balance_of(user) -> Decimal:
     """Текущий баланс (кошелёк создаётся при первом обращении)."""
-    wallet, _ = Wallet.objects.get_or_create(user=user)
+    wallet, _created = Wallet.objects.get_or_create(user=user)
     return wallet.balance
 
 
 def _locked_wallet(user):
     """Кошелёк с блокировкой строки — внутри atomic."""
-    wallet, _ = Wallet.objects.select_for_update().get_or_create(user=user)
+    wallet, _created = Wallet.objects.select_for_update().get_or_create(user=user)
     return wallet
 
 
@@ -33,9 +34,9 @@ def credit(user, amount, kind: str, ref: str = '', note: str = '') -> Transactio
     """Зачислить (пополнение/эскроу-выплата/корректировка)."""
     amount = Decimal(amount)
     if amount <= 0:
-        raise ValueError('Сумма должна быть положительной')
+        raise ValueError(_('Сумма должна быть положительной'))
     if kind not in Transaction.CREDIT_KINDS:
-        raise ValueError(f'{kind} не является зачислением')
+        raise ValueError(_('{kind} не является зачислением').format(kind=kind))
     wallet = _locked_wallet(user)
     wallet.balance += amount
     wallet.save(update_fields=['balance', 'updated_at'])
@@ -50,13 +51,13 @@ def debit(user, amount, kind: str, ref: str = '', note: str = '') -> Transaction
     """Списать (платное действие/вывод/эскроу-заморозка). Не хватает — исключение."""
     amount = Decimal(amount)
     if amount <= 0:
-        raise ValueError('Сумма должна быть положительной')
+        raise ValueError(_('Сумма должна быть положительной'))
     if kind not in Transaction.DEBIT_KINDS:
-        raise ValueError(f'{kind} не является списанием')
+        raise ValueError(_('{kind} не является списанием').format(kind=kind))
     wallet = _locked_wallet(user)
     if wallet.balance < amount:
         raise InsufficientFunds(
-            f'Недостаточно средств: баланс {wallet.balance}, нужно {amount}')
+            _('Недостаточно средств: баланс {v1}, нужно {amount}').format(v1=wallet.balance, amount=amount))
     wallet.balance -= amount
     wallet.save(update_fields=['balance', 'updated_at'])
     return Transaction.objects.create(
@@ -72,9 +73,9 @@ def escrow_hold(buyer, seller, amount, ref: str = '') -> EscrowDeal:
     """Заморозить деньги покупателя под сделку (списание сразу)."""
     amount = Decimal(amount)
     if amount <= 0:
-        raise ValueError('Сумма должна быть положительной')
+        raise ValueError(_('Сумма должна быть положительной'))
     if buyer == seller:
-        raise ValueError('Покупатель и продавец совпадают')
+        raise ValueError(_('Покупатель и продавец совпадают'))
     deal = EscrowDeal.objects.create(buyer=buyer, seller=seller, amount=amount, ref=ref)
     debit(buyer, amount, Transaction.ESCROW_HOLD, ref=ref or f'escrow:{deal.id}',
           note=f'Эскроу-сделка #{deal.id}')
@@ -113,7 +114,7 @@ def escrow_refund(deal: EscrowDeal, decided_by=None) -> EscrowDeal:
 
 def _assert_hold(deal):
     if deal.status != EscrowDeal.HOLD:
-        raise ValueError(f'Сделка уже решена: {deal.get_status_display()}')
+        raise ValueError(_('Сделка уже решена: {v1}').format(v1=deal.get_status_display()))
 
 
 # ---------- вывод средств ----------
@@ -123,7 +124,7 @@ def create_payout_request(user, amount, min_amount: Decimal) -> PayoutRequest:
     """Заявка на вывод: списание сразу, при отклонении админ возвращает."""
     amount = Decimal(amount)
     if amount < min_amount:
-        raise ValueError(f'Минимальная сумма вывода: {min_amount}')
+        raise ValueError(_('Минимальная сумма вывода: {min_amount}').format(min_amount=min_amount))
     request = PayoutRequest.objects.create(user=user, amount=amount)
     debit(user, amount, Transaction.PAYOUT, ref=f'payout:{request.id}',
           note=f'Заявка на вывод #{request.id}')
@@ -134,7 +135,7 @@ def create_payout_request(user, amount, min_amount: Decimal) -> PayoutRequest:
 def reject_payout(request: PayoutRequest, decided_by) -> PayoutRequest:
     """Отклонить заявку — деньги возвращаются на баланс."""
     if request.status != PayoutRequest.PENDING:
-        raise ValueError('Заявка уже обработана')
+        raise ValueError(_('Заявка уже обработана'))
     credit(request.user, request.amount, Transaction.ADMIN_ADJUST,
            ref=f'payout:{request.id}', note='Возврат отклонённой заявки на вывод')
     request.status = PayoutRequest.REJECTED

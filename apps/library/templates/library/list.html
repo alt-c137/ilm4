@@ -1,17 +1,18 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons %}
-{% block title %}Библиотека — {{ block.super }}{% endblock %}
+{% block title %}{% translate "Библиотека —" %} {{ block.super }}{% endblock %}
 {% block body_class %}s-library{% endblock %}
 
 {% block content %}
-{% include 'includes/section_hero.html' with icon="📚" title="Библиотека" desc="Книги для роста: бесплатные и платные, с мгновенным доступом" class="library" cta="Добавить книгу" cta_url="/library/add/" %}
+{% include 'includes/section_hero.html' with icon="📚" title=_("Библиотека") desc=_("Книги для роста: бесплатные и платные, с мгновенным доступом") class="library" cta=_("Добавить книгу") cta_url="/library/add/" %}
 <section class="sec">
   <div class="sec__h">
-    {% if user.is_authenticated %}<a class="sec__l" href="{% url 'library:add' %}">+ Добавить книгу</a>{% endif %}
+    {% if user.is_authenticated %}<a class="sec__l" href="{% url 'library:add' %}">{% translate "+ Добавить книгу" %}</a>{% endif %}
   </div>
   <div class="toolbar">
     <div class="chips">
-      <a class="chip{% if not cat %} chip--on{% endif %}" href="/library/">Все разделы</a>
+      <a class="chip{% if not cat %} chip--on{% endif %}" href="/library/">{% translate "Все разделы" %}</a>
       {% for key, label in categories %}
       <a class="chip{% if key == cat %} chip--on{% endif %}" href="?cat={{ key }}">{{ label }}</a>
       {% endfor %}
@@ -30,15 +31,15 @@
         <div class="card__c">{{ b.get_category_display }}</div>
         <div class="card__d">{{ b.author|default:'—' }}</div>
         <div class="card__f">
-          <span class="price">{% if b.price == 0 %}Бесплатно{% else %}{{ b.price }} сум{% endif %}</span>
+          <span class="price">{% if b.price == 0 %}{% translate "Бесплатно" %}{% else %}{{ b.price }} {% translate "сум" %}{% endif %}</span>
           {% if user.is_authenticated %}
           {% if b.price == 0 or b.pk in owned %}
-          <a class="btn btn--s" href="{% url 'library:download' b.pk %}">Читать</a>
+          <a class="btn btn--s" href="{% url 'library:download' b.pk %}">{% translate "Читать" %}</a>
           {% else %}
-          <form method="post" action="{% url 'library:download' b.pk %}">{% csrf_token %}<button class="btn btn--s" type="submit">Купить</button></form>
+          <form method="post" action="{% url 'library:download' b.pk %}">{% csrf_token %}<button class="btn btn--s" type="submit">{% translate "Купить" %}</button></form>
           {% endif %}
           {% else %}
-          <a class="btn btn--s" href="{% url 'accounts:login' %}?next={{ request.path }}">Войти</a>
+          <a class="btn btn--s" href="{% url 'accounts:login' %}?next={{ request.path }}">{% translate "Войти" %}</a>
           {% endif %}
         </div>
       </div>
@@ -46,9 +47,9 @@
     {% empty %}
     <div class="empty" style="grid-column:1/-1">
       <div class="empty__plug"><svg viewBox="0 0 24 24"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v15H6a2 2 0 0 0-2 1.3zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v15h5a2 2 0 0 1 2 1.3z"/></svg></div>
-      <h3 style="font-size:18px;font-weight:800">Книг пока нет</h3>
-      <p style="color:var(--ink-soft)">Первые книги появятся здесь совсем скоро.</p>
-      {% if user.is_authenticated %}<a class="btn btn--p" href="{% url 'library:add' %}">Добавить книгу</a>{% endif %}
+      <h3 style="font-size:18px;font-weight:800">{% translate "Книг пока нет" %}</h3>
+      <p style="color:var(--ink-soft)">{% translate "Первые книги появятся здесь совсем скоро." %}</p>
+      {% if user.is_authenticated %}<a class="btn btn--p" href="{% url 'library:add' %}">{% translate "Добавить книгу" %}</a>{% endif %}
     </div>
     {% endfor %}
   </div>

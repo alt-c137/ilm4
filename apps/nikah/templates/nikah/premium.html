@@ -1,21 +1,22 @@
 {% extends 'nikah/_base.html' %}
+{% load i18n %}
 {% load nikah_tags humanize %}
-{% block nk_title %}Премиум · Никях{% endblock %}
-{% block nk_back %}<a class="nkback" href="{% url 'nikah:home' %}" data-back>{% nk_icon 'back' %}Назад</a>{% endblock %}
+{% block nk_title %}{% translate "Премиум · Никях" %}{% endblock %}
+{% block nk_back %}<a class="nkback" href="{% url 'nikah:home' %}" data-back>{% nk_icon 'back' %}{% translate "Назад" %}</a>{% endblock %}
 {% block nk %}
 <section class="nkhero nkhero--prem"><span class="nkhero__ic">{% nk_icon 'star' %}</span>
-  <h1>Премиум</h1>
-  {% if me.is_premium %}<p>Подключён до <b>{{ me.premium_until|date:"d.m.Y" }}</b>. Продлить — ещё {{ days }} дней.</p>
-  {% else %}<p>Больше возможностей, чтобы найти свою половину быстрее.</p>{% endif %}
+  <h1>{% translate "Премиум" %}</h1>
+  {% if me.is_premium %}<p>{% translate "Подключён до" %} <b>{{ me.premium_until|date:"d.m.Y" }}</b>{% translate ". Продлить — ещё" %} {{ days }} {% translate "дней." %}</p>
+  {% else %}<p>{% translate "Больше возможностей, чтобы найти свою половину быстрее." %}</p>{% endif %}
 </section>
 <div class="nkprinc">
-  <div class="nkp">{% nk_icon 'feed' 'nkp__ic' %}<div><b>Без дневного лимита</b><p>Без премиума — {{ limit }} анкет в день. С премиумом — сколько нужно.</p></div></div>
-  <div class="nkp">{% nk_icon 'once' 'nkp__ic' %}<div><b>Вернуть отклонённых</b><p>Бесплатно вернуть в ленту анкеты, которые пропустили (без премиума — {{ restore_price|intcomma }} сум).</p></div></div>
-  <div class="nkp">{% nk_icon 'clock' 'nkp__ic' %}<div><b>Видеть, кто в сети</b><p>Отметка «в сети» на анкетах и фильтр «Сейчас в сети».</p></div></div>
+  <div class="nkp">{% nk_icon 'feed' 'nkp__ic' %}<div><b>{% translate "Без дневного лимита" %}</b><p>{% translate "Без премиума —" %} {{ limit }} {% translate "анкет в день. С премиумом — сколько нужно." %}</p></div></div>
+  <div class="nkp">{% nk_icon 'once' 'nkp__ic' %}<div><b>{% translate "Вернуть отклонённых" %}</b><p>{% translate "Бесплатно вернуть в ленту анкеты, которые пропустили (без премиума —" %} {{ restore_price|intcomma }} {% translate "сум)." %}</p></div></div>
+  <div class="nkp">{% nk_icon 'clock' 'nkp__ic' %}<div><b>{% translate "Видеть, кто в сети" %}</b><p>{% translate "Отметка «в сети» на анкетах и фильтр «Сейчас в сети»." %}</p></div></div>
 </div>
-<p class="nkhint" style="margin-top:14px">Премиум не влияет на совместимость и не открывает фото — фото по-прежнему только при взаимной симпатии.</p>
+<p class="nkhint" style="margin-top:14px">{% translate "Премиум не влияет на совместимость и не открывает фото — фото по-прежнему только при взаимной симпатии." %}</p>
 <form method="post" class="nkprem__buy">{% csrf_token %}
-  <button class="btn btn--p btn--lg" type="submit">{% if me.is_premium %}Продлить{% else %}Подключить{% endif %} на {{ days }} дней · {{ price|intcomma }} сум</button>
-  <p class="nkmeta">Оплата с баланса: сейчас {{ balance|floatformat:0|intcomma }} сум · <a class="link" href="{% url 'wallet:index' %}">пополнить</a></p>
+  <button class="btn btn--p btn--lg" type="submit">{% if me.is_premium %}{% translate "Продлить" %}{% else %}{% translate "Подключить" %}{% endif %} {% translate "на" %} {{ days }} {% translate "дней ·" %} {{ price|intcomma }} {% translate "сум" %}</button>
+  <p class="nkmeta">{% translate "Оплата с баланса: сейчас" %} {{ balance|floatformat:0|intcomma }} {% translate "сум ·" %} <a class="link" href="{% url 'wallet:index' %}">{% translate "пополнить" %}</a></p>
 </form>
 {% endblock %}

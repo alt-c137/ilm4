@@ -1,24 +1,25 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons %}
-{% block title %}Здоровье — {{ block.super }}{% endblock %}
+{% block title %}{% translate "Здоровье —" %} {{ block.super }}{% endblock %}
 {% block body_class %}s-health{% endblock %}
 
 {% block content %}
 <div class="svc">
-{% include 'includes/section_hero.html' with icon="🩺" title="Здоровье" desc="Врачи нашей уммы по городам — контакты, опыт, специализации" class="health" cta="Публикация врача" cta_url="/health/add/" %}
+{% include 'includes/section_hero.html' with icon="🩺" title=_("Здоровье") desc=_("Врачи нашей уммы по городам — контакты, опыт, специализации") class="health" cta=_("Публикация врача") cta_url="/health/add/" %}
 
 <div class="toolbar">
-  <div class="prayer__lbl">Специализация</div>
+  <div class="prayer__lbl">{% translate "Специализация" %}</div>
   <div class="chips">
-    <a class="chip{% if not spec %} chip--on{% endif %}" href="?city={{ city|urlencode }}">Все</a>
+    <a class="chip{% if not spec %} chip--on{% endif %}" href="?city={{ city|urlencode }}">{% translate "Все" %}</a>
     {% for key, label in specializations %}
     <a class="chip{% if key == spec %} chip--on{% endif %}" href="?city={{ city|urlencode }}&spec={{ key }}">{{ label }}</a>
     {% endfor %}
   </div>
   <form method="get" class="map__form" style="margin-top:12px">
     <input type="hidden" name="spec" value="{{ spec }}">
-    <input type="text" name="city" value="{{ city }}" placeholder="Город: Ташкент, Казань, Грозный…">
-    <button type="submit" class="btn btn--p">Найти</button>
+    <input type="text" name="city" value="{{ city }}" placeholder="{% translate 'Город: Ташкент, Казань, Грозный…' %}">
+    <button type="submit" class="btn btn--p">{% translate "Найти" %}</button>
   </form>
 </div>
 
@@ -32,17 +33,16 @@
       <div class="card__c">{{ d.specialization|upper }}</div>
       <div class="card__t">{{ d.name }}</div>
       <div class="card__d">{{ d.city }}{% if d.clinic %} · {{ d.clinic }}{% endif %}</div>
-      <div class="card__f"><span class="meta">опыт {{ d.experience }} лет</span>
+      <div class="card__f"><span class="meta">{% translate "опыт" %} {{ d.experience }} {% translate "лет" %}</span>
         <span class="meta">{{ d.created_at|date:"d.m" }}</span></div>
     </div>
   </a>
   {% empty %}
   <div class="empty" style="grid-column:1/-1">
     <div class="empty__plug">{% svc_icon 'health' '🩺' '' %}</div>
-    <h3 style="font-size:18px;font-weight:800">Врачей пока нет</h3>
-    <p style="color:var(--ink-soft)">Врач или знаешь проверенного? Опубликуй анкету —
-      бесплатно, после модерации.</p>
-    <a class="btn btn--p" href="{% url 'health:add' %}">Публикация врача</a>
+    <h3 style="font-size:18px;font-weight:800">{% translate "Врачей пока нет" %}</h3>
+    <p style="color:var(--ink-soft)">{% translate "Врач или знаешь проверенного? Опубликуй анкету — бесплатно, после модерации." %}</p>
+    <a class="btn btn--p" href="{% url 'health:add' %}">{% translate "Публикация врача" %}</a>
   </div>
   {% endfor %}
 </div>

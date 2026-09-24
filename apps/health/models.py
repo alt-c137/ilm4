@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.translation import gettext_lazy as _lazy
 
 from apps.maps.models import BasePlace
 
@@ -11,10 +12,10 @@ class Doctor(BasePlace):
     """
 
     SPECIALIZATIONS = [
-        ('gp', 'Терапевт / семейный'), ('cardio', 'Кардиолог'),
-        ('neuro', 'Невролог'), ('pediatr', 'Педиатр'),
-        ('dentist', 'Стоматолог'), ('gyneco', 'Гинеколог'),
-        ('psych', 'Психолог / психотерапевт'), ('hijama', 'Хиджама'), ('other', 'Другое'),
+        ('gp', _lazy('Терапевт / семейный')), ('cardio', _lazy('Кардиолог')),
+        ('neuro', _lazy('Невролог')), ('pediatr', _lazy('Педиатр')),
+        ('dentist', _lazy('Стоматолог')), ('gyneco', _lazy('Гинеколог')),
+        ('psych', _lazy('Психолог / психотерапевт')), ('hijama', _lazy('Хиджама')), ('other', _lazy('Другое')),
     ]
 
     category = models.CharField('специализация', max_length=30, choices=SPECIALIZATIONS)

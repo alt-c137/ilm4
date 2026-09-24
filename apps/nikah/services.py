@@ -5,9 +5,13 @@ import re
 import uuid
 from datetime import timedelta
 
+from django.conf import settings
 from django.core.files.base import ContentFile
 from django.db import transaction
-from django.utils import timezone
+from django.utils import timezone, translation
+from django.utils.text import format_lazy
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _lazy
 
 from apps.chat.crypto import decrypt_bytes, encrypt_bytes
 from apps.core.models import SiteSettings
@@ -41,22 +45,22 @@ def compatibility(me: NikahProfile, other: NikahProfile) -> tuple[int, list[str]
     athari, kalam = {'athari', 'salafi'}, {'ashari', 'maturidi'}
     if same('aqida'):
         score += 25
-        why.append('Одно вероубеждение')
+        why.append(_('Одно вероубеждение'))
     elif {me.aqida, other.aqida} <= athari or {me.aqida, other.aqida} <= kalam:
         score += 20
-        why.append('Близкие вероубеждения')
+        why.append(_('Близкие вероубеждения'))
     elif 'sunna' in (me.aqida, other.aqida) or 'other' in (me.aqida, other.aqida):
         score += 10
 
     if same('where_allah'):
         score += 15
-        why.append('Одинаковый ответ «где Аллах»')
+        why.append(_('Одинаковый ответ «где Аллах»'))
     elif 'unsure' in (me.where_allah, other.where_allah):
         score += 6
 
     if same('madhhab'):
         score += 10
-        why.append('Один мазхаб')
+        why.append(_('Один мазхаб'))
     elif 'none' in (me.madhhab, other.madhhab):
         score += 6
     elif me.madhhab and other.madhhab:
@@ -64,7 +68,7 @@ def compatibility(me: NikahProfile, other: NikahProfile) -> tuple[int, list[str]
 
     if same('prayer'):
         score += 15
-        why.append('Одинаково с намазом')
+        why.append(_('Одинаково с намазом'))
     elif 'none' not in (me.prayer, other.prayer):
         score += 8
 
@@ -72,17 +76,17 @@ def compatibility(me: NikahProfile, other: NikahProfile) -> tuple[int, list[str]
     fits_other = other.age_from <= me.age <= other.age_to
     score += 8 * fits_me + 7 * fits_other
     if fits_me and fits_other:
-        why.append('Возраст подходит обоим')
+        why.append(_('Возраст подходит обоим'))
 
     if same('children_want'):
         score += 10
-        why.append('Одинаково о детях')
+        why.append(_('Одинаково о детях'))
     elif 'unsure' in (me.children_want, other.children_want):
         score += 5
 
     if me.country and me.country.lower() == (other.country or '').lower():
         score += 10
-        why.append('Одна страна')
+        why.append(_('Одна страна'))
     elif {'abroad', 'any'} & {me.relocation, other.relocation}:
         score += 7
     else:
@@ -138,6 +142,8 @@ def notify(profile: NikahProfile, text: str, url: str) -> None:
     from apps.accounts.telegram import send_message
     from apps.core.models import Notification
 
+    with translation.override(profile.user.language or settings.LANGUAGE_CODE):
+        text = str(text)          # на языке получателя, а не того, кто нажал кнопку
     Notification.objects.create(user=profile.user, text=text, url=url)
     send_message(profile.user, text, url)
 
@@ -147,14 +153,14 @@ def notify(profile: NikahProfile, text: str, url: str) -> None:
 def send_interest(me: NikahProfile, other: NikahProfile) -> NikahMatch | None:
     """Поставить «❤». Встречный интерес уже есть — создаётся пара."""
     if me.gender == other.gender or me.pk == other.pk:
-        raise ValueError('Интерес можно проявить только к анкете противоположного пола')
+        raise ValueError(_('Интерес можно проявить только к анкете противоположного пола'))
     from apps.accounts.models import UserBlock
     if UserBlock.between(me.user, other.user):
-        raise ValueError('Анкета недоступна')
-    _, created = NikahInterest.objects.get_or_create(from_profile=me, to_profile=other)
+        raise ValueError(_('Анкета недоступна'))
+    _obj, created = NikahInterest.objects.get_or_create(from_profile=me, to_profile=other)
     if not NikahInterest.objects.filter(from_profile=other, to_profile=me).exists():
         if created:
-            notify(other, 'Кто-то проявил интерес к вашей анкете никяха', '/nikah/interests/')
+            notify(other, _lazy('Кто-то проявил интерес к вашей анкете никяха'), '/nikah/interests/')
         return None
     sister, brother = (me, other) if me.gender == 'F' else (other, me)
     match, made = NikahMatch.objects.get_or_create(sister=sister, brother=brother)
@@ -164,7 +170,7 @@ def send_interest(me: NikahProfile, other: NikahProfile) -> NikahMatch | None:
             match.save(update_fields=['stage'])
             _ensure_chat(match)
         for p in (sister, brother):
-            notify(p, 'Взаимная симпатия! Откройте, что дальше', f'/nikah/match/{match.pk}/')
+            notify(p, _lazy('Взаимная симпатия! Откройте, что дальше'), f'/nikah/match/{match.pk}/')
     return match
 
 
@@ -210,7 +216,7 @@ def seconds_left(match: NikahMatch, side: str) -> int:
 def open_photo(match: NikahMatch, side: str) -> None:
     match = NikahMatch.objects.select_for_update().get(pk=match.pk)
     if turn(match) != side:
-        raise ValueError('Сейчас не ваша очередь')
+        raise ValueError(_('Сейчас не ваша очередь'))
     if not getattr(match, f'{side}_viewed_at'):
         setattr(match, f'{side}_viewed_at', timezone.now())
         match.save(update_fields=[f'{side}_viewed_at'])
@@ -220,21 +226,21 @@ def open_photo(match: NikahMatch, side: str) -> None:
 def decide(match: NikahMatch, side: str, ok: bool) -> NikahMatch:
     match = refresh(NikahMatch.objects.select_for_update().get(pk=match.pk))
     if turn(match) != side or not getattr(match, f'{side}_viewed_at'):
-        raise ValueError('Решение уже принято или время вышло')
+        raise ValueError(_('Решение уже принято или время вышло'))
     setattr(match, f'{side}_ok', ok)
     match.save(update_fields=[f'{side}_ok'])
     cleanup_tg_photos(match)
     if not ok:
         _close(match)
     elif side == 'sister':
-        notify(match.brother, 'Сестра посмотрела ваше фото и готова продолжить — ваша очередь',
+        notify(match.brother, _lazy('Сестра посмотрела ваше фото и готова продолжить — ваша очередь'),
                f'/nikah/match/{match.pk}/')
     else:
         match.stage = NikahMatch.CHAT
         match.save(update_fields=['stage'])
         _ensure_chat(match)
         for p in (match.sister, match.brother):
-            notify(p, 'Оба согласны — чат открыт. БаракаЛлаху фикум!', f'/nikah/match/{match.pk}/')
+            notify(p, _lazy('Оба согласны — чат открыт. БаракаЛлаху фикум!'), f'/nikah/match/{match.pk}/')
     return match
 
 
@@ -252,7 +258,7 @@ def send_photo_to_telegram(match: NikahMatch, side: str, user) -> bool:
     partner = match.brother if side == 'sister' else match.sister
     msg_id = send_protected_photo(
         user, watermarked_photo(partner, user),
-        f'Фото исчезнет через {photo_minutes()} мин. Скриншот и пересылка запрещены — нарушение = блокировка.',
+        _('Фото исчезнет через {v1} мин. Скриншот и пересылка запрещены — нарушение = блокировка.').format(v1=photo_minutes()),
         f'/nikah/match/{match.pk}/')
     if msg_id:
         setattr(match, f'{side}_tg_msg', msg_id)
@@ -315,7 +321,7 @@ def pay_chat(match: NikahMatch, user) -> None:
     match = NikahMatch.objects.select_for_update().get(pk=match.pk)
     price = chat_price()
     if match.stage != NikahMatch.CHAT or match.brother.user_id != user.pk:
-        raise ValueError('Оплата сейчас недоступна')
+        raise ValueError(_('Оплата сейчас недоступна'))
     if price and not match.chat_paid:
         wallet.debit(user, price, Transaction.PURCHASE, ref=f'nikah:chat:{match.pk}', note='Никях: открытие чата')
     match.chat_paid = True
@@ -340,7 +346,7 @@ def set_witness(profile, user) -> None:
     for t in witness_threads(profile):
         t.participants.add(user)
         t.observers.add(user)
-    notify(profile, f'{user.get_display_name()} теперь свидетель в ваших чатах никяха.', '/nikah/settings/')
+    notify(profile, format_lazy(_lazy('{v0} теперь свидетель в ваших чатах никяха.'), v0=user.get_display_name()), '/nikah/settings/')
 
 
 def remove_witness(profile) -> None:

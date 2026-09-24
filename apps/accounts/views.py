@@ -12,17 +12,25 @@ from django.contrib.auth.views import LogoutView
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.utils.http import url_has_allowed_host_and_scheme
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _lazy
 
 from .audit import log_action
 from .forms import LoginForm, ProfileForm, RegisterForm
 
+CAPTCHA_ERROR = _lazy('Подтвердите, что вы не робот.')
+
 
 def register(request):
+    from apps.core import captcha
+
     form = RegisterForm(request.POST or None)
+    if request.method == 'POST' and not captcha.verify(request):
+        form.add_error(None, CAPTCHA_ERROR)
     if request.method == 'POST' and form.is_valid():
         user = form.save()
         auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-        messages.success(request, f'Добро пожаловать, {user.get_display_name()}!')
+        messages.success(request, _('Добро пожаловать, {v1}!').format(v1=user.get_display_name()))
         next_url = request.POST.get('next') or request.GET.get('next')
         if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
             return redirect(next_url)
@@ -51,10 +59,15 @@ def login_view(request):
     from django.core.cache import cache
 
     if request.method == 'POST' and any(cache.get(k, 0) >= limit for k, limit in _login_keys(request)):
-        messages.error(request, 'Слишком много попыток входа. Подождите 15 минут и попробуйте снова.')
+        messages.error(request, _('Слишком много попыток входа. Подождите 15 минут и попробуйте снова.'))
         return render(request, 'accounts/login.html', {'form': LoginForm(request), 'next': request.GET.get('next', '')},
                       status=429)
+    from apps.core import captcha
+
+    need_captcha = captcha.enabled() and cache.get(f'login_fail:ip:{client_ip(request)}', 0) >= 3
     form = LoginForm(request, request.POST or None)
+    if request.method == 'POST' and need_captcha and not captcha.verify(request):
+        form.add_error(None, CAPTCHA_ERROR)
     if request.method == 'POST' and not form.is_valid():
         for key, _limit in _login_keys(request):
             cache.add(key, 0, LOGIN_WINDOW)
@@ -63,14 +76,17 @@ def login_view(request):
             except ValueError:
                 cache.set(key, 1, LOGIN_WINDOW)
     if request.method == 'POST' and form.is_valid():
+        cache.delete(_login_keys(request)[0][0])   # успешный вход — сброс счётчика этого логина (не IP)
         user = form.get_user()
         auth_login(request, user, backend='apps.accounts.backends.EmailBackend')
-        messages.success(request, f'С возвращением, {user.get_display_name()}!')
+        messages.success(request, _('С возвращением, {v1}!').format(v1=user.get_display_name()))
         next_url = request.POST.get('next') or request.GET.get('next')
         if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
             return redirect(next_url)
         return redirect('core:home')
-    return render(request, 'accounts/login.html', {'form': form, 'next': request.GET.get('next', '')})
+    need_captcha = captcha.enabled() and cache.get(f'login_fail:ip:{client_ip(request)}', 0) >= 3
+    return render(request, 'accounts/login.html', {'form': form, 'next': request.GET.get('next', ''),
+                                                   'need_captcha': need_captcha})
 
 
 # Выход — только POST (Django 5), кнопка-форма в шапке
@@ -91,9 +107,13 @@ def password_reset(request):
     from django.core.cache import cache
 
     if request.method == 'POST':
+        from apps.core import captcha
+        if not captcha.verify(request):
+            messages.error(request, CAPTCHA_ERROR)
+            return redirect('accounts:password_reset')
         key = f'pwreset:{client_ip(request)}'
         if cache.get(key, 0) >= 5:
-            messages.error(request, 'Слишком много запросов. Попробуйте через час.')
+            messages.error(request, _('Слишком много запросов. Попробуйте через час.'))
             return redirect('accounts:password_reset')
         cache.set(key, cache.get(key, 0) + 1, 3600)
     return _reset_view(request)
@@ -113,7 +133,7 @@ def profile(request):
     form = ProfileForm(request.POST or None, request.FILES or None, instance=request.user)
     if request.method == 'POST' and form.is_valid():
         form.save()
-        messages.success(request, 'Профиль обновлён.')
+        messages.success(request, _('Профиль обновлён.'))
         return redirect('accounts:profile')
     return render(request, 'accounts/profile.html', {'form': form})
 
@@ -132,9 +152,9 @@ def two_factor_setup(request):
             device.save()
             django_otp.login(request, device)
             log_action(request, 'Подключена 2FA', request.user.email)
-            messages.success(request, '2FA подключена.')
+            messages.success(request, _('2FA подключена.'))
             return redirect('core:home')
-        messages.error(request, 'Код неверный — проверьте приложение и время на телефоне.')
+        messages.error(request, _('Код неверный — проверьте приложение и время на телефоне.'))
 
     # QR данными (data-URI), без внешних сервисов
     img = qrcode.make(device.config_url)
@@ -153,7 +173,7 @@ def two_factor_verify(request):
             if device.verify_token(code):
                 django_otp.login(request, device)
                 return redirect('core:home')
-        messages.error(request, 'Код неверный.')
+        messages.error(request, _('Код неверный.'))
     return render(request, 'accounts/2fa_verify.html')
 
 
@@ -195,11 +215,10 @@ def block_toggle(request, pk):
     obj, created = UserBlock.objects.get_or_create(blocker=request.user, blocked=other)
     if not created:
         obj.delete()
-        messages.success(request, f'{other.get_display_name()} разблокирован(а).')
+        messages.success(request, _('{v0} разблокирован(а).').format(v0=other.get_display_name()))
     else:
         log_action(request, 'Заблокирован пользователь', f'#{other.pk}')
-        messages.success(request, f'{other.get_display_name()} заблокирован(а): не сможет писать вам. '
-                                  'Разблокировать — Профиль → Заблокированные.')
+        messages.success(request, _('{v0} заблокирован(а): не сможет писать вам. Разблокировать — Профиль → Заблокированные.').format(v0=other.get_display_name()))
     return redirect(nxt or 'accounts:blocked')
 
 
@@ -217,14 +236,14 @@ def delete_account(request):
     from django.contrib.auth import logout
 
     if request.method == 'POST':
-        if request.POST.get('confirm', '').strip().lower() != 'удалить':
-            messages.error(request, 'Напишите слово «удалить», чтобы подтвердить.')
+        if request.POST.get('confirm', '').strip().lower() != _('удалить'):
+            messages.error(request, _('Напишите слово «удалить», чтобы подтвердить.'))
             return redirect('accounts:delete')
         user = request.user
         _wipe_user(user)
         log_action(request, 'Аккаунт удалён владельцем', f'#{user.pk}')
         logout(request)
-        messages.success(request, 'Аккаунт удалён. Да вознаградит вас Аллах благом.')
+        messages.success(request, _('Аккаунт удалён. Да вознаградит вас Аллах благом.'))
         return redirect('core:home')
     return render(request, 'accounts/delete.html')
 

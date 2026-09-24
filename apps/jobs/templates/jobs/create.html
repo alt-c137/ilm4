@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
-{% block title %}Вакансия — {{ block.super }}{% endblock %}
+{% load i18n %}
+{% block title %}{% translate "Вакансия —" %} {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="page">
-  <h1>Добавить вакансию</h1>
+  <h1>{% translate "Добавить вакансию" %}</h1>
   <form method="post" class="form form--wide">{% csrf_token %}
     {% for field in form %}
       <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span class="req">*</span>{% endif %}</label>
@@ -11,7 +12,7 @@
       {% if field.errors %}<span class="err">{{ field.errors.0 }}</span>{% endif %}
     {% endfor %}
     {% include 'includes/pledge.html' %}
-    <button type="submit" class="btn btn--p">Отправить на модерацию</button>
+    <button type="submit" class="btn btn--p">{% translate "Отправить на модерацию" %}</button>
   </form>
 </div>
 {% endblock %}

@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.translation import gettext_lazy as _lazy
 
 
 class Org(models.Model):
@@ -9,35 +10,35 @@ class Org(models.Model):
     """
 
     KINDS = [
-        ('intl', 'Международная организация'),
-        ('unhcr', 'УВКБ ООН'),
-        ('embassy', 'Посольство'),
-        ('redcrescent', 'Красный Полумесяц / Красный Крест'),
-        ('ngo', 'Общественная организация'),
-        ('lawyer', 'Адвокат / юридическая помощь'),
-        ('other', 'Другое'),
+        ('intl', _lazy('Международная организация')),
+        ('unhcr', _lazy('УВКБ ООН')),
+        ('embassy', _lazy('Посольство')),
+        ('redcrescent', _lazy('Красный Полумесяц / Красный Крест')),
+        ('ngo', _lazy('Общественная организация')),
+        ('lawyer', _lazy('Адвокат / юридическая помощь')),
+        ('other', _lazy('Другое')),
     ]
 
     REGIONS = [
-        ('intl', 'Весь мир'),
-        ('asia', 'Азия'),
-        ('europe', 'Европа'),
-        ('mideast', 'Ближний Восток и Африка'),
-        ('americas', 'Америка'),
+        ('intl', _lazy('Весь мир')),
+        ('asia', _lazy('Азия')),
+        ('europe', _lazy('Европа')),
+        ('mideast', _lazy('Ближний Восток и Африка')),
+        ('americas', _lazy('Америка')),
     ]
     # регион по стране — подставляется сам, если в админке не выбран
     REGION_BY_COUNTRY = {
-        'Германия': 'europe', 'Россия': 'europe', 'Франция': 'europe', 'Великобритания': 'europe',
-        'Нидерланды': 'europe', 'Бельгия': 'europe', 'Швеция': 'europe', 'Норвегия': 'europe',
-        'Австрия': 'europe', 'Швейцария': 'europe', 'Италия': 'europe', 'Испания': 'europe',
-        'Польша': 'europe', 'Чехия': 'europe', 'Финляндия': 'europe', 'Дания': 'europe',
-        'Евросоюз': 'europe', 'Украина': 'europe', 'Грузия': 'europe', 'Армения': 'asia',
-        'Азербайджан': 'asia', 'Турция': 'asia', 'Казахстан': 'asia', 'Узбекистан': 'asia',
-        'Кыргызстан': 'asia', 'Таджикистан': 'asia', 'Туркменистан': 'asia', 'Афганистан': 'asia',
-        'Пакистан': 'asia', 'Иран': 'asia', 'Малайзия': 'asia', 'Индонезия': 'asia',
-        'Иордания': 'mideast', 'Ливан': 'mideast', 'Египет': 'mideast', 'ОАЭ': 'mideast',
-        'Саудовская Аравия': 'mideast', 'Ирак': 'mideast', 'Сирия': 'mideast',
-        'США': 'americas', 'Канада': 'americas',
+        _lazy('Германия'): 'europe', _lazy('Россия'): 'europe', _lazy('Франция'): 'europe', _lazy('Великобритания'): 'europe',
+        _lazy('Нидерланды'): 'europe', _lazy('Бельгия'): 'europe', _lazy('Швеция'): 'europe', _lazy('Норвегия'): 'europe',
+        _lazy('Австрия'): 'europe', _lazy('Швейцария'): 'europe', _lazy('Италия'): 'europe', _lazy('Испания'): 'europe',
+        _lazy('Польша'): 'europe', _lazy('Чехия'): 'europe', _lazy('Финляндия'): 'europe', _lazy('Дания'): 'europe',
+        _lazy('Евросоюз'): 'europe', _lazy('Украина'): 'europe', _lazy('Грузия'): 'europe', _lazy('Армения'): 'asia',
+        _lazy('Азербайджан'): 'asia', _lazy('Турция'): 'asia', _lazy('Казахстан'): 'asia', _lazy('Узбекистан'): 'asia',
+        _lazy('Кыргызстан'): 'asia', _lazy('Таджикистан'): 'asia', _lazy('Туркменистан'): 'asia', _lazy('Афганистан'): 'asia',
+        _lazy('Пакистан'): 'asia', _lazy('Иран'): 'asia', _lazy('Малайзия'): 'asia', _lazy('Индонезия'): 'asia',
+        _lazy('Иордания'): 'mideast', _lazy('Ливан'): 'mideast', _lazy('Египет'): 'mideast', _lazy('ОАЭ'): 'mideast',
+        _lazy('Саудовская Аравия'): 'mideast', _lazy('Ирак'): 'mideast', _lazy('Сирия'): 'mideast',
+        _lazy('США'): 'americas', _lazy('Канада'): 'americas',
     }
 
     country = models.CharField('страна', max_length=80, db_index=True)

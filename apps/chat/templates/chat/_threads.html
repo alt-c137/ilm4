@@ -1,31 +1,31 @@
-{% load icons %}<aside class="tg__side">
+{% load i18n %}{% load icons %}<aside class="tg__side">
   <div class="tg__sidehead">
-    <h1 class="tg__title">Чаты</h1>
+    <h1 class="tg__title">{% translate "Чаты" %}</h1>
     <span class="tg__heads">
-      {% if contacts_on %}<a class="tg__new" href="{% url 'chat:contacts' %}" title="Найти знакомых из контактов" aria-label="Найти знакомых">{% ico 'user' %}</a>{% endif %}
-      <a class="tg__new" href="{% url 'chat:start' %}" title="Новый диалог" aria-label="Новый диалог">{% ico 'edit' %}</a>
+      {% if contacts_on %}<a class="tg__new" href="{% url 'chat:contacts' %}" title="{% translate 'Найти знакомых из контактов' %}" aria-label="{% translate 'Найти знакомых' %}">{% ico 'user' %}</a>{% endif %}
+      <a class="tg__new" href="{% url 'chat:start' %}" title="{% translate 'Новый диалог' %}" aria-label="{% translate 'Новый диалог' %}">{% ico 'edit' %}</a>
     </span>
   </div>
-  <label class="tg__search">{% ico 'search' %}<input type="search" id="tg-q" placeholder="Поиск" autocomplete="off" aria-label="Поиск по чатам"></label>
+  <label class="tg__search">{% ico 'search' %}<input type="search" id="tg-q" placeholder="{% translate 'Поиск' %}" autocomplete="off" aria-label="{% translate 'Поиск по чатам' %}"></label>
   <nav class="tg__list" id="tg-list">
     {% for r in rows %}
     <a class="tgrow{% if thread and r.thread.pk == thread.pk %} on{% endif %}" href="{% url 'chat:thread' r.thread.pk %}"
        data-q="{{ r.other.get_display_name|lower }} {{ r.thread.subject|lower }}">
       {% include 'chat/_ava.html' with u=r.other hue=r.hue %}
       <span class="tgrow__b">
-        <span class="tgrow__top"><b>{{ r.other.get_display_name|default:"Удалённый аккаунт" }}</b><time>{{ r.when }}</time></span>
+        <span class="tgrow__top"><b>{{ r.other.get_display_name|default:_("Удалённый аккаунт") }}</b><time>{{ r.when }}</time></span>
         <span class="tgrow__bot">
-          <span class="tgrow__msg">{% if r.last %}{% if r.mine %}<i>Вы:</i> {% endif %}{% if r.kind == 'photo' %}<i class="tgk">{% ico 'image' %}</i>{% elif r.kind == 'voice' %}<i class="tgk">{% ico 'mic' %}</i>{% elif r.kind == 'circle' %}<i class="tgk">{% ico 'circlecam' %}</i>{% elif r.kind == 'system' %}<i class="tgk">{% ico 'call' %}</i>{% endif %}{{ r.preview|truncatechars:60 }}{% elif r.thread.subject %}{{ r.thread.subject }}{% else %}Нет сообщений — напишите первым{% endif %}</span>
-          {% if r.unread %}<span class="tgrow__badge">{{ r.unread }}</span>{% elif r.mine and r.last.read_at %}<span class="tick tick--2" title="Прочитано"></span>{% elif r.mine %}<span class="tick" title="Отправлено"></span>{% endif %}
+          <span class="tgrow__msg">{% if r.last %}{% if r.mine %}<i>{% translate "Вы:" %}</i> {% endif %}{% if r.kind == 'photo' %}<i class="tgk">{% ico 'image' %}</i>{% elif r.kind == 'voice' %}<i class="tgk">{% ico 'mic' %}</i>{% elif r.kind == 'circle' %}<i class="tgk">{% ico 'circlecam' %}</i>{% elif r.kind == 'system' %}<i class="tgk">{% ico 'call' %}</i>{% endif %}{{ r.preview|truncatechars:60 }}{% elif r.thread.subject %}{{ r.thread.subject }}{% else %}{% translate "Нет сообщений — напишите первым" %}{% endif %}</span>
+          {% if r.unread %}<span class="tgrow__badge">{{ r.unread }}</span>{% elif r.mine and r.last.read_at %}<span class="tick tick--2" title="{% translate 'Прочитано' %}"></span>{% elif r.mine %}<span class="tick" title="{% translate 'Отправлено' %}"></span>{% endif %}
         </span>
       </span>
     </a>
     {% empty %}
     <div class="tg__empty">
       <div class="empty__plug">{% ico 'chat' %}</div>
-      <b>Диалогов пока нет</b>
-      <span>Напишите продавцу из объявления или начните новый диалог.</span>
-      <a class="btn btn--p" href="{% url 'chat:start' %}">Новый диалог</a>
+      <b>{% translate "Диалогов пока нет" %}</b>
+      <span>{% translate "Напишите продавцу из объявления или начните новый диалог." %}</span>
+      <a class="btn btn--p" href="{% url 'chat:start' %}">{% translate "Новый диалог" %}</a>
     </div>
     {% endfor %}
   </nav>

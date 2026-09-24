@@ -1,6 +1,7 @@
 
 from django.conf import settings
 from django.db import models
+from django.utils.translation import gettext_lazy as _lazy
 
 
 class Wallet(models.Model):
@@ -35,10 +36,10 @@ class Transaction(models.Model):
     ESCROW_REFUND = 'escrow_ref'   # эскроу возвращён покупателю
     ADMIN_ADJUST = 'admin_adjust'  # корректировка админом
     KINDS = [
-        (TOPUP, 'Пополнение'), (EARN, 'Зачисление'),
-        (PURCHASE, 'Списание'), (PAYOUT, 'Вывод'),
-        (ESCROW_HOLD, 'Эскроу: заморозка'), (ESCROW_RELEASE, 'Эскроу: выплата'),
-        (ESCROW_REFUND, 'Эскроу: возврат'), (ADMIN_ADJUST, 'Корректировка'),
+        (TOPUP, _lazy('Пополнение')), (EARN, _lazy('Зачисление')),
+        (PURCHASE, _lazy('Списание')), (PAYOUT, _lazy('Вывод')),
+        (ESCROW_HOLD, _lazy('Эскроу: заморозка')), (ESCROW_RELEASE, _lazy('Эскроу: выплата')),
+        (ESCROW_REFUND, _lazy('Эскроу: возврат')), (ADMIN_ADJUST, _lazy('Корректировка')),
     ]
     DEBIT_KINDS = {PURCHASE, PAYOUT, ESCROW_HOLD}   # уменьшают баланс
     CREDIT_KINDS = {TOPUP, EARN, ESCROW_RELEASE, ESCROW_REFUND, ADMIN_ADJUST}
@@ -71,7 +72,7 @@ class PayoutRequest(models.Model):
     """Заявка на вывод средств. Обрабатывает админ вручную (на старте)."""
 
     PENDING, DONE, REJECTED = 'pending', 'done', 'rejected'
-    STATUSES = [(PENDING, 'Ожидает'), (DONE, 'Выполнена'), (REJECTED, 'Отклонена')]
+    STATUSES = [(PENDING, _lazy('Ожидает')), (DONE, _lazy('Выполнена')), (REJECTED, _lazy('Отклонена'))]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                              related_name='payout_requests', verbose_name='пользователь')
@@ -100,8 +101,8 @@ class EscrowDeal(models.Model):
     """
 
     HOLD, RELEASED, REFUNDED = 'hold', 'released', 'refunded'
-    STATUSES = [(HOLD, 'Деньги заморожены'), (RELEASED, 'Выплачена продавцу'),
-                (REFUNDED, 'Возвращена покупателю')]
+    STATUSES = [(HOLD, _lazy('Деньги заморожены')), (RELEASED, _lazy('Выплачена продавцу')),
+                (REFUNDED, _lazy('Возвращена покупателю'))]
 
     buyer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                               related_name='escrow_buys', verbose_name='покупатель')

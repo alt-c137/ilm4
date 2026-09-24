@@ -15,6 +15,7 @@ from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from apps.accounts.audit import log_action
@@ -45,7 +46,7 @@ def profile_required(view):
     def wrapped(request, *args, **kwargs):
         me = _me(request)
         if me is None:
-            messages.info(request, 'Сначала заполните анкету — это займёт около 5 минут.')
+            messages.info(request, _('Сначала заполните анкету — это займёт около 5 минут.'))
             return redirect('nikah:create')
         request.nikah = me
         deck.touch(me)
@@ -145,9 +146,9 @@ def restore(request):
     try:
         n = deck.restore_skipped(request.nikah, request.user)
     except InsufficientFunds:
-        messages.error(request, 'На балансе не хватает средств — пополните кошелёк.')
+        messages.error(request, _('На балансе не хватает средств — пополните кошелёк.'))
         return redirect('wallet:index')
-    messages.success(request, f'Вернули в ленту: {n}.' if n else 'Отклонённых анкет нет.')
+    messages.success(request, _('Вернули в ленту: {n}.').format(n=n) if n else _('Отклонённых анкет нет.'))
     return redirect('nikah:home')
 
 
@@ -159,12 +160,12 @@ def premium(request):
         try:
             deck.buy_premium(me, request.user)
         except InsufficientFunds:
-            messages.error(request, 'На балансе не хватает средств — пополните кошелёк.')
+            messages.error(request, _('На балансе не хватает средств — пополните кошелёк.'))
             return redirect('wallet:index')
         except ValueError as exc:
             messages.error(request, str(exc))
             return redirect('nikah:premium')
-        messages.success(request, 'Премиум подключён. БаракаЛлаху фик!')
+        messages.success(request, _('Премиум подключён. БаракаЛлаху фик!'))
         return redirect('nikah:premium')
     return render(request, 'nikah/premium.html', _ctx(
         request, 'me', price=st.nikah_premium_price, days=st.nikah_premium_days, limit=st.nikah_daily_limit,
@@ -193,7 +194,7 @@ def interest(request, pk):
     me = request.nikah
     p = get_object_or_404(NikahProfile, pk=pk, status=Moderation.APPROVED, is_active=True)
     if not me.is_published:
-        text = 'Интерес можно проявлять, когда вашу анкету одобрит модератор.'
+        text = _('Интерес можно проявлять, когда вашу анкету одобрит модератор.')
         if _wants_json(request):
             return JsonResponse({'ok': False, 'error': text}, status=403)
         messages.info(request, text)
@@ -217,9 +218,9 @@ def interest(request, pk):
         return JsonResponse({'ok': True, 'left': deck.left_today(me),
                              'match': reverse('nikah:match', args=[match.pk]) if match else ''})
     if match:
-        messages.success(request, 'Взаимная симпатия! Посмотрите, что дальше.')
+        messages.success(request, _('Взаимная симпатия! Посмотрите, что дальше.'))
         return redirect('nikah:match', pk=match.pk)
-    messages.success(request, 'Интерес отправлен. Если он взаимный — вы оба узнаете.')
+    messages.success(request, _('Интерес отправлен. Если он взаимный — вы оба узнаете.'))
     return redirect(back if back.startswith('/nikah/') else 'nikah:home')
 
 
@@ -306,7 +307,7 @@ def match(request, pk):
 def match_open(request, pk):
     me, m = _my_match(request, pk)
     if request.POST.get('oath') != '1':
-        messages.error(request, 'Подтвердите обещание не сохранять и не пересылать фото.')
+        messages.error(request, _('Подтвердите обещание не сохранять и не пересылать фото.'))
         return redirect('nikah:match', pk=pk)
     try:
         services.open_photo(m, m.side(me))
@@ -317,9 +318,9 @@ def match_open(request, pk):
     if request.POST.get('via') == 'tg':
         m.refresh_from_db()
         if services.send_photo_to_telegram(m, m.side(me), request.user):
-            messages.success(request, 'Фото отправлено в Telegram — откройте чат с ботом. Решение примите здесь.')
+            messages.success(request, _('Фото отправлено в Telegram — откройте чат с ботом. Решение примите здесь.'))
         else:
-            messages.error(request, 'Не удалось отправить в Telegram — фото открыто здесь.')
+            messages.error(request, _('Не удалось отправить в Telegram — фото открыто здесь.'))
     return redirect('nikah:match', pk=pk)
 
 
@@ -357,7 +358,7 @@ def match_pay(request, pk):
     try:
         services.pay_chat(m, request.user)
     except InsufficientFunds:
-        messages.error(request, 'На балансе не хватает средств — пополните кошелёк.')
+        messages.error(request, _('На балансе не хватает средств — пополните кошелёк.'))
         return redirect('wallet:index')
     except ValueError as exc:
         messages.error(request, str(exc))
@@ -399,9 +400,9 @@ def edit(request):
         try:
             photo = clean_image(request.FILES.get('photo'))
         except ValidationError as exc:
-            photo_error = exc.messages[0] if exc.messages else 'Загрузите фото JPG или PNG.'
+            photo_error = exc.messages[0] if exc.messages else _('Загрузите фото JPG или PNG.')
         if request.POST.get('photo_mode') == 'exchange' and not (photo or me.has_photo) and not photo_error:
-            photo_error = 'Загрузите фото или выберите «Без фото».'
+            photo_error = _('Загрузите фото или выберите «Без фото».')
         if form.is_valid() and not photo_error:
             profile = form.save(commit=False)
             texts_changed = any(getattr(profile, f) != before[f] for f in TEXT_FIELDS)
@@ -414,9 +415,9 @@ def edit(request):
             if profile.status == Moderation.PENDING and (texts_changed or photo is not None):
                 from .bot import send_for_moderation
                 send_for_moderation(profile)
-                messages.success(request, 'Сохранено. Тексты и фото проверит модератор — обычно до суток.')
+                messages.success(request, _('Сохранено. Тексты и фото проверит модератор — обычно до суток.'))
             else:
-                messages.success(request, 'Сохранено.')
+                messages.success(request, _('Сохранено.'))
             return redirect('nikah:mine')
     return render(request, 'nikah/edit.html', _ctx(
         request, 'me', form=form, photo_error=photo_error, p=me, opts=_opts(), geo=_geo(),
@@ -428,14 +429,18 @@ def _opts():
         'marital': C.MARITAL, 'wife_number': C.WIFE_NUMBER, 'polygyny': C.POLYGYNY,
         'madhhab': C.MADHHAB, 'aqida': C.AQIDA, 'prayer': C.PRAYER, 'quran': C.QURAN,
         'where_allah': C.WHERE_ALLAH, 'children_want': C.CHILDREN_WANT, 'children_accept': C.CHILDREN_ACCEPT,
-        'ready_when': C.READY, 'has_children': [('no', 'Нет'), ('yes', 'Есть')],
+        'ready_when': C.READY, 'has_children': [('no', _('Нет')), ('yes', _('Есть'))],
         'look_m': C.LOOK_M, 'look_f': C.LOOK_F, 'relocation': C.RELOCATION, 'photo_mode': C.PHOTO_MODE,
     }
 
 
 def _geo():
-    from .geo import CITIES, COUNTRIES
-    return {'countries': COUNTRIES, 'cities': CITIES}
+    """Страны и города для выбора — на языке интерфейса (в базе хранится русское название)."""
+    from django.utils.translation import get_language
+
+    from .geo import CITIES, countries_for, country_name
+    lang = (get_language() or 'ru')[:2]
+    return {'countries': countries_for(lang), 'cities': {country_name(k, lang): v for k, v in CITIES.items()}}
 
 
 @profile_required
@@ -445,11 +450,11 @@ def settings_page(request):
     if request.method == 'POST' and request.POST.get('photo_mode') in ('exchange', 'none'):
         mode = request.POST['photo_mode']
         if mode == 'exchange' and not me.has_photo:
-            messages.info(request, 'Сначала добавьте фото в анкете.')
+            messages.info(request, _('Сначала добавьте фото в анкете.'))
             return redirect(reverse('nikah:edit') + '#photo')
         me.photo_mode = mode
         me.save(update_fields=['photo_mode'])
-        messages.success(request, 'Сохранено.')
+        messages.success(request, _('Сохранено.'))
         return redirect('nikah:settings')
     from django.conf import settings as dj
     bot = getattr(dj, 'TELEGRAM_BOT_USERNAME', '')
@@ -468,9 +473,9 @@ def verify(request):
     """Верификация кружком: бот присылает инструкцию в Telegram."""
     from .bot import send_verify_instructions
     if request.user.telegram_id and send_verify_instructions(request.user.telegram_id):
-        messages.success(request, 'Инструкция отправлена в Telegram — запишите видео-кружок боту.')
+        messages.success(request, _('Инструкция отправлена в Telegram — запишите видео-кружок боту.'))
     else:
-        messages.info(request, 'Верификация проходит в Telegram: откройте бота по кнопке ниже.')
+        messages.info(request, _('Верификация проходит в Telegram: откройте бота по кнопке ниже.'))
     return redirect('nikah:settings')
 
 
@@ -482,17 +487,17 @@ def _wizard(request, instance):
         faith = {k: request.POST.get(f'faith_{k}', '') for k, _q, _o in C.FAITH_QUESTIONS}
         faith_given = all(v in ('yes', 'no') for v in faith.values())
         if not editing and not faith_given:
-            step_errors[14] = 'Ответьте на все вопросы.'
+            step_errors[14] = _('Ответьте на все вопросы.')
         if not editing and not all(request.POST.get(f'agree_{k}') == '1' for k, _t, _d in C.PLEDGES):
-            step_errors[15] = 'Примите все пункты, чтобы завершить регистрацию.'
+            step_errors[15] = _('Примите все пункты, чтобы завершить регистрацию.')
         photo = None
         try:
             photo = clean_image(request.FILES.get('photo'))
         except ValidationError as exc:
-            step_errors[13] = exc.messages[0] if exc.messages else 'Загрузите фото в формате JPG или PNG.'
+            step_errors[13] = exc.messages[0] if exc.messages else _('Загрузите фото в формате JPG или PNG.')
         has_photo = photo is not None or (editing and instance.has_photo)
         if request.POST.get('photo_mode') == 'exchange' and not has_photo and 13 not in step_errors:
-            step_errors[13] = 'Загрузите фото или выберите «Без фото».'
+            step_errors[13] = _('Загрузите фото или выберите «Без фото».')
         if form.is_valid() and not step_errors:
             profile = form.save(commit=False)
             profile.user = request.user
@@ -514,7 +519,7 @@ def _wizard(request, instance):
                        f'#{profile.pk}')
             from .bot import send_for_moderation
             send_for_moderation(profile)
-            messages.success(request, 'Анкета отправлена на проверку. Обычно это занимает до суток.')
+            messages.success(request, _('Анкета отправлена на проверку. Обычно это занимает до суток.'))
             return redirect('nikah:mine')
         step = min([form.first_error_step() if form.errors else 99, *step_errors.keys()])
     # первая ошибка каждого шага — для вывода под вопросами
@@ -531,7 +536,7 @@ def _wizard(request, instance):
             'madhhab': C.MADHHAB, 'aqida': C.AQIDA, 'prayer': C.PRAYER, 'quran': C.QURAN,
             'where_allah': C.WHERE_ALLAH, 'children_want': C.CHILDREN_WANT,
             'children_accept': C.CHILDREN_ACCEPT, 'ready_when': C.READY,
-            'has_children': [('no', 'Нет'), ('yes', 'Есть')],
+            'has_children': [('no', _('Нет')), ('yes', _('Есть'))],
             'look_m': C.LOOK_M, 'look_f': C.LOOK_F, 'relocation': C.RELOCATION, 'photo_mode': C.PHOTO_MODE,
         },
         faith_cur={k: request.POST.get(f'faith_{k}') or (instance.faith_answers.get(k) if editing else '')
@@ -557,12 +562,12 @@ def boost(request):
     try:
         wallet.debit(request.user, price, Transaction.PURCHASE, ref='nikah:boost', note='Буст анкеты никаха')
     except InsufficientFunds:
-        messages.error(request, 'Недостаточно средств — пополните кошелёк.')
+        messages.error(request, _('Недостаточно средств — пополните кошелёк.'))
         return redirect('wallet:index')
     base = profile.boosted_until if profile.is_boosted else timezone.now()
     profile.boosted_until = base + timedelta(days=7)
     profile.save(update_fields=['boosted_until'])
-    messages.success(request, 'Анкета поднята на 7 дней.')
+    messages.success(request, _('Анкета поднята на 7 дней.'))
     return redirect('nikah:mine')
 
 
@@ -574,7 +579,7 @@ def pause(request):
     if profile:
         profile.is_active = not profile.is_active
         profile.save(update_fields=['is_active'])
-        messages.success(request, 'Анкета снова в ленте.' if profile.is_active else 'Анкета скрыта из ленты.')
+        messages.success(request, _('Анкета снова в ленте.') if profile.is_active else _('Анкета скрыта из ленты.'))
     return redirect('nikah:mine')
 
 
@@ -600,11 +605,11 @@ def witness_invite(request):
     me = request.nikah
     if request.POST.get('remove') == '1':
         services.remove_witness(me)
-        messages.success(request, 'Свидетель убран из ваших чатов.')
+        messages.success(request, _('Свидетель убран из ваших чатов.'))
     else:
         me.witness_token = secrets.token_urlsafe(16)[:24]
         me.save(update_fields=['witness_token'])
-        messages.success(request, 'Ссылка готова — отправьте её махраму. Она одноразовая.')
+        messages.success(request, _('Ссылка готова — отправьте её махраму. Она одноразовая.'))
     return redirect(reverse('nikah:settings') + '#witness')
 
 
@@ -614,14 +619,14 @@ def witness_join(request, token):
     """Махрам открыл ссылку: подтверждает, что становится свидетелем."""
     p = NikahProfile.objects.filter(witness_token=token).exclude(witness_token='').first()
     if p is None:
-        messages.error(request, 'Ссылка недействительна или уже использована.')
+        messages.error(request, _('Ссылка недействительна или уже использована.'))
         return redirect('nikah:home')
     if p.user_id == request.user.pk:
-        messages.info(request, 'Это ваша ссылка — отправьте её махраму.')
+        messages.info(request, _('Это ваша ссылка — отправьте её махраму.'))
         return redirect('nikah:settings')
     if request.method == 'POST':
         services.set_witness(p, request.user)
         log_action(request, 'Никях: стал свидетелем', f'анкета #{p.pk}')
-        messages.success(request, f'Вы свидетель в чатах никяха: {p.display_name}. Чаты — в разделе «Чаты» сайта.')
+        messages.success(request, _('Вы свидетель в чатах никяха: {v1}. Чаты — в разделе «Чаты» сайта.').format(v1=p.display_name))
         return redirect('chat:inbox')
     return render(request, 'nikah/witness_join.html', _ctx(request, 'me', p=p))

@@ -1,70 +1,71 @@
 {% extends 'nikah/_base.html' %}
+{% load i18n %}
 {% load nikah_tags %}
-{% block nk_title %}Редактирование анкеты · Никях{% endblock %}
-{% block nk_back %}<a class="nkback" href="{% url 'nikah:mine' %}" data-back>{% nk_icon 'back' %}Назад</a>{% endblock %}
+{% block nk_title %}{% translate "Редактирование анкеты · Никях" %}{% endblock %}
+{% block nk_back %}<a class="nkback" href="{% url 'nikah:mine' %}" data-back>{% nk_icon 'back' %}{% translate "Назад" %}</a>{% endblock %}
 {% block nk %}
 <form method="post" enctype="multipart/form-data" class="nkedit" id="nkedit" novalidate>{% csrf_token %}
   <input type="hidden" name="gender" value="{{ p.gender }}">
-  <div class="nkedit__head"><h1>Редактирование анкеты</h1><span class="nkedit__state" id="nk-state">Без изменений</span></div>
-  {% if form.errors or photo_error %}<div class="nknote nknote--err">{% nk_icon 'x' %}<div><b>Проверьте отмеченные поля.</b>{% for f, e in form.errors.items %} {{ e.0 }}{% endfor %} {{ photo_error }}</div></div>{% endif %}
+  <div class="nkedit__head"><h1>{% translate "Редактирование анкеты" %}</h1><span class="nkedit__state" id="nk-state">{% translate "Без изменений" %}</span></div>
+  {% if form.errors or photo_error %}<div class="nknote nknote--err">{% nk_icon 'x' %}<div><b>{% translate "Проверьте отмеченные поля." %}</b>{% for f, e in form.errors.items %} {{ e.0 }}{% endfor %} {{ photo_error }}</div></div>{% endif %}
 
-  <section class="nkfs"><h4>Основное</h4>
-    <label class="nkf"><span>Имя или ник</span><input type="text" name="name" maxlength="40" value="{{ form.name.value|default:'' }}"></label>
+  <section class="nkfs"><h4>{% translate "Основное" %}</h4>
+    <label class="nkf"><span>{% translate "Имя или ник" %}</span><input type="text" name="name" maxlength="40" value="{{ form.name.value|default:'' }}"></label>
     <div class="nkgrid2">
-      <label class="nkf"><span>Возраст</span><select name="age">{% for v in ages %}<option value="{{ v }}"{% if v == form.age.value|add:0 %} selected{% endif %}>{{ v }}</option>{% endfor %}</select></label>
-      <div class="nkf"><span>Ищу возраст {% if p.gender == 'M' %}жены{% else %}мужа{% endif %}</span>
-        <div class="nkrange2"><select name="age_from">{% for v in ages %}<option value="{{ v }}"{% if v == form.age_from.value|add:0 %} selected{% endif %}>от {{ v }}</option>{% endfor %}</select><span>—</span><select name="age_to">{% for v in ages %}<option value="{{ v }}"{% if v == form.age_to.value|add:0 %} selected{% endif %}>до {{ v }}</option>{% endfor %}</select></div></div>
+      <label class="nkf"><span>{% translate "Возраст" %}</span><select name="age">{% for v in ages %}<option value="{{ v }}"{% if v == form.age.value|add:0 %} selected{% endif %}>{{ v }}</option>{% endfor %}</select></label>
+      <div class="nkf"><span>{% translate "Ищу возраст" %} {% if p.gender == 'M' %}{% translate "жены" %}{% else %}{% translate "мужа" %}{% endif %}</span>
+        <div class="nkrange2"><select name="age_from">{% for v in ages %}<option value="{{ v }}"{% if v == form.age_from.value|add:0 %} selected{% endif %}>{% translate "от" %} {{ v }}</option>{% endfor %}</select><span>—</span><select name="age_to">{% for v in ages %}<option value="{{ v }}"{% if v == form.age_to.value|add:0 %} selected{% endif %}>{% translate "до" %} {{ v }}</option>{% endfor %}</select></div></div>
     </div>
   </section>
 
-  <section class="nkfs"><h4>Откуда</h4>
-    <div class="nkf"><span>Страна</span><div class="nkpick" data-pick="country"><input type="text" name="country" maxlength="80" value="{{ form.country.value|default:'' }}"></div></div>
-    <div class="nkf"><span>Город</span><div class="nkpick" data-pick="city"><input type="text" name="city" maxlength="80" value="{{ form.city.value|default:'' }}"></div></div>
-    <label class="nkf"><span>Национальность</span><input type="text" name="nationality" maxlength="80" value="{{ form.nationality.value|default:'' }}"></label>
+  <section class="nkfs"><h4>{% translate "Откуда" %}</h4>
+    <div class="nkf"><span>{% translate "Страна" %}</span><div class="nkpick" data-pick="country"><input type="text" name="country" maxlength="80" value="{{ form.country.value|nk_country }}"></div></div>
+    <div class="nkf"><span>{% translate "Город" %}</span><div class="nkpick" data-pick="city"><input type="text" name="city" maxlength="80" value="{{ form.city.value|default:'' }}"></div></div>
+    <label class="nkf"><span>{% translate "Национальность" %}</span><input type="text" name="nationality" maxlength="80" value="{{ form.nationality.value|default:'' }}"></label>
   </section>
 
-  <section class="nkfs"><h4>Внешность</h4>
+  <section class="nkfs"><h4>{% translate "Внешность" %}</h4>
     <div class="nkgrid2">
-      <label class="nkf"><span>Рост, см</span><select name="height"><option value="">не указывать</option>{% for v in heights %}<option value="{{ v }}"{% if v == form.height.value|add:0 %} selected{% endif %}>{{ v }}</option>{% endfor %}</select></label>
-      <label class="nkf"><span>Вес, кг</span><select name="weight"><option value="">не указывать</option>{% for v in weights %}<option value="{{ v }}"{% if v == form.weight.value|add:0 %} selected{% endif %}>{{ v }}</option>{% endfor %}</select></label>
+      <label class="nkf"><span>{% translate "Рост, см" %}</span><select name="height"><option value="">{% translate "не указывать" %}</option>{% for v in heights %}<option value="{{ v }}"{% if v == form.height.value|add:0 %} selected{% endif %}>{{ v }}</option>{% endfor %}</select></label>
+      <label class="nkf"><span>{% translate "Вес, кг" %}</span><select name="weight"><option value="">{% translate "не указывать" %}</option>{% for v in weights %}<option value="{{ v }}"{% if v == form.weight.value|add:0 %} selected{% endif %}>{{ v }}</option>{% endfor %}</select></label>
     </div>
-    <div class="nkf"><span>{% if p.gender == 'M' %}Борода{% else %}Покрытие{% endif %}</span>
+    <div class="nkf"><span>{% if p.gender == 'M' %}{% translate "Борода" %}{% else %}{% translate "Покрытие" %}{% endif %}</span>
       {% if p.gender == 'M' %}{% include 'nikah/_pills.html' with name='look' options=opts.look_m value=form.look.value gender=p.gender %}{% else %}{% include 'nikah/_pills.html' with name='look' options=opts.look_f value=form.look.value gender=p.gender %}{% endif %}</div>
   </section>
 
-  <section class="nkfs"><h4>Семья</h4>
-    <div class="nkf"><span>Семейное положение</span>{% include 'nikah/_pills.html' with name='marital' options=opts.marital value=form.marital.value gender=p.gender %}</div>
-    {% if p.gender == 'M' %}<div class="nkf"><span>Какую по счёту жену ищете</span>{% include 'nikah/_pills.html' with name='wife_number' options=opts.wife_number value=form.wife_number.value gender=p.gender %}</div>
-    {% else %}<div class="nkf"><span>Быть не единственной женой</span>{% include 'nikah/_pills.html' with name='polygyny' options=opts.polygyny value=form.polygyny.value gender=p.gender %}</div>{% endif %}
-    <div class="nkf"><span>Есть свои дети</span>{% include 'nikah/_pills.html' with name='has_children' options=opts.has_children value=form.has_children.value gender=p.gender %}</div>
-    <div class="nkf"><span>Хотите ли своих детей</span>{% include 'nikah/_pills.html' with name='children_want' options=opts.children_want value=form.children_want.value gender=p.gender %}</div>
-    <div class="nkf"><span>Готовы принять детей партнёра</span>{% include 'nikah/_pills.html' with name='children_accept' options=opts.children_accept value=form.children_accept.value gender=p.gender %}</div>
-    <div class="nkf"><span>Когда готовы к никяху</span>{% include 'nikah/_pills.html' with name='ready_when' options=opts.ready_when value=form.ready_when.value gender=p.gender %}</div>
-    <div class="nkf"><span>Переезд</span>{% include 'nikah/_pills.html' with name='relocation' options=opts.relocation value=form.relocation.value gender=p.gender %}</div>
+  <section class="nkfs"><h4>{% translate "Семья" %}</h4>
+    <div class="nkf"><span>{% translate "Семейное положение" %}</span>{% include 'nikah/_pills.html' with name='marital' options=opts.marital value=form.marital.value gender=p.gender %}</div>
+    {% if p.gender == 'M' %}<div class="nkf"><span>{% translate "Какую по счёту жену ищете" %}</span>{% include 'nikah/_pills.html' with name='wife_number' options=opts.wife_number value=form.wife_number.value gender=p.gender %}</div>
+    {% else %}<div class="nkf"><span>{% translate "Быть не единственной женой" %}</span>{% include 'nikah/_pills.html' with name='polygyny' options=opts.polygyny value=form.polygyny.value gender=p.gender %}</div>{% endif %}
+    <div class="nkf"><span>{% translate "Есть свои дети" %}</span>{% include 'nikah/_pills.html' with name='has_children' options=opts.has_children value=form.has_children.value gender=p.gender %}</div>
+    <div class="nkf"><span>{% translate "Хотите ли своих детей" %}</span>{% include 'nikah/_pills.html' with name='children_want' options=opts.children_want value=form.children_want.value gender=p.gender %}</div>
+    <div class="nkf"><span>{% translate "Готовы принять детей партнёра" %}</span>{% include 'nikah/_pills.html' with name='children_accept' options=opts.children_accept value=form.children_accept.value gender=p.gender %}</div>
+    <div class="nkf"><span>{% translate "Когда готовы к никяху" %}</span>{% include 'nikah/_pills.html' with name='ready_when' options=opts.ready_when value=form.ready_when.value gender=p.gender %}</div>
+    <div class="nkf"><span>{% translate "Переезд" %}</span>{% include 'nikah/_pills.html' with name='relocation' options=opts.relocation value=form.relocation.value gender=p.gender %}</div>
   </section>
 
-  <section class="nkfs"><h4>Религия</h4>
-    <div class="nkf"><span>Мазхаб</span>{% include 'nikah/_pills.html' with name='madhhab' options=opts.madhhab value=form.madhhab.value gender=p.gender %}</div>
-    <div class="nkf"><span>Вероубеждение</span>{% include 'nikah/_pills.html' with name='aqida' options=opts.aqida value=form.aqida.value gender=p.gender %}</div>
-    <div class="nkf"><span>Намаз</span>{% include 'nikah/_pills.html' with name='prayer' options=opts.prayer value=form.prayer.value gender=p.gender %}</div>
-    <div class="nkf"><span>Коран</span>{% include 'nikah/_pills.html' with name='quran' options=opts.quran value=form.quran.value gender=p.gender %}</div>
-    <div class="nkf"><span>Где Аллах?</span>{% include 'nikah/_pills.html' with name='where_allah' options=opts.where_allah value=form.where_allah.value gender=p.gender %}</div>
+  <section class="nkfs"><h4>{% translate "Религия" %}</h4>
+    <div class="nkf"><span>{% translate "Мазхаб" %}</span>{% include 'nikah/_pills.html' with name='madhhab' options=opts.madhhab value=form.madhhab.value gender=p.gender %}</div>
+    <div class="nkf"><span>{% translate "Вероубеждение" %}</span>{% include 'nikah/_pills.html' with name='aqida' options=opts.aqida value=form.aqida.value gender=p.gender %}</div>
+    <div class="nkf"><span>{% translate "Намаз" %}</span>{% include 'nikah/_pills.html' with name='prayer' options=opts.prayer value=form.prayer.value gender=p.gender %}</div>
+    <div class="nkf"><span>{% translate "Коран" %}</span>{% include 'nikah/_pills.html' with name='quran' options=opts.quran value=form.quran.value gender=p.gender %}</div>
+    <div class="nkf"><span>{% translate "Где Аллах?" %}</span>{% include 'nikah/_pills.html' with name='where_allah' options=opts.where_allah value=form.where_allah.value gender=p.gender %}</div>
   </section>
 
-  <section class="nkfs"><h4>Вероубеждение и манхадж — своими словами</h4>
+  <section class="nkfs"><h4>{% translate "Вероубеждение и манхадж — своими словами" %}</h4>
     <label class="nkf"><textarea name="manhaj_text" rows="5" maxlength="900">{{ form.manhaj_text.value|default:'' }}</textarea><small class="nkcount"><b>0</b>/900</small></label></section>
-  <section class="nkfs"><h4>О себе</h4>
+  <section class="nkfs"><h4>{% translate "О себе" %}</h4>
     <label class="nkf"><textarea name="about" rows="5" maxlength="900">{{ form.about.value|default:'' }}</textarea><small class="nkcount"><b>0</b>/900</small></label></section>
-  <section class="nkfs"><h4>{% if p.gender == 'M' %}Какую жену ищу{% else %}Какого мужа ищу{% endif %}</h4>
+  <section class="nkfs"><h4>{% if p.gender == 'M' %}{% translate "Какую жену ищу" %}{% else %}{% translate "Какого мужа ищу" %}{% endif %}</h4>
     <label class="nkf"><textarea name="partner_expectations" rows="5" maxlength="900">{{ form.partner_expectations.value|default:'' }}</textarea><small class="nkcount"><b>0</b>/900</small></label></section>
 
-  <section class="nkfs" id="photo"><h4>Фото</h4>
+  <section class="nkfs" id="photo"><h4>{% translate "Фото" %}</h4>
     {% include 'nikah/_opts.html' with name='photo_mode' options=opts.photo_mode value=form.photo_mode.value icons='photo_' grid=1 %}
-    <label class="nkdrop" style="margin-top:10px">{% nk_icon 'camera' %}<span id="nk-photo-t">{% if p.has_photo %}Фото загружено — нажмите, чтобы заменить{% else %}Добавить фото (JPG, PNG, до 10 МБ){% endif %}</span><input type="file" name="photo" accept="image/jpeg,image/png,image/webp" data-skip="1"></label>
-    <p class="nkstep__tip">Изменения текстов и фото проверит модератор — до проверки анкета скрыта из ленты. Остальное меняется сразу.</p>
+    <label class="nkdrop" style="margin-top:10px">{% nk_icon 'camera' %}<span id="nk-photo-t">{% if p.has_photo %}{% translate "Фото загружено — нажмите, чтобы заменить" %}{% else %}{% translate "Добавить фото (JPG, PNG, до 10 МБ)" %}{% endif %}</span><input type="file" name="photo" accept="image/jpeg,image/png,image/webp" data-skip="1"></label>
+    <p class="nkstep__tip">{% translate "Изменения текстов и фото проверит модератор — до проверки анкета скрыта из ленты. Остальное меняется сразу." %}</p>
   </section>
 
-  <div class="nkedit__foot"><button class="btn btn--p btn--lg" type="submit">Сохранить</button></div>
+  <div class="nkedit__foot"><button class="btn btn--p btn--lg" type="submit">{% translate "Сохранить" %}</button></div>
 </form>
 {% endblock %}
 {% block extra_js %}{{ block.super }}
@@ -73,7 +74,7 @@
   var f = document.getElementById('nkedit'), st = document.getElementById('nk-state');
   function snap() { return new URLSearchParams(new FormData(f)).toString(); }
   var start = snap();
-  function upd() { var changed = snap() !== start || f.querySelector('[name=photo]').files.length; st.textContent = changed ? 'Есть несохранённые изменения' : 'Без изменений'; st.classList.toggle('on', !!changed); }
+  function upd() { var changed = snap() !== start || f.querySelector('[name=photo]').files.length; st.textContent = changed ? '{{ _("Есть несохранённые изменения")|escapejs }}' : '{{ _("Без изменений")|escapejs }}'; st.classList.toggle('on', !!changed); }
   f.addEventListener('input', upd); f.addEventListener('change', function (e) {
     if (e.target.name === 'photo' && e.target.files.length) document.getElementById('nk-photo-t').textContent = e.target.files[0].name;
     upd();

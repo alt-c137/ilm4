@@ -1,4 +1,4 @@
-<div class="nkchipset">
-  <label class="nkc"><input type="radio" name="{{ name }}" value=""{% if not value %} checked{% endif %}><span>Все</span></label>
+{% load i18n %}<div class="nkchipset">
+  <label class="nkc"><input type="radio" name="{{ name }}" value=""{% if not value %} checked{% endif %}><span>{% translate "Все" %}</span></label>
   {% for opt in options %}<label class="nkc"><input type="radio" name="{{ name }}" value="{{ opt.0 }}"{% if opt.0 == value %} checked{% endif %}><span>{% if opt.2 and gender == 'F' %}{{ opt.2 }}{% else %}{{ opt.1 }}{% endif %}</span></label>{% endfor %}
 </div>

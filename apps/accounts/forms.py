@@ -4,6 +4,8 @@ import copy
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _lazy
 
 from .models import RegistrationField
 
@@ -11,8 +13,8 @@ User = get_user_model()
 
 
 class LoginForm(forms.Form):
-    login = forms.CharField(label='Email или логин', max_length=254)
-    password = forms.CharField(label='Пароль', widget=forms.PasswordInput)
+    login = forms.CharField(label=_lazy('Email или логин'), max_length=254)
+    password = forms.CharField(label=_lazy('Пароль'), widget=forms.PasswordInput)
 
     def __init__(self, request=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -28,7 +30,7 @@ class LoginForm(forms.Form):
         if login_value and password:
             self.user_cache = authenticate(self.request, username=login_value, password=password)
             if self.user_cache is None:
-                raise forms.ValidationError('Неверный email/логин или пароль.')
+                raise forms.ValidationError(_('Неверный email/логин или пароль.'))
         return cleaned
 
     def get_user(self):
@@ -39,14 +41,14 @@ class RegisterForm(forms.Form):
     """Email + пароль всегда; остальные поля — из RegistrationField (админка)."""
 
     email = forms.EmailField(label='Email')
-    username = forms.CharField(label='Логин', max_length=150, help_text='Можно оставить пустым — сгенерируем из email', required=False)
-    password1 = forms.CharField(label='Пароль', widget=forms.PasswordInput)
-    password2 = forms.CharField(label='Пароль ещё раз', widget=forms.PasswordInput)
+    username = forms.CharField(label=_lazy('Логин'), max_length=150, help_text='Можно оставить пустым — сгенерируем из email', required=False)
+    password1 = forms.CharField(label=_lazy('Пароль'), widget=forms.PasswordInput)
+    password2 = forms.CharField(label=_lazy('Пароль ещё раз'), widget=forms.PasswordInput)
 
     FIELD_WIDGETS = {  # как строить доп-поля по ключам RegistrationField
-        'nickname': forms.CharField(label='Ник', max_length=40, required=False),
-        'city': forms.CharField(label='Город', max_length=80, required=False),
-        'first_name': forms.CharField(label='Имя', max_length=150, required=False),
+        'nickname': forms.CharField(label=_lazy('Ник'), max_length=40, required=False),
+        'city': forms.CharField(label=_lazy('Город'), max_length=80, required=False),
+        'first_name': forms.CharField(label=_lazy('Имя'), max_length=150, required=False),
     }
 
     def __init__(self, *args, **kwargs):
@@ -65,7 +67,7 @@ class RegisterForm(forms.Form):
     def clean_email(self):
         email = self.cleaned_data['email'].lower()
         if User.objects.filter(email__iexact=email).exists():
-            raise forms.ValidationError('Этот email уже зарегистрирован.')
+            raise forms.ValidationError(_('Этот email уже зарегистрирован.'))
         return email
 
     def clean_username(self):
@@ -73,14 +75,14 @@ class RegisterForm(forms.Form):
         if not username:
             return username  # сгенерируем при сохранении
         if User.objects.filter(username=username).exists():
-            raise forms.ValidationError('Этот логин занят.')
+            raise forms.ValidationError(_('Этот логин занят.'))
         return username
 
     def clean(self):
         cleaned = super().clean()
         p1, p2 = cleaned.get('password1'), cleaned.get('password2')
         if p1 and p2 and p1 != p2:
-            self.add_error('password2', 'Пароли не совпадают.')
+            self.add_error('password2', _('Пароли не совпадают.'))
         elif p1:
             validate_password(p1)
         return cleaned
@@ -120,5 +122,5 @@ class ProfileForm(forms.ModelForm):
     def clean_avatar(self):
         avatar = self.cleaned_data.get('avatar')
         if avatar and hasattr(avatar, 'size') and avatar.size > 5 * 1024 * 1024:
-            raise forms.ValidationError('Фото больше 5 МБ')
+            raise forms.ValidationError(_('Фото больше 5 МБ'))
         return avatar

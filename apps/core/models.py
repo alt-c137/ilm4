@@ -1,5 +1,7 @@
 from django.conf import settings
 from django.db import models
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _lazy
 from solo.models import SingletonModel
 
 
@@ -7,7 +9,7 @@ class Moderation:
     """Общий статус модерации контента (объявления, места, врачи, анкеты, темы)."""
 
     PENDING, APPROVED, REJECTED = 'pending', 'approved', 'rejected'
-    CHOICES = [(PENDING, 'На модерации'), (APPROVED, 'Опубликован'), (REJECTED, 'Отклонён')]
+    CHOICES = [(PENDING, _lazy('На модерации')), (APPROVED, _lazy('Опубликован')), (REJECTED, _lazy('Отклонён'))]
 
 
 class Theme(models.Model):
@@ -40,7 +42,7 @@ class ModuleConfig(models.Model):
     """
 
     ON, OFF, SOON = 'on', 'off', 'soon'
-    STATUS = [(ON, 'включён'), (OFF, 'выключен'), (SOON, 'скоро')]
+    STATUS = [(ON, _lazy('включён')), (OFF, _lazy('выключен')), (SOON, _lazy('скоро'))]
 
     key = models.CharField('ключ (имя раздела)', max_length=30, unique=True)
     name = models.CharField('название', max_length=80)
@@ -105,6 +107,17 @@ class SiteSettings(SingletonModel):
     chat_photos_enabled = models.BooleanField('чат: фото', default=True)
     chat_voice_enabled = models.BooleanField('чат: голосовые сообщения', default=True)
     chat_circles_enabled = models.BooleanField('чат: видеокружки', default=True)
+    chat_videos_enabled = models.BooleanField('чат: видео (файлом, до 50 МБ)', default=True)
+    app_min_version = models.CharField(
+        'приложение: минимальная версия', max_length=20, blank=True,
+        help_text='Например 1.2.0. Кто на более старой версии — увидит «Обновите приложение». Пусто — без проверки')
+    app_notice = models.CharField(
+        'приложение: объявление вверху', max_length=300, blank=True,
+        help_text='Короткое сообщение всем пользователям приложения (например, о работах на сервере)')
+    nikah_chat_media = models.BooleanField(
+        'никях-чат: фото, видео и кружки', default=False,
+        help_text='Выключено — в переписке пары никяха только текст и голос: фото показываются '
+                  'лишь через защищённый обмен (водяной знак, таймер)')
     chat_calls_enabled = models.BooleanField('чат: аудиозвонки', default=True)
     chat_video_calls_enabled = models.BooleanField('чат: видеозвонки', default=True)
     webrtc_turn_url = models.CharField(
@@ -137,6 +150,18 @@ class SiteSettings(SingletonModel):
     stars_rate = models.PositiveIntegerField(
         'Telegram Stars: сум за 1 звезду', default=250,
         help_text='Пополнение через Stars: сумма в сум ÷ курс = сколько звёзд списать')
+    ai_moderation_enabled = models.BooleanField(
+        'ИИ-модерация включена', default=True,
+        help_text='Работает, когда в .env задан ANTHROPIC_API_KEY или OPENAI_API_KEY')
+    ai_auto_approve = models.BooleanField(
+        'ИИ одобряет чистые публикации сам', default=False,
+        help_text='Выключено — ИИ только подсказывает модератору. Включено — «чисто» публикуется без человека')
+    ai_check_photos = models.BooleanField(
+        'ИИ проверяет фото анкет никяха', default=False,
+        help_text='Фото уходит во внешний сервис ИИ. Включайте, только если это указано в политике конфиденциальности')
+    nikah_chat_block_contacts = models.BooleanField(
+        'никях: блокировать контакты в чате', default=True,
+        help_text='Телефоны, ники и ссылки в переписке никяха не отправляются')
     prayer_method = models.CharField(
         'метод расчёта намаза', max_length=10, default='Karachi',
         help_text='Karachi (СНГ/Азия), MWL, ISNA, Makkah, Egypt',
@@ -165,7 +190,7 @@ class SiteSettings(SingletonModel):
         verbose_name = 'настройки сайта'
 
     def __str__(self):
-        return 'Настройки сайта'
+        return _('Настройки сайта')
 
 
 class Banner(models.Model):
@@ -239,7 +264,7 @@ class SocialLink(models.Model):
     KINDS = [
         ('telegram', 'Telegram'), ('instagram', 'Instagram'), ('facebook', 'Facebook'),
         ('x', 'X (Twitter)'), ('youtube', 'YouTube'), ('tiktok', 'TikTok'),
-        ('whatsapp', 'WhatsApp'), ('vk', 'ВКонтакте'), ('threads', 'Threads'), ('other', 'Другое'),
+        ('whatsapp', 'WhatsApp'), ('vk', _lazy('ВКонтакте')), ('threads', 'Threads'), ('other', _lazy('Другое')),
     ]
 
     kind = models.CharField('сеть', max_length=12, choices=KINDS, default='telegram')
@@ -268,13 +293,13 @@ class Report(models.Model):
     до решения модератора (как у крупных площадок: быстрее, чем ждать модерацию)."""
 
     REASONS = [
-        ('spam', 'Спам или реклама'), ('fraud', 'Мошенничество, просят предоплату'),
-        ('haram', 'Харам, неприличное содержание'), ('fake', 'Фейк, чужие фото, обман'),
-        ('contacts', 'Контакты в анкете / уводят в другие мессенджеры'),
-        ('abuse', 'Оскорбления, угрозы'), ('other', 'Другое'),
+        ('spam', _lazy('Спам или реклама')), ('fraud', _lazy('Мошенничество, просят предоплату')),
+        ('haram', _lazy('Харам, неприличное содержание')), ('fake', _lazy('Фейк, чужие фото, обман')),
+        ('contacts', _lazy('Контакты в анкете / уводят в другие мессенджеры')),
+        ('abuse', _lazy('Оскорбления, угрозы')), ('other', _lazy('Другое')),
     ]
     NEW, RESOLVED, DISMISSED = 'new', 'resolved', 'dismissed'
-    STATUSES = [(NEW, 'новая'), (RESOLVED, 'меры приняты'), (DISMISSED, 'отклонена')]
+    STATUSES = [(NEW, _lazy('новая')), (RESOLVED, _lazy('меры приняты')), (DISMISSED, _lazy('отклонена'))]
 
     content_type = models.ForeignKey('contenttypes.ContentType', on_delete=models.CASCADE)
     object_id = models.PositiveBigIntegerField()
@@ -297,3 +322,26 @@ class Report(models.Model):
     @property
     def target(self):
         return self.content_type.get_object_for_this_type(pk=self.object_id)
+
+
+class AIReview(models.Model):
+    """Вердикт ИИ-модератора по публикации/анкете (последняя проверка)."""
+
+    OK, REVIEW, REJECT, ERROR = 'ok', 'review', 'reject', 'error'
+    VERDICTS = [(OK, 'чисто'), (REVIEW, 'посмотреть человеку'), (REJECT, 'нарушение'), (ERROR, 'ошибка проверки')]
+
+    content_type = models.ForeignKey('contenttypes.ContentType', on_delete=models.CASCADE)
+    object_id = models.PositiveBigIntegerField()
+    content_hash = models.CharField(max_length=64, editable=False)
+    verdict = models.CharField('вердикт ИИ', max_length=8, choices=VERDICTS)
+    reasons = models.JSONField('причины', default=list, blank=True)
+    model_name = models.CharField('модель', max_length=60, blank=True)
+    checked_at = models.DateTimeField('проверено', auto_now=True)
+
+    class Meta:
+        verbose_name = 'проверка ИИ'
+        verbose_name_plural = 'проверки ИИ'
+        constraints = [models.UniqueConstraint(fields=['content_type', 'object_id'], name='one_ai_review')]
+
+    def __str__(self):
+        return f'{self.get_verdict_display()} — {self.content_type.model}#{self.object_id}'

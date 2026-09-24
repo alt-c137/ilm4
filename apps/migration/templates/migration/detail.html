@@ -1,15 +1,16 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons %}{% load reports %}
 {% block title %}{{ story.title }} — {{ block.super }}{% endblock %}
-{% block description %}{{ story.title }}: история переезда {{ story.country_from }} → {{ story.country_to }} на ilm4.{% endblock %}
+{% block description %}{{ story.title }}{% translate ": история переезда" %} {{ story.country_from }} → {{ story.country_to }} {% translate "на ilm4." %}{% endblock %}
 {% block body_class %}s-migration{% endblock %}
 
 {% block content %}
 <div class="dpage">
   <article class="article">
-    <a class="crumb" href="{% url 'migration:list' %}">{% ico 'back' %}Все истории</a>
+    <a class="crumb" href="{% url 'migration:list' %}">{% ico 'back' %}{% translate "Все истории" %}</a>
     <div class="dcard">
-      <div class="dkicker">{% ico 'plane' %}История переезда</div>
+      <div class="dkicker">{% ico 'plane' %}{% translate "История переезда" %}</div>
       <h1 class="dtitle">{{ story.title }}</h1>
       <div class="dmeta">
         <span class="route">{{ story.country_from }} {% ico 'arrow' %} {{ story.country_to }}</span>
@@ -21,8 +22,8 @@
       </div>
       <div class="prose">{{ story.body|linebreaks }}</div>
       <div class="article__foot">
-        <a class="btn btn--g" href="{% url 'migration:list' %}">{% ico 'back' %}Все истории</a>
-        <a class="btn btn--s" href="{% url 'migration:create' %}">{% ico 'edit' %}Рассказать свою</a>
+        <a class="btn btn--g" href="{% url 'migration:list' %}">{% ico 'back' %}{% translate "Все истории" %}</a>
+        <a class="btn btn--s" href="{% url 'migration:create' %}">{% ico 'edit' %}{% translate "Рассказать свою" %}</a>
       </div>
       {% report_button story %}
     </div>

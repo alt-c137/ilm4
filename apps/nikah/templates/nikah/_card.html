@@ -1,14 +1,14 @@
-{% load nikah_tags %}<article class="nkcard">
+{% load i18n %}{% load nikah_tags %}<article class="nkcard">
   <a class="nkcard__main" href="{% url 'nikah:detail' p.pk %}">
     <div class="nkcard__top">
       <span class="nkava nkava--{{ p.gender }}">{% if p.gender == 'M' %}{% nk_icon 'brother' %}{% else %}{% nk_icon 'sister' %}{% endif %}</span>
       <div class="nkcard__who"><b>{{ p.display_name }}, {{ p.age }}{% if p.verified %}<i class="nkverified">✓</i>{% endif %}</b><small>{{ p.place|default:"—" }}{% if p.nationality %} · {{ p.nationality }}{% endif %}</small></div>
-      {% if p.compat is not None %}<span class="nkcompat" style="--p:{{ p.compat }}" title="Совместимость с вами"><b>{{ p.compat }}%</b></span>{% endif %}
+      {% if p.compat is not None %}<span class="nkcompat" style="--p:{{ p.compat }}" title="{% translate 'Совместимость с вами' %}"><b>{{ p.compat }}%</b></span>{% endif %}
     </div>
     <div class="nkchips">
       {% if p.aqida %}<span class="nkchip nkchip--acc">{{ p|nk:'aqida' }}</span>{% endif %}
-      {% if p.madhhab %}<span class="nkchip">{% if p.madhhab == 'none' %}Без мазхаба{% else %}{{ p|nk:'madhhab' }}{% endif %}</span>{% endif %}
-      {% if p.prayer %}<span class="nkchip">Намаз: {{ p|nk:'prayer'|lower }}</span>{% endif %}
+      {% if p.madhhab %}<span class="nkchip">{% if p.madhhab == 'none' %}{% translate "Без мазхаба" %}{% else %}{{ p|nk:'madhhab' }}{% endif %}</span>{% endif %}
+      {% if p.prayer %}<span class="nkchip">{% translate "Намаз:" %} {{ p|nk:'prayer'|lower }}</span>{% endif %}
       {% if p.marital %}<span class="nkchip">{{ p|nk:'marital' }}</span>{% endif %}
     </div>
     <p class="nkcard__txt">{{ p.manhaj_text|truncatechars:170 }}</p>
@@ -16,11 +16,11 @@
   </a>
   <div class="nkcard__act">
     <form method="post" action="{% url 'nikah:interest' p.pk %}">{% csrf_token %}<input type="hidden" name="back" value="{{ request.get_full_path }}">
-      {% if p.liked %}<input type="hidden" name="undo" value="1"><button class="nkbtn nkbtn--on" type="submit" title="Отозвать интерес">{% nk_icon 'heart' %}Интерес отправлен</button>
-      {% else %}<button class="nkbtn nkbtn--love" type="submit">{% nk_icon 'heart' %}Интерес</button>{% endif %}
+      {% if p.liked %}<input type="hidden" name="undo" value="1"><button class="nkbtn nkbtn--on" type="submit" title="{% translate 'Отозвать интерес' %}">{% nk_icon 'heart' %}{% translate "Интерес отправлен" %}</button>
+      {% else %}<button class="nkbtn nkbtn--love" type="submit">{% nk_icon 'heart' %}{% translate "Интерес" %}</button>{% endif %}
     </form>
     <form method="post" action="{% url 'nikah:save' p.pk %}">{% csrf_token %}<input type="hidden" name="back" value="{{ request.get_full_path }}">
-      <button class="nkicon{% if p.saved %} on{% endif %}" type="submit" aria-label="{% if p.saved %}Убрать из сохранённых{% else %}Сохранить{% endif %}" title="{% if p.saved %}Убрать из сохранённых{% else %}Сохранить{% endif %}">{% nk_icon 'star' %}</button>
+      <button class="nkicon{% if p.saved %} on{% endif %}" type="submit" aria-label="{% if p.saved %}{% translate 'Убрать из сохранённых' %}{% else %}{% translate 'Сохранить' %}{% endif %}" title="{% if p.saved %}{% translate 'Убрать из сохранённых' %}{% else %}{% translate 'Сохранить' %}{% endif %}">{% nk_icon 'star' %}</button>
     </form>
   </div>
 </article>

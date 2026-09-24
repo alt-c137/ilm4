@@ -21,6 +21,26 @@ def _asset_version() -> str:
 
 ASSET_V = _asset_version()
 
+_JS_MSGIDS = None
+
+
+def js_i18n() -> dict:
+    """Переводы строк из static/js (_t('…')) для текущего языка: {русский: перевод}."""
+    global _JS_MSGIDS
+    import re
+    from pathlib import Path
+
+    from django.utils.translation import get_language, gettext
+    if (get_language() or 'ru')[:2] == 'ru':
+        return {}
+    if _JS_MSGIDS is None:
+        root = Path(django_settings.BASE_DIR) / 'static' / 'js'
+        found = set()
+        for f in root.glob('*.js'):
+            found.update(re.findall(r"_t\('((?:[^'\\]|\\.)*)'\)", f.read_text()))
+        _JS_MSGIDS = sorted(found)
+    return {m: gettext(m) for m in _JS_MSGIDS}
+
 # Пожертвования (Tribute). Кнопка «Поддержать» в шапке, на главной и на /support/
 DONATE_URL = 'https://web.tribute.tg/d/Qrv'
 
@@ -74,6 +94,9 @@ def site(request):
     return {
         'site_settings': settings_obj,
         'nikah_mode': nikah_mode,
+        'in_app': 'ilm4-app' in request.META.get('HTTP_USER_AGENT', ''),
+        'lang_choices': django_settings.LANGUAGES,   # названия на своём языке, без перевода
+        'js_i18n': js_i18n(),   # мобильное приложение (mobile/)
         'themes': themes,
         'current_theme': current,
         'menu_top': top,
@@ -95,5 +118,6 @@ def site(request):
         'social_links': social_links(),
         'donate_url': DONATE_URL,
         'map_cfg': {'maptiler': settings_obj.map_maptiler_key},
+        'captcha_site_key': django_settings.TURNSTILE_SITE_KEY if django_settings.TURNSTILE_SECRET_KEY else '',
         'asset_v': ASSET_V if not django_settings.DEBUG else _asset_version(),
     }

@@ -1,11 +1,12 @@
 """Автору — уведомление, когда модератор одобрил или отклонил его публикацию."""
 from django.db.models.signals import post_save, pre_save
+from django.utils.translation import gettext_lazy as _lazy
 
 from .models import Moderation
 from .publications import PUBLICATIONS
 
-TEXT = {Moderation.APPROVED: '✅ «{t}» одобрено и опубликовано.',
-        Moderation.REJECTED: '❌ «{t}» не прошло проверку. Исправьте и отправьте снова (Мои публикации).'}
+TEXT = {Moderation.APPROVED: _lazy('✅ «{t}» одобрено и опубликовано.'),
+        Moderation.REJECTED: _lazy('❌ «{t}» не прошло проверку. Исправьте и отправьте снова (Мои публикации).')}
 
 
 def _remember(sender, instance, **kwargs):
@@ -22,8 +23,12 @@ def _notify(sender, instance, created, **kwargs):
     owner = getattr(instance, pub.owner, None)
     if owner is None:
         return
+    from django.conf import settings
+    from django.utils import translation
+
     from apps.core.models import Notification
-    text = TEXT[new].format(t=pub.title_of(instance)[:80])
+    with translation.override(getattr(owner, 'language', '') or settings.LANGUAGE_CODE):
+        text = str(TEXT[new]).format(t=pub.title_of(instance)[:80])
     Notification.objects.create(user=owner, text=text, url=pub.url_of(instance) if new == Moderation.APPROVED
                                 else '/my/')
     from apps.accounts.telegram import send_message

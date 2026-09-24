@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons %}
-{% block title %}Чаты — {{ block.super }}{% endblock %}
+{% block title %}{% translate "Чаты —" %} {{ block.super }}{% endblock %}
 {% block body_class %}s-chat page-chat{% endblock %}
 
 {% block content %}
@@ -9,8 +10,8 @@
   <section class="tg__main tg__main--empty">
     <div class="tg__hint">
       <span class="tg__hint-ic">{% ico 'chat' %}</span>
-      <b>Выберите диалог</b>
-      <span>Сообщения доставляются мгновенно — как в мессенджере.</span>
+      <b>{% translate "Выберите диалог" %}</b>
+      <span>{% translate "Сообщения доставляются мгновенно — как в мессенджере." %}</span>
     </div>
   </section>
 </div>

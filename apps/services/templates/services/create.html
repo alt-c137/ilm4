@@ -1,26 +1,27 @@
 {% extends 'base.html' %}
-{% block title %}Предложить услугу — {{ block.super }}{% endblock %}
+{% load i18n %}
+{% block title %}{% translate "Предложить услугу —" %} {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="page">
-  <h1>Предложить услугу</h1>
+  <h1>{% translate "Предложить услугу" %}</h1>
   <form method="post" class="form form--wide">{% csrf_token %}
-    <label>Название <span class="req">*</span></label>
+    <label>{% translate "Название" %} <span class="req">*</span></label>
     <input type="text" name="name" maxlength="160" required>
-    <label>Вид услуги</label>
+    <label>{% translate "Вид услуги" %}</label>
     <select name="kind">
       {% for key, label in kinds %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
     </select>
-    <label>Город</label>
+    <label>{% translate "Город" %}</label>
     <input type="text" name="city" maxlength="80">
-    <label>Описание <span class="req">*</span></label>
+    <label>{% translate "Описание" %} <span class="req">*</span></label>
     <textarea name="description" rows="4" required></textarea>
-    <label>Цена (текстом)</label>
-    <input type="text" name="price_text" maxlength="120" placeholder="например: 1 страница — 50 000 сум">
-    <label>Контакт <span class="req">*</span></label>
+    <label>{% translate "Цена (текстом)" %}</label>
+    <input type="text" name="price_text" maxlength="120" placeholder="{% translate 'например: 1 страница — 50 000 сум' %}">
+    <label>{% translate "Контакт" %} <span class="req">*</span></label>
     <input type="text" name="contact" maxlength="120" required>
     {% include 'includes/pledge.html' %}
-    <button type="submit" class="btn btn--p">Отправить на модерацию</button>
+    <button type="submit" class="btn btn--p">{% translate "Отправить на модерацию" %}</button>
   </form>
 </div>
 {% endblock %}

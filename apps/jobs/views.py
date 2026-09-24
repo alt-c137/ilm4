@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.translation import gettext as _
 
 from apps.core.decorators import module_required, pledge_required
 from apps.core.models import Moderation
@@ -46,7 +47,7 @@ def vacancy_create(request):
         vacancy = form.save(commit=False)
         vacancy.owner = request.user
         vacancy.save()
-        messages.success(request, 'Вакансия отправлена на модерацию.')
+        messages.success(request, _('Вакансия отправлена на модерацию.'))
         return redirect('jobs:list')
     return render(request, 'jobs/create.html', {'form': form})
 
@@ -56,10 +57,10 @@ def vacancy_create(request):
 def vacancy_respond(request, pk):
     vacancy = get_object_or_404(Vacancy, pk=pk, status=Moderation.APPROVED)
     if vacancy.owner_id == request.user.pk:
-        messages.info(request, 'Это ваша вакансия.')
+        messages.info(request, _('Это ваша вакансия.'))
         return redirect('jobs:detail', pk=pk)
     if vacancy.responses.filter(user=request.user).exists():
-        messages.info(request, 'Вы уже откликнулись на эту вакансию.')
+        messages.info(request, _('Вы уже откликнулись на эту вакансию.'))
         return redirect('jobs:detail', pk=pk)
     form = VacancyResponseForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
@@ -67,6 +68,6 @@ def vacancy_respond(request, pk):
         response_obj.vacancy = vacancy
         response_obj.user = request.user
         response_obj.save()
-        messages.success(request, 'Отклик отправлен — работодатель увидит ваш email.')
+        messages.success(request, _('Отклик отправлен — работодатель увидит ваш email.'))
         return redirect('jobs:detail', pk=pk)
     return render(request, 'jobs/respond.html', {'form': form, 'vacancy': vacancy})

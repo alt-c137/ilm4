@@ -1,12 +1,13 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons reviews %}{% load reports %}
 {% block title %}{{ place.name }} — {{ block.super }}{% endblock %}
-{% block description %}{{ place.name }} — {{ place.get_category_display|lower }}, {{ place.city }}. Адрес, контакты и отзывы на ilm4.{% endblock %}
+{% block description %}{{ place.name }} — {{ place.get_category_display|lower }}, {{ place.city }}{% translate ". Адрес, контакты и отзывы на ilm4." %}{% endblock %}
 {% block body_class %}s-map{% if place.phone %} has-dbar{% endif %}{% endblock %}
 
 {% block content %}
 <div class="dpage">
-  <a class="crumb" href="/map/?city={{ place.city|urlencode }}">{% ico 'back' %}Халяль карта · {{ place.city }}</a>
+  <a class="crumb" href="/map/?city={{ place.city|urlencode }}">{% ico 'back' %}{% translate "Халяль карта ·" %} {{ place.city }}</a>
   <div class="dgrid dgrid--rev">
     <aside class="dside">
       <div class="dcard pcard">
@@ -18,72 +19,72 @@
         </div>
         {% if place.is_mosque and place.mosque_brief %}<div class="mbrief">{{ place.mosque_brief }}</div>{% endif %}
         <div class="pcard__rep">{% if not place.is_mosque %}{% rating_badge place %}{% endif %}
-          <a class="vbadge vbadge--{{ verif.level }}" href="#confirm" title="{% if verif.who %}Подтвердили: {{ verif.who }}{% else %}Сведения ещё никто не подтвердил{% endif %}">{{ verif.label }}</a></div>
+          <a class="vbadge vbadge--{{ verif.level }}" href="#confirm" title="{% if verif.who %}{% translate 'Подтвердили:' %} {{ verif.who }}{% else %}{% translate 'Сведения ещё никто не подтвердил' %}{% endif %}">{{ verif.label }}</a></div>
         <div class="dact">
-          {% if place.phone %}<a class="btn btn--p" href="tel:{{ place.phone|cut:' ' }}">{% ico 'phone' %}Позвонить</a>{% endif %}
-          <a class="btn btn--g" href="#pmap">{% ico 'pin' %}Маршрут</a>
-          {% if place.url %}<a class="btn btn--g" href="{{ place.url }}" target="_blank" rel="noopener nofollow" data-ext>{% ico 'globe' %}Сайт / соцсеть</a>{% endif %}
+          {% if place.phone %}<a class="btn btn--p" href="tel:{{ place.phone|cut:' ' }}">{% ico 'phone' %}{% translate "Позвонить" %}</a>{% endif %}
+          <a class="btn btn--g" href="#pmap">{% ico 'pin' %}{% translate "Маршрут" %}</a>
+          {% if place.url %}<a class="btn btn--g" href="{{ place.url }}" target="_blank" rel="noopener nofollow" data-ext>{% ico 'globe' %}{% translate "Сайт / соцсеть" %}</a>{% endif %}
         </div>
       </div>
     </aside>
     <div class="dmain">
       {% if place.is_mosque %}
       <section class="dcard">
-        <h2 class="dcard__h">О мечети</h2>
+        <h2 class="dcard__h">{% translate "О мечети" %}</h2>
         <div class="minfo">
-          <div><span>Течение</span><b>{{ place.get_branch_display|default:"не указано" }}</b></div>
-          <div><span>Мазхаб</span><b>{{ place.get_madhhab_display|default:"не указан" }}</b></div>
-          <div><span>Манхадж / направление</span><b>{{ place.get_manhaj_display|default:"не указано" }}</b></div>
-          <div><span>На чём держится</span><b>{{ place.get_kind_display|default:"не указано" }}</b></div>
-          <div class="minfo__wide"><span>Кому принадлежит</span><b>{{ place.affiliation|default:"не указано" }}</b></div>
-          {% if place.imam %}<div><span>Имам</span><b>{{ place.imam }}</b></div>{% endif %}
-          {% if place.khutba_lang %}<div><span>Язык хутбы</span><b>{{ place.khutba_lang }}</b></div>{% endif %}
+          <div><span>{% translate "Течение" %}</span><b>{{ place.get_branch_display|default:_("не указано") }}</b></div>
+          <div><span>{% translate "Мазхаб" %}</span><b>{{ place.get_madhhab_display|default:_("не указан") }}</b></div>
+          <div><span>{% translate "Манхадж / направление" %}</span><b>{{ place.get_manhaj_display|default:_("не указано") }}</b></div>
+          <div><span>{% translate "На чём держится" %}</span><b>{{ place.get_kind_display|default:_("не указано") }}</b></div>
+          <div class="minfo__wide"><span>{% translate "Кому принадлежит" %}</span><b>{{ place.affiliation|default:_("не указано") }}</b></div>
+          {% if place.imam %}<div><span>{% translate "Имам" %}</span><b>{{ place.imam }}</b></div>{% endif %}
+          {% if place.khutba_lang %}<div><span>{% translate "Язык хутбы" %}</span><b>{{ place.khutba_lang }}</b></div>{% endif %}
         </div>
         {% if place.amenities %}<div class="mamen">{% for a in place.amenities %}<span>✓ {{ a }}</span>{% endfor %}</div>{% endif %}
         <div class="vline vline--{{ verif.level }}">
           <span class="vbadge vbadge--{{ verif.level }}">{{ verif.label }}</span>
-          <small>{% if verif.level == 'ilm4' %}Модератор ilm4 сверил сведения с мечетью.{% elif verif.level == 'users' %}Подтвердили: {{ verif.who }}.{% else %}Сведения примерные — со слов пользователей. Были здесь? Подтвердите или поправьте ниже.{% endif %}{% if verif.disputed %} Есть уточнение — на проверке у модератора.{% endif %}</small>
+          <small>{% if verif.level == 'ilm4' %}{% translate "Модератор ilm4 сверил сведения с мечетью." %}{% elif verif.level == 'users' %}{% translate "Подтвердили:" %} {{ verif.who }}.{% else %}{% translate "Сведения примерные — со слов пользователей. Были здесь? Подтвердите или поправьте ниже." %}{% endif %}{% if verif.disputed %} {% translate "Есть уточнение — на проверке у модератора." %}{% endif %}</small>
         </div>
       </section>
       {% endif %}
       <section class="dcard">
-        <h2 class="dcard__h">Контакты</h2>
+        <h2 class="dcard__h">{% translate "Контакты" %}</h2>
         <div class="kv">
-          <div class="kv__row"><span class="kv__ic">{% ico 'pin' %}</span><div><div class="kv__l">Адрес</div><div class="kv__v">{{ place.address|default:place.city }}</div></div></div>
-          {% if place.phone %}<div class="kv__row"><span class="kv__ic">{% ico 'phone' %}</span><div><div class="kv__l">Телефон</div><div class="kv__v"><a href="tel:{{ place.phone|cut:' ' }}">{{ place.phone }}</a></div></div></div>{% endif %}
+          <div class="kv__row"><span class="kv__ic">{% ico 'pin' %}</span><div><div class="kv__l">{% translate "Адрес" %}</div><div class="kv__v">{{ place.address|default:place.city }}</div></div></div>
+          {% if place.phone %}<div class="kv__row"><span class="kv__ic">{% ico 'phone' %}</span><div><div class="kv__l">{% translate "Телефон" %}</div><div class="kv__v"><a href="tel:{{ place.phone|cut:' ' }}">{{ place.phone }}</a></div></div></div>{% endif %}
         </div>
         <div id="pmap" class="pmap" data-lat="{{ place.lat|stringformat:'f' }}" data-lon="{{ place.lon|stringformat:'f' }}"></div>
-        <div class="proutes"><span>Маршрут:</span>
+        <div class="proutes"><span>{% translate "Маршрут:" %}</span>
           <a href="https://www.google.com/maps/dir/?api=1&amp;destination={{ place.lat|stringformat:'f' }},{{ place.lon|stringformat:'f' }}" target="_blank" rel="noopener">Google</a>
-          <a href="https://yandex.ru/maps/?rtext=~{{ place.lat|stringformat:'f' }},{{ place.lon|stringformat:'f' }}" target="_blank" rel="noopener">Яндекс</a>
-          <a href="https://2gis.ru/routeSearch/rsType/car/to/{{ place.lon|stringformat:'f' }},{{ place.lat|stringformat:'f' }}" target="_blank" rel="noopener">2ГИС</a>
+          <a href="https://yandex.ru/maps/?rtext=~{{ place.lat|stringformat:'f' }},{{ place.lon|stringformat:'f' }}" target="_blank" rel="noopener">{% translate "Яндекс" %}</a>
+          <a href="https://2gis.ru/routeSearch/rsType/car/to/{{ place.lon|stringformat:'f' }},{{ place.lat|stringformat:'f' }}" target="_blank" rel="noopener">{% translate "2ГИС" %}</a>
         </div>
       </section>
-      {% if place.description %}<section class="dcard"><h2 class="dcard__h">О месте</h2><div class="prose">{{ place.description|linebreaks }}</div></section>{% endif %}
+      {% if place.description %}<section class="dcard"><h2 class="dcard__h">{% translate "О месте" %}</h2><div class="prose">{{ place.description|linebreaks }}</div></section>{% endif %}
       <section class="dcard confirm" id="confirm">
-        <h2 class="dcard__h">Информация верна?</h2>
-        <p class="confirm__t">{% if confirmed %}Подтвердили {{ confirmed }} {{ confirmed|ru_plural:"пользователь,пользователя,пользователей" }}.{% else %}Пока никто не подтвердил. Были здесь — помогите другим.{% endif %}</p>
+        <h2 class="dcard__h">{% translate "Информация верна?" %}</h2>
+        <p class="confirm__t">{% if confirmed %}{% translate "Подтвердили" %} {{ confirmed }} {{ confirmed|ru_plural:_("пользователь,пользователя,пользователей") }}.{% else %}{% translate "Пока никто не подтвердил. Были здесь — помогите другим." %}{% endif %}</p>
         {% if user.is_authenticated %}
-          {% if my_confirmation %}<p class="confirm__mine">{% if my_confirmation.is_correct %}✓ Вы подтвердили эти сведения{% else %}Вы сообщили о неточности — спасибо, модератор проверит{% endif %}</p>{% endif %}
+          {% if my_confirmation %}<p class="confirm__mine">{% if my_confirmation.is_correct %}{% translate "✓ Вы подтвердили эти сведения" %}{% else %}{% translate "Вы сообщили о неточности — спасибо, модератор проверит" %}{% endif %}</p>{% endif %}
           <div class="confirm__act">
             <form method="post" action="{% url 'maps:confirm' place.pk %}">{% csrf_token %}<input type="hidden" name="correct" value="1">
-              <button type="submit" class="btn btn--p">{% ico 'shield' %}Да, всё верно</button></form>
-            <details class="confirm__bad"><summary class="btn btn--g">Сообщить о неточности</summary>
+              <button type="submit" class="btn btn--p">{% ico 'shield' %}{% translate "Да, всё верно" %}</button></form>
+            <details class="confirm__bad"><summary class="btn btn--g">{% translate "Сообщить о неточности" %}</summary>
               <form method="post" action="{% url 'maps:confirm' place.pk %}">{% csrf_token %}<input type="hidden" name="correct" value="0">
-                {% if place.is_mosque %}<p class="confirm__hint">Выберите, как на самом деле (что знаете), — модератор применит одной кнопкой.</p>
+                {% if place.is_mosque %}<p class="confirm__hint">{% translate "Выберите, как на самом деле (что знаете), — модератор применит одной кнопкой." %}</p>
                 <div class="confirm__grid">
-                  <label>Течение<select name="branch"><option value="">— без изменений —</option>{% for k, v in branches %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
-                  <label>Мазхаб<select name="madhhab"><option value="">— без изменений —</option>{% for k, v in madhhabs %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
-                  <label>Манхадж<select name="manhaj"><option value="">— без изменений —</option>{% for k, v in manhajs %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
-                  <label>На чём держится<select name="kind"><option value="">— без изменений —</option>{% for k, v in kinds %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+                  <label>{% translate "Течение" %}<select name="branch"><option value="">{% translate "— без изменений —" %}</option>{% for k, v in branches %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+                  <label>{% translate "Мазхаб" %}<select name="madhhab"><option value="">{% translate "— без изменений —" %}</option>{% for k, v in madhhabs %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+                  <label>{% translate "Манхадж" %}<select name="manhaj"><option value="">{% translate "— без изменений —" %}</option>{% for k, v in manhajs %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+                  <label>{% translate "На чём держится" %}<select name="kind"><option value="">{% translate "— без изменений —" %}</option>{% for k, v in kinds %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
                 </div>{% endif %}
-                <textarea name="note" rows="2" maxlength="500"{% if not place.is_mosque %} required{% endif %} placeholder="Что не так: адрес, телефон, часы, имам…"></textarea>
-                <button type="submit" class="btn btn--s">Отправить модератору</button></form>
+                <textarea name="note" rows="2" maxlength="500"{% if not place.is_mosque %} required{% endif %} placeholder="{% translate 'Что не так: адрес, телефон, часы, имам…' %}"></textarea>
+                <button type="submit" class="btn btn--s">{% translate "Отправить модератору" %}</button></form>
             </details>
           </div>
-        {% else %}<p class="reviews__login"><a class="link" href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">Войдите</a>, чтобы подтвердить или уточнить.</p>{% endif %}
+        {% else %}<p class="reviews__login"><a class="link" href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">{% translate "Войдите" %}</a>{% translate ", чтобы подтвердить или уточнить." %}</p>{% endif %}
       </section>
-      {% if place.is_mosque %}{% reviews_block place "Комментарии" %}{% else %}{% reviews_block place "Отзывы посетителей" %}{% endif %}
+      {% if place.is_mosque %}{% reviews_block place _("Комментарии") %}{% else %}{% reviews_block place _("Отзывы посетителей") %}{% endif %}
       {% if not place.is_mosque %}{% include 'includes/disclaimer.html' %}{% endif %}
       {% report_button place %}
     </div>
@@ -92,7 +93,7 @@
 {% if place.phone %}
 <div class="dbar">
   <div class="dbar__p"><div class="dbar__v">{{ place.name }}</div><div class="dbar__s">{{ place.get_category_display }} · {{ place.city }}</div></div>
-  <a class="btn btn--p" href="tel:{{ place.phone|cut:' ' }}">{% ico 'phone' %}Позвонить</a>
+  <a class="btn btn--p" href="tel:{{ place.phone|cut:' ' }}">{% ico 'phone' %}{% translate "Позвонить" %}</a>
 </div>
 {% endif %}
 {% endblock %}

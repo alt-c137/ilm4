@@ -1,16 +1,17 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons %}
-{% block title %}Новости — {{ block.super }}{% endblock %}
+{% block title %}{% translate "Новости —" %} {{ block.super }}{% endblock %}
 {% block body_class %}s-news{% endblock %}
 
 {% block content %}
 <div class="svc">
-{% include 'includes/section_hero.html' with icon="📰" title="Новости" desc="Главное из исламского мира — коротко и по делу" class="news" %}
+{% include 'includes/section_hero.html' with icon="📰" title=_("Новости") desc=_("Главное из исламского мира — коротко и по делу") class="news" %}
 {% for l in social_links %}{% if l.key == 'telegram' %}
 <a class="tgcard" href="{{ l.url }}" target="_blank" rel="noopener">
   <span class="tgcard__ic"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.9 4.6 19 19.3c-.2 1-.8 1.2-1.6.8l-4.5-3.3-2.2 2.1c-.2.2-.4.4-.9.4l.3-4.6L18.6 7c.4-.3-.1-.5-.6-.2L7.7 13.2 3.4 11.9c-.9-.3-.9-.9.2-1.4l17-6.6c.8-.3 1.5.2 1.3 1.3z"/></svg></span>
-  <span class="tgcard__b"><b>Новости ilm4 в Telegram</b><span>Подпишитесь, чтобы узнавать первыми — {{ l.url|cut:'https://' }}</span></span>
-  <span class="btn btn--s tgcard__btn">Подписаться</span>
+  <span class="tgcard__b"><b>{% translate "Новости ilm4 в Telegram" %}</b><span>{% translate "Подпишитесь, чтобы узнавать первыми —" %} {{ l.url|cut:'https://' }}</span></span>
+  <span class="btn btn--s tgcard__btn">{% translate "Подписаться" %}</span>
 </a>
 {% endif %}{% endfor %}
 
@@ -19,20 +20,20 @@
   <a class="card" href="{% url 'news:detail' p.slug %}">
     <div class="ncard__cover ncard__cover--{% cycle 'a' 'b' 'c' %}">
       {% if p.cover %}<img src="{{ p.cover.url }}" alt="">{% else %}<svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="opacity:.9"><path d="M4 5h13v14H5a1 1 0 0 1-1-1V5zM17 8h3v9a2 2 0 0 1-2 2M7 8h7M7 11.5h7M7 15h5"/></svg>{% endif %}
-      {% if p.is_pinned %}<span class="badge"><svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" style="vertical-align:-1px;margin-right:3px"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.1 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.3l6.1-.7z"/></svg>Важное</span>{% endif %}
+      {% if p.is_pinned %}<span class="badge"><svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" style="vertical-align:-1px;margin-right:3px"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.1 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.3l6.1-.7z"/></svg>{% translate "Важное" %}</span>{% endif %}
     </div>
     <div class="card__b">
       <div class="card__t">{{ p.title }}</div>
       {% if p.summary %}<div class="card__d">{{ p.summary }}</div>{% endif %}
       <div class="card__f"><span class="meta">{{ p.created_at|date:"d.m.Y H:i" }}</span>
-        <span class="link" style="font-size:12.5px">Читать →</span></div>
+        <span class="link" style="font-size:12.5px">{% translate "Читать →" %}</span></div>
     </div>
   </a>
   {% empty %}
   <div class="empty" style="grid-column:1/-1">
     <div class="empty__plug">{% svc_icon 'news' '📰' '' %}</div>
-    <h3 style="font-size:18px;font-weight:800">Новостей пока нет</h3>
-    <p style="color:var(--ink-soft)">Первые публикации появятся здесь.</p>
+    <h3 style="font-size:18px;font-weight:800">{% translate "Новостей пока нет" %}</h3>
+    <p style="color:var(--ink-soft)">{% translate "Первые публикации появятся здесь." %}</p>
   </div>
   {% endfor %}
 </div>

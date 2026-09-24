@@ -1,27 +1,28 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons %}{% load reports %}
 {% block title %}{{ topic.title }} — {{ block.super }}{% endblock %}
-{% block description %}{{ topic.title }} — вопрос на форуме ilm4{% endblock %}
+{% block description %}{{ topic.title }} {% translate "— вопрос на форуме ilm4" %}{% endblock %}
 {% block body_class %}s-forum{% endblock %}
 
 {% block content %}
 <div class="dpage">
   <div class="thread">
-    <a class="crumb" href="{% url 'forum:list' %}">{% ico 'back' %}Все вопросы</a>
+    <a class="crumb" href="{% url 'forum:list' %}">{% ico 'back' %}{% translate "Все вопросы" %}</a>
 
     <section class="dcard qhead">
       <div class="person">
         <span class="person__ava">{{ topic.author.get_display_name|slice:":1"|upper }}</span>
         <div>
           <div class="person__n">{{ topic.author.get_display_name }}</div>
-          <div class="person__s">спросил(а) {{ topic.created_at|date:"j E Y, H:i" }}</div>
+          <div class="person__s">{% translate "спросил(а)" %} {{ topic.created_at|date:"j E Y, H:i" }}</div>
         </div>
       </div>
       <h1 class="dtitle">{{ topic.title }}</h1>
       {% if topic.body %}<div class="prose">{{ topic.body|linebreaks }}</div>{% endif %}
     </section>
 
-    <h2 class="dcard__h" style="margin:8px 4px 0">Ответы <small>{{ replies|length }}</small></h2>
+    <h2 class="dcard__h" style="margin:8px 4px 0">{% translate "Ответы" %} <small>{{ replies|length }}</small></h2>
     <div class="answers">
       {% for r in replies %}
       <div class="answer">
@@ -35,8 +36,8 @@
       {% empty %}
       <div class="empty">
         <div class="empty__plug">{% ico 'chat' %}</div>
-        <h3 style="font-size:17px;font-weight:800">Ответов пока нет</h3>
-        <p style="color:var(--ink-soft)">Знаете ответ? Поделитесь — это садака знанием.</p>
+        <h3 style="font-size:17px;font-weight:800">{% translate "Ответов пока нет" %}</h3>
+        <p style="color:var(--ink-soft)">{% translate "Знаете ответ? Поделитесь — это садака знанием." %}</p>
       </div>
       {% endfor %}
     </div>
@@ -44,15 +45,15 @@
     <section class="dcard replybox">
       {% if user.is_authenticated %}
       <form method="post" action="{% url 'forum:reply' topic.pk %}" class="form" style="max-width:none">{% csrf_token %}
-        <label for="id_body">Ваш ответ</label>
-        <textarea name="body" id="id_body" rows="4" required placeholder="Ответ по существу, с источником, если он есть…"></textarea>
-        <button type="submit" class="btn btn--p">{% ico 'send' %}Ответить</button>
+        <label for="id_body">{% translate "Ваш ответ" %}</label>
+        <textarea name="body" id="id_body" rows="4" required placeholder="{% translate 'Ответ по существу, с источником, если он есть…' %}"></textarea>
+        <button type="submit" class="btn btn--p">{% ico 'send' %}{% translate "Ответить" %}</button>
       </form>
       {% else %}
       <div class="person">
         <span class="person__ava">{% ico 'user' %}</span>
-        <div style="flex:1"><div class="person__n">Хотите ответить?</div><div class="person__s">Войдите — это займёт минуту.</div></div>
-        <a class="btn btn--p" href="{% url 'accounts:login' %}?next={{ request.path }}">Войти</a>
+        <div style="flex:1"><div class="person__n">{% translate "Хотите ответить?" %}</div><div class="person__s">{% translate "Войдите — это займёт минуту." %}</div></div>
+        <a class="btn btn--p" href="{% url 'accounts:login' %}?next={{ request.path }}">{% translate "Войти" %}</a>
       </div>
       {% endif %}
     </section>

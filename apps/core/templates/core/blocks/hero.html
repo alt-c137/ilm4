@@ -1,16 +1,14 @@
-{% load icons %}{% load prayer_tags %}{% load weather %}{% load humanize %}{% comment %}Главная: герой + ИНФОПАНЕЛЬ (хадис дня, ближайшая молитва, погода, курс валют).
-Картинки героя/хадиса — из админки (SiteSettings: hero_image, hadis_image).
-Погода — Open-Meteo с кешем; при недоступности панель просто без погоды.{% endcomment %}
+{% load i18n %}{% load icons %}{% load prayer_tags %}{% load weather %}{% load humanize %}{% comment %}{% translate "Главная: герой + ИНФОПАНЕЛЬ (хадис дня, ближайшая молитва, погода, курс валют). Картинки героя/хадиса — из админки (SiteSettings: hero_image, hadis_image). Погода — Open-Meteo с кешем; при недоступности панель просто без погоды." %}{% endcomment %}
 <section class="sec">
   <div class="hero2">
     <div class="hero2__card">
       <div class="hero__l">
-        <span class="hero__k">Знания · Жизнь · Дело</span>
-        <h1>Одна платформа для всей уммы</h1>
-        <p>Учись, покупай и продавай, находи работу и жильё, читай новости и получай ответы — быстро и удобно.</p>
+        <span class="hero__k">{% translate "Знания · Жизнь · Дело" %}</span>
+        <h1>{% translate "Одна платформа для всей уммы" %}</h1>
+        <p>{% translate "Учись, покупай и продавай, находи работу и жильё, читай новости и получай ответы — быстро и удобно." %}</p>
         <div class="hero__cta">
-          <a class="btn btn--p" href="{% url 'core:catalog' %}">Все сервисы <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-          <a class="btn btn--g" href="/buy/add/">Подать объявление</a>
+          <a class="btn btn--p" href="{% url 'core:catalog' %}">{% translate "Все сервисы" %} <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a class="btn btn--g" href="/buy/add/">{% translate "Подать объявление" %}</a>
         </div>
       </div>
       {% if site_settings.hero_image %}
@@ -44,10 +42,10 @@
 {% if site_settings.hadis_details %}
 <div class="modal" id="hadis-modal" hidden>
   <div class="modal__card">
-    <button type="button" class="modal__close" id="hadis-modal-close" aria-label="Закрыть">×</button>
-    <h3 class="modal__h">Разбор хадиса</h3>
-    <p class="modal__src">{{ site_settings.hadis_text }} — {{ site_settings.hadis_source }}</p>
-    <div class="modal__body">{{ site_settings.hadis_details|linebreaks }}</div>
+    <button type="button" class="modal__close" id="hadis-modal-close" aria-label="{% translate 'Закрыть' %}">×</button>
+    <h3 class="modal__h">{% translate "Разбор хадиса" %}</h3>
+    <p class="modal__src">{{ site_settings.hadis_text|tr }} — {{ site_settings.hadis_source|tr }}</p>
+    <div class="modal__body">{{ site_settings.hadis_details|tr|linebreaks }}</div>
   </div>
 </div>
 <script>

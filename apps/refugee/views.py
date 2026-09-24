@@ -1,5 +1,6 @@
 from django.db.models import Q
 from django.shortcuts import render
+from django.utils.translation import gettext as _
 
 from apps.core.decorators import module_required
 
@@ -67,6 +68,6 @@ def index(request):
                 groups.append({'key': key, 'name': name, 'items': items})
         other = list(local.filter(region=''))
         if other:
-            groups.append({'key': '', 'name': 'Другие страны', 'items': other})
+            groups.append({'key': '', 'name': _('Другие страны'), 'items': other})
         ctx['groups'] = groups
     return render(request, 'refugee/index.html', ctx)

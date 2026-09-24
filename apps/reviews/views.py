@@ -6,6 +6,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
+from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from apps.accounts.audit import log_action
@@ -36,7 +37,7 @@ def _back(request):
 def submit(request, ct_id, obj_id):
     ct, obj = _target(ct_id, obj_id)
     if not can_review(request.user, obj):
-        messages.error(request, 'Оценивать свою страницу нельзя.')
+        messages.error(request, _('Оценивать свою страницу нельзя.'))
         return _back(request)
     text = request.POST.get('text', '').strip()[:2000]
     if is_rated(obj):
@@ -45,18 +46,18 @@ def submit(request, ct_id, obj_id):
         except ValueError:
             rating = 0
         if not 1 <= rating <= 5:
-            messages.error(request, 'Поставьте оценку от 1 до 5 звёзд.')
+            messages.error(request, _('Поставьте оценку от 1 до 5 звёзд.'))
             return _back(request)
     else:
         rating = None
         if not text:
-            messages.error(request, 'Напишите сообщение.')
+            messages.error(request, _('Напишите сообщение.'))
             return _back(request)
     _review, created = Review.objects.update_or_create(
         content_type=ct, object_id=obj.pk, author=request.user,
         defaults={'rating': rating, 'text': text})
     log_action(request, 'Отзыв ' + ('оставлен' if created else 'изменён'), f'{ct.model}#{obj.pk}: {rating or "—"}★')
-    messages.success(request, 'Спасибо! Отзыв опубликован.' if created else 'Отзыв обновлён.')
+    messages.success(request, _('Спасибо! Отзыв опубликован.') if created else _('Отзыв обновлён.'))
     return _back(request)
 
 
@@ -70,5 +71,5 @@ def reply(request, pk):
     review.reply = request.POST.get('reply', '').strip()[:2000]
     review.replied_at = timezone.now() if review.reply else None
     review.save(update_fields=['reply', 'replied_at'])
-    messages.success(request, 'Ответ сохранён.')
+    messages.success(request, _('Ответ сохранён.'))
     return _back(request)

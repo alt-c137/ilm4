@@ -1,11 +1,12 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons humanize %}
-{% block title %}Оплата — {{ block.super }}{% endblock %}
+{% block title %}{% translate "Оплата —" %} {{ block.super }}{% endblock %}
 {% block content %}
 <div class="fpage"><div class="dcard" style="text-align:center">
-  <h1 id="pay-h">{% if t.status == 'paid' %}Баланс пополнен ✅{% elif t.status == 'pending' %}Ждём подтверждение оплаты…{% else %}Оплата не прошла{% endif %}</h1>
-  <p class="fpage__sub">{{ t.amount|intcomma }} сум · {{ t.provider }}. {% if t.status == 'pending' %}Обычно это секунды — страница обновится сама.{% endif %}</p>
-  <a class="btn btn--p" href="{{ next|default:'/wallet/' }}">Продолжить</a>
+  <h1 id="pay-h">{% if t.status == 'paid' %}{% translate "Баланс пополнен ✅" %}{% elif t.status == 'pending' %}{% translate "Ждём подтверждение оплаты…" %}{% else %}{% translate "Оплата не прошла" %}{% endif %}</h1>
+  <p class="fpage__sub">{{ t.amount|intcomma }} {% translate "сум ·" %} {{ t.provider }}. {% if t.status == 'pending' %}{% translate "Обычно это секунды — страница обновится сама." %}{% endif %}</p>
+  <a class="btn btn--p" href="{{ next|default:'/wallet/' }}">{% translate "Продолжить" %}</a>
 </div></div>
 {% endblock %}
 {% block extra_js %}{% if t.status == 'pending' %}

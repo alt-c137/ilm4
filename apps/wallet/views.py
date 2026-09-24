@@ -2,6 +2,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
+from django.utils.translation import gettext as _
 
 from apps.core.decorators import module_required
 from apps.core.models import SiteSettings
@@ -18,10 +19,10 @@ def index(request):
         'transactions': (request.user.transactions.all()[:50]),
         'payouts': st.wallet_payouts_enabled,
         'prices': [
-            ('Поднять объявление в топ на 7 дней', st.boost_price),
-            ('Поднять анкету никах на 7 дней', st.nikah_boost_price),
-            ('Открыть контакт в никахе', st.nikah_chat_price),
-            ('Публикация врача', st.doctor_publish_price),
+            (_('Поднять объявление в топ на 7 дней'), st.boost_price),
+            (_('Поднять анкету никах на 7 дней'), st.nikah_boost_price),
+            (_('Открыть контакт в никахе'), st.nikah_chat_price),
+            (_('Публикация врача'), st.doctor_publish_price),
         ],
     })
 
@@ -30,7 +31,7 @@ def index(request):
 @module_required('wallet')
 def payout(request):
     if not SiteSettings.get_solo().wallet_payouts_enabled:
-        messages.info(request, 'Вывод средств пока недоступен: баланс можно тратить на услуги платформы.')
+        messages.info(request, _('Вывод средств пока недоступен: баланс можно тратить на услуги платформы.'))
         return redirect('wallet:index')
     min_amount = SiteSettings.get_solo().min_payout
     balance = services.balance_of(request.user)
@@ -38,10 +39,10 @@ def payout(request):
         try:
             amount = request.POST.get('amount', '').strip()
             services.create_payout_request(request.user, amount, min_amount)
-            messages.success(request, 'Заявка на вывод создана — обработает админ.')
+            messages.success(request, _('Заявка на вывод создана — обработает админ.'))
             return redirect('wallet:index')
         except services.InsufficientFunds:
-            messages.error(request, 'Недостаточно средств на балансе.')
+            messages.error(request, _('Недостаточно средств на балансе.'))
         except ValueError as exc:
             messages.error(request, str(exc))
     return render(request, 'wallet/payout.html', {'balance': balance, 'min_amount': min_amount})

@@ -1,21 +1,22 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons %}
-{% block title %}Все сервисы — {{ block.super }}{% endblock %}
-{% block description %}Все сервисы ilm4 в одном месте: намаз, халяль-маркет, карта, никах, работа, новости и другие.{% endblock %}
+{% block title %}{% translate "Все сервисы —" %} {{ block.super }}{% endblock %}
+{% block description %}{% translate "Все сервисы ilm4 в одном месте: намаз, халяль-маркет, карта, никах, работа, новости и другие." %}{% endblock %}
 {% block body_class %}page-catalog{% endblock %}
 
 {% block content %}
 <div class="catalog">
   <header class="cat__head">
     <div>
-      <h1 class="cat__t">Все сервисы</h1>
-      <p class="cat__sub">{{ services_on }} работают{% if services_soon %} · ещё {{ services_soon }} скоро{% endif %}</p>
+      <h1 class="cat__t">{% translate "Все сервисы" %}</h1>
+      <p class="cat__sub">{{ services_on }} {% translate "работают" %}{% if services_soon %} {% translate "· ещё" %} {{ services_soon }} {% translate "скоро" %}{% endif %}</p>
     </div>
     <label class="cat__search">
       {% ico 'search' %}
-      <input type="search" id="cat-q" placeholder="Найти сервис: намаз, работа, врач…" autocomplete="off" enterkeyhint="search" aria-label="Поиск сервиса">
+      <input type="search" id="cat-q" placeholder="{% translate 'Найти сервис: намаз, работа, врач…' %}" autocomplete="off" enterkeyhint="search" aria-label="{% translate 'Поиск сервиса' %}">
     </label>
-    <nav class="cat__chips" aria-label="Группы">
+    <nav class="cat__chips" aria-label="{% translate 'Группы' %}">
       {% for g in groups %}<a class="chip" href="#g-{{ g.key }}">{{ g.name }}</a>{% endfor %}
     </nav>
   </header>
@@ -28,11 +29,11 @@
       <a class="citem{% if m.status == 'soon' %} is-soon{% endif %}"
          href="{% if m.url %}{{ m.url }}{% elif m.status == 'on' %}/{{ m.key }}/{% else %}{% url 'core:soon' %}?m={{ m.key }}{% endif %}"
          {% if m.external %}target="_blank" rel="noopener"{% endif %}
-         data-q="{{ m.name|lower }} {{ m.descr|lower }} {{ m.key }}">
+         data-q="{{ m.name|tr|lower }} {{ m.descr|tr|lower }} {{ m.key }}">
         <span class="app__ic">{% if m.ui_icon %}{% ico m.ui_icon 'glyph-svg' %}{% else %}{% svc_glyph m.key m.icon 'glyph' %}{% endif %}</span>
         <span class="citem__b">
-          <span class="citem__n">{{ m.name }}{% if m.status == 'soon' %} <span class="citem__soon">скоро</span>{% endif %}</span>
-          {% if m.descr %}<span class="citem__d">{{ m.descr }}</span>{% endif %}
+          <span class="citem__n">{{ m.name|tr }}{% if m.status == 'soon' %} <span class="citem__soon">{% translate "скоро" %}</span>{% endif %}</span>
+          {% if m.descr %}<span class="citem__d">{{ m.descr|tr }}</span>{% endif %}
         </span>
         <svg class="citem__go" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
       </a>
@@ -43,8 +44,8 @@
 
   <div class="empty" id="cat-empty" hidden>
     <div class="empty__plug">{% ico 'search' %}</div>
-    <h3 style="font-size:17px;font-weight:800">Ничего не нашли</h3>
-    <p style="color:var(--ink-soft)">Попробуйте другое слово — например, «еда», «врач» или «работа».</p>
+    <h3 style="font-size:17px;font-weight:800">{% translate "Ничего не нашли" %}</h3>
+    <p style="color:var(--ink-soft)">{% translate "Попробуйте другое слово — например, «еда», «врач» или «работа»." %}</p>
   </div>
 </div>
 {% endblock %}

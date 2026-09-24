@@ -1,39 +1,40 @@
 {% extends 'nikah/_base.html' %}
+{% load i18n %}
 {% load nikah_tags humanize icons %}
-{% block nk_title %}Анкеты · Никях{% endblock %}
-{% block nk_bar_left %}<button type="button" class="nkbar__btn{% if filtered %} on{% endif %}" data-open-filters aria-label="Фильтры">{% nk_icon 'gauge' %}<span>Фильтры{% if filtered %} ·  вкл{% endif %}</span></button>{% endblock %}
+{% block nk_title %}{% translate "Анкеты · Никях" %}{% endblock %}
+{% block nk_bar_left %}<button type="button" class="nkbar__btn{% if filtered %} on{% endif %}" data-open-filters aria-label="{% translate 'Фильтры' %}">{% nk_icon 'gauge' %}<span>{% translate "Фильтры" %}{% if filtered %} {% translate "· вкл" %}{% endif %}</span></button>{% endblock %}
 {% block nk %}
 {% if not me.is_published %}
-<div class="nknote">{% nk_icon 'clock' %}<div>{% if me.status == 'rejected' %}<b>Анкета не прошла проверку.</b> <a class="link" href="{% url 'nikah:edit' %}">Исправить →</a>{% elif not me.is_active %}<b>Анкета скрыта.</b> <a class="link" href="{% url 'nikah:mine' %}">Вернуть →</a>{% else %}<b>Анкета на проверке.</b> Листать можно, интерес — после одобрения.{% endif %}</div></div>
+<div class="nknote">{% nk_icon 'clock' %}<div>{% if me.status == 'rejected' %}<b>{% translate "Анкета не прошла проверку." %}</b> <a class="link" href="{% url 'nikah:edit' %}">{% translate "Исправить →" %}</a>{% elif not me.is_active %}<b>{% translate "Анкета скрыта." %}</b> <a class="link" href="{% url 'nikah:mine' %}">{% translate "Вернуть →" %}</a>{% else %}<b>{% translate "Анкета на проверке." %}</b> {% translate "Листать можно, интерес — после одобрения." %}{% endif %}</div></div>
 {% endif %}
 
 {% if cards %}
-<p class="nkdeck__hint">← Листайте свайпом: влево — пропустить, вправо — интерес →{% if left is not None %} · <b id="nk-left">{{ left }}</b> на сегодня{% endif %}</p>
+<p class="nkdeck__hint">{% translate "← Листайте свайпом: влево — пропустить, вправо — интерес →" %}{% if left is not None %} · <b id="nk-left">{{ left }}</b> {% translate "на сегодня" %}{% endif %}</p>
 <div class="nkdeckwrap">
 <div class="nkdeck" id="nkdeck">
   {% for p in cards %}{% include 'nikah/_swipecard.html' %}{% endfor %}
 </div>
 <div class="nkdeck__act">
-  <button type="button" class="nkround nkround--no" data-act="no" aria-label="Пропустить" title="Пропустить (←)">{% nk_icon 'x' %}</button>
-  <button type="button" class="nkround nkround--yes" data-act="yes" aria-label="Проявить интерес" title="Интерес (→)"{% if not me.is_published %} disabled{% endif %}>{% nk_icon 'check' %}</button>
+  <button type="button" class="nkround nkround--no" data-act="no" aria-label="{% translate 'Пропустить' %}" title="{% translate 'Пропустить (←)' %}">{% nk_icon 'x' %}</button>
+  <button type="button" class="nkround nkround--yes" data-act="yes" aria-label="{% translate 'Проявить интерес' %}" title="{% translate 'Интерес (→)' %}"{% if not me.is_published %} disabled{% endif %}>{% nk_icon 'check' %}</button>
 </div>
 </div>
 <div class="nkstamp nkstamp--no" aria-hidden="true">{% nk_icon 'x' %}</div>
 <div class="nkstamp nkstamp--yes" aria-hidden="true">{% nk_icon 'check' %}</div>
-<div class="nkmatchpop" id="nk-matchpop" hidden>{% nk_icon 'heart' %}<b>Взаимная симпатия!</b><a class="btn btn--p" id="nk-matchlink" href="#">Что дальше →</a></div>
+<div class="nkmatchpop" id="nk-matchpop" hidden>{% nk_icon 'heart' %}<b>{% translate "Взаимная симпатия!" %}</b><a class="btn btn--p" id="nk-matchlink" href="#">{% translate "Что дальше →" %}</a></div>
 {% elif left == 0 %}
 <div class="nkend">{% nk_icon 'clock' %}
-  <h2>Анкеты на сегодня закончились</h2>
-  <p>Вы посмотрели {{ limit }} {{ limit|ru_plural:"анкету,анкеты,анкет" }} за сегодня. Завтра, иншаАллах, будут новые.</p>
-  {% if premium_on %}<a class="btn btn--p btn--lg" href="{% url 'nikah:premium' %}">{% nk_icon 'star' %}Премиум — без ограничений</a>{% endif %}
+  <h2>{% translate "Анкеты на сегодня закончились" %}</h2>
+  <p>{% translate "Вы посмотрели" %} {{ limit }} {{ limit|ru_plural:_("анкету,анкеты,анкет") }} {% translate "за сегодня. Завтра, иншаАллах, будут новые." %}</p>
+  {% if premium_on %}<a class="btn btn--p btn--lg" href="{% url 'nikah:premium' %}">{% nk_icon 'star' %}{% translate "Премиум — без ограничений" %}</a>{% endif %}
 </div>
 {% else %}
 <div class="nkend">{% nk_icon 'feed' %}
-  <h2>{% if filtered %}По фильтрам больше никого{% else %}Вы посмотрели все анкеты{% endif %}</h2>
-  <p>{% if filtered %}Расширьте фильтры — возраст, страну или город.{% else %}Новые анкеты появляются каждый день — загляните позже.{% endif %}</p>
+  <h2>{% if filtered %}{% translate "По фильтрам больше никого" %}{% else %}{% translate "Вы посмотрели все анкеты" %}{% endif %}</h2>
+  <p>{% if filtered %}{% translate "Расширьте фильтры — возраст, страну или город." %}{% else %}{% translate "Новые анкеты появляются каждый день — загляните позже." %}{% endif %}</p>
   <div class="nkend__act">
-    {% if filtered %}<form method="post" action="{% url 'nikah:filters' %}">{% csrf_token %}<input type="hidden" name="reset" value="1"><button class="btn btn--g" type="submit">Сбросить фильтры</button></form>{% endif %}
-    {% if skipped %}<form method="post" action="{% url 'nikah:restore' %}">{% csrf_token %}<button class="btn btn--p" type="submit">↺ Вернуть отклонённых ({{ skipped }}){% if not me.is_premium and restore_price %} · {{ restore_price|intcomma }} сум{% endif %}</button></form>{% endif %}
+    {% if filtered %}<form method="post" action="{% url 'nikah:filters' %}">{% csrf_token %}<input type="hidden" name="reset" value="1"><button class="btn btn--g" type="submit">{% translate "Сбросить фильтры" %}</button></form>{% endif %}
+    {% if skipped %}<form method="post" action="{% url 'nikah:restore' %}">{% csrf_token %}<button class="btn btn--p" type="submit">{% translate "↺ Вернуть отклонённых (" %}{{ skipped }}){% if not me.is_premium and restore_price %} · {{ restore_price|intcomma }} {% translate "сум" %}{% endif %}</button></form>{% endif %}
   </div>
 </div>
 {% endif %}
@@ -42,42 +43,42 @@
 <dialog class="nkfilters" id="nkfilters">
   <form method="post" action="{% url 'nikah:filters' %}" class="nkfilters__form" id="nkfilters-form">{% csrf_token %}
     <header class="nkfilters__head">
-      <button type="button" class="nkfilters__x" data-close aria-label="Закрыть">{% nk_icon 'x' %}</button>
-      <b>Фильтры</b>
-      <button type="submit" name="reset" value="1" class="nkfilters__reset">Сброс</button>
+      <button type="button" class="nkfilters__x" data-close aria-label="{% translate 'Закрыть' %}">{% nk_icon 'x' %}</button>
+      <b>{% translate "Фильтры" %}</b>
+      <button type="submit" name="reset" value="1" class="nkfilters__reset">{% translate "Сброс" %}</button>
     </header>
     <div class="nkfilters__body">
-      <section class="nkfs"><h4>Где живёт</h4>
-        <div class="nkf"><span>Страна</span><div class="nkpick" data-pick="country"><input type="text" name="country" value="{{ f.country|default:'' }}" placeholder="Любая"></div></div>
-        <div class="nkf"><span>Город</span><div class="nkpick" data-pick="city"><input type="text" name="city" value="{{ f.city|default:'' }}" placeholder="Любой"></div></div>
+      <section class="nkfs"><h4>{% translate "Где живёт" %}</h4>
+        <div class="nkf"><span>{% translate "Страна" %}</span><div class="nkpick" data-pick="country"><input type="text" name="country" value="{{ f.country|nk_country }}" placeholder="{% translate 'Любая' %}"></div></div>
+        <div class="nkf"><span>{% translate "Город" %}</span><div class="nkpick" data-pick="city"><input type="text" name="city" value="{{ f.city|default:'' }}" placeholder="{% translate 'Любой' %}"></div></div>
       </section>
-      <section class="nkfs"><h4>Национальность</h4>
+      <section class="nkfs"><h4>{% translate "Национальность" %}</h4>
         <div class="nkchipset">
-          <label class="nkc"><input type="radio" name="nation_group" value=""{% if not f.nation_group %} checked{% endif %}><span>Все</span></label>
+          <label class="nkc"><input type="radio" name="nation_group" value=""{% if not f.nation_group %} checked{% endif %}><span>{% translate "Все" %}</span></label>
           {% for g, label in nation_groups %}<label class="nkc"><input type="radio" name="nation_group" value="{{ g }}"{% if f.nation_group == g %} checked{% endif %}><span>{{ label }}</span></label>{% endfor %}
         </div>
-        <label class="nkf"><input type="text" name="nation_text" value="{{ f.nation_text|default:'' }}" placeholder="Или впишите одну нацию: татарка, чеченец…"></label>
+        <label class="nkf"><input type="text" name="nation_text" value="{{ f.nation_text|default:'' }}" placeholder="{% translate 'Или впишите одну нацию: татарка, чеченец…' %}"></label>
       </section>
-      <section class="nkfs">{% include 'nikah/_dual.html' with name='age' label='Возраст' lo=18 hi=80 a=f.age.0 b=f.age.1 unit='лет' %}</section>
-      <section class="nkfs">{% include 'nikah/_dual.html' with name='height' label='Рост' lo=120 hi=230 a=f.height.0 b=f.height.1 unit='см' %}</section>
-      <section class="nkfs">{% include 'nikah/_dual.html' with name='weight' label='Вес' lo=40 hi=200 a=f.weight.0 b=f.weight.1 unit='кг' %}</section>
-      <section class="nkfs"><h4>Мазхаб</h4>{% include 'nikah/_chips.html' with name='madhhab' options=opts.madhhab value=f.madhhab %}</section>
-      <section class="nkfs"><h4>Вероубеждение</h4>{% include 'nikah/_chips.html' with name='aqida' options=opts.aqida value=f.aqida %}</section>
-      <section class="nkfs"><h4>Намаз</h4>{% include 'nikah/_chips.html' with name='prayer' options=opts.prayer value=f.prayer %}</section>
-      <section class="nkfs"><h4>Когда готовы к никяху</h4>{% include 'nikah/_chips.html' with name='ready_when' options=opts.ready_when value=f.ready_when %}</section>
-      <section class="nkfs"><h4>Семейное положение</h4>{% include 'nikah/_chips.html' with name='marital' options=opts.marital value=f.marital gender=other_gender %}</section>
-      <section class="nkfs"><h4>{% if me.gender == 'M' %}Покрытие{% else %}Борода{% endif %}</h4>{% include 'nikah/_chips.html' with name='look' options=opts.look value=f.look %}</section>
-      <section class="nkfs"><h4>Хочет детей</h4>{% include 'nikah/_chips.html' with name='children_want' options=opts.children_want value=f.children_want %}</section>
-      <section class="nkfs"><h4>Готовность к переезду</h4>{% include 'nikah/_chips.html' with name='relocation' options=opts.relocation value=f.relocation %}</section>
-      <section class="nkfs"><h4>Параметры анкеты</h4>
-        <label class="nksw"><span><b>С фото</b><small>Только анкеты, где фото откроется при симпатии</small></span><input type="checkbox" name="with_photo" value="1"{% if f.with_photo %} checked{% endif %}><i></i></label>
-        <label class="nksw{% if not me.is_premium %} nksw--lock{% endif %}"><span><b>Сейчас в сети{% if not me.is_premium %} 🔒{% endif %}</b><small>{% if me.is_premium %}Были на сайте последние 10 минут{% else %}Доступно с премиумом{% endif %}</small></span><input type="checkbox" name="online" value="1"{% if f.online %} checked{% endif %}{% if not me.is_premium %} disabled{% endif %}><i></i></label>
-        <label class="nksw"><span><b>Без детей</b><small>Нет своих детей</small></span><input type="checkbox" name="no_children" value="1"{% if f.no_children %} checked{% endif %}><i></i></label>
-        <label class="nksw"><span><b>{% if me.gender == 'M' %}Не была замужем{% else %}Не был женат{% endif %}</b><small>Ранее в браке не состоял(а)</small></span><input type="checkbox" name="never_married" value="1"{% if f.never_married %} checked{% endif %}><i></i></label>
-        {% if me.gender == 'M' %}<label class="nksw"><span><b>Согласна на многожёнство</b><small>Готова быть не единственной или обсуждать</small></span><input type="checkbox" name="polygyny" value="1"{% if f.polygyny %} checked{% endif %}><i></i></label>{% endif %}
+      <section class="nkfs">{% include 'nikah/_dual.html' with name='age' label=_('Возраст') lo=18 hi=80 a=f.age.0 b=f.age.1 unit=_('лет') %}</section>
+      <section class="nkfs">{% include 'nikah/_dual.html' with name='height' label=_('Рост') lo=120 hi=230 a=f.height.0 b=f.height.1 unit=_('см') %}</section>
+      <section class="nkfs">{% include 'nikah/_dual.html' with name='weight' label=_('Вес') lo=40 hi=200 a=f.weight.0 b=f.weight.1 unit=_('кг') %}</section>
+      <section class="nkfs"><h4>{% translate "Мазхаб" %}</h4>{% include 'nikah/_chips.html' with name='madhhab' options=opts.madhhab value=f.madhhab %}</section>
+      <section class="nkfs"><h4>{% translate "Вероубеждение" %}</h4>{% include 'nikah/_chips.html' with name='aqida' options=opts.aqida value=f.aqida %}</section>
+      <section class="nkfs"><h4>{% translate "Намаз" %}</h4>{% include 'nikah/_chips.html' with name='prayer' options=opts.prayer value=f.prayer %}</section>
+      <section class="nkfs"><h4>{% translate "Когда готовы к никяху" %}</h4>{% include 'nikah/_chips.html' with name='ready_when' options=opts.ready_when value=f.ready_when %}</section>
+      <section class="nkfs"><h4>{% translate "Семейное положение" %}</h4>{% include 'nikah/_chips.html' with name='marital' options=opts.marital value=f.marital gender=other_gender %}</section>
+      <section class="nkfs"><h4>{% if me.gender == 'M' %}{% translate "Покрытие" %}{% else %}{% translate "Борода" %}{% endif %}</h4>{% include 'nikah/_chips.html' with name='look' options=opts.look value=f.look %}</section>
+      <section class="nkfs"><h4>{% translate "Хочет детей" %}</h4>{% include 'nikah/_chips.html' with name='children_want' options=opts.children_want value=f.children_want %}</section>
+      <section class="nkfs"><h4>{% translate "Готовность к переезду" %}</h4>{% include 'nikah/_chips.html' with name='relocation' options=opts.relocation value=f.relocation %}</section>
+      <section class="nkfs"><h4>{% translate "Параметры анкеты" %}</h4>
+        <label class="nksw"><span><b>{% translate "С фото" %}</b><small>{% translate "Только анкеты, где фото откроется при симпатии" %}</small></span><input type="checkbox" name="with_photo" value="1"{% if f.with_photo %} checked{% endif %}><i></i></label>
+        <label class="nksw{% if not me.is_premium %} nksw--lock{% endif %}"><span><b>{% translate "Сейчас в сети" %}{% if not me.is_premium %} 🔒{% endif %}</b><small>{% if me.is_premium %}{% translate "Были на сайте последние 10 минут" %}{% else %}{% translate "Доступно с премиумом" %}{% endif %}</small></span><input type="checkbox" name="online" value="1"{% if f.online %} checked{% endif %}{% if not me.is_premium %} disabled{% endif %}><i></i></label>
+        <label class="nksw"><span><b>{% translate "Без детей" %}</b><small>{% translate "Нет своих детей" %}</small></span><input type="checkbox" name="no_children" value="1"{% if f.no_children %} checked{% endif %}><i></i></label>
+        <label class="nksw"><span><b>{% if me.gender == 'M' %}{% translate "Не была замужем" %}{% else %}{% translate "Не был женат" %}{% endif %}</b><small>{% translate "Ранее в браке не состоял(а)" %}</small></span><input type="checkbox" name="never_married" value="1"{% if f.never_married %} checked{% endif %}><i></i></label>
+        {% if me.gender == 'M' %}<label class="nksw"><span><b>{% translate "Согласна на многожёнство" %}</b><small>{% translate "Готова быть не единственной или обсуждать" %}</small></span><input type="checkbox" name="polygyny" value="1"{% if f.polygyny %} checked{% endif %}><i></i></label>{% endif %}
       </section>
     </div>
-    <footer class="nkfilters__foot"><button class="btn btn--p btn--lg" type="submit">Применить</button></footer>
+    <footer class="nkfilters__foot"><button class="btn btn--p btn--lg" type="submit">{% translate "Применить" %}</button></footer>
   </form>
 </dialog>
 {% endblock %}
@@ -138,7 +139,7 @@
   }
   function fly(card, dir) {
     var like = dir > 0;
-    if (like && !canLike) { toast('Интерес можно проявлять после одобрения вашей анкеты'); back(card); return; }
+    if (like && !canLike) { toast('{{ _("Интерес можно проявлять после одобрения вашей анкеты")|escapejs }}'); back(card); return; }
     card.classList.add('gone');
     card.style.transition = 'transform .38s ease-in, opacity .38s';
     card.style.transform = 'translate(' + dir * (window.innerWidth + 200) + 'px,40px) rotate(' + dir * 28 + 'deg)';
@@ -150,7 +151,7 @@
       if (j.error) toast(j.error);
       var left = document.getElementById('nk-left'); if (left && j.left != null) left.textContent = j.left;
       if (j.match) { var pop = document.getElementById('nk-matchpop'); document.getElementById('nk-matchlink').href = j.match; pop.hidden = false; }
-    }).catch(function () { toast('Нет соединения — решение не сохранилось'); });
+    }).catch(function () { toast('{{ _("Нет соединения — решение не сохранилось")|escapejs }}'); });
   }
   function back(card) {
     card.style.transition = 'transform .3s cubic-bezier(.2,1.4,.4,1)'; card.style.transform = '';

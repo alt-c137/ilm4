@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils.translation import gettext_lazy as _lazy
 
 from apps.core.models import Moderation
 
@@ -8,9 +9,9 @@ class Book(models.Model):
     """Книга библиотеки: разделы, бесплатная (price=0) или платная."""
 
     CATEGORIES = [
-        ('akida', 'Акыда'), ('fiqh', 'Фикх'), ('quran', 'Коран и таджвид'),
-        ('arabic', 'Арабский язык'), ('history', 'История Ислама'),
-        ('family', 'Семья и воспитание'), ('other', 'Другое'),
+        ('akida', _lazy('Акыда')), ('fiqh', _lazy('Фикх')), ('quran', _lazy('Коран и таджвид')),
+        ('arabic', _lazy('Арабский язык')), ('history', _lazy('История Ислама')),
+        ('family', _lazy('Семья и воспитание')), ('other', _lazy('Другое')),
     ]
 
     title = models.CharField('название', max_length=200)

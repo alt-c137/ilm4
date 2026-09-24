@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
 from django.shortcuts import redirect, render
+from django.utils.translation import gettext as _
 
 from apps.core.decorators import module_required, pledge_required
 from apps.core.models import Moderation
@@ -56,6 +57,6 @@ def ride_create(request):
         ride = form.save(commit=False)
         ride.owner = request.user
         ride.save()
-        messages.success(request, 'Отправлено — после модерации появится в списке.')
+        messages.success(request, _('Отправлено — после модерации появится в списке.'))
         return redirect('transport:list')
     return render(request, 'transport/create.html', {'form': form, 'types': Ride.TYPES})

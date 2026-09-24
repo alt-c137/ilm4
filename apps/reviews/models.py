@@ -9,6 +9,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.utils.translation import gettext as _
 
 # что можно оценивать: 'app_label.model'
 REVIEWABLE = {'accounts.user', 'maps.halalplace', 'health.doctor'}
@@ -39,4 +40,4 @@ class Review(models.Model):
         indexes = [models.Index(fields=['content_type', 'object_id', 'is_hidden'])]
 
     def __str__(self):
-        return f'{self.rating or "—"}★ от {self.author} → {self.content_type.model}#{self.object_id}'
+        return _('{v0}★ от {v2} → {v4}#{v6}').format(v0=self.rating or '—', v2=self.author, v4=self.content_type.model, v6=self.object_id)

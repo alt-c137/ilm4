@@ -10,6 +10,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.formats import date_format
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _lazy
 from django.views.decorators.http import require_POST
 
 from apps.core.decorators import module_required
@@ -19,7 +21,7 @@ from .models import Message, Thread
 
 User = get_user_model()
 HISTORY = 300
-WEEKDAYS = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс']
+WEEKDAYS = [_lazy('пн'), _lazy('вт'), _lazy('ср'), _lazy('чт'), _lazy('пт'), _lazy('сб'), _lazy('вс')]
 
 
 def _when(dt):
@@ -31,7 +33,7 @@ def _when(dt):
     if local.date() == today:
         return local.strftime('%H:%M')
     if local.date() == today - timedelta(days=1):
-        return 'вчера'
+        return _('вчера')
     if (today - local.date()).days < 7:
         return WEEKDAYS[local.weekday()]
     return local.strftime('%d.%m.%y')
@@ -40,9 +42,9 @@ def _when(dt):
 def _day_label(d):
     today = timezone.localdate()
     if d == today:
-        return 'Сегодня'
+        return _('Сегодня')
     if d == today - timedelta(days=1):
-        return 'Вчера'
+        return _('Вчера')
     return date_format(d, 'j E' if d.year == today.year else 'j E Y')
 
 
@@ -84,6 +86,9 @@ def thread_detail(request, pk):
     blocked = _blocked(thread, request.user)
     if request.method == 'POST':  # fallback без JS: отправить обычной формой
         body = request.POST.get('body', '').strip()[:2000]
+        if body and nikah_contacts_forbidden(thread.pk, body):
+            messages.error(request, _('В чате никяха нельзя передавать телефоны, ники и ссылки.'))
+            return redirect('chat:thread', pk=pk)
         if body and not blocked:
             Message.objects.create(thread=thread, sender=request.user, body=body)
         return redirect('chat:thread', pk=pk)
@@ -118,7 +123,7 @@ def thread_detail(request, pk):
         'blocked': blocked,
         'witnesses': [u.get_display_name() for u in thread.observers.exclude(pk=request.user.pk)],
         'chat_cfg': {'me': request.user.id, 'thread': thread.pk,
-                     'other': other.get_display_name() if other else '', 'features': _flags()},
+                     'other': other.get_display_name() if other else '', 'features': _flags(thread)},
     })
 
 
@@ -136,7 +141,7 @@ def thread_start(request):
         other = User.objects.filter(email__iexact=email).first()
         from apps.accounts.models import UserBlock
         if other and UserBlock.between(request.user, other):
-            messages.error(request, 'Переписка недоступна: один из вас заблокировал другого.')
+            messages.error(request, _('Переписка недоступна: один из вас заблокировал другого.'))
             return redirect('chat:inbox')
         if other:
             thread = (Thread.objects.filter(participants=request.user)
@@ -150,8 +155,18 @@ def thread_start(request):
                 thread.subject = subject
                 thread.save(update_fields=['subject', 'updated_at'])
             return redirect('chat:thread', pk=thread.pk)
-        messages.error(request, 'Пользователь с таким email не найден.')
+        messages.error(request, _('Пользователь с таким email не найден.'))
     return render(request, 'chat/start.html', {'email': email})
+
+
+def nikah_contacts_forbidden(thread_id, body: str) -> bool:
+    """Чат никяха: телефоны, ники и ссылки не пропускаем (настройка в админке)."""
+    from apps.core.models import SiteSettings
+    if not SiteSettings.get_solo().nikah_chat_block_contacts:
+        return False
+    from apps.nikah.models import NikahMatch
+    from apps.nikah.services import has_contacts
+    return has_contacts(body) and NikahMatch.objects.filter(thread_id=thread_id).exists()
 
 
 def _blocked(thread, user) -> bool:
@@ -160,10 +175,18 @@ def _blocked(thread, user) -> bool:
     return any(UserBlock.between(user, p) for p in thread.participants.exclude(pk=user.pk))
 
 
-def _flags():
+def _flags(thread=None):
+    """Что разрешено в чате (выключатели в админке). Для пары никяха фото/видео/кружки —
+    отдельным выключателем: иначе фото ушли бы в обход защищённого обмена."""
     from apps.core.models import SiteSettings
     st = SiteSettings.get_solo()
-    return {'contacts': st.chat_contacts_enabled, 'photo': st.chat_photos_enabled, 'voice': st.chat_voice_enabled, 'circle': st.chat_circles_enabled,
+    media = True
+    if thread is not None and not st.nikah_chat_media:
+        from apps.nikah.models import NikahMatch
+        media = not NikahMatch.objects.filter(thread_id=thread.pk).exists()
+    return {'contacts': st.chat_contacts_enabled, 'photo': st.chat_photos_enabled and media,
+            'video': st.chat_videos_enabled and media, 'voice': st.chat_voice_enabled,
+            'circle': st.chat_circles_enabled and media,
             'calls': st.chat_calls_enabled, 'video_calls': st.chat_video_calls_enabled,
             'turn': {'url': st.webrtc_turn_url, 'username': st.webrtc_turn_username,
                      'credential': st.webrtc_turn_credential} if st.webrtc_turn_url else None}
@@ -173,30 +196,43 @@ def _flags():
 @module_required('chat')
 @require_POST
 def upload(request, pk):
-    """Фото / голосовое / кружок: сохранить и разослать участникам по WebSocket."""
+    """Фото / видео / голосовое / кружок: сохранить и разослать участникам по WebSocket."""
+    thread = get_object_or_404(Thread, pk=pk)
+    try:
+        payload = store_upload(thread, request.user, request.POST.get('kind', ''), request.FILES.get('file'),
+                               request.POST.get('duration'), request.POST.get('caption', ''))
+    except UploadRefused as exc:
+        return JsonResponse({'error': exc.message}, status=exc.status)
+    return JsonResponse(payload)
+
+
+class UploadRefused(Exception):
+    def __init__(self, message, status):
+        super().__init__(str(message))
+        self.message, self.status = str(message), status
+
+
+def store_upload(thread, user, kind, upload_file, duration=None, caption='') -> dict:
+    """Общая часть загрузки вложения (сайт и приложение): проверки, сохранение, рассылка."""
     from asgiref.sync import async_to_sync
     from channels.layers import get_channel_layer
 
     from .events import message_payload, notify_recipients, preview
     from .media import MediaError, prepare
 
-    thread = get_object_or_404(Thread, pk=pk)
-    if request.user not in thread.participants.all():
-        return JsonResponse({'error': 'Нет доступа'}, status=403)
-    if _blocked(thread, request.user):
-        return JsonResponse({'error': 'Переписка недоступна: блокировка'}, status=403)
-    kind = request.POST.get('kind', '')
-    if not _flags().get(kind):
-        return JsonResponse({'error': 'Эта функция сейчас отключена'}, status=403)
-    upload_file = request.FILES.get('file')
+    if not thread.participants.filter(pk=user.pk).exists():
+        raise UploadRefused(_('Нет доступа'), 403)
+    if _blocked(thread, user):
+        raise UploadRefused(_('Переписка недоступна: блокировка'), 403)
+    if kind not in ('photo', 'video', 'voice', 'circle') or not _flags(thread).get(kind):
+        raise UploadRefused(_('Эта функция сейчас отключена'), 403)
     if not upload_file:
-        return JsonResponse({'error': 'Файл не получен'}, status=400)
+        raise UploadRefused(_('Файл не получен'), 400)
     try:
-        content, duration = prepare(kind, upload_file, request.POST.get('duration'))
+        content, sec = prepare(kind, upload_file, duration)
     except MediaError as exc:
-        return JsonResponse({'error': str(exc)}, status=400)
-    msg = Message(thread=thread, sender=request.user, kind=kind, duration=duration,
-                  body=request.POST.get('caption', '').strip()[:1000])
+        raise UploadRefused(str(exc), 400) from exc
+    msg = Message(thread=thread, sender=user, kind=kind, duration=sec, body=(caption or '').strip()[:1000])
     msg.attachment.save(content.name, content, save=False)
     msg.save()
     thread.save(update_fields=['updated_at'])
@@ -204,8 +240,34 @@ def upload(request, pk):
     layer = get_channel_layer()
     if layer is not None:
         async_to_sync(layer.group_send)(f'chat_{thread.pk}', {'type': 'chat.message', 'payload': payload})
-    notify_recipients(thread, request.user, preview(msg))
-    return JsonResponse(payload)
+    notify_recipients(thread, user, preview(msg))
+    return payload
+
+
+def send_text(thread, user, body: str) -> dict:
+    """Текстовое сообщение не через WebSocket (приложение, запасной путь): те же проверки."""
+    from asgiref.sync import async_to_sync
+    from channels.layers import get_channel_layer
+
+    from .events import message_payload, notify_recipients
+
+    body = (body or '').strip()
+    if not body or len(body) > 2000:
+        raise UploadRefused(_('Сообщение пустое или слишком длинное'), 400)
+    if not thread.participants.filter(pk=user.pk).exists():
+        raise UploadRefused(_('Нет доступа'), 403)
+    if _blocked(thread, user):
+        raise UploadRefused(_('Переписка недоступна: блокировка'), 403)
+    if nikah_contacts_forbidden(thread.pk, body):
+        raise UploadRefused(_('В чате никяха нельзя передавать телефоны, ники и ссылки — общение внутри ilm4, при махраме.'), 400)
+    msg = Message.objects.create(thread=thread, sender=user, body=body)
+    thread.save(update_fields=['updated_at'])
+    payload = message_payload(msg)
+    layer = get_channel_layer()
+    if layer is not None:
+        async_to_sync(layer.group_send)(f'chat_{thread.pk}', {'type': 'chat.message', 'payload': payload})
+    notify_recipients(thread, user, body)
+    return payload
 
 
 @login_required
@@ -242,12 +304,12 @@ def contacts_match(request):
     key = f'contacts_match:{request.user.pk}'
     hits = cache.get(key, 0)
     if hits >= 10:
-        return JsonResponse({'error': 'Слишком часто. Попробуйте через час.'}, status=429)
+        return JsonResponse({'error': _('Слишком часто. Попробуйте через час.')}, status=429)
     cache.set(key, hits + 1, 3600)
     try:
         keys = json.loads(request.body or b'{}').get('keys', [])
     except ValueError:
-        return JsonResponse({'error': 'Неверный запрос'}, status=400)
+        return JsonResponse({'error': _('Неверный запрос')}, status=400)
     keys = [k for k in keys if isinstance(k, str) and len(k) == 64][:2000]
     found = (User.objects.filter(phone_key__in=keys, findable_by_phone=True, is_active=True)
              .exclude(pk=request.user.pk)[:200])

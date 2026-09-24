@@ -4,6 +4,7 @@ import json
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.translation import gettext as _
 
 from apps.core.decorators import module_required, pledge_required
 from apps.core.models import Moderation
@@ -71,7 +72,7 @@ def add_place(request):
         place = form.save(commit=False)
         place.owner = request.user
         place.save()
-        messages.success(request, 'Спасибо! Место отправлено на модерацию.')
+        messages.success(request, _('Спасибо! Место отправлено на модерацию.'))
         return redirect('maps:map')
     return render(request, 'maps/add.html', {'form': form})
 
@@ -110,11 +111,11 @@ def place_confirm(request, pk):
     if correct:
         suggested = dict.fromkeys(suggested, '')
     if not correct and not note and not any(suggested.values()):
-        messages.error(request, 'Опишите, что неточно, — модератор проверит.')
+        messages.error(request, _('Опишите, что неточно, — модератор проверит.'))
         return redirect('maps:detail', pk=pk)
     PlaceConfirmation.objects.update_or_create(
         place=place, user=request.user,
         defaults={'is_correct': correct, 'note': '' if correct else note, 'resolved': False, **suggested})
-    messages.success(request, 'Спасибо, подтверждение учтено.' if correct
-                     else 'Спасибо! Модератор проверит и исправит.')
+    messages.success(request, _('Спасибо, подтверждение учтено.') if correct
+                     else _('Спасибо! Модератор проверит и исправит.'))
     return redirect('maps:detail', pk=pk)

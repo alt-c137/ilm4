@@ -16,6 +16,7 @@ urlpatterns = [
     path('my/<slug:key>/<int:pk>/delete/', my_views.my_delete, name='my_delete'),
     path('my/<slug:key>/<int:pk>/toggle/', my_views.my_toggle, name='my_toggle'),
     path('report/', my_views.report, name='report'),
+    path('lang/', views.set_language, name='set_lang'),
     path('catalog/', views.catalog, name='catalog'),
     path('settings/', views.settings_view, name='settings'),
     path('feed/', views.feed, name='feed'),

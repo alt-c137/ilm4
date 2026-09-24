@@ -1,68 +1,71 @@
 {% extends 'nikah/_base.html' %}
+{% load i18n %}
 {% load nikah_tags %}
-{% block nk_title %}Настройки · Никях{% endblock %}
-{% block nk_back %}<a class="nkback" href="{% url 'nikah:mine' %}" data-back>{% nk_icon 'back' %}Назад</a>{% endblock %}
+{% block nk_title %}{% translate "Настройки · Никях" %}{% endblock %}
+{% block nk_back %}<a class="nkback" href="{% url 'nikah:mine' %}" data-back>{% nk_icon 'back' %}{% translate "Назад" %}</a>{% endblock %}
 {% block nk %}
 <div class="nkedit">
-  <div class="nkedit__head"><h1>Настройки</h1></div>
+  <div class="nkedit__head"><h1>{% translate "Настройки" %}</h1></div>
 
-  <section class="nkfs"><h4>Фото в анкете</h4>
+  <section class="nkfs"><h4>{% translate "Фото в анкете" %}</h4>
     <form method="post" class="nkphotomode">{% csrf_token %}
-      <button type="submit" name="photo_mode" value="exchange" class="nkpm{% if p.photo_mode == 'exchange' %} on{% endif %}">{% nk_icon 'photo_exchange' %}<b>Открывать фото при взаимной симпатии</b><small>Одноразовый показ на несколько минут с водяным знаком. Сестра смотрит первой.</small></button>
-      <button type="submit" name="photo_mode" value="none" class="nkpm{% if p.photo_mode == 'none' %} on{% endif %}">{% nk_icon 'photo_none' %}<b>Без фото — только переписка</b><small>Чат открывается сразу после взаимной симпатии. Фото — лично в чате, когда решите.</small></button>
+      <button type="submit" name="photo_mode" value="exchange" class="nkpm{% if p.photo_mode == 'exchange' %} on{% endif %}">{% nk_icon 'photo_exchange' %}<b>{% translate "Открывать фото при взаимной симпатии" %}</b><small>{% translate "Одноразовый показ на несколько минут с водяным знаком. Сестра смотрит первой." %}</small></button>
+      <button type="submit" name="photo_mode" value="none" class="nkpm{% if p.photo_mode == 'none' %} on{% endif %}">{% nk_icon 'photo_none' %}<b>{% translate "Без фото — только переписка" %}</b><small>{% translate "Чат открывается сразу после взаимной симпатии. Фото — лично в чате, когда решите." %}</small></button>
     </form>
-    <p class="nkstep__tip">⚠ Без своего фото вы не увидите фото других — обмен работает по принципу взаимности.</p>
+    <p class="nkstep__tip">{% translate "⚠ Без своего фото вы не увидите фото других — обмен работает по принципу взаимности." %}</p>
   </section>
 
-  <section class="nkfs"><h4>Личные данные</h4>
+  <section class="nkfs"><h4>{% translate "Личные данные" %}</h4>
     <div class="nkmenu">
-      <div class="nkmenu__info">{% nk_icon 'user' %}<span>{{ p.display_name }}{% if p.verified %} <i class="nkverified">✓</i>{% endif %}</span><small>Анкета #{{ p.pk }}</small></div>
-      <a href="{% url 'nikah:edit' %}">{% nk_icon 'edit' %}<span>Редактирование<br><small>Личное, внешность, семья, религия</small></span>{% nk_icon 'arrow' 'nkmenu__go' %}</a>
-      <a href="{% url 'nikah:detail' p.pk %}">{% nk_icon 'eye_off' %}<span>Предпросмотр анкеты<br><small>Как её видят другие</small></span>{% nk_icon 'arrow' 'nkmenu__go' %}</a>
+      <div class="nkmenu__info">{% nk_icon 'user' %}<span>{{ p.display_name }}{% if p.verified %} <i class="nkverified">✓</i>{% endif %}</span><small>{% translate "Анкета #" %}{{ p.pk }}</small></div>
+      <a href="{% url 'nikah:edit' %}">{% nk_icon 'edit' %}<span>{% translate "Редактирование" %}<br><small>{% translate "Личное, внешность, семья, религия" %}</small></span>{% nk_icon 'arrow' 'nkmenu__go' %}</a>
+      <a href="{% url 'nikah:detail' p.pk %}">{% nk_icon 'eye_off' %}<span>{% translate "Предпросмотр анкеты" %}<br><small>{% translate "Как её видят другие" %}</small></span>{% nk_icon 'arrow' 'nkmenu__go' %}</a>
     </div>
   </section>
 
-  <section class="nkfs" id="verify"><h4>Верификация</h4>
-    {% if p.verified %}<p class="nkok">✅ Вы верифицированы {{ p.verified_at|date:"d.m.Y" }} — на анкете значок.</p>
+  <section class="nkfs" id="verify"><h4>{% translate "Верификация" %}</h4>
+    {% if p.verified %}<p class="nkok">{% translate "✅ Вы верифицированы" %} {{ p.verified_at|date:"d.m.Y" }} {% translate "— на анкете значок." %}</p>
     {% else %}
-    <p class="nkstep__sub">Подтвердите, что анкету ведёт живой человек: запишите боту видео-кружок и скажите «{{ p.display_name }}, {{ p.age }}». Запись видит только модератор, на нашем сервере она не хранится.</p>
-    {% if user.telegram_id %}<form method="post" action="{% url 'nikah:verify' %}">{% csrf_token %}<button class="btn btn--p" type="submit">{% nk_icon 'telegram' %}Пройти в Telegram</button></form>
-    {% elif verify_tg %}<a class="btn btn--p" href="{{ verify_tg }}" target="_blank" rel="noopener">{% nk_icon 'telegram' %}Открыть бота и пройти</a>
-    {% else %}<p class="nkmeta">Верификация заработает, когда будет подключён Telegram-бот.</p>{% endif %}
+    <p class="nkstep__sub">{% translate "Подтвердите, что анкету ведёт живой человек: запишите боту видео-кружок и скажите «" %}{{ p.display_name }}, {{ p.age }}{% translate "». Запись видит только модератор, на нашем сервере она не хранится." %}</p>
+    {% if user.telegram_id %}<form method="post" action="{% url 'nikah:verify' %}">{% csrf_token %}<button class="btn btn--p" type="submit">{% nk_icon 'telegram' %}{% translate "Пройти в Telegram" %}</button></form>
+    {% elif verify_tg %}<a class="btn btn--p" href="{{ verify_tg }}" target="_blank" rel="noopener">{% nk_icon 'telegram' %}{% translate "Открыть бота и пройти" %}</a>
+    {% else %}<p class="nkmeta">{% translate "Верификация заработает, когда будет подключён Telegram-бот." %}</p>{% endif %}
     {% endif %}
   </section>
 
-  <section class="nkfs" id="witness"><h4>Свидетель (махрам)</h4>
-    {% if p.witness %}<p class="nkok">👁 {{ p.witness.get_display_name }} — свидетель во всех ваших чатах никяха.</p>
-      <form method="post" action="{% url 'nikah:witness' %}">{% csrf_token %}<input type="hidden" name="remove" value="1"><button class="linkbtn" type="submit">Убрать свидетеля</button></form>
+  <section class="nkfs" id="witness"><h4>{% translate "Свидетель (махрам)" %}</h4>
+    {% if p.witness %}<p class="nkok">👁 {{ p.witness.get_display_name }} {% translate "— свидетель во всех ваших чатах никяха." %}</p>
+      <form method="post" action="{% url 'nikah:witness' %}">{% csrf_token %}<input type="hidden" name="remove" value="1"><button class="linkbtn" type="submit">{% translate "Убрать свидетеля" %}</button></form>
     {% else %}
-      <p class="nkstep__sub">Добавьте махрама (отца, брата) — он будет видеть переписку в ваших чатах никяха и сможет писать. Так общение остаётся в рамках адаба.</p>
-      {% if p.witness_token %}<div class="nkcopy"><input type="text" readonly id="nk-witness" value="{{ request.scheme }}://{{ request.get_host }}{% url 'nikah:witness_join' p.witness_token %}"><button type="button" class="btn btn--p" data-copy="#nk-witness">Копировать</button></div>
-        <p class="nkmeta">Отправьте ссылку махраму. Ему нужен аккаунт ilm4 (или вход через Telegram).</p>
-      {% else %}<form method="post" action="{% url 'nikah:witness' %}">{% csrf_token %}<button class="btn btn--p" type="submit">{% nk_icon 'user' %}Пригласить свидетеля</button></form>{% endif %}
+      <p class="nkstep__sub">{% translate "Добавьте махрама (отца, брата) — он будет видеть переписку в ваших чатах никяха и сможет писать. Так общение остаётся в рамках адаба." %}</p>
+      {% if p.witness_token %}<div class="nkcopy"><input type="text" readonly id="nk-witness" value="{{ request.scheme }}://{{ request.get_host }}{% url 'nikah:witness_join' p.witness_token %}"><button type="button" class="btn btn--p" data-copy="#nk-witness">{% translate "Копировать" %}</button></div>
+        <p class="nkmeta">{% translate "Отправьте ссылку махраму. Ему нужен аккаунт ilm4 (или вход через Telegram)." %}</p>
+      {% else %}<form method="post" action="{% url 'nikah:witness' %}">{% csrf_token %}<button class="btn btn--p" type="submit">{% nk_icon 'user' %}{% translate "Пригласить свидетеля" %}</button></form>{% endif %}
     {% endif %}
   </section>
 
-  <section class="nkfs"><h4>Уведомления</h4>
-    {% if user.telegram_id %}<p class="nkok">✅ Telegram подключён{% if user.telegram_username %} (@{{ user.telegram_username }}){% endif %} — о симпатиях и сообщениях пишет бот.</p>
-    {% elif tg_bot %}<p class="nkstep__sub">Откройте никях через бота — уведомления будут приходить в Telegram.</p><a class="btn btn--g" href="https://t.me/{{ tg_bot }}" target="_blank" rel="noopener">{% nk_icon 'telegram' %}Открыть бота</a>
-    {% else %}<p class="nkmeta">Уведомления — на сайте (колокольчик).</p>{% endif %}
+  <section class="nkfs"><h4>{% translate "Уведомления" %}</h4>
+    {% if user.telegram_id %}<p class="nkok">{% translate "✅ Telegram подключён" %}{% if user.telegram_username %} (@{{ user.telegram_username }}){% endif %} {% translate "— о симпатиях и сообщениях пишет бот." %}</p>
+    {% elif tg_bot %}<p class="nkstep__sub">{% translate "Откройте никях через бота — уведомления будут приходить в Telegram." %}</p><a class="btn btn--g" href="https://t.me/{{ tg_bot }}" target="_blank" rel="noopener">{% nk_icon 'telegram' %}{% translate "Открыть бота" %}</a>
+    {% else %}<p class="nkmeta">{% translate "Уведомления — на сайте (колокольчик)." %}</p>{% endif %}
   </section>
 
-  <section class="nkfs"><h4>Анкеты сегодня</h4>
-    <div class="nkmenu"><div class="nkmenu__info">{% nk_icon 'heart' %}<span>Осталось сегодня</span><b>{% if left is None %}без лимита{% else %}{{ left }}/{{ limit }}{% endif %}</b></div></div>
+  <section class="nkfs"><h4>{% translate "Язык" %}</h4>{% include 'includes/lang_switch.html' %}</section>
+
+  <section class="nkfs"><h4>{% translate "Анкеты сегодня" %}</h4>
+    <div class="nkmenu"><div class="nkmenu__info">{% nk_icon 'heart' %}<span>{% translate "Осталось сегодня" %}</span><b>{% if left is None %}{% translate "без лимита" %}{% else %}{{ left }}/{{ limit }}{% endif %}</b></div></div>
   </section>
 
-  <section class="nkfs"><h4>Платежи</h4>
+  <section class="nkfs"><h4>{% translate "Платежи" %}</h4>
     <div class="nkmenu">
-      <a href="{% url 'wallet:topup' %}?next={{ request.path|urlencode }}">{% nk_icon 'lock' %}<span>Пополнить баланс</span><small>{{ balance|floatformat:0 }} сум</small>{% nk_icon 'arrow' 'nkmenu__go' %}</a>
-      <a href="{% url 'wallet:index' %}">{% nk_icon 'feed' %}<span>История платежей</span>{% nk_icon 'arrow' 'nkmenu__go' %}</a>
+      <a href="{% url 'wallet:topup' %}?next={{ request.path|urlencode }}">{% nk_icon 'lock' %}<span>{% translate "Пополнить баланс" %}</span><small>{{ balance|floatformat:0 }} {% translate "сум" %}</small>{% nk_icon 'arrow' 'nkmenu__go' %}</a>
+      <a href="{% url 'wallet:index' %}">{% nk_icon 'feed' %}<span>{% translate "История платежей" %}</span>{% nk_icon 'arrow' 'nkmenu__go' %}</a>
     </div>
   </section>
 
-  <section class="nkfs"><h4>Пригласить друзей</h4>
-    <p class="nkstep__sub">{% if bonus_days %}+{{ bonus_days }} дн. премиума за каждого, чью анкету одобрит модератор.{% else %}Поделитесь ссылкой с теми, кто ищет никях.{% endif %} Приглашено: <b>{{ invited }}</b>.</p>
-    <div class="nkcopy"><input type="text" readonly value="{% if invite_tg %}{{ invite_tg }}{% else %}{{ invite_web }}{% endif %}" id="nk-invite"><button type="button" class="btn btn--p" data-copy="#nk-invite">Копировать</button></div>
+  <section class="nkfs"><h4>{% translate "Пригласить друзей" %}</h4>
+    <p class="nkstep__sub">{% if bonus_days %}+{{ bonus_days }} {% translate "дн. премиума за каждого, чью анкету одобрит модератор." %}{% else %}{% translate "Поделитесь ссылкой с теми, кто ищет никях." %}{% endif %} {% translate "Приглашено:" %} <b>{{ invited }}</b>.</p>
+    <div class="nkcopy"><input type="text" readonly value="{% if invite_tg %}{{ invite_tg }}{% else %}{{ invite_web }}{% endif %}" id="nk-invite"><button type="button" class="btn btn--p" data-copy="#nk-invite">{% translate "Копировать" %}</button></div>
   </section>
 </div>
 {% endblock %}
@@ -72,7 +75,7 @@ document.querySelectorAll('[data-copy]').forEach(function (b) {
   b.addEventListener('click', function () {
     var i = document.querySelector(b.dataset.copy); i.select();
     (navigator.clipboard ? navigator.clipboard.writeText(i.value) : Promise.reject()).catch(function () { document.execCommand('copy'); });
-    b.textContent = 'Скопировано'; setTimeout(function () { b.textContent = 'Копировать'; }, 1500);
+    b.textContent = '{{ _("Скопировано")|escapejs }}'; setTimeout(function () { b.textContent = '{{ _("Копировать")|escapejs }}'; }, 1500);
   });
 });
 </script>

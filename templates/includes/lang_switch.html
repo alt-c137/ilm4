@@ -1,0 +1,6 @@
+{% load i18n %}{% get_current_language as CUR %}
+{# язык сегментами (настройки никяха, страница настроек): RU · UZ · EN #}
+<form method="post" action="{% url 'core:set_lang' %}" class="langseg" aria-label="{% translate 'Язык' %}">{% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  {% for code, name in lang_choices %}<button type="submit" name="language" value="{{ code }}" lang="{{ code }}" class="{% if code == CUR %}on{% endif %}" aria-pressed="{% if code == CUR %}true{% else %}false{% endif %}">{{ name }}</button>{% endfor %}
+</form>

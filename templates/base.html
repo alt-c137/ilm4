@@ -1,10 +1,10 @@
-{% load static %}{% load icons %}<!DOCTYPE html>
-<html lang="ru"{% if is_dark %} data-theme="dark"{% endif %}>
+{% load i18n %}{% load static %}{% load icons %}<!DOCTYPE html>
+{% get_current_language as LANGUAGE_CODE %}<html lang="{{ LANGUAGE_CODE }}"{% if in_app %} class="in-app"{% endif %}{% if is_dark %} data-theme="dark"{% endif %}>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>{% block title %}{{ site_settings.site_name }} — знания · жизнь · дело{% endblock %}</title>
-<meta name="description" content="{% block description %}ilm4 — платформа знаний, жизни и дела для уммы: время намаза, халяль-маркет, карта, никах, работа, новости и форум.{% endblock %}">
+<title>{% block title %}{{ site_settings.site_name }} {% translate "— знания · жизнь · дело" %}{% endblock %}</title>
+<meta name="description" content="{% block description %}{% translate 'ilm4 — платформа знаний, жизни и дела для уммы: время намаза, халяль-маркет, карта, никах, работа, новости и форум.' %}{% endblock %}">
 <meta name="theme-color" content="{% if is_dark %}#0e1016{% else %}#f2f3fb{% endif %}" id="meta-theme">
 <meta name="color-scheme" content="light dark">
 <meta name="format-detection" content="telephone=no">
@@ -25,6 +25,9 @@
 <link rel="stylesheet" href="{% static 'css/unify.css' %}?v={{ asset_v }}">
 <link rel="stylesheet" href="{% static 'css/chat.css' %}?v={{ asset_v }}">
 <link rel="stylesheet" href="{% static 'css/mobile.css' %}?v={{ asset_v }}">
+{{ js_i18n|json_script:"i18n-js" }}
+<script>/* перевод строк в static/js: _t('русский текст') */
+window._t = (function () { var d = {}; try { d = JSON.parse(document.getElementById('i18n-js').textContent); } catch (e) {} return function (s) { return d[s] || s; }; })();</script>
 {% include 'includes/tg_webapp.html' %}
 {% block extra_head %}{% endblock %}
 {% if current_theme %}<style>:root{--accent:{{ current_theme.accent }};--accent-d:{{ current_theme.accent_d }};--accent-soft:{{ current_theme.accent_soft }}}</style>{% endif %}
@@ -33,34 +36,35 @@
 {% include 'includes/messages.html' %}
 <div class="wrap">
   <header class="top" id="top"><div class="top__row">
-    <a class="logo logo--text" href="{% url 'core:home' %}" aria-label="ilm4 — на главную"><b>ilm<i>4</i></b></a>
-    <button type="button" class="darktoggle" id="darktoggle" aria-label="Светлая или тёмная тема" title="Светлая / тёмная тема"><svg class="dt-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg><svg class="dt-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg></button>
+    <a class="logo logo--text" href="{% url 'core:home' %}" aria-label="{% translate 'ilm4 — на главную' %}"><b>ilm<i>4</i></b></a>
+    <button type="button" class="darktoggle" id="darktoggle" aria-label="{% translate 'Светлая или тёмная тема' %}" title="{% translate 'Светлая / тёмная тема' %}"><svg class="dt-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg><svg class="dt-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg></button>
+    {% include 'includes/lang_menu.html' %}
     <form class="search" id="search" method="get" action="/buy/" role="search">
-      <input name="q" type="search" placeholder="Поиск объявлений: телефон, финики, коврик…" aria-label="Поиск" enterkeyhint="search" autocomplete="off">
-      <button type="submit">Найти</button>
+      <input name="q" type="search" placeholder="{% translate 'Поиск объявлений: телефон, финики, коврик…' %}" aria-label="{% translate 'Поиск' %}" enterkeyhint="search" autocomplete="off">
+      <button type="submit">{% translate "Найти" %}</button>
     </form>
     <div class="top__act">
-      <button type="button" class="tbtn tbtn--search" id="search-toggle" aria-label="Поиск" aria-controls="search" aria-expanded="false">
+      <button type="button" class="tbtn tbtn--search" id="search-toggle" aria-label="{% translate 'Поиск' %}" aria-controls="search" aria-expanded="false">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/></svg>
       </button>
-      <a class="ibtn ibtn--add" href="/buy/add/" title="Подать объявление">
-        <span class="ibtn__ic"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span><span class="ibtn__n">Подать</span>
+      <a class="ibtn ibtn--add" href="/buy/add/" title="{% translate 'Подать объявление' %}">
+        <span class="ibtn__ic"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span><span class="ibtn__n">{% translate "Подать" %}</span>
       </a>
-      <a class="ibtn ibtn--chat" href="{% url 'chat:inbox' %}" title="Сообщения">
-        <span class="ibtn__ic"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-11.9 7.6L3 21l1.9-6.1A8.4 8.4 0 1 1 21 11.5z"/></svg></span><span class="ibtn__n">Чаты</span>
+      <a class="ibtn ibtn--chat" href="{% url 'chat:inbox' %}" title="{% translate 'Сообщения' %}">
+        <span class="ibtn__ic"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-11.9 7.6L3 21l1.9-6.1A8.4 8.4 0 1 1 21 11.5z"/></svg></span><span class="ibtn__n">{% translate "Чаты" %}</span>
       </a>
-      {% if user.is_authenticated %}<a class="ibtn ibtn--bell" href="{% url 'notifications:list' %}" title="Уведомления" aria-label="Уведомления{% if unread_notifications %}: {{ unread_notifications }} новых{% endif %}">
+      {% if user.is_authenticated %}<a class="ibtn ibtn--bell" href="{% url 'notifications:list' %}" title="{% translate 'Уведомления' %}" aria-label="{% translate 'Уведомления' %}{% if unread_notifications %}: {{ unread_notifications }} {% translate 'новых' %}{% endif %}">
         <span class="ibtn__ic"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
         {% if unread_notifications %}<span class="ibtn__badge">{{ unread_notifications }}</span>{% endif %}
-        <span class="ibtn__n">Уведом.</span>
+        <span class="ibtn__n">{% translate "Уведом." %}</span>
       </a>{% endif %}
-      <a class="donate-m" href="{{ donate_url }}" target="_blank" rel="noopener" title="Поддержать проект">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.5-9.3C1 8 3.4 4.5 7 4.5c2 0 3.5 1.1 5 3 1.5-1.9 3-3 5-3 3.6 0 6 3.5 4.5 7.2C19.5 16.4 12 21 12 21z"/></svg>Поддержать
+      <a class="donate-m" href="{{ donate_url }}" target="_blank" rel="noopener" title="{% translate 'Поддержать проект' %}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.5-9.3C1 8 3.4 4.5 7 4.5c2 0 3.5 1.1 5 3 1.5-1.9 3-3 5-3 3.6 0 6 3.5 4.5 7.2C19.5 16.4 12 21 12 21z"/></svg>{% translate "Поддержать" %}
       </a>
-      <a class="btn btn--s supp-wide" href="{{ donate_url }}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" style="fill:currentColor;stroke:none;width:15px;height:15px"><path d="M12 21s-7.5-4.6-9.5-9.3C1 8 3.4 4.5 7 4.5c2 0 3.5 1.1 5 3 1.5-1.9 3-3 5-3 3.6 0 6 3.5 4.5 7.2C19.5 16.4 12 21 12 21z"/></svg>Поддержать</a>
+      <a class="btn btn--s supp-wide" href="{{ donate_url }}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" style="fill:currentColor;stroke:none;width:15px;height:15px"><path d="M12 21s-7.5-4.6-9.5-9.3C1 8 3.4 4.5 7 4.5c2 0 3.5 1.1 5 3 1.5-1.9 3-3 5-3 3.6 0 6 3.5 4.5 7.2C19.5 16.4 12 21 12 21z"/></svg>{% translate "Поддержать" %}</a>
       {% if user.is_authenticated %}
       <div class="usermenu" id="usermenu">
-        <button type="button" class="uchip" id="uchip" aria-haspopup="true" aria-expanded="false" aria-label="Меню профиля">
+        <button type="button" class="uchip" id="uchip" aria-haspopup="true" aria-expanded="false" aria-label="{% translate 'Меню профиля' %}">
           {% if user.avatar %}<img class="uchip__ava" src="{{ user.avatar.url }}" alt="">{% else %}<span class="uchip__ava uchip__ava--txt">{{ user.get_display_name|slice:":1"|upper }}</span>{% endif %}
           <span class="uchip__c">▾</span>
         </button>
@@ -72,36 +76,36 @@
               <div class="umenu__mail">{{ user.email }}</div>
             </div>
           </div>
-          <a href="{% url 'accounts:profile' %}"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1.2-3.6 4.1-5.5 7.5-5.5s6.3 1.9 7.5 5.5"/></svg>Профиль</a>
-          <a href="{% url 'core:my' %}"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>Мои публикации</a>
-          <a href="{% url 'market:my' %}"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M9 4v16"/></svg>Мои объявления</a>
-          <a href="{% url 'deals:index' %}"><svg viewBox="0 0 24 24"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.2-7.5 9.5-4.3-1.3-7.5-4.9-7.5-9.5V6z"/><path d="M9 12l2.2 2.2L15.5 10"/></svg>Сделки</a>
-{% if wallet_on %}          <a href="{% url 'wallet:index' %}"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h12v3"/><rect x="3" y="8" width="18" height="11" rx="2"/><path d="M16 13h2.5"/></svg>Кошелёк</a>{% endif %}
-          <a href="{% url 'chat:inbox' %}"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-11.9 7.6L3 21l1.9-6.1A8.4 8.4 0 1 1 21 11.5z"/></svg>Сообщения</a>
-          <a href="{% url 'notifications:list' %}"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>Уведомления{% if unread_notifications %} <span class="umenu__badge">{{ unread_notifications }}</span>{% endif %}</a>
-          <a class="umenu__m-only" href="{{ donate_url }}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.3-8.8-8.7C1.8 7.8 4 4.5 7.3 4.5c1.9 0 3.3 1 4.7 2.8 1.4-1.8 2.8-2.8 4.7-2.8 3.3 0 5.5 3.3 4.1 6.8C19 15.7 12 20 12 20z"/></svg>Поддержать проект</a>
+          <a href="{% url 'accounts:profile' %}"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1.2-3.6 4.1-5.5 7.5-5.5s6.3 1.9 7.5 5.5"/></svg>{% translate "Профиль" %}</a>
+          <a href="{% url 'core:my' %}"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>{% translate "Мои публикации" %}</a>
+          <a href="{% url 'market:my' %}"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M9 4v16"/></svg>{% translate "Мои объявления" %}</a>
+          <a href="{% url 'deals:index' %}"><svg viewBox="0 0 24 24"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.2-7.5 9.5-4.3-1.3-7.5-4.9-7.5-9.5V6z"/><path d="M9 12l2.2 2.2L15.5 10"/></svg>{% translate "Сделки" %}</a>
+{% if wallet_on %}          <a href="{% url 'wallet:index' %}"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h12v3"/><rect x="3" y="8" width="18" height="11" rx="2"/><path d="M16 13h2.5"/></svg>{% translate "Кошелёк" %}</a>{% endif %}
+          <a href="{% url 'chat:inbox' %}"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-11.9 7.6L3 21l1.9-6.1A8.4 8.4 0 1 1 21 11.5z"/></svg>{% translate "Сообщения" %}</a>
+          <a href="{% url 'notifications:list' %}"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>{% translate "Уведомления" %}{% if unread_notifications %} <span class="umenu__badge">{{ unread_notifications }}</span>{% endif %}</a>
+          <a class="umenu__m-only" href="{{ donate_url }}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.3-8.8-8.7C1.8 7.8 4 4.5 7.3 4.5c1.9 0 3.3 1 4.7 2.8 1.4-1.8 2.8-2.8 4.7-2.8 3.3 0 5.5 3.3 4.1 6.8C19 15.7 12 20 12 20z"/></svg>{% translate "Поддержать проект" %}</a>
           <div class="umenu__sep"></div>
-          <a href="{% url 'core:settings' %}"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Настройки</a>
+          <a href="{% url 'core:settings' %}"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>{% translate "Настройки" %}</a>
           <div class="umenu__sep"></div>
-          {% if user.is_staff %}<a href="/admin/"><svg viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></svg>Админка</a>{% endif %}
+          {% if user.is_staff %}<a href="/admin/"><svg viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></svg>{% translate "Админка" %}</a>{% endif %}
           <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
-            <button type="submit" class="umenu__exit"><svg viewBox="0 0 24 24"><path d="M14 4h4a1.5 1.5 0 0 1 1.5 1.5v13A1.5 1.5 0 0 1 18 20h-4"/><path d="M9 8l-4 4 4 4M5 12h10"/></svg>Выйти</button>
+            <button type="submit" class="umenu__exit"><svg viewBox="0 0 24 24"><path d="M14 4h4a1.5 1.5 0 0 1 1.5 1.5v13A1.5 1.5 0 0 1 18 20h-4"/><path d="M9 8l-4 4 4 4M5 12h10"/></svg>{% translate "Выйти" %}</button>
           </form>
         </div>
       </div>
       {% else %}
-        <a class="btn btn--g btn--login" href="{% url 'accounts:login' %}">Войти</a>
-        <a class="btn btn--p btn--reg" href="{% url 'accounts:register' %}">Регистрация</a>
+        <a class="btn btn--g btn--login" href="{% url 'accounts:login' %}">{% translate "Войти" %}</a>
+        <a class="btn btn--p btn--reg" href="{% url 'accounts:register' %}">{% translate "Регистрация" %}</a>
       {% endif %}
     </div>
   </div></header>
-  <nav class="nav railnav" aria-label="Разделы"><div class="nav__row">
-    <a class="{% if is_home %}on{% endif %}" href="{% url 'core:home' %}">Главная</a>
-    <a class="nav__all{% if request.resolver_match.url_name == 'catalog' %} on{% endif %}" href="{% url 'core:catalog' %}"><span class="navic"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="3.25"/></svg></span><span>Все сервисы</span></a>
-    {% for m in menu_modules %}<a class="{% if m.key == active_section %}on{% endif %}" href="/{{ m.key }}/">{% svc_icon m.key m.icon 'navic' %}<span>{{ m.name }}</span></a>{% endfor %}
+  <nav class="nav railnav" aria-label="{% translate 'Разделы' %}"><div class="nav__row">
+    <a class="{% if is_home %}on{% endif %}" href="{% url 'core:home' %}">{% translate "Главная" %}</a>
+    <a class="nav__all{% if request.resolver_match.url_name == 'catalog' %} on{% endif %}" href="{% url 'core:catalog' %}"><span class="navic"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="3.25"/></svg></span><span>{% translate "Все сервисы" %}</span></a>
+    {% for m in menu_modules %}<a class="{% if m.key == active_section %}on{% endif %}" href="/{{ m.key }}/">{% svc_icon m.key m.icon 'navic' %}<span>{{ m.name|tr }}</span></a>{% endfor %}
   </div>
-  <button type="button" class="rail-arrow l" aria-label="Назад">‹</button>
-  <button type="button" class="rail-arrow r" aria-label="Вперёд">›</button>
+  <button type="button" class="rail-arrow l" aria-label="{% translate 'Назад' %}">‹</button>
+  <button type="button" class="rail-arrow r" aria-label="{% translate 'Вперёд' %}">›</button>
   </nav>
   <main id="main">
   {% block content %}{% endblock %}
@@ -111,30 +115,30 @@
   <div class="foot__g">
     <div class="foot__brand">
       <div class="foot__l"><b>ilm<i>4</i></b></div>
-      <p class="foot__about">Платформа знаний, жизни и дела — для мусульман и всех, кому это полезно.</p>
-      <p class="foot__legal">ilm4 — площадка для объявлений и общения. Мы не продаём товары и не оказываем услуги сами: за них отвечают авторы публикаций.</p>
+      <p class="foot__about">{% translate "Платформа знаний, жизни и дела — для мусульман и всех, кому это полезно." %}</p>
+      <p class="foot__legal">{% translate "ilm4 — площадка для объявлений и общения. Мы не продаём товары и не оказываем услуги сами: за них отвечают авторы публикаций." %}</p>
     </div>
-    <div><h4>Разделы</h4>
-      {% for m in menu_modules|slice:":5" %}<a href="/{{ m.key }}/">{{ m.name }}</a>{% endfor %}
-      <a class="foot__more" href="{% url 'core:catalog' %}">Все сервисы →</a>
+    <div><h4>{% translate "Разделы" %}</h4>
+      {% for m in menu_modules|slice:":5" %}<a href="/{{ m.key }}/">{{ m.name|tr }}</a>{% endfor %}
+      <a class="foot__more" href="{% url 'core:catalog' %}">{% translate "Все сервисы →" %}</a>
     </div>
-    <div><h4>Платформа</h4>
-      <a href="{% url 'core:rules' %}">Правила</a>
-      <a href="{% url 'core:privacy' %}">Политика и куки</a>
-      <a href="{% url 'core:support' %}">Поддержать</a>
-      <a href="{% url 'core:shahada' %}">Как принять ислам</a>
-      <a href="{% url 'core:settings' %}">Настройки и оформление</a>
+    <div><h4>{% translate "Платформа" %}</h4>
+      <a href="{% url 'core:rules' %}">{% translate "Правила" %}</a>
+      <a href="{% url 'core:privacy' %}">{% translate "Политика и куки" %}</a>
+      <a href="{% url 'core:support' %}">{% translate "Поддержать" %}</a>
+      <a href="{% url 'core:shahada' %}">{% translate "Как принять ислам" %}</a>
+      <a href="{% url 'core:settings' %}">{% translate "Настройки и оформление" %}</a>
     </div>
-    <div><h4>Статус</h4>
-      <a href="{% url 'core:soon' %}">Что откроется дальше</a>
-      {% if user.is_staff %}<a href="/admin/">Управление</a>{% endif %}
+    <div><h4>{% translate "Статус" %}</h4>
+      <a href="{% url 'core:soon' %}">{% translate "Что откроется дальше" %}</a>
+      {% if user.is_staff %}<a href="/admin/">{% translate "Управление" %}</a>{% endif %}
     </div>
   </div>
   <div class="foot__bot"><span>© 2026 ilm4 · <span dir="rtl" lang="ar">بارك الله فيكم</span></span>
-    <div class="soc" aria-label="Мы в соцсетях">
+    <div class="soc" aria-label="{% translate 'Мы в соцсетях' %}">
       {% for l in social_links %}
-      <a href="{{ l.url }}" target="_blank" rel="noopener" aria-label="{{ l.name }}" title="{{ l.name }}" class="soc__a soc__a--{{ l.key }}{% if forloop.first %} soc__a--main{% endif %}">
-        {% include 'includes/social_icon.html' with key=l.key %}{% if forloop.first %}<span>{{ l.name }}</span>{% endif %}
+      <a href="{{ l.url }}" target="_blank" rel="noopener" aria-label="{{ l.name|tr }}" title="{{ l.name|tr }}" class="soc__a soc__a--{{ l.key }}{% if forloop.first %} soc__a--main{% endif %}">
+        {% include 'includes/social_icon.html' with key=l.key %}{% if forloop.first %}<span>{{ l.name|tr }}</span>{% endif %}
       </a>
       {% endfor %}
     </div>
@@ -142,26 +146,26 @@
 </div></footer>
 
 {# нижняя панель вкладок — только на телефонах (как в нативных приложениях iOS/Android) #}
-<nav class="tabbar" aria-label="Быстрая навигация">
+<nav class="tabbar" aria-label="{% translate 'Быстрая навигация' %}">
   <a class="tabbar__i{% if is_home %} on{% endif %}" href="{% url 'core:home' %}">
-    <svg viewBox="0 0 24 24"><path d="M3.5 10.5 12 3.5l8.5 7V19a1.5 1.5 0 0 1-1.5 1.5h-4v-6h-6v6H5A1.5 1.5 0 0 1 3.5 19z"/></svg><span>Главная</span>
+    <svg viewBox="0 0 24 24"><path d="M3.5 10.5 12 3.5l8.5 7V19a1.5 1.5 0 0 1-1.5 1.5h-4v-6h-6v6H5A1.5 1.5 0 0 1 3.5 19z"/></svg><span>{% translate "Главная" %}</span>
   </a>
   <a class="tabbar__i{% if request.resolver_match.url_name == 'catalog' %} on{% endif %}" href="{% url 'core:catalog' %}">
-    <svg viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="3.25"/></svg><span>Сервисы</span>
+    <svg viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="3.25"/></svg><span>{% translate "Сервисы" %}</span>
   </a>
-  <a class="tabbar__i tabbar__add{% if request.path == '/buy/add/' %} on{% endif %}" href="/buy/add/" aria-label="Подать объявление">
-    <i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></i><span>Подать</span>
+  <a class="tabbar__i tabbar__add{% if request.path == '/buy/add/' %} on{% endif %}" href="/buy/add/" aria-label="{% translate 'Подать объявление' %}">
+    <i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></i><span>{% translate "Подать" %}</span>
   </a>
   <a class="tabbar__i{% if active_section == 'chat' %} on{% endif %}" href="{% url 'chat:inbox' %}">
-    <svg viewBox="0 0 24 24"><path d="M20.5 11.5a8 8 0 0 1-11.4 7.2L3.5 20.5l1.8-5.5a8 8 0 1 1 15.2-3.5z"/></svg><span>Чаты</span>
+    <svg viewBox="0 0 24 24"><path d="M20.5 11.5a8 8 0 0 1-11.4 7.2L3.5 20.5l1.8-5.5a8 8 0 1 1 15.2-3.5z"/></svg><span>{% translate "Чаты" %}</span>
   </a>
   {% if user.is_authenticated %}
   <a class="tabbar__i{% if request.resolver_match.url_name == 'profile' or active_section == 'wallet' %} on{% endif %}" href="{% url 'accounts:profile' %}">
-    {% if user.avatar %}<img class="tabbar__ava" src="{{ user.avatar.url }}" alt="">{% else %}<span class="tabbar__ava tabbar__ava--txt">{{ user.get_display_name|slice:":1"|upper }}</span>{% endif %}<span>Профиль</span>
+    {% if user.avatar %}<img class="tabbar__ava" src="{{ user.avatar.url }}" alt="">{% else %}<span class="tabbar__ava tabbar__ava--txt">{{ user.get_display_name|slice:":1"|upper }}</span>{% endif %}<span>{% translate "Профиль" %}</span>
   </a>
   {% else %}
   <a class="tabbar__i{% if '/accounts/' in request.path %} on{% endif %}" href="{% url 'accounts:login' %}">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1.2-3.6 4.1-5.5 7.5-5.5s6.3 1.9 7.5 5.5"/></svg><span>Войти</span>
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1.2-3.6 4.1-5.5 7.5-5.5s6.3 1.9 7.5 5.5"/></svg><span>{% translate "Войти" %}</span>
   </a>
   {% endif %}
 </nav>

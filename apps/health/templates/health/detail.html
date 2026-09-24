@@ -1,12 +1,13 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons reviews %}{% load reports %}
 {% block title %}{{ doctor.name }} — {{ block.super }}{% endblock %}
-{% block description %}{{ doctor.name }} — {{ doctor.specialization }}, {{ doctor.city }}. Контакты врача на ilm4.{% endblock %}
+{% block description %}{{ doctor.name }} — {{ doctor.specialization }}, {{ doctor.city }}{% translate ". Контакты врача на ilm4." %}{% endblock %}
 {% block body_class %}s-health{% if doctor.phone %} has-dbar{% endif %}{% endblock %}
 
 {% block content %}
 <div class="dpage">
-  <a class="crumb" href="{% url 'health:index' %}">{% ico 'back' %}Все врачи</a>
+  <a class="crumb" href="{% url 'health:index' %}">{% ico 'back' %}{% translate "Все врачи" %}</a>
   <div class="dgrid dgrid--rev">
     <aside class="dside">
       <div class="dcard pcard">
@@ -15,33 +16,33 @@
         <div class="dmeta">
           <span class="mchip mchip--acc">{{ doctor.specialization }}</span>
           <span class="mchip">{% ico 'pin' %}{{ doctor.city }}</span>
-          {% if doctor.experience %}<span class="mchip">{% ico 'star' %}опыт {{ doctor.experience }} лет</span>{% endif %}
+          {% if doctor.experience %}<span class="mchip">{% ico 'star' %}{% translate "опыт" %} {{ doctor.experience }} {% translate "лет" %}</span>{% endif %}
         </div>
         <div class="pcard__rep">{% rating_badge doctor %}{% verified_badge doctor %}</div>
         <div class="dact">
-          {% if doctor.phone %}<a class="btn btn--p" href="tel:{{ doctor.phone|cut:' ' }}">{% ico 'phone' %}Позвонить</a>{% endif %}
-          {% if doctor.url %}<a class="btn btn--g" href="{{ doctor.url }}" target="_blank" rel="noopener nofollow" data-ext>{% ico 'globe' %}Сайт / соцсеть</a>{% endif %}
+          {% if doctor.phone %}<a class="btn btn--p" href="tel:{{ doctor.phone|cut:' ' }}">{% ico 'phone' %}{% translate "Позвонить" %}</a>{% endif %}
+          {% if doctor.url %}<a class="btn btn--g" href="{{ doctor.url }}" target="_blank" rel="noopener nofollow" data-ext>{% ico 'globe' %}{% translate "Сайт / соцсеть" %}</a>{% endif %}
         </div>
       </div>
     </aside>
 
     <div class="dmain">
       <section class="dcard">
-        <h2 class="dcard__h">Контакты и приём</h2>
+        <h2 class="dcard__h">{% translate "Контакты и приём" %}</h2>
         <div class="kv">
-          {% if doctor.clinic %}<div class="kv__row"><span class="kv__ic">{% ico 'building' %}</span><div><div class="kv__l">Клиника</div><div class="kv__v">{{ doctor.clinic }}</div></div></div>{% endif %}
-          <div class="kv__row"><span class="kv__ic">{% ico 'pin' %}</span><div><div class="kv__l">Адрес</div><div class="kv__v">{{ doctor.address|default:doctor.city }}</div></div></div>
-          {% if doctor.phone %}<div class="kv__row"><span class="kv__ic">{% ico 'phone' %}</span><div><div class="kv__l">Телефон</div><div class="kv__v"><a href="tel:{{ doctor.phone|cut:' ' }}">{{ doctor.phone }}</a></div></div></div>{% endif %}
-          {% if doctor.url %}<div class="kv__row"><span class="kv__ic">{% ico 'globe' %}</span><div><div class="kv__l">Сайт</div><div class="kv__v"><a href="{{ doctor.url }}" target="_blank" rel="noopener nofollow" data-ext>{{ doctor.url|cut:'https://'|cut:'http://' }}</a></div></div></div>{% endif %}
+          {% if doctor.clinic %}<div class="kv__row"><span class="kv__ic">{% ico 'building' %}</span><div><div class="kv__l">{% translate "Клиника" %}</div><div class="kv__v">{{ doctor.clinic }}</div></div></div>{% endif %}
+          <div class="kv__row"><span class="kv__ic">{% ico 'pin' %}</span><div><div class="kv__l">{% translate "Адрес" %}</div><div class="kv__v">{{ doctor.address|default:doctor.city }}</div></div></div>
+          {% if doctor.phone %}<div class="kv__row"><span class="kv__ic">{% ico 'phone' %}</span><div><div class="kv__l">{% translate "Телефон" %}</div><div class="kv__v"><a href="tel:{{ doctor.phone|cut:' ' }}">{{ doctor.phone }}</a></div></div></div>{% endif %}
+          {% if doctor.url %}<div class="kv__row"><span class="kv__ic">{% ico 'globe' %}</span><div><div class="kv__l">{% translate "Сайт" %}</div><div class="kv__v"><a href="{{ doctor.url }}" target="_blank" rel="noopener nofollow" data-ext>{{ doctor.url|cut:'https://'|cut:'http://' }}</a></div></div></div>{% endif %}
         </div>
       </section>
       {% if doctor.description %}
       <section class="dcard">
-        <h2 class="dcard__h">О враче</h2>
+        <h2 class="dcard__h">{% translate "О враче" %}</h2>
         <div class="prose">{{ doctor.description|linebreaks }}</div>
       </section>
       {% endif %}
-      {% reviews_block doctor "Отзывы пациентов" %}
+      {% reviews_block doctor _("Отзывы пациентов") %}
       {% include 'includes/disclaimer.html' with dkind='health' %}
       {% report_button doctor %}
     </div>
@@ -50,7 +51,7 @@
 {% if doctor.phone %}
 <div class="dbar">
   <div class="dbar__p"><div class="dbar__v">{{ doctor.name }}</div><div class="dbar__s">{{ doctor.specialization }} · {{ doctor.city }}</div></div>
-  <a class="btn btn--p" href="tel:{{ doctor.phone|cut:' ' }}">{% ico 'phone' %}Позвонить</a>
+  <a class="btn btn--p" href="tel:{{ doctor.phone|cut:' ' }}">{% ico 'phone' %}{% translate "Позвонить" %}</a>
 </div>
 {% endif %}
 {% endblock %}

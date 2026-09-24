@@ -1,28 +1,29 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons %}
-{% block title %}Работа — {{ block.super }}{% endblock %}
+{% block title %}{% translate "Работа —" %} {{ block.super }}{% endblock %}
 {% block body_class %}s-jobs{% endblock %}
 
 {% block content %}
 <div class="svc">
-{% include 'includes/section_hero.html' with icon="💼" title="Работа" desc="Вакансии и резюме от своих: честные работодатели и соискатели, без серых схем" class="jobs" cta="Разместить вакансию или резюме" cta_url="/jobs/add/" %}
+{% include 'includes/section_hero.html' with icon="💼" title=_("Работа") desc=_("Вакансии и резюме от своих: честные работодатели и соискатели, без серых схем") class="jobs" cta=_("Разместить вакансию или резюме") cta_url="/jobs/add/" %}
 
 <div class="toolbar">
     <div class="jobkind">
-      <a class="{% if kind == 'vacancy' %}on{% endif %}" href="?kind=vacancy">Вакансии <small>ищу работника</small></a>
-      <a class="{% if kind == 'resume' %}on{% endif %}" href="?kind=resume">Резюме <small>ищу работу</small></a>
+      <a class="{% if kind == 'vacancy' %}on{% endif %}" href="?kind=vacancy">{% translate "Вакансии" %} <small>{% translate "ищу работника" %}</small></a>
+      <a class="{% if kind == 'resume' %}on{% endif %}" href="?kind=resume">{% translate "Резюме" %} <small>{% translate "ищу работу" %}</small></a>
     </div>
     <div class="chips" style="margin-bottom:12px">
-      <a class="chip{% if not cat %} chip--on{% endif %}" href="?kind={{ kind }}">Все разделы</a>
+      <a class="chip{% if not cat %} chip--on{% endif %}" href="?kind={{ kind }}">{% translate "Все разделы" %}</a>
       {% for key, label in categories %}
       <a class="chip{% if key == cat %} chip--on{% endif %}" href="?kind={{ kind }}&amp;cat={{ key }}">{{ label }}</a>
       {% endfor %}
     </div>
   <form method="get" class="map__form">
     <input type="hidden" name="kind" value="{{ kind }}">
-    <input type="text" name="q" value="{{ q }}" placeholder="Должность: программист, водитель…">
-    <input type="text" name="city" value="{{ city }}" placeholder="Город">
-    <button type="submit" class="btn btn--p">Найти</button>
+    <input type="text" name="q" value="{{ q }}" placeholder="{% translate 'Должность: программист, водитель…' %}">
+    <input type="text" name="city" value="{{ city }}" placeholder="{% translate 'Город' %}">
+    <button type="submit" class="btn btn--p">{% translate "Найти" %}</button>
   </form>
 </div>
 
@@ -33,9 +34,9 @@
     <div class="card__b">
       <div class="card__c">{{ v.get_category_display|upper }}</div>
       <div class="card__t">{{ v.title }}</div>
-      <div class="card__d">{% if v.is_resume %}Резюме{% else %}{{ v.company }}{% endif %} · {{ v.city }}</div>
+      <div class="card__d">{% if v.is_resume %}{% translate "Резюме" %}{% else %}{{ v.company }}{% endif %} · {{ v.city }}</div>
       <div class="card__f">
-        <span class="price">{{ v.salary|default:'договорная' }}</span>
+        <span class="price">{{ v.salary|default:_('договорная') }}</span>
         <span class="meta">{{ v.created_at|date:"d.m" }}</span>
       </div>
     </div>
@@ -43,9 +44,9 @@
   {% empty %}
   <div class="empty" style="grid-column:1/-1">
     <div class="empty__plug">{% svc_icon 'jobs' '💼' '' %}</div>
-    <h3 style="font-size:18px;font-weight:800">Вакансий пока нет</h3>
-    <p style="color:var(--ink-soft)">Есть кого нанять или знаете, кто ищет людей? Добавьте первую вакансию.</p>
-    <a class="btn btn--p" href="{% url 'jobs:create' %}">Добавить вакансию</a>
+    <h3 style="font-size:18px;font-weight:800">{% translate "Вакансий пока нет" %}</h3>
+    <p style="color:var(--ink-soft)">{% translate "Есть кого нанять или знаете, кто ищет людей? Добавьте первую вакансию." %}</p>
+    <a class="btn btn--p" href="{% url 'jobs:create' %}">{% translate "Добавить вакансию" %}</a>
   </div>
   {% endfor %}
 </div>

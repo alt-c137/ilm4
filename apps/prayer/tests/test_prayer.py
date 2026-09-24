@@ -125,3 +125,19 @@ def test_next_epoch_respects_city_timezone():
     ts = services.next_epoch(times, tz_offset=3)
     import time as _time
     assert 0 < ts - _time.time() < 26 * 3600
+
+
+def test_methods_independent_of_call_order():
+    """MWL и Умм аль-Кура не должны брать остатки чужих настроек библиотеки
+    (раньше MWL считался по шиитскому «Джафари»: Магриб на 19 минут позже заката)."""
+    from datetime import date
+
+    from apps.prayer.services import compute
+    day = date(2026, 9, 24)
+    first = compute(41.3111, 69.2797, 5, day, 'MWL')
+    compute(41.3111, 69.2797, 5, day, 'Karachi')
+    compute(41.3111, 69.2797, 5, day, 'Makkah')
+    assert compute(41.3111, 69.2797, 5, day, 'MWL') == first
+    assert first['fajr'] == '04:39' and first['maghrib'] == '18:17' and first['isha'] == '19:44'
+    makkah = compute(41.3111, 69.2797, 5, day, 'Makkah')
+    assert makkah['maghrib'] == '18:17' and makkah['isha'] == '19:47'

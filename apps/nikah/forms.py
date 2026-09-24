@@ -1,12 +1,14 @@
 """Анкета никяха: одна форма на весь мастер (15 шагов показывает JS, проверяет сервер)."""
 from django import forms
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _lazy
 
 from . import choices as C
 from .models import NikahProfile
 from .services import has_contacts
 
 TEXT_MAX = 900
-CONTACTS_ERROR = 'Уберите контакты (телефон, ссылки, ники, соцсети) — общение только внутри сервиса.'
+CONTACTS_ERROR = _lazy('Уберите контакты (телефон, ссылки, ники, соцсети) — общение только внутри сервиса.')
 
 # на каком шаге мастера поле — чтобы вернуть человека к ошибке
 STEP_OF = {
@@ -38,27 +40,27 @@ class NikahProfileForm(forms.ModelForm):
     def clean_age(self):
         age = self.cleaned_data['age']
         if not 18 <= age <= 80:
-            raise forms.ValidationError('Возраст — от 18 до 80 лет')
+            raise forms.ValidationError(_('Возраст — от 18 до 80 лет'))
         return age
 
     def _range(self, name, lo, hi, what):
         value = self.cleaned_data.get(name)
         if value is not None and not lo <= value <= hi:
-            raise forms.ValidationError(f'{what}: от {lo} до {hi}')
+            raise forms.ValidationError(_('{what}: от {lo} до {hi}').format(what=what, lo=lo, hi=hi))
         return value
 
     def clean_height(self):
-        return self._range('height', 120, 230, 'Рост')
+        return self._range('height', 120, 230, _('Рост'))
 
     def clean_weight(self):
-        return self._range('weight', 40, 200, 'Вес')
+        return self._range('weight', 40, 200, _('Вес'))
 
     def _text(self, name, minimum):
         text = (self.cleaned_data.get(name) or '').strip()
         if len(text) < minimum:
-            raise forms.ValidationError(f'Напишите хотя бы {minimum} символов')
+            raise forms.ValidationError(_('Напишите хотя бы {minimum} символов').format(minimum=minimum))
         if len(text) > TEXT_MAX:
-            raise forms.ValidationError(f'Не больше {TEXT_MAX} символов')
+            raise forms.ValidationError(_('Не больше {TEXT_MAX} символов').format(TEXT_MAX=TEXT_MAX))
         if has_contacts(text):
             raise forms.ValidationError(CONTACTS_ERROR)
         return text
@@ -72,6 +74,10 @@ class NikahProfileForm(forms.ModelForm):
     def clean_partner_expectations(self):
         return self._text('partner_expectations', 20)
 
+    def clean_country(self):
+        from .geo import canonical_country
+        return canonical_country(self.cleaned_data.get('country', ''))
+
     def clean_name(self):
         name = (self.cleaned_data.get('name') or '').strip()
         if has_contacts(name):
@@ -83,23 +89,23 @@ class NikahProfileForm(forms.ModelForm):
         gender = data.get('gender') or (self.instance.gender if self.instance.pk else '')
         lo, hi = data.get('age_from'), data.get('age_to')
         if lo is not None and hi is not None and not (18 <= lo <= hi <= 80):
-            self.add_error('age_to', 'Диапазон возраста: от 18 до 80, «от» не больше «до»')
+            self.add_error('age_to', _('Диапазон возраста: от 18 до 80, «от» не больше «до»'))
         if gender == 'M':
             data['polygyny'] = ''
             if data.get('marital') == 'married' and (data.get('wife_number') or 1) < 2:
-                self.add_error('wife_number', 'Вы женаты — укажите, какую по счёту жену ищете (2–4)')
+                self.add_error('wife_number', _('Вы женаты — укажите, какую по счёту жену ищете (2–4)'))
             if not data.get('wife_number'):
                 data['wife_number'] = 1
             if data.get('look') not in dict(C.LOOK_M):
-                self.add_error('look', 'Выберите вариант')
+                self.add_error('look', _('Выберите вариант'))
         elif gender == 'F':
             data['wife_number'] = None
             if data.get('marital') == 'married':
-                self.add_error('marital', 'Выберите вариант')
+                self.add_error('marital', _('Выберите вариант'))
             if not data.get('polygyny'):
-                self.add_error('polygyny', 'Выберите вариант')
+                self.add_error('polygyny', _('Выберите вариант'))
             if data.get('look') not in dict(C.LOOK_F):
-                self.add_error('look', 'Выберите вариант')
+                self.add_error('look', _('Выберите вариант'))
         return data
 
     def first_error_step(self) -> int:

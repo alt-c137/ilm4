@@ -1,7 +1,8 @@
 {% extends 'nikah/_base.html' %}
+{% load i18n %}
 {% load nikah_tags %}
-{% block nk_title %}Взаимная симпатия · Никях{% endblock %}
-{% block nk_back %}<a class="nkback" href="{% url 'nikah:home' %}" data-back>{% nk_icon 'back' %}Назад</a>{% endblock %}
+{% block nk_title %}{% translate "Взаимная симпатия · Никях" %}{% endblock %}
+{% block nk_back %}<a class="nkback" href="{% url 'nikah:home' %}" data-back>{% nk_icon 'back' %}{% translate "Назад" %}</a>{% endblock %}
 {% block nk %}
 <div class="nkmatch">
   <header class="nkmatch__head">
@@ -9,63 +10,63 @@
     <span class="nkmatch__heart">{% nk_icon 'heart' %}</span>
     <a class="nkava nkava--{{ partner.gender }}" href="{% url 'nikah:detail' partner.pk %}">{% if partner.gender == 'M' %}{% nk_icon 'brother' %}{% else %}{% nk_icon 'sister' %}{% endif %}</a>
   </header>
-  <h1>Вы и {{ partner.display_name }}, {{ partner.age }}</h1>
+  <h1>{% translate "Вы и" %} {{ partner.display_name }}, {{ partner.age }}</h1>
 
   <ol class="nksteps">
-    <li class="done">Взаимный интерес</li>
-    <li class="{% if m.stage == 'photos' %}now{% elif m.stage == 'chat' and m.sister_viewed_at %}done{% elif m.stage == 'closed' %}fail{% else %}skip{% endif %}">Обмен фото</li>
-    <li class="{% if m.stage == 'chat' %}{% if m.thread_id %}done{% else %}now{% endif %}{% endif %}">Чат</li>
+    <li class="done">{% translate "Взаимный интерес" %}</li>
+    <li class="{% if m.stage == 'photos' %}now{% elif m.stage == 'chat' and m.sister_viewed_at %}done{% elif m.stage == 'closed' %}fail{% else %}skip{% endif %}">{% translate "Обмен фото" %}</li>
+    <li class="{% if m.stage == 'chat' %}{% if m.thread_id %}done{% else %}now{% endif %}{% endif %}">{% translate "Чат" %}</li>
   </ol>
 
   {% if m.stage == 'photos' %}
     {% if turn == side %}
       {% if opened %}
       <div class="nkphoto" oncontextmenu="return false" id="nkphoto">
-        <canvas class="nkphoto__img" id="nkphoto-c" data-src="{% url 'nikah:match_photo' m.pk %}" aria-label="Фото собеседника"></canvas>
+        <canvas class="nkphoto__img" id="nkphoto-c" data-src="{% url 'nikah:match_photo' m.pk %}" aria-label="{% translate 'Фото собеседника' %}"></canvas>
         <div class="nkphoto__shield"></div>
-        <button type="button" class="nkphoto__veil" id="nkphoto-veil" hidden>{% nk_icon 'eye_off' %}<b>Фото скрыто</b><span>Окно теряло фокус — возможно, делали снимок экрана. Нажмите, чтобы показать снова.</span></button>
+        <button type="button" class="nkphoto__veil" id="nkphoto-veil" hidden>{% nk_icon 'eye_off' %}<b>{% translate "Фото скрыто" %}</b><span>{% translate "Окно теряло фокус — возможно, делали снимок экрана. Нажмите, чтобы показать снова." %}</span></button>
         <div class="nkphoto__timer" data-left="{{ seconds }}">{% nk_icon 'clock' %}<b id="nk-left">{{ seconds }}</b></div>
       </div>
-      <p class="nkhint">На фото — ваш ID и время показа. Решите, пока идёт таймер; молчание = отказ.</p>
+      <p class="nkhint">{% translate "На фото — ваш ID и время показа. Решите, пока идёт таймер; молчание = отказ." %}</p>
       <div class="nkdecide">
-        <form method="post" action="{% url 'nikah:match_decide' m.pk %}">{% csrf_token %}<input type="hidden" name="ok" value="0"><button class="btn btn--g btn--lg" type="submit">{% nk_icon 'x' %}Не подходит</button></form>
-        <form method="post" action="{% url 'nikah:match_decide' m.pk %}">{% csrf_token %}<input type="hidden" name="ok" value="1"><button class="btn btn--p btn--lg" type="submit">{% nk_icon 'check' %}Продолжить</button></form>
+        <form method="post" action="{% url 'nikah:match_decide' m.pk %}">{% csrf_token %}<input type="hidden" name="ok" value="0"><button class="btn btn--g btn--lg" type="submit">{% nk_icon 'x' %}{% translate "Не подходит" %}</button></form>
+        <form method="post" action="{% url 'nikah:match_decide' m.pk %}">{% csrf_token %}<input type="hidden" name="ok" value="1"><button class="btn btn--p btn--lg" type="submit">{% nk_icon 'check' %}{% translate "Продолжить" %}</button></form>
       </div>
       {% else %}
       <div class="nkcardbox">
-        <h2>{% if side == 'sister' %}Вы смотрите первой{% else %}Сестра согласна продолжить — ваша очередь{% endif %}</h2>
-        <p>Фото откроется один раз на <b>{{ minutes }} минут</b>. На снимке будет ваш ID — если фото утечёт, мы узнаем источник и заблокируем навсегда.</p>
+        <h2>{% if side == 'sister' %}{% translate "Вы смотрите первой" %}{% else %}{% translate "Сестра согласна продолжить — ваша очередь" %}{% endif %}</h2>
+        <p>{% translate "Фото откроется один раз на" %} <b>{{ minutes }} {% translate "минут" %}</b>{% translate ". На снимке будет ваш ID — если фото утечёт, мы узнаем источник и заблокируем навсегда." %}</p>
         <form method="post" action="{% url 'nikah:match_open' m.pk %}" class="nkoath">{% csrf_token %}
-          <label class="nkcheck"><input type="checkbox" name="oath" value="1" required><span>Обещаю перед Аллахом не делать скриншотов, не сохранять и не пересылать это фото.</span></label>
+          <label class="nkcheck"><input type="checkbox" name="oath" value="1" required><span>{% translate "Обещаю перед Аллахом не делать скриншотов, не сохранять и не пересылать это фото." %}</span></label>
           {% if tg_photo %}
-          <button class="btn btn--p btn--lg" type="submit" name="via" value="tg">{% nk_icon 'telegram' %}Открыть в Telegram — защищённо</button>
-          <p class="nkmeta">Telegram запрещает пересылку и сохранение этого фото, на Android — и скриншот. Бот удалит фото через {{ minutes }} минут.</p>
-          <button class="btn btn--g" type="submit">{% nk_icon 'camera' %}Открыть здесь</button>
+          <button class="btn btn--p btn--lg" type="submit" name="via" value="tg">{% nk_icon 'telegram' %}{% translate "Открыть в Telegram — защищённо" %}</button>
+          <p class="nkmeta">{% translate "Telegram запрещает пересылку и сохранение этого фото, на Android — и скриншот. Бот удалит фото через" %} {{ minutes }} {% translate "минут." %}</p>
+          <button class="btn btn--g" type="submit">{% nk_icon 'camera' %}{% translate "Открыть здесь" %}</button>
           {% else %}
-          <button class="btn btn--p btn--lg" type="submit">{% nk_icon 'camera' %}Открыть фото</button>
+          <button class="btn btn--p btn--lg" type="submit">{% nk_icon 'camera' %}{% translate "Открыть фото" %}</button>
           {% endif %}
         </form>
       </div>
       {% endif %}
     {% else %}
       <div class="nkcardbox nkcardbox--wait">{% nk_icon 'clock' %}
-        {% if my_ok %}<h2>Вы согласны. Ждём ответа</h2><p>{% if side == 'sister' %}Теперь брат посмотрит ваше фото и примет решение.{% endif %}</p>
-        {% elif side == 'brother' %}<h2>Сестра смотрит первой</h2><p>По адабу сначала решает сестра. Если она согласится — вы увидите её фото.</p>
-        {% else %}<h2>Ждём ответа</h2>{% endif %}
+        {% if my_ok %}<h2>{% translate "Вы согласны. Ждём ответа" %}</h2><p>{% if side == 'sister' %}{% translate "Теперь брат посмотрит ваше фото и примет решение." %}{% endif %}</p>
+        {% elif side == 'brother' %}<h2>{% translate "Сестра смотрит первой" %}</h2><p>{% translate "По адабу сначала решает сестра. Если она согласится — вы увидите её фото." %}</p>
+        {% else %}<h2>{% translate "Ждём ответа" %}</h2>{% endif %}
       </div>
     {% endif %}
   {% elif m.stage == 'chat' %}
     <div class="nkcardbox nkcardbox--ok">{% nk_icon 'chat' %}
-      {% if m.thread_id %}<h2>Чат открыт</h2><p>БаракаЛлаху фикум. Общайтесь с адабом — цель никях.</p>
-        <a class="btn btn--p btn--lg" href="{% url 'chat:thread' m.thread_id %}">{% nk_icon 'chat' %}Перейти в чат</a>
-      {% elif side == 'brother' %}<h2>Откройте чат</h2><p>Открытие чата для брата — {{ price }} сум (разово). Для сестры бесплатно.</p>
-        <form method="post" action="{% url 'nikah:match_pay' m.pk %}">{% csrf_token %}<button class="btn btn--p btn--lg" type="submit">Открыть чат · {{ price }} сум</button></form>
-        <p class="nkmeta">Ваш баланс: {{ balance }} сум · <a class="link" href="{% url 'wallet:index' %}">кошелёк</a></p>
-      {% else %}<h2>Почти готово</h2><p>Ждём, пока брат откроет чат.</p>{% endif %}
+      {% if m.thread_id %}<h2>{% translate "Чат открыт" %}</h2><p>{% translate "БаракаЛлаху фикум. Общайтесь с адабом — цель никях." %}</p>
+        <a class="btn btn--p btn--lg" href="{% url 'chat:thread' m.thread_id %}">{% nk_icon 'chat' %}{% translate "Перейти в чат" %}</a>
+      {% elif side == 'brother' %}<h2>{% translate "Откройте чат" %}</h2><p>{% translate "Открытие чата для брата —" %} {{ price }} {% translate "сум (разово). Для сестры бесплатно." %}</p>
+        <form method="post" action="{% url 'nikah:match_pay' m.pk %}">{% csrf_token %}<button class="btn btn--p btn--lg" type="submit">{% translate "Открыть чат ·" %} {{ price }} {% translate "сум" %}</button></form>
+        <p class="nkmeta">{% translate "Ваш баланс:" %} {{ balance }} {% translate "сум ·" %} <a class="link" href="{% url 'wallet:index' %}">{% translate "кошелёк" %}</a></p>
+      {% else %}<h2>{% translate "Почти готово" %}</h2><p>{% translate "Ждём, пока брат откроет чат." %}</p>{% endif %}
     </div>
   {% else %}
-    <div class="nkcardbox nkcardbox--wait">{% nk_icon 'moon' %}<h2>Не сложилось</h2><p>Всё по предопределению Аллаха. Пусть Он пошлёт вам лучшее — продолжайте поиск.</p>
-      <a class="btn btn--g" href="{% url 'nikah:home' %}">Вернуться в ленту</a></div>
+    <div class="nkcardbox nkcardbox--wait">{% nk_icon 'moon' %}<h2>{% translate "Не сложилось" %}</h2><p>{% translate "Всё по предопределению Аллаха. Пусть Он пошлёт вам лучшее — продолжайте поиск." %}</p>
+      <a class="btn btn--g" href="{% url 'nikah:home' %}">{% translate "Вернуться в ленту" %}</a></div>
   {% endif %}
 </div>
 {% endblock %}

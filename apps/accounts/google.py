@@ -20,6 +20,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.text import slugify
+from django.utils.translation import gettext as _
 
 from .audit import log_action
 
@@ -48,7 +49,7 @@ def _safe_next(request, url: str) -> str:
 def google_start(request):
     """Кнопка «Войти через Google»: запоминаем state и уходим на Google."""
     if not is_configured():
-        messages.info(request, 'Вход через Google скоро заработает. Пока войдите по email.')
+        messages.info(request, _('Вход через Google скоро заработает. Пока войдите по email.'))
         return redirect('accounts:login')
     state = secrets.token_urlsafe(24)
     request.session[SESSION_KEY] = {'state': state, 'next': request.GET.get('next', '')}
@@ -77,7 +78,7 @@ def _unique_username(base: str) -> str:
 def google_callback(request):
     """Google вернул код: меняем на токен, берём профиль, входим."""
     saved = request.session.pop(SESSION_KEY, None) or {}
-    fail = 'Не удалось войти через Google. Попробуйте ещё раз или войдите по email.'
+    fail = _('Не удалось войти через Google. Попробуйте ещё раз или войдите по email.')
     if (not is_configured() or request.GET.get('error') or not saved
             or not secrets.compare_digest(request.GET.get('state', ''), saved.get('state', ''))):
         messages.error(request, fail)
@@ -99,7 +100,7 @@ def google_callback(request):
 
     email = (info.get('email') or '').strip().lower()
     if not email or not info.get('email_verified'):
-        messages.error(request, 'Google не подтвердил email этого аккаунта.')
+        messages.error(request, _('Google не подтвердил email этого аккаунта.'))
         return redirect('accounts:login')
 
     User = get_user_model()
@@ -116,11 +117,11 @@ def google_callback(request):
         user.save()
         created = True
     if not user.is_active:
-        messages.error(request, 'Аккаунт заблокирован. Напишите в поддержку.')
+        messages.error(request, _('Аккаунт заблокирован. Напишите в поддержку.'))
         return redirect('accounts:login')
 
     auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
     log_action(request, 'Вход через Google' + (' (новый аккаунт)' if created else ''), email)
-    messages.success(request, (f'Добро пожаловать, {user.get_display_name()}!' if created
-                               else f'С возвращением, {user.get_display_name()}!'))
+    messages.success(request, (_('Добро пожаловать, {v1}!').format(v1=user.get_display_name()) if created
+                               else _('С возвращением, {v1}!').format(v1=user.get_display_name())))
     return redirect(_safe_next(request, saved.get('next', '')))

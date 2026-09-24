@@ -13,27 +13,30 @@ document.querySelectorAll('input[type=file]').forEach(function (input) {
   var btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'filebtn';
-  btn.innerHTML = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5 12.3 19.2a4.8 4.8 0 0 1-6.8-6.8l7.7-7.7a3.2 3.2 0 0 1 4.5 4.5l-7.6 7.7a1.6 1.6 0 0 1-2.3-2.3l7-7"/></svg>Выбрать файл';
+  btn.innerHTML = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5 12.3 19.2a4.8 4.8 0 0 1-6.8-6.8l7.7-7.7a3.2 3.2 0 0 1 4.5 4.5l-7.6 7.7a1.6 1.6 0 0 1-2.3-2.3l7-7"/></svg>' + _t('Выбрать файл');
   var name = document.createElement('span');
   name.className = 'filename';
-  name.textContent = 'файл не выбран';
+  name.textContent = _t('файл не выбран');
   input.parentNode.insertBefore(btn, input.nextSibling);
   btn.parentNode.insertBefore(name, btn.nextSibling);
   btn.addEventListener('click', function () { input.click(); });
   input.addEventListener('change', function () {
-    name.textContent = input.files.length ? input.files[0].name : 'файл не выбран';
+    name.textContent = input.files.length ? input.files[0].name : _t('файл не выбран');
   });
 });
 
 
 // живой отсчёт до намаза: элементы .live-cd с data-ts (unix)
+var CD_WORDS = {ru: ['через ', ' ч ', ' мин ', ' сек', ''], en: ['in ', ' h ', ' min ', ' s', ''],
+                uz: ['', ' soat ', ' daq ', ' son', ' dan keyin']};
 function fmtCd(s) {
+  var w = CD_WORDS[document.documentElement.lang] || CD_WORDS.ru;
   var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
   var t = '';
-  if (h) t += h + ' ч ';
-  if (h || m) t += m + ' мин ';
-  t += (x < 10 ? '0' : '') + x + ' сек';
-  return 'через ' + t;
+  if (h) t += h + w[1];
+  if (h || m) t += m + w[2];
+  t += (x < 10 ? '0' : '') + x + w[3];
+  return w[0] + t + w[4];
 }
 function tickCd() {
   var now = Math.floor(Date.now() / 1000);
@@ -71,6 +74,21 @@ if (dt) {
     if (mt) mt.setAttribute('content', next === '1' ? '#0e1016' : '#f2f3fb');
   });
 }
+
+// язык: своё выпадающее меню в шапке
+(function () {
+  var box = document.getElementById('langm'), btn = document.getElementById('langm-btn');
+  if (!box || !btn) return;
+  function close() { box.classList.remove('open'); btn.setAttribute('aria-expanded', 'false'); }
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    var open = box.classList.toggle('open');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) { var on = box.querySelector('.langm__o.on') || box.querySelector('.langm__o'); if (on) on.focus(); }
+  });
+  document.addEventListener('click', function (e) { if (!box.contains(e.target)) close(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && box.classList.contains('open')) { close(); btn.focus(); } });
+})();
 
 // телефон: поиск раскрывается по кнопке-лупе
 (function () {
@@ -137,7 +155,7 @@ document.querySelectorAll('.railnav').forEach(function (nav) {
 document.querySelectorAll('[data-copy]').forEach(function (b) {
   b.addEventListener('click', function () {
     var txt = b.dataset.copy, label = b.textContent;
-    var done = function () { b.textContent = 'Скопировано'; b.classList.add('ok');
+    var done = function () { b.textContent = _t('Скопировано'); b.classList.add('ok');
       setTimeout(function () { b.textContent = label; b.classList.remove('ok'); }, 1600); };
     if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(txt).then(done);
     else { var t = document.createElement('textarea'); t.value = txt; document.body.appendChild(t);
@@ -151,7 +169,7 @@ document.querySelectorAll('[data-share]').forEach(function (b) {
     var data = { title: b.dataset.share, url: location.href };
     if (navigator.share) { navigator.share(data).catch(function () {}); return; }
     var label = b.innerHTML;
-    var done = function () { b.textContent = 'Ссылка скопирована'; setTimeout(function () { b.innerHTML = label; }, 1600); };
+    var done = function () { b.textContent = _t('Ссылка скопирована'); setTimeout(function () { b.innerHTML = label; }, 1600); };
     if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(location.href).then(done);
   });
 });
@@ -180,13 +198,13 @@ document.querySelectorAll('[data-share]').forEach(function (b) {
     modal = document.createElement('div');
     modal.className = 'modal extmodal'; modal.hidden = true;
     modal.innerHTML = '<div class="modal__card" role="dialog" aria-modal="true" aria-labelledby="ext-h">' +
-      '<button type="button" class="modal__close" aria-label="Закрыть">×</button>' +
+      '<button type="button" class="modal__close" aria-label="' + _t('Закрыть') + '">×</button>' +
       '<div class="extmodal__ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v4.5A1.5 1.5 0 0 1 16.5 20h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/></svg></div>' +
-      '<h3 class="modal__h" id="ext-h">Вы переходите на сторонний сайт</h3>' +
+      '<h3 class="modal__h" id="ext-h">' + _t('Вы переходите на сторонний сайт') + '</h3>' +
       '<span class="extmodal__url"></span>' +
-      '<p class="extmodal__txt">Это внешний сайт — не ilm4. Мы не отвечаем за его содержание, товары и услуги. Не вводите пароли и данные карт, если не уверены в сайте.</p>' +
-      '<div class="extmodal__act"><button type="button" class="btn btn--g" data-x>Остаться</button><a class="btn btn--p" data-go target="_blank" rel="noopener nofollow">Перейти</a></div>' +
-      '<label class="extmodal__skip"><input type="checkbox" data-skip> Больше не предупреждать</label></div>';
+      '<p class="extmodal__txt">' + _t('Это внешний сайт — не ilm4. Мы не отвечаем за его содержание, товары и услуги. Не вводите пароли и данные карт, если не уверены в сайте.') + '</p>' +
+      '<div class="extmodal__act"><button type="button" class="btn btn--g" data-x>' + _t('Остаться') + '</button><a class="btn btn--p" data-go target="_blank" rel="noopener nofollow">' + _t('Перейти') + '</a></div>' +
+      '<label class="extmodal__skip"><input type="checkbox" data-skip> ' + _t('Больше не предупреждать') + '</label></div>';
     document.body.appendChild(modal);
     var close = function () { modal.hidden = true; };
     modal.querySelector('.modal__close').addEventListener('click', close);
@@ -222,12 +240,12 @@ document.querySelectorAll('[data-share]').forEach(function (b) {
       box = document.createElement('div');
       box.className = 'ringtoast';
       box.innerHTML = '<span class="ringtoast__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5h3l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.5 5.7 2 2 0 0 1 6.5 3.5z"/></svg></span>' +
-        '<span class="ringtoast__b"><b></b><small></small></span><a class="btn btn--p">Ответить</a><button type="button" class="ringtoast__x" aria-label="Скрыть">×</button>';
+        '<span class="ringtoast__b"><b></b><small></small></span><a class="btn btn--p">' + _t('Ответить') + '</a><button type="button" class="ringtoast__x" aria-label="' + _t('Скрыть') + '">×</button>';
       box.querySelector('.ringtoast__x').onclick = hide;
       document.body.appendChild(box);
     }
     box.querySelector('b').textContent = d.from_name;
-    box.querySelector('small').textContent = d.video ? 'Видеозвонок…' : 'Звонит…';
+    box.querySelector('small').textContent = d.video ? _t('Видеозвонок…') : _t('Звонит…');
     box.querySelector('a').href = '/chat/' + d.thread + '/?answer=1';
     clearTimeout(timer); timer = setTimeout(hide, 8000);   // звонящий повторяет сигнал каждые 3 с
   }

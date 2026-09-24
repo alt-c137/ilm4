@@ -23,16 +23,16 @@
     function placeholder() {
       if (!isCity) return;
       var c = countryInput();
-      input.placeholder = c && c.value ? 'Выберите или впишите город' : 'Сначала укажите страну';
+      input.placeholder = c && c.value ? _t('Выберите или впишите город') : _t('Сначала укажите страну');
     }
     function render() {
       var items = source(), q = norm(input.value), html = '';
-      if (items === null) { list.innerHTML = '<p class="nkpick__hint">Сначала выберите страну</p>'; list.hidden = false; return; }
+      if (items === null) { list.innerHTML = '<p class="nkpick__hint">' + _t('Сначала выберите страну') + '</p>'; list.hidden = false; return; }
       var starts = [], has = [];
       items.forEach(function (it) { var n = norm(it); if (!q || n.indexOf(q) === 0) starts.push(it); else if (n.indexOf(q) > 0) has.push(it); });
       var all = starts.concat(has).slice(0, 300);
       all.forEach(function (it) { html += '<button type="button" class="nkpick__i">' + it.replace(/[&<>"]/g, function (ch) { return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[ch]; }) + '</button>'; });
-      if (!all.length) html = '<p class="nkpick__hint">' + (isCity ? 'Нет в списке — впишите свой город' : 'Страна не найдена') + '</p>';
+      if (!all.length) html = '<p class="nkpick__hint">' + (isCity ? _t('Нет в списке — впишите свой город') : _t('Страна не найдена')) + '</p>';
       list.innerHTML = html; list.hidden = false;
     }
     function pick(v) {

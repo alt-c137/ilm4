@@ -6,11 +6,12 @@
 """
 from django.conf import settings
 from django.db import models
+from django.utils.translation import gettext_lazy as _lazy
 
 
 class TopUp(models.Model):
     PENDING, PAID, FAILED, CANCELLED = 'pending', 'paid', 'failed', 'cancelled'
-    STATUSES = [(PENDING, 'Ожидает оплаты'), (PAID, 'Оплачено, зачислено'), (FAILED, 'Ошибка'), (CANCELLED, 'Отменено')]
+    STATUSES = [(PENDING, _lazy('Ожидает оплаты')), (PAID, _lazy('Оплачено, зачислено')), (FAILED, _lazy('Ошибка')), (CANCELLED, _lazy('Отменено'))]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='topups')
     amount = models.DecimalField('сумма, сум', max_digits=14, decimal_places=0)

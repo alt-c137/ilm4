@@ -70,3 +70,12 @@ def nk(profile, field: str) -> str:
 def get_item(mapping, key):
     value = mapping.get(key) if hasattr(mapping, 'get') else None
     return '' if value is None else value
+
+
+@register.filter
+def nk_country(value):
+    """Страна из базы (по-русски) → на языке интерфейса."""
+    from django.utils.translation import get_language
+
+    from apps.nikah.geo import country_name
+    return country_name(value or '', (get_language() or 'ru')[:2]) if value else ''

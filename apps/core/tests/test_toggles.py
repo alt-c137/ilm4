@@ -37,7 +37,8 @@ def test_calls_toggle_hides_buttons(client, user):
     html = client.get(f'/chat/{t.pk}/').content.decode()
     assert 'data-call="audio"' in html and 'id="mic-btn"' in html
     SiteSettings.objects.update(chat_calls_enabled=False, chat_video_calls_enabled=False,
-                                chat_voice_enabled=False, chat_circles_enabled=False, chat_photos_enabled=False)
+                                chat_voice_enabled=False, chat_circles_enabled=False, chat_photos_enabled=False,
+                                chat_videos_enabled=False)
     html = client.get(f'/chat/{t.pk}/').content.decode()
     for marker in ('data-call="audio"', 'data-call="video"', 'id="mic-btn"', 'id="circle-btn"', 'id="photo-input"'):
         assert marker not in html

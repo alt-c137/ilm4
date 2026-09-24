@@ -1,10 +1,11 @@
 {% extends 'base.html' %}
-{% block title %}Вход — {{ block.super }}{% endblock %}
+{% load i18n %}
+{% block title %}{% translate "Вход —" %} {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="auth">
-  <h1>С возвращением!</h1>
-  <p class="auth__sub">Войди — курсы, объявления и чаты ждут.</p>
+  <h1>{% translate "С возвращением!" %}</h1>
+  <p class="auth__sub">{% translate "Войди — курсы, объявления и чаты ждут." %}</p>
   {% include 'accounts/includes/oauth.html' %}
   <form method="post" class="form">{% csrf_token %}
     <input type="hidden" name="next" value="{{ next }}">
@@ -14,9 +15,10 @@
       {% if field.errors %}<span class="err">{{ field.errors.0 }}</span>{% endif %}
     {% endfor %}
     {% if form.non_field_errors %}<span class="err">{{ form.non_field_errors.0 }}</span>{% endif %}
-    <button type="submit" class="btn btn--p">Войти</button>
+    {% if need_captcha %}{% include 'includes/captcha.html' %}{% endif %}
+    <button type="submit" class="btn btn--p">{% translate "Войти" %}</button>
   </form>
-  <p class="auth__hint"><a href="{% url 'accounts:password_reset' %}" class="link">Забыли пароль?</a></p>
-  <p class="auth__hint">Нет аккаунта? <a href="{% url 'accounts:register' %}" class="link">Зарегистрироваться</a></p>
+  <p class="auth__hint"><a href="{% url 'accounts:password_reset' %}" class="link">{% translate "Забыли пароль?" %}</a></p>
+  <p class="auth__hint">{% translate "Нет аккаунта?" %} <a href="{% url 'accounts:register' %}" class="link">{% translate "Зарегистрироваться" %}</a></p>
 </div>
 {% endblock %}

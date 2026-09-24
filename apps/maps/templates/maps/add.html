@@ -1,23 +1,24 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons %}
-{% block title %}Добавить место — {{ block.super }}{% endblock %}
+{% block title %}{% translate "Добавить место —" %} {{ block.super }}{% endblock %}
 {% block body_class %}s-map{% endblock %}
 
 {% block content %}
 <div class="fpage">
-  <a class="crumb" href="/map/">{% ico 'back' %}Халяль карта</a>
+  <a class="crumb" href="/map/">{% ico 'back' %}{% translate "Халяль карта" %}</a>
   <div class="dcard">
     <div class="fpage__h">
       <span class="fpage__ic">{% ico 'pin' %}</span>
-      <div><h1>Добавить место</h1>
-        <div class="fpage__sub">Мечеть, кафе, магазин, отель, лавка — всё, что поможет братьям и сёстрам. Место проверит модератор.</div></div>
+      <div><h1>{% translate "Добавить место" %}</h1>
+        <div class="fpage__sub">{% translate "Мечеть, кафе, магазин, отель, лавка — всё, что поможет братьям и сёстрам. Место проверит модератор." %}</div></div>
     </div>
     <form method="post" enctype="multipart/form-data" class="form fgrid" id="place-form">{% csrf_token %}
       {% for field in form %}
-      {% if field.name == 'lat' %}<div class="field field--wide"><label>Точка на карте <span class="req">*</span></label>
+      {% if field.name == 'lat' %}<div class="field field--wide"><label>{% translate "Точка на карте" %} <span class="req">*</span></label>
         <div id="pick" class="pmap pmap--pick"></div>
-        <div class="pick__bar"><button type="button" class="btn btn--g btn--s" id="pick-me">{% ico 'pin' %}Я сейчас здесь</button><span class="hint">Нажмите на карту или перетащите метку — координаты заполнятся сами.</span></div></div>{% endif %}
-      {% if field.name == 'branch' %}<div class="field field--wide mosque-only fsep"><b>О мечети</b><span class="hint">Заполните, что знаете. Остальное уточнят пользователи.</span></div>{% endif %}
+        <div class="pick__bar"><button type="button" class="btn btn--g btn--s" id="pick-me">{% ico 'pin' %}{% translate "Я сейчас здесь" %}</button><span class="hint">{% translate "Нажмите на карту или перетащите метку — координаты заполнятся сами." %}</span></div></div>{% endif %}
+      {% if field.name == 'branch' %}<div class="field field--wide mosque-only fsep"><b>{% translate "О мечети" %}</b><span class="hint">{% translate "Заполните, что знаете. Остальное уточнят пользователи." %}</span></div>{% endif %}
       <div class="field{% if field.name in 'name address description photo affiliation' %} field--wide{% endif %}{% if field.name in 'branch madhhab manhaj kind affiliation imam khutba_lang has_jumua has_women has_wudu has_parking accessible' %} mosque-only{% endif %}{% if field.field.widget.input_type == 'checkbox' %} field--check{% endif %}{% if field.errors %} field--err{% endif %}">
         {% if field.field.widget.input_type == 'checkbox' %}<label class="fcheck">{{ field }} {{ field.label }}</label>{% else %}
         <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span class="req">*</span>{% endif %}</label>
@@ -27,7 +28,7 @@
       </div>
       {% endfor %}
       {% include 'includes/pledge.html' %}
-      <button type="submit" class="btn btn--p">{% ico 'send' %}Отправить на модерацию</button>
+      <button type="submit" class="btn btn--p">{% ico 'send' %}{% translate "Отправить на модерацию" %}</button>
     </form>
   </div>
 </div>
@@ -60,7 +61,7 @@
   document.getElementById('pick-me').addEventListener('click', function () {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(function (p) { set(L.latLng(p.coords.latitude, p.coords.longitude), true); },
-      function () { alert('Не удалось получить координаты — разрешите доступ к геолокации'); });
+      function () { alert('{{ _("Не удалось получить координаты — разрешите доступ к геолокации")|escapejs }}'); });
   });
 })();
 </script>

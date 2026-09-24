@@ -1,14 +1,15 @@
 {% extends 'base.html' %}
-{% block title %}Код 2FA — {{ block.super }}{% endblock %}
+{% load i18n %}
+{% block title %}{% translate "Код 2FA —" %} {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="page">
-  <h1>Подтверждение входа</h1>
-  <p>Введите шестизначный код из приложения-аутентификатора.</p>
+  <h1>{% translate "Подтверждение входа" %}</h1>
+  <p>{% translate "Введите шестизначный код из приложения-аутентификатора." %}</p>
   <form method="post" class="form">{% csrf_token %}
     <input class="form__code" type="text" name="code" inputmode="numeric" autocomplete="one-time-code"
            placeholder="000000" maxlength="6" required autofocus>
-    <button type="submit" class="btn btn--p">Войти</button>
+    <button type="submit" class="btn btn--p">{% translate "Войти" %}</button>
   </form>
 </div>
 {% endblock %}

@@ -1,4 +1,4 @@
-{% load icons %}<div class="panel org">
+{% load i18n %}{% load icons %}<div class="panel org">
   <div class="org__head">
     <span class="org__kind{% if o.kind == 'lawyer' %} org__kind--law{% endif %}">{{ o.get_kind_display }}</span>
     <span class="meta">{{ o.country }}{% if o.city %} · {{ o.city }}{% endif %}</span>
@@ -8,7 +8,7 @@
   {% if o.phones or o.website %}
   <div class="org__phones">
     {% for p in o.phone_list %}<a class="btn btn--p" href="tel:{{ p|cut:' ' }}">{% ico 'phone' %}{{ p }}</a>{% endfor %}
-    {% if o.website %}<a class="btn btn--g" href="{{ o.website }}" target="_blank" rel="noopener nofollow" data-ext>{% ico 'globe' %}Сайт</a>{% endif %}
+    {% if o.website %}<a class="btn btn--g" href="{{ o.website }}" target="_blank" rel="noopener nofollow" data-ext>{% ico 'globe' %}{% translate "Сайт" %}</a>{% endif %}
   </div>
   {% endif %}
   {% if o.notes %}<p class="org__notes">{{ o.notes }}</p>{% endif %}

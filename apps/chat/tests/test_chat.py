@@ -174,3 +174,75 @@ def test_voice_rejects_fake_file(client, pair, settings, tmp_path):
     client.force_login(a)
     fake = SimpleUploadedFile('v.webm', b'<script>alert(1)</script>', content_type='audio/webm')
     assert client.post(f'/chat/{t.pk}/upload/', {'kind': 'voice', 'file': fake}).status_code == 400
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db(transaction=True)
+async def test_ws_nikah_chat_blocks_contacts():
+    """Чат никяха по WebSocket: сообщение с телефоном не сохраняется, приходит ошибка."""
+    from channels.db import database_sync_to_async
+
+    from config.asgi import application
+
+    def setup():
+        from apps.nikah import services
+        from apps.nikah.tests.test_nikah import make_profile
+        b = make_profile('wb@x.com', 'M')
+        s = make_profile('ws@x.com', 'F')
+        services.send_interest(b, s)
+        return b.user, services.send_interest(s, b).thread
+    user, thread = await database_sync_to_async(setup)()
+    comm = WebsocketCommunicator(application, f'/ws/chat/{thread.pk}/')
+    comm.scope['user'] = user
+    connected, _ = await comm.connect()
+    assert connected
+    await comm.send_json_to({'body': 'звоните +998 90 123 45 67'})
+    reply = await comm.receive_json_from()
+    assert reply['type'] == 'error'
+    count = await database_sync_to_async(lambda: thread.messages.exclude(kind='system').count())()
+    assert count == 0
+    await comm.disconnect()
+
+
+def test_video_upload_and_toggle(client, pair, settings, tmp_path):
+    """Видео файлом: mp4 проходит; выключатель в админке — 403; подделка — 400."""
+    settings.MEDIA_ROOT = tmp_path
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    from apps.chat.models import Message
+    from apps.core.models import SiteSettings
+    a, _b, t = pair
+    client.force_login(a)
+    mp4 = b'\x00\x00\x00\x18ftypmp42' + b'\x00' * 64
+    r = client.post(f'/chat/{t.pk}/upload/', {'kind': 'video', 'duration': '12',
+                                             'file': SimpleUploadedFile('v.mp4', mp4, content_type='video/mp4')})
+    assert r.status_code == 200, r.content
+    m = Message.objects.get(pk=r.json()['id'])
+    assert m.kind == 'video' and m.duration == 12 and m.attachment.name.endswith('.mp4')
+    fake = SimpleUploadedFile('v.mp4', b'<html>', content_type='video/mp4')
+    assert client.post(f'/chat/{t.pk}/upload/', {'kind': 'video', 'file': fake}).status_code == 400
+    s = SiteSettings.get_solo()
+    s.chat_videos_enabled = False
+    s.save()
+    again = SimpleUploadedFile('v.mp4', mp4, content_type='video/mp4')
+    assert client.post(f'/chat/{t.pk}/upload/', {'kind': 'video', 'file': again}).status_code == 403
+
+
+def test_nikah_chat_media_off_by_default(client, db, settings, tmp_path):
+    """Пара никяха: фото в чат нельзя (обход защищённого обмена), пока не включено в админке."""
+    settings.MEDIA_ROOT = tmp_path
+    from apps.core.models import ModuleConfig, SiteSettings
+    from apps.nikah import services
+    from apps.nikah.tests.test_nikah import make_profile
+    ModuleConfig.objects.update_or_create(key='chat', defaults={'name': 'Чат', 'status': 'on'})
+    b, s = make_profile('nb@x.com', 'M'), make_profile('ns@x.com', 'F')
+    services.send_interest(b, s)
+    m = services.send_interest(s, b)
+    thread = services._ensure_chat(m)
+    assert thread is not None
+    client.force_login(b.user)
+    assert client.post(f'/chat/{thread.pk}/upload/', {'kind': 'photo', 'file': _jpeg()}).status_code == 403
+    st = SiteSettings.get_solo()
+    st.nikah_chat_media = True
+    st.save()
+    assert client.post(f'/chat/{thread.pk}/upload/', {'kind': 'photo', 'file': _jpeg()}).status_code == 200

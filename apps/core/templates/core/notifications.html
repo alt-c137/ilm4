@@ -1,11 +1,12 @@
 {% extends 'base.html' %}
-{% block title %}Уведомления — {{ block.super }}{% endblock %}
+{% load i18n %}
+{% block title %}{% translate "Уведомления —" %} {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="page">
-  <h1>Уведомления</h1>
+  <h1>{% translate "Уведомления" %}</h1>
   <form method="post" action="{% url 'notifications:read-all' %}">{% csrf_token %}
-    <button type="submit" class="btn btn--s">Отметить все прочитанными</button>
+    <button type="submit" class="btn btn--s">{% translate "Отметить все прочитанными" %}</button>
   </form>
   <div class="panel" style="margin-top:14px">
     {% for n in notifications %}
@@ -15,7 +16,7 @@
         <div class="ni__m">{{ n.created_at|date:"d.m H:i" }}</div>
       </div>
     </div>
-    {% empty %}<p>Уведомлений нет.</p>{% endfor %}
+    {% empty %}<p>{% translate "Уведомлений нет." %}</p>{% endfor %}
   </div>
 </div>
 {% endblock %}

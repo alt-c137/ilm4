@@ -1,4 +1,5 @@
 from django import forms
+from django.utils.translation import gettext as _
 
 from .models import Vacancy, VacancyResponse
 
@@ -22,7 +23,7 @@ class VacancyForm(forms.ModelForm):
     def clean(self):
         data = super().clean()
         if data.get('kind') == Vacancy.VACANCY and not (data.get('company') or '').strip():
-            self.add_error('company', 'Укажите компанию или «Частное лицо»')
+            self.add_error('company', _('Укажите компанию или «Частное лицо»'))
         return data
 
 

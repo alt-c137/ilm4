@@ -1,34 +1,35 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons %}
-{% block title %}Поддержать проект — {{ block.super }}{% endblock %}
+{% block title %}{% translate "Поддержать проект —" %} {{ block.super }}{% endblock %}
 {% block extra_head %}<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">{% endblock %}
-{% block description %}Поддержите ilm4 — платформу знаний, жизни и дела для уммы. Садака джария, пока люди получают пользу.{% endblock %}
+{% block description %}{% translate "Поддержите ilm4 — платформу знаний, жизни и дела для уммы. Садака джария, пока люди получают пользу." %}{% endblock %}
 
 {% block content %}
 <div class="guide">
   <header class="guide__hero">
-    <div class="guide__k">{% ico 'heart' %}Садака джария</div>
-    <h1>Поддержите ilm4</h1>
-    <p>{{ site_settings.support_text|default:"ilm4 живёт на пожертвования уммы — садака джария, пока люди получают знания и пользу." }}</p>
+    <div class="guide__k">{% ico 'heart' %}{% translate "Садака джария" %}</div>
+    <h1>{% translate "Поддержите ilm4" %}</h1>
+    <p>{{ site_settings.support_text|tr|default:_("ilm4 живёт на пожертвования уммы — садака джария, пока люди получают знания и пользу.") }}</p>
     <div class="guide__cta" style="justify-content:flex-start;margin-top:18px">
-      <a class="btn btn--lg donate-btn" href="{{ donate_url }}" target="_blank" rel="noopener">{% ico 'heart' %}Поддержать через Tribute</a>
+      <a class="btn btn--lg donate-btn" href="{{ donate_url }}" target="_blank" rel="noopener">{% ico 'heart' %}{% translate "Поддержать через Tribute" %}</a>
     </div>
   </header>
 
   <section class="gcard">
-    <h2 class="gcard__h">На что идут пожертвования</h2>
+    <h2 class="gcard__h">{% translate "На что идут пожертвования" %}</h2>
     <ul class="checks">
-      <li>Серверы и хранение: чтобы сайт работал быстро и без перебоев</li>
-      <li>Модерация объявлений, анкет и публикаций</li>
-      <li>Новые разделы: обучение, адвокаты, развлечения и мобильное приложение</li>
-      <li>Проверка контактов организаций помощи беженцам</li>
+      <li>{% translate "Серверы и хранение: чтобы сайт работал быстро и без перебоев" %}</li>
+      <li>{% translate "Модерация объявлений, анкет и публикаций" %}</li>
+      <li>{% translate "Новые разделы: обучение, адвокаты, развлечения и мобильное приложение" %}</li>
+      <li>{% translate "Проверка контактов организаций помощи беженцам" %}</li>
     </ul>
-    <p class="gcard__note">Пророк <span class="saw">ﷺ</span> сказал: «Когда человек умирает, его дела прекращаются, кроме трёх: непрерывной милостыни (садака джария), знания, которым пользуются, и праведного ребёнка, который молится за него» (Муслим).</p>
+    <p class="gcard__note">{% translate "Пророк" %} <span class="saw">ﷺ</span> {% translate "сказал: «Когда человек умирает, его дела прекращаются, кроме трёх: непрерывной милостыни (садака джария), знания, которым пользуются, и праведного ребёнка, который молится за него» (Муслим)." %}</p>
   </section>
 
   {% if social_links %}
   <section class="gcard">
-    <h2 class="gcard__h">Мы в соцсетях</h2>
+    <h2 class="gcard__h">{% translate "Мы в соцсетях" %}</h2>
     <div class="soclist">
       {% for l in social_links %}
       <a class="soclist__a soclist__a--{{ l.key }}" href="{{ l.url }}" target="_blank" rel="noopener">
@@ -39,6 +40,6 @@
     </div>
   </section>
   {% endif %}
-  <p class="guide__note">Не хотите или не можете сейчас — ничего страшного. Возвращайтесь, делитесь сайтом с близкими: это тоже поддержка. <span dir="rtl" lang="ar">بارك الله فيكم</span></p>
+  <p class="guide__note">{% translate "Не хотите или не можете сейчас — ничего страшного. Возвращайтесь, делитесь сайтом с близкими: это тоже поддержка." %} <span dir="rtl" lang="ar">بارك الله فيكم</span></p>
 </div>
 {% endblock %}

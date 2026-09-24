@@ -1,62 +1,63 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons %}
-{% block title %}Помощь беженцам — {{ block.super }}{% endblock %}
-{% block description %}Помощь беженцам: УВКБ ООН, МОМ, Красный Крест и Полумесяц, организации по странам Азии и Европы, юридическая помощь.{% endblock %}
+{% block title %}{% translate "Помощь беженцам —" %} {{ block.super }}{% endblock %}
+{% block description %}{% translate "Помощь беженцам: УВКБ ООН, МОМ, Красный Крест и Полумесяц, организации по странам Азии и Европы, юридическая помощь." %}{% endblock %}
 {% block body_class %}s-migration{% endblock %}
 
 {% block content %}
 <div class="svc">
-{% include 'includes/section_hero.html' with icon="🕊️" icslug="refugee" title="Помощь беженцам" desc="Международные организации, контакты по странам и юридическая помощь — проверенные официальные источники" class="migration" %}
+{% include 'includes/section_hero.html' with icon="🕊️" icslug="refugee" title=_("Помощь беженцам") desc=_("Международные организации, контакты по странам и юридическая помощь — проверенные официальные источники") class="migration" %}
 
-  <nav class="rtabs" aria-label="Разделы справочника">
-    <a class="rtab{% if not tab and not q %} on{% endif %}" href="/refugee/">Обзор</a>
-    <a class="rtab{% if tab == 'intl' %} on{% endif %}" href="?tab=intl">{% ico 'globe' %}Международные</a>
+  <nav class="rtabs" aria-label="{% translate 'Разделы справочника' %}">
+    <a class="rtab{% if not tab and not q %} on{% endif %}" href="/refugee/">{% translate "Обзор" %}</a>
+    <a class="rtab{% if tab == 'intl' %} on{% endif %}" href="?tab=intl">{% ico 'globe' %}{% translate "Международные" %}</a>
     {% for key, name in regions %}<a class="rtab{% if tab == key %} on{% endif %}" href="?tab={{ key }}">{{ name }}</a>{% endfor %}
-    <a class="rtab{% if tab == 'lawyer' %} on{% endif %}" href="?tab=lawyer">{% ico 'shield' %}Адвокаты{% if lawyers_count %} <small>{{ lawyers_count }}</small>{% endif %}</a>
+    <a class="rtab{% if tab == 'lawyer' %} on{% endif %}" href="?tab=lawyer">{% ico 'shield' %}{% translate "Адвокаты" %}{% if lawyers_count %} <small>{{ lawyers_count }}</small>{% endif %}</a>
   </nav>
 
   <form method="get" class="rsearch" role="search">
-    {% ico 'search' %}<input type="search" name="q" value="{{ q }}" placeholder="Организация, страна или город…" aria-label="Поиск по справочнику">
-    {% if q %}<a class="rsearch__x" href="/refugee/" aria-label="Сбросить">×</a>{% endif %}
+    {% ico 'search' %}<input type="search" name="q" value="{{ q }}" placeholder="{% translate 'Организация, страна или город…' %}" aria-label="{% translate 'Поиск по справочнику' %}">
+    {% if q %}<a class="rsearch__x" href="/refugee/" aria-label="{% translate 'Сбросить' %}">×</a>{% endif %}
   </form>
 
   {% if q %}
-    <h2 class="rsec__t">Найдено: {{ results|length }}</h2>
+    <h2 class="rsec__t">{% translate "Найдено:" %} {{ results|length }}</h2>
     <div class="grid g2">{% for o in results %}{% if o.kind == 'intl' %}{% include 'refugee/_link.html' %}{% else %}{% include 'refugee/_org.html' %}{% endif %}{% empty %}
-      <div class="empty" style="grid-column:1/-1"><h3 style="font-size:17px;font-weight:800">Ничего не нашли</h3><p style="color:var(--ink-soft)">Попробуйте название страны или организации.</p></div>{% endfor %}</div>
+      <div class="empty" style="grid-column:1/-1"><h3 style="font-size:17px;font-weight:800">{% translate "Ничего не нашли" %}</h3><p style="color:var(--ink-soft)">{% translate "Попробуйте название страны или организации." %}</p></div>{% endfor %}</div>
 
   {% elif not tab %}
     <section class="rstart">
-      <h2 class="rsec__t">С чего начать</h2>
+      <h2 class="rsec__t">{% translate "С чего начать" %}</h2>
       <ol class="rsteps">
-        <li><b>Обратитесь в УВКБ ООН</b> или миграционную службу страны, где вы находитесь, — только там оформляют статус.</li>
-        <li><b>Сохраните документы</b>: паспорт, свидетельства, справки. Сделайте фото и копии в облаке.</li>
-        <li><b>Не платите посредникам.</b> Регистрация в УВКБ ООН и помощь посольств — бесплатны.</li>
-        <li><b>Ищите бесплатную юрпомощь</b> — в разделе «Адвокаты» и у общественных организаций.</li>
+        <li><b>{% translate "Обратитесь в УВКБ ООН" %}</b> {% translate "или миграционную службу страны, где вы находитесь, — только там оформляют статус." %}</li>
+        <li><b>{% translate "Сохраните документы" %}</b>{% translate ": паспорт, свидетельства, справки. Сделайте фото и копии в облаке." %}</li>
+        <li><b>{% translate "Не платите посредникам." %}</b> {% translate "Регистрация в УВКБ ООН и помощь посольств — бесплатны." %}</li>
+        <li><b>{% translate "Ищите бесплатную юрпомощь" %}</b> {% translate "— в разделе «Адвокаты» и у общественных организаций." %}</li>
       </ol>
     </section>
 
     <section>
-      <div class="rsec__h"><h2 class="rsec__t">Международные организации</h2>{% if intl_total > 6 %}<a class="sec__l" href="?tab=intl">Все {{ intl_total }} →</a>{% endif %}</div>
+      <div class="rsec__h"><h2 class="rsec__t">{% translate "Международные организации" %}</h2>{% if intl_total > 6 %}<a class="sec__l" href="?tab=intl">{% translate "Все" %} {{ intl_total }} →</a>{% endif %}</div>
       <div class="lgrid">{% for o in intl %}{% include 'refugee/_link.html' %}{% endfor %}</div>
     </section>
 
     {% for g in groups %}
     <section>
-      <div class="rsec__h"><h2 class="rsec__t">{{ g.name }}</h2>{% if g.key %}<a class="sec__l" href="?tab={{ g.key }}">По странам →</a>{% endif %}</div>
+      <div class="rsec__h"><h2 class="rsec__t">{{ g.name }}</h2>{% if g.key %}<a class="sec__l" href="?tab={{ g.key }}">{% translate "По странам →" %}</a>{% endif %}</div>
       <div class="grid g2">{% for o in g.items %}{% include 'refugee/_org.html' %}{% endfor %}</div>
     </section>
     {% endfor %}
 
   {% elif tab == 'intl' %}
-    <h2 class="rsec__t">Международные организации</h2>
+    <h2 class="rsec__t">{% translate "Международные организации" %}</h2>
     <div class="lgrid">{% for o in intl %}{% include 'refugee/_link.html' %}{% endfor %}</div>
 
   {% else %}
-    <div class="rsec__h"><h2 class="rsec__t">{% if tab == 'lawyer' %}Адвокаты и юридическая помощь{% else %}{{ tab_name }}{% endif %}</h2></div>
+    <div class="rsec__h"><h2 class="rsec__t">{% if tab == 'lawyer' %}{% translate "Адвокаты и юридическая помощь" %}{% else %}{{ tab_name }}{% endif %}</h2></div>
     {% if countries %}
     <div class="toolbar"><div class="chips">
-      <a class="chip{% if not country %} chip--on{% endif %}" href="?tab={{ tab }}">Все страны</a>
+      <a class="chip{% if not country %} chip--on{% endif %}" href="?tab={{ tab }}">{% translate "Все страны" %}</a>
       {% for c in countries %}<a class="chip{% if c == country %} chip--on{% endif %}" href="?tab={{ tab }}&amp;country={{ c|urlencode }}">{{ c }}</a>{% endfor %}
     </div></div>
     {% endif %}
@@ -66,12 +67,12 @@
       <div class="empty" style="grid-column:1/-1">
         <div class="empty__plug">{% if tab == 'lawyer' %}{% ico 'shield' %}{% else %}{% ico 'globe' %}{% endif %}</div>
         {% if tab == 'lawyer' %}
-        <h3 style="font-size:18px;font-weight:800">Раздел пополняется</h3>
-        <p style="color:var(--ink-soft)">Мы собираем проверенных адвокатов и юристов, которые помогают беженцам и мигрантам. Вы юрист и готовы помогать? Напишите нам.</p>
-        {% for l in social_links %}<a class="btn btn--p" href="{{ l.url }}" target="_blank" rel="noopener">Наш канал в Telegram</a>{% endfor %}
+        <h3 style="font-size:18px;font-weight:800">{% translate "Раздел пополняется" %}</h3>
+        <p style="color:var(--ink-soft)">{% translate "Мы собираем проверенных адвокатов и юристов, которые помогают беженцам и мигрантам. Вы юрист и готовы помогать? Напишите нам." %}</p>
+        {% for l in social_links %}<a class="btn btn--p" href="{{ l.url }}" target="_blank" rel="noopener">{% translate "Наш канал в Telegram" %}</a>{% endfor %}
         {% else %}
-        <h3 style="font-size:18px;font-weight:800">Контакты по этому региону скоро появятся</h3>
-        <p style="color:var(--ink-soft)">Пока посмотрите <a class="link" href="?tab=intl">международные организации</a> — у УВКБ ООН есть страница помощи почти для каждой страны.</p>
+        <h3 style="font-size:18px;font-weight:800">{% translate "Контакты по этому региону скоро появятся" %}</h3>
+        <p style="color:var(--ink-soft)">{% translate "Пока посмотрите" %} <a class="link" href="?tab=intl">{% translate "международные организации" %}</a> {% translate "— у УВКБ ООН есть страница помощи почти для каждой страны." %}</p>
         {% endif %}
       </div>
       {% endfor %}

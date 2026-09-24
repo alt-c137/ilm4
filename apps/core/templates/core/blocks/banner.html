@@ -1,9 +1,4 @@
-{% load icons %}{% comment %}Рекламная карусель главной (Playerok-стиль).
-Если в админке есть активные баннеры (Core → Баннеры) — показываются они:
-у каждого своя картинка, текст, кнопка и СВОЯ длительность показа.
-Картинка — <picture>: на компьютере широкий кадр с текстом слева,
-на телефоне — кадр сверху, текст снизу (своя обрезка banner/<slug>-m.jpg).
-Пусто — три фирменных слайда-приглашения.{% endcomment %}
+{% load i18n %}{% load icons %}{% comment %}{% translate "Рекламная карусель главной (Playerok-стиль). Если в админке есть активные баннеры (Core → Баннеры) — показываются они: у каждого своя картинка, текст, кнопка и СВОЯ длительность показа. Картинка —" %} <picture>{% translate ": на компьютере широкий кадр с текстом слева, на телефоне — кадр сверху, текст снизу (своя обрезка banner/" %}<slug>{% translate "-m.jpg). Пусто — три фирменных слайда-приглашения." %}{% endcomment %}
 <div class="banner" id="banner" aria-roledescription="карусель">
   <div class="banner__window" id="banner-window">
     {% if db_banners %}
@@ -23,35 +18,35 @@
         {% if buy_d %}<picture class="banner__media">{% if buy_m %}<source media="(max-width:760px)" srcset="{{ buy_m }}">{% endif %}<img src="{{ buy_d }}" alt="" decoding="async" fetchpriority="high"></picture>{% endif %}
         <div class="banner__body">
           <div class="banner__k">ILMBUY</div>
-          <div class="banner__t">Халяль-маркетплейс уммы</div>
-          <div class="banner__d">От телефонов до фиников — покупай и продавай у своих, в своём городе.</div>
-          <span class="banner__cta"><span class="hide-m">Перейти в маркетплейс</span><span class="hide-d">Открыть</span> <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+          <div class="banner__t">{% translate "Халяль-маркетплейс уммы" %}</div>
+          <div class="banner__d">{% translate "От телефонов до фиников — покупай и продавай у своих, в своём городе." %}</div>
+          <span class="banner__cta"><span class="hide-m">{% translate "Перейти в маркетплейс" %}</span><span class="hide-d">{% translate "Открыть" %}</span> <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
         </div>
       </a>
       {% banner_url 'prayer' as pr_d %}{% banner_url 'prayer-m' as pr_m %}
       <a class="banner__slide banner__slide--prayer{% if pr_d %} has-img{% endif %}" href="/prayer/" data-duration="6000">
         {% if pr_d %}<picture class="banner__media">{% if pr_m %}<source media="(max-width:760px)" srcset="{{ pr_m }}">{% endif %}<img src="{{ pr_d }}" alt="" decoding="async" loading="lazy"></picture>{% endif %}
         <div class="banner__body">
-          <div class="banner__k">Время намаза</div>
-          <div class="banner__t">Ни одна молитва не пропустится</div>
-          <div class="banner__d">Точный расчёт по твоему городу или GPS — быстро и без лишнего.</div>
-          <span class="banner__cta"><span class="hide-m">Посмотреть времена</span><span class="hide-d">Открыть</span> <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+          <div class="banner__k">{% translate "Время намаза" %}</div>
+          <div class="banner__t">{% translate "Ни одна молитва не пропустится" %}</div>
+          <div class="banner__d">{% translate "Точный расчёт по твоему городу или GPS — быстро и без лишнего." %}</div>
+          <span class="banner__cta"><span class="hide-m">{% translate "Посмотреть времена" %}</span><span class="hide-d">{% translate "Открыть" %}</span> <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
         </div>
       </a>
       {% banner_url 'nikah' as nk_d %}{% banner_url 'nikah-m' as nk_m %}
       <a class="banner__slide banner__slide--nikah{% if nk_d %} has-img{% endif %}" href="/nikah/" data-duration="6000">
         {% if nk_d %}<picture class="banner__media">{% if nk_m %}<source media="(max-width:760px)" srcset="{{ nk_m }}">{% endif %}<img src="{{ nk_d }}" alt="" decoding="async" loading="lazy"></picture>{% endif %}
         <div class="banner__body">
-          <div class="banner__k">Никах</div>
-          <div class="banner__t">Знакомства для брака — серьёзно</div>
-          <div class="banner__d">Проверенные анкеты, уважение и цель — только никах.</div>
-          <span class="banner__cta"><span class="hide-m">Смотреть анкеты</span><span class="hide-d">Открыть</span> <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+          <div class="banner__k">{% translate "Никах" %}</div>
+          <div class="banner__t">{% translate "Знакомства для брака — серьёзно" %}</div>
+          <div class="banner__d">{% translate "Проверенные анкеты, уважение и цель — только никах." %}</div>
+          <span class="banner__cta"><span class="hide-m">{% translate "Смотреть анкеты" %}</span><span class="hide-d">{% translate "Открыть" %}</span> <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
         </div>
       </a>
     {% endif %}
   </div>
-  <button type="button" class="banner__edge banner__edge--l" id="banner-prev" aria-label="Предыдущий слайд"><i>‹</i></button>
-  <button type="button" class="banner__edge banner__edge--r" id="banner-next" aria-label="Следующий слайд"><i>›</i></button>
+  <button type="button" class="banner__edge banner__edge--l" id="banner-prev" aria-label="{% translate 'Предыдущий слайд' %}"><i>‹</i></button>
+  <button type="button" class="banner__edge banner__edge--r" id="banner-next" aria-label="{% translate 'Следующий слайд' %}"><i>›</i></button>
   <div class="banner__lines" id="banner-lines">
     {% if db_banners %}
       {% for b in db_banners %}<span class="banner__line" data-duration="{% widthratio b.duration_seconds 1 1000 %}"><span class="banner__line-fill"></span></span>{% endfor %}

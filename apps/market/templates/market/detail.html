@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons %}{% load humanize %}{% load reviews %}{% load reports %}
 {% block title %}{{ listing.title }} — {{ block.super }}{% endblock %}
 {% block description %}{{ listing.title }}{% if listing.city %}, {{ listing.city }}{% endif %} — {{ listing.description|truncatechars:140 }}{% endblock %}
@@ -7,7 +8,7 @@
 {% block content %}
 {% with owner=listing.owner %}
 <div class="dpage">
-  <a class="crumb" href="/buy/{% if listing.category %}?cat={{ listing.category.slug }}{% endif %}">{% ico 'back' %}{% if listing.category %}{{ listing.category.name }}{% else %}Все объявления{% endif %}</a>
+  <a class="crumb" href="/buy/{% if listing.category %}?cat={{ listing.category.slug }}{% endif %}">{% ico 'back' %}{% if listing.category %}{{ listing.category.name|tr }}{% else %}{% translate "Все объявления" %}{% endif %}</a>
   <div class="dgrid dgrid--split">
     <div class="dmain">
       <div class="gallery">
@@ -16,11 +17,11 @@
         {% else %}
         <div class="gallery__plug">{% svc_icon 'cat-'|add:listing.category.slug listing.category.icon 'card__plug' %}</div>
         {% endif %}
-        {% if listing.is_boosted %}<span class="badge">ТОП</span>{% endif %}
+        {% if listing.is_boosted %}<span class="badge">{% translate "ТОП" %}</span>{% endif %}
       </div>
 
       <section class="dcard">
-        <h2 class="dcard__h">Описание</h2>
+        <h2 class="dcard__h">{% translate "Описание" %}</h2>
         <div class="prose">{{ listing.description|linebreaks }}</div>
         {% if listing.tags.all %}
         <div class="tags">{% for t in listing.tags.all %}<span class="tag">#{{ t.name }}</span>{% endfor %}</div>
@@ -30,27 +31,27 @@
 
     <aside class="dside">
       <div class="dcard">
-        <div class="dprice">{% if listing.price == 0 %}Даром{% else %}{{ listing.price|intcomma }} {{ listing.get_currency_display }}{% endif %}</div>
+        <div class="dprice">{% if listing.price == 0 %}{% translate "Даром" %}{% else %}{{ listing.price|intcomma }} {{ listing.get_currency_display }}{% endif %}</div>
         <h1 class="dtitle">{{ listing.title }}</h1>
         <div class="dmeta">
-          {% if listing.category %}<span class="mchip mchip--acc">{% svc_icon 'cat-'|add:listing.category.slug listing.category.icon 'mdet__cat' %}{{ listing.category.name }}</span>{% endif %}
+          {% if listing.category %}<span class="mchip mchip--acc">{% svc_icon 'cat-'|add:listing.category.slug listing.category.icon 'mdet__cat' %}{{ listing.category.name|tr }}</span>{% endif %}
           {% if listing.city %}<span class="mchip">{% ico 'pin' %}{{ listing.city }}</span>{% endif %}
           <span class="mchip">{% ico 'calendar' %}{{ listing.created_at|date:"j E" }}</span>
-          <span class="mchip" title="Просмотры">{% ico 'eye' %}{{ listing.views }}</span>
+          <span class="mchip" title="{% translate 'Просмотры' %}">{% ico 'eye' %}{{ listing.views }}</span>
         </div>
 
         <div class="dact">
           {% if listing.owner == request.user %}
-            <a class="btn btn--g" href="{% url 'market:my' %}">{% ico 'edit' %}Мои объявления</a>
+            <a class="btn btn--g" href="{% url 'market:my' %}">{% ico 'edit' %}{% translate "Мои объявления" %}</a>
           {% else %}
-            <a class="btn btn--p" href="{% url 'chat:start' %}?user={{ owner.pk }}&amp;subject={{ listing.title|urlencode }}">{% ico 'chat' %}Написать продавцу</a>
+            <a class="btn btn--p" href="{% url 'chat:start' %}?user={{ owner.pk }}&amp;subject={{ listing.title|urlencode }}">{% ico 'chat' %}{% translate "Написать продавцу" %}</a>
           {% endif %}
         </div>
 
         {% if listing.contact and listing.owner != request.user %}
         <div class="contactbox">
-          <div class="contactbox__v"><span class="contactbox__l">Контакт продавца</span>{{ listing.contact }}</div>
-          <button type="button" class="copybtn" data-copy="{{ listing.contact }}">Копировать</button>
+          <div class="contactbox__v"><span class="contactbox__l">{% translate "Контакт продавца" %}</span>{{ listing.contact }}</div>
+          <button type="button" class="copybtn" data-copy="{{ listing.contact }}">{% translate "Копировать" %}</button>
         </div>
         {% endif %}
 
@@ -59,7 +60,7 @@
           {% if owner.avatar %}<img class="person__ava" src="{{ owner.avatar.url }}" alt="">{% else %}<span class="person__ava">{{ owner.get_display_name|slice:":1"|upper }}</span>{% endif %}
           <div>
             <div class="person__n">{{ owner.get_display_name }}</div>
-            <div class="person__s">на ilm4 с {{ owner.date_joined|date:"E Y"|lower }}</div>
+            <div class="person__s">{% translate "на ilm4 с" %} {{ owner.date_joined|date:"E Y"|lower }}</div>
           </div>
           <svg class="person__go" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
         </a>
@@ -68,7 +69,7 @@
 
       {% include 'includes/disclaimer.html' %}
       {% report_button listing %}
-      <div class="dnote">{% ico 'shield' %}<span>Встречайтесь в людных местах и проверяйте товар до оплаты. Безопасная сделка через платформу появится позже.</span></div>
+      <div class="dnote">{% ico 'shield' %}<span>{% translate "Встречайтесь в людных местах и проверяйте товар до оплаты. Безопасная сделка через платформу появится позже." %}</span></div>
     </aside>
   </div>
 </div>
@@ -76,10 +77,10 @@
 {% if listing.owner != request.user %}
 <div class="dbar">
   <div class="dbar__p">
-    <div class="dbar__v">{% if listing.price == 0 %}Даром{% else %}{{ listing.price|intcomma }} {{ listing.get_currency_display }}{% endif %}</div>
+    <div class="dbar__v">{% if listing.price == 0 %}{% translate "Даром" %}{% else %}{{ listing.price|intcomma }} {{ listing.get_currency_display }}{% endif %}</div>
     <div class="dbar__s">{{ listing.title }}</div>
   </div>
-  <a class="btn btn--p" href="{% url 'chat:start' %}?user={{ owner.pk }}&amp;subject={{ listing.title|urlencode }}">{% ico 'chat' %}Написать</a>
+  <a class="btn btn--p" href="{% url 'chat:start' %}?user={{ owner.pk }}&amp;subject={{ listing.title|urlencode }}">{% ico 'chat' %}{% translate "Написать" %}</a>
 </div>
 {% endif %}
 {% endwith %}

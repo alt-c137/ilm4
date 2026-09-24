@@ -1,15 +1,15 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load humanize %}
-{% block title %}Публикация врача — {{ block.super }}{% endblock %}
+{% block title %}{% translate "Публикация врача —" %} {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="page">
-  <h1>Публикация врача</h1>
+  <h1>{% translate "Публикация врача" %}</h1>
   {% if price %}
-  <p>Публикация платная: <b>{{ price|intcomma }} сум</b> спишется с баланса кошелька.
-     После отправки анкета пройдёт модерацию.</p>
+  <p>{% translate "Публикация платная:" %} <b>{{ price|intcomma }} {% translate "сум" %}</b> {% translate "спишется с баланса кошелька. После отправки анкета пройдёт модерацию." %}</p>
   {% else %}
-  <p>Опубликуйте себя или врача, которому доверяете. Анкета появится после модерации.</p>
+  <p>{% translate "Опубликуйте себя или врача, которому доверяете. Анкета появится после модерации." %}</p>
   {% endif %}
   <form method="post" enctype="multipart/form-data" class="form form--wide">{% csrf_token %}
     {% for field in form %}
@@ -18,7 +18,7 @@
       {% if field.errors %}<span class="err">{{ field.errors.0 }}</span>{% endif %}
     {% endfor %}
     {% include 'includes/pledge.html' %}
-    <button type="submit" class="btn btn--p">Отправить</button>
+    <button type="submit" class="btn btn--p">{% translate "Отправить" %}</button>
   </form>
 </div>
 {% endblock %}

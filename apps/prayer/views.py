@@ -1,5 +1,6 @@
 """Страница «Время намаза»: город или GPS-координаты, метод расчёта."""
 from django.shortcuts import render
+from django.utils.translation import gettext as _
 
 from apps.core.decorators import module_required
 
@@ -21,7 +22,7 @@ def index(request):
         lat = float(request.GET.get('lat', ''))
         lon = float(request.GET.get('lon', ''))
         tz = float(request.GET.get('tz', '5'))
-        place = request.GET.get('label') or 'Моё местоположение'
+        place = request.GET.get('label') or _('Моё местоположение')
         city_key = None
     except ValueError:
         city_key = request.GET.get('city') or request.COOKIES.get('ilm4_city') or DEFAULT_CITY

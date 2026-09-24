@@ -9,6 +9,8 @@ from datetime import timedelta
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _lazy
 
 from apps.core.models import Moderation, SiteSettings
 
@@ -21,15 +23,15 @@ ONLINE_TOUCH = timedelta(minutes=3)
 
 # Группы национальностей для фильтра: поиск по началу слова в свободном поле «национальность»
 NATION_GROUPS = [
-    ('caucasus', 'Кавказ', ['чечен', 'ингуш', 'дагест', 'авар', 'даргин', 'лезгин', 'кумык', 'лак', 'табасаран',
+    ('caucasus', _lazy('Кавказ'), ['чечен', 'ингуш', 'дагест', 'авар', 'даргин', 'лезгин', 'кумык', 'лак', 'табасаран',
                             'кабардин', 'балкар', 'карачаев', 'черкес', 'адыг', 'осетин', 'азербайдж']),
-    ('central_asia', 'Средняя Азия', ['узбек', 'казах', 'кыргыз', 'киргиз', 'таджик', 'туркмен', 'каракалпак',
+    ('central_asia', _lazy('Средняя Азия'), ['узбек', 'казах', 'кыргыз', 'киргиз', 'таджик', 'туркмен', 'каракалпак',
                                       'уйгур']),
-    ('turkic', 'Тюрки', ['татар', 'башкир', 'турок', 'турчан', 'турец', 'азербайдж', 'гагауз', 'ногай', 'кумык',
+    ('turkic', _lazy('Тюрки'), ['татар', 'башкир', 'турок', 'турчан', 'турец', 'азербайдж', 'гагауз', 'ногай', 'кумык',
                          'крымск', 'чуваш']),
-    ('arab', 'Арабы', ['араб', 'египт', 'сири', 'иордан', 'палестин', 'ливан', 'ирак', 'марокк', 'алжир', 'тунис',
+    ('arab', _lazy('Арабы'), ['араб', 'египт', 'сири', 'иордан', 'палестин', 'ливан', 'ирак', 'марокк', 'алжир', 'тунис',
                        'саудов', 'йемен', 'ливи', 'судан']),
-    ('south_asia', 'Южная Азия', ['пакистан', 'инди', 'бенгал', 'бангладеш', 'афган', 'пуштун', 'хазар']),
+    ('south_asia', _lazy('Южная Азия'), ['пакистан', 'инди', 'бенгал', 'бангладеш', 'афган', 'пуштун', 'хазар']),
 ]
 
 RANGES = {'age': (18, 80), 'height': (120, 230), 'weight': (40, 200)}
@@ -46,10 +48,11 @@ def settings_():
 def clean_filters(data) -> dict:
     """Из формы (POST) — в словарь для сессии: только допустимые значения."""
     f = {}
+    from .geo import canonical_country
     for field in ('country', 'city', 'nation_text'):
         value = (data.get(field) or '').strip()[:60]
         if value:
-            f[field] = value
+            f[field] = canonical_country(value) if field == 'country' else value
     group = data.get('nation_group', '')
     if group in {g for g, _l, _k in NATION_GROUPS}:
         f['nation_group'] = group
@@ -177,7 +180,7 @@ def buy_premium(me: NikahProfile, user) -> None:
 
     st = settings_()
     if not st.nikah_premium_enabled:
-        raise ValueError('Премиум сейчас недоступен')
+        raise ValueError(_('Премиум сейчас недоступен'))
     wallet.debit(user, st.nikah_premium_price, Transaction.PURCHASE, ref='nikah:premium',
                  note=f'Никях: премиум на {st.nikah_premium_days} дней')
     base = me.premium_until if me.is_premium else timezone.now()

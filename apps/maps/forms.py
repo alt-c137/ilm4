@@ -1,4 +1,5 @@
 from django import forms
+from django.utils.translation import gettext as _
 
 from .models import HalalPlace
 
@@ -24,4 +25,4 @@ class HalalPlaceForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if 'category' in self.fields:
-            self.fields['category'].choices = [('', '— выберите из списка —')] + [c for c in self.fields['category'].choices if c[0] != '']
+            self.fields['category'].choices = [('', _('— выберите из списка —'))] + [c for c in self.fields['category'].choices if c[0] != '']

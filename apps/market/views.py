@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import F, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from apps.core.decorators import module_required, pledge_required
@@ -72,7 +73,7 @@ def listing_create(request):
         form.save_m2m()  # теги
         messages.success(
             request,
-            'Опубликовано!' if listing.is_approved else 'Отправлено на модерацию.')
+            _('Опубликовано!') if listing.is_approved else _('Отправлено на модерацию.'))
         return redirect('market:my')
     return render(request, 'market/form.html', {'form': form, 'categories': Category.objects.all()})
 
@@ -97,10 +98,10 @@ def listing_boost(request, pk):
         wallet.debit(request.user, price, Transaction.PURCHASE,
                      ref=f'market:boost:{pk}', note=f'Буст объявления #{pk}')
     except InsufficientFunds:
-        messages.error(request, 'Недостаточно средств — пополните кошелёк.')
+        messages.error(request, _('Недостаточно средств — пополните кошелёк.'))
         return redirect('wallet:index')
     base = listing.boosted_until if listing.is_boosted else timezone.now()
     listing.boosted_until = base + timedelta(days=7)
     listing.save(update_fields=['boosted_until'])
-    messages.success(request, 'Объявление поднято на 7 дней.')
+    messages.success(request, _('Объявление поднято на 7 дней.'))
     return redirect('market:my')

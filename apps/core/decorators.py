@@ -3,6 +3,7 @@ from functools import wraps
 
 from django.http import Http404
 from django.shortcuts import render
+from django.utils.translation import gettext as _
 
 from .models import ModuleConfig
 
@@ -43,13 +44,13 @@ def pledge_required(view):
             if cache.get(key, 0) >= PUBLISH_PER_DAY and not request.user.is_staff:
                 from django.contrib import messages
                 from django.shortcuts import redirect
-                messages.error(request, 'На сегодня лимит публикаций исчерпан — защита от спама. Завтра можно снова.')
+                messages.error(request, _('На сегодня лимит публикаций исчерпан — защита от спама. Завтра можно снова.'))
                 return redirect(request.path)
             cache.set(key, cache.get(key, 0) + 1, 86400)
             if request.POST.get('pledge') != '1':
                 from django.contrib import messages
                 from django.shortcuts import redirect
-                messages.error(request, 'Чтобы опубликовать, примите договор автора внизу формы.')
+                messages.error(request, _('Чтобы опубликовать, примите договор автора внизу формы.'))
                 return redirect(request.path)
             from apps.accounts.audit import log_action
             log_action(request, 'Принят договор автора', request.path)

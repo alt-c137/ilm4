@@ -15,6 +15,7 @@ from functools import lru_cache
 from cryptography.fernet import Fernet, InvalidToken
 from django.conf import settings
 from django.db import models
+from django.utils.translation import gettext as _
 
 PREFIX = 'enc1:'
 
@@ -40,7 +41,7 @@ def decrypt(value: str) -> str:
     try:
         return _fernet().decrypt(value[len(PREFIX):].encode()).decode()
     except InvalidToken:
-        return '[сообщение не удалось расшифровать]'
+        return _('[сообщение не удалось расшифровать]')
 
 
 def encrypt_bytes(data: bytes) -> bytes:

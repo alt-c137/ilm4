@@ -377,3 +377,10 @@
   .top .darktoggle{--dt-w:44px;--dt-h:25px;--dt-k:19px;margin-left:4px}
 }
 @media (max-width:350px){.top .logo--text b{font-size:20px}.top .darktoggle{margin-left:2px}.top .uchip{margin-left:2px}}
+
+/* язык в шапке на телефоне — компактно */
+@media (max-width:760px){
+  .langm{margin-left:6px}
+  .langm__btn{height:27px;padding:0 8px;font-size:11.5px;gap:0}
+  .langm__btn svg{display:none}
+}

@@ -1,19 +1,19 @@
-{% load humanize %}
+{% load i18n %}{% load humanize %}
 {% if rates %}
 <section class="sec">
   <div class="sec__h">
-    <div class="sec__t">Курс валют</div>
-    <span class="meta">обновлён: {{ rates_updated|date:"d.m H:i" }}</span>
+    <div class="sec__t">{% translate "Курс валют" %}</div>
+    <span class="meta">{% translate "обновлён:" %} {{ rates_updated|date:"d.m H:i" }}</span>
   </div>
   <div class="rates">
     {% for r in rates %}
     <div class="rates__item">
       <span class="rates__code">{{ r.code }}</span>
       <span class="rates__val">{{ r.rate|intcomma }}</span>
-      <span class="rates__cur">сум</span>
+      <span class="rates__cur">{% translate "сум" %}</span>
     </div>
     {% endfor %}
   </div>
-  <div class="rates__note">Не является офертой. Актуальность уточняйте в банке.</div>
+  <div class="rates__note">{% translate "Не является офертой. Актуальность уточняйте в банке." %}</div>
 </section>
 {% endif %}

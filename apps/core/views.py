@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.utils.translation import gettext as _
 
 from .blocks import get_blocks
 from .catalog import build_catalog
@@ -93,18 +94,18 @@ def feed(request):
     from apps.market.models import Listing
     from apps.news.models import NewsPost
 
-    news = [{'kind': 'Новости', 'title': p.title, 'text': p.summary, 'img': p.cover.url if p.cover else '',
+    news = [{'kind': _('Новости'), 'title': p.title, 'text': p.summary, 'img': p.cover.url if p.cover else '',
              'url': f'/news/{p.slug}/', 'meta': p.created_at} for p in NewsPost.objects.all()[:10]]
-    buy = [{'kind': 'Маркет', 'title': x.title, 'text': x.description[:160], 'img': x.photo.url if x.photo else '',
+    buy = [{'kind': _('Маркет'), 'title': x.title, 'text': x.description[:160], 'img': x.photo.url if x.photo else '',
             'url': f'/buy/{x.pk}/', 'meta': x.created_at, 'price': f'{x.price:,.0f} {x.get_currency_display()}'.replace(',', ' ')}
            for x in Listing.objects.filter(status=Moderation.APPROVED, is_active=True)[:10]]
-    qa = [{'kind': 'Вопрос', 'title': t.title, 'text': t.body[:200], 'img': '', 'url': f'/forum/{t.pk}/',
+    qa = [{'kind': _('Вопрос'), 'title': t.title, 'text': t.body[:200], 'img': '', 'url': f'/forum/{t.pk}/',
            'meta': t.created_at, 'author': t.author.get_display_name()}
           for t in Topic.objects.filter(status=Moderation.APPROVED).select_related('author')[:10]]
     places = [{'kind': p.get_category_display(), 'title': p.name, 'text': p.description[:160] or p.city,
                'img': p.photo.url if p.photo else '', 'url': f'/map/{p.pk}/', 'meta': p.created_at}
               for p in HalalPlace.objects.filter(status=Moderation.APPROVED)[:10]]
-    jobs = [{'kind': 'Вакансия', 'title': v.title, 'text': f'{v.company} · {v.city}', 'img': '',
+    jobs = [{'kind': _('Вакансия'), 'title': v.title, 'text': f'{v.company} · {v.city}', 'img': '',
              'url': f'/jobs/{v.pk}/', 'meta': v.created_at, 'price': v.salary}
             for v in Vacancy.objects.filter(status=Moderation.APPROVED)[:10]]
     items = [x for group in zip_longest(news, buy, qa, places, jobs) for x in group if x][:40]
@@ -112,3 +113,24 @@ def feed(request):
         it['id'] = i
         it['tone'] = i % 5
     return render(request, 'core/feed.html', {'items': items})
+
+
+def set_language(request):
+    """Сменить язык: кука + профиль (если вошёл). POST, возвращает туда же."""
+    from django.conf import settings
+    from django.shortcuts import redirect
+    from django.utils import translation
+    from django.utils.http import url_has_allowed_host_and_scheme
+
+    code = request.POST.get('language', '')
+    nxt = request.POST.get('next', '') or '/'
+    if not url_has_allowed_host_and_scheme(nxt, allowed_hosts={request.get_host()}):
+        nxt = '/'
+    response = redirect(nxt)
+    if request.method == 'POST' and code in dict(settings.LANGUAGES):
+        translation.activate(code)
+        response.set_cookie(settings.LANGUAGE_COOKIE_NAME, code, max_age=settings.LANGUAGE_COOKIE_AGE, samesite='Lax')
+        if request.user.is_authenticated and request.user.language != code:
+            request.user.language = code
+            request.user.save(update_fields=['language'])
+    return response

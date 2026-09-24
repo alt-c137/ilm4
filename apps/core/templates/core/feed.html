@@ -1,11 +1,12 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons %}
-{% block title %}Лента — {{ block.super }}{% endblock %}
+{% block title %}{% translate "Лента —" %} {{ block.super }}{% endblock %}
 {% block body_class %}page-feed{% endblock %}
 
 {% block content %}
 <div class="feedwrap">
-  <div class="feedtop"><b>Лента</b><span>бета · листайте вверх</span></div>
+  <div class="feedtop"><b>{% translate "Лента" %}</b><span>{% translate "бета · листайте вверх" %}</span></div>
   <div class="feedv" id="feedv">
     {% for it in items %}
     <article class="fcard fcard--t{{ it.tone }}" data-url="{{ it.url }}" data-id="{{ it.kind }}-{{ it.id }}">
@@ -16,17 +17,17 @@
         <h2 class="fcard__t">{{ it.title }}</h2>
         {% if it.price %}<div class="fcard__price">{{ it.price }}</div>{% endif %}
         {% if it.text %}<p class="fcard__x">{{ it.text|truncatechars:170 }}</p>{% endif %}
-        <div class="fcard__meta">{% if it.author %}{{ it.author }} · {% endif %}{{ it.meta|timesince }} назад</div>
-        <a class="fcard__open" href="{{ it.url }}">Открыть {% ico 'arrow' %}</a>
+        <div class="fcard__meta">{% if it.author %}{{ it.author }} · {% endif %}{{ it.meta|timesince }} {% translate "назад" %}</div>
+        <a class="fcard__open" href="{{ it.url }}">{% translate "Открыть" %} {% ico 'arrow' %}</a>
       </div>
       <div class="fcard__rail">
-        <button type="button" class="frail" data-like aria-label="Нравится">{% ico 'heart' %}<small>Нравится</small></button>
-        <a class="frail" href="{{ it.url }}" aria-label="Обсудить">{% ico 'chat' %}<small>Обсудить</small></a>
-        <button type="button" class="frail" data-fshare="{{ it.title }}" aria-label="Поделиться">{% ico 'send' %}<small>Поделиться</small></button>
+        <button type="button" class="frail" data-like aria-label="{% translate 'Нравится' %}">{% ico 'heart' %}<small>{% translate "Нравится" %}</small></button>
+        <a class="frail" href="{{ it.url }}" aria-label="{% translate 'Обсудить' %}">{% ico 'chat' %}<small>{% translate "Обсудить" %}</small></a>
+        <button type="button" class="frail" data-fshare="{{ it.title }}" aria-label="{% translate 'Поделиться' %}">{% ico 'send' %}<small>{% translate "Поделиться" %}</small></button>
       </div>
     </article>
     {% empty %}
-    <article class="fcard fcard--t0"><div class="fcard__body"><h2 class="fcard__t">Здесь скоро будет лента</h2><p class="fcard__x">Новости, объявления, вопросы уммы — одним свайпом.</p></div></article>
+    <article class="fcard fcard--t0"><div class="fcard__body"><h2 class="fcard__t">{% translate "Здесь скоро будет лента" %}</h2><p class="fcard__x">{% translate "Новости, объявления, вопросы уммы — одним свайпом." %}</p></div></article>
     {% endfor %}
   </div>
 </div>

@@ -1,11 +1,12 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons %}
-{% block title %}Мои публикации — {{ block.super }}{% endblock %}
+{% block title %}{% translate "Мои публикации —" %} {{ block.super }}{% endblock %}
 {% block content %}
 <div class="dpage">
-  <a class="crumb" href="{% url 'accounts:profile' %}">{% ico 'back' %}Профиль</a>
-  <h1 class="mypubs__h">Мои публикации</h1>
-  <p class="mypubs__sub">Всё, что вы выставили на ilm4: объявления, вакансии, услуги, перевозки, места, истории. Здесь видно, что на проверке, и можно изменить или удалить.</p>
+  <a class="crumb" href="{% url 'accounts:profile' %}">{% ico 'back' %}{% translate "Профиль" %}</a>
+  <h1 class="mypubs__h">{% translate "Мои публикации" %}</h1>
+  <p class="mypubs__sub">{% translate "Всё, что вы выставили на ilm4: объявления, вакансии, услуги, перевозки, места, истории. Здесь видно, что на проверке, и можно изменить или удалить." %}</p>
 
   <div class="mypubs__add">{% for p in create %}<a class="chip" href="{{ p.create }}">+ {{ p.label }}</a>{% endfor %}</div>
 
@@ -19,16 +20,16 @@
         <span class="mypub__st mypub__st--{{ it.css }}">{{ it.status }}</span>
       </div>
       <div class="mypub__act">
-        {% if g.pub.form %}<a class="btn btn--s btn--g" href="{% url 'core:my_edit' g.pub.key it.obj.pk %}">{% ico 'edit' %}Изменить</a>{% endif %}
-        {% if g.pub.active %}<form method="post" action="{% url 'core:my_toggle' g.pub.key it.obj.pk %}">{% csrf_token %}<button class="btn btn--s btn--g" type="submit">{% if it.css == 'off' %}Показать{% else %}Скрыть{% endif %}</button></form>{% endif %}
-        <form method="post" action="{% url 'core:my_delete' g.pub.key it.obj.pk %}" onsubmit="return confirm('Удалить «{{ it.title|escapejs }}» насовсем?')">{% csrf_token %}<button class="btn btn--s btn--g mypub__del" type="submit">Удалить</button></form>
+        {% if g.pub.form %}<a class="btn btn--s btn--g" href="{% url 'core:my_edit' g.pub.key it.obj.pk %}">{% ico 'edit' %}{% translate "Изменить" %}</a>{% endif %}
+        {% if g.pub.active %}<form method="post" action="{% url 'core:my_toggle' g.pub.key it.obj.pk %}">{% csrf_token %}<button class="btn btn--s btn--g" type="submit">{% if it.css == 'off' %}{% translate "Показать" %}{% else %}{% translate "Скрыть" %}{% endif %}</button></form>{% endif %}
+        <form method="post" action="{% url 'core:my_delete' g.pub.key it.obj.pk %}" onsubmit="return confirm('{{ _("Удалить насовсем?")|escapejs }} «{{ it.title|escapejs }}»')">{% csrf_token %}<button class="btn btn--s btn--g mypub__del" type="submit">{% translate "Удалить" %}</button></form>
       </div>
     </div>
     {% endfor %}
   </section>
   {% empty %}
-  <div class="empty"><h3 style="font-size:18px;font-weight:800">Пока ничего не опубликовано</h3>
-    <p style="color:var(--ink-soft)">Выставьте вакансию, услугу или объявление — кнопки выше.</p></div>
+  <div class="empty"><h3 style="font-size:18px;font-weight:800">{% translate "Пока ничего не опубликовано" %}</h3>
+    <p style="color:var(--ink-soft)">{% translate "Выставьте вакансию, услугу или объявление — кнопки выше." %}</p></div>
   {% endfor %}
 </div>
 {% endblock %}

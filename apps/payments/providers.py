@@ -20,6 +20,8 @@ from urllib.parse import urlencode
 import requests
 from django.conf import settings
 from django.urls import reverse
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _lazy
 
 
 class ProviderNotReady(Exception):
@@ -52,12 +54,12 @@ class Provider:
         return bool(cls.env_keys) and all(getattr(settings, k, '') for k in cls.env_keys)
 
     def start(self, topup, request) -> str:
-        raise ProviderNotReady(f'{self.title}: не настроено')
+        raise ProviderNotReady(_('{v0}: не настроено').format(v0=self.title))
 
 
 class Stars(Provider):
     """Telegram Stars: счёт в боте. Оплата подтверждается апдейтом successful_payment."""
-    key, title, hint, icon = 'stars', 'Telegram Stars', 'Звёзды Telegram — из приложения, в 2 касания', 'star'
+    key, title, hint, icon = 'stars', 'Telegram Stars', _lazy('Звёзды Telegram — из приложения, в 2 касания'), 'star'
     env_keys = ('TELEGRAM_BOT_TOKEN',)
 
     @staticmethod
@@ -71,10 +73,10 @@ class Stars(Provider):
 
         stars = self.stars_for(topup.amount)
         link = api('createInvoiceLink', {
-            'title': 'Пополнение баланса ilm4', 'description': f'{int(topup.amount):,} сум на баланс'.replace(',', ' '),
-            'payload': f'topup:{topup.pk}', 'currency': 'XTR', 'prices': [{'label': 'Пополнение', 'amount': stars}]})
+            'title': _('Пополнение баланса ilm4'), 'description': _('{v0:,} сум на баланс').format(v0=int(topup.amount)).replace(',', ' '),
+            'payload': f'topup:{topup.pk}', 'currency': 'XTR', 'prices': [{'label': _('Пополнение'), 'amount': stars}]})
         if not link:
-            raise ProviderNotReady('Telegram не создал счёт — проверьте токен бота')
+            raise ProviderNotReady(_('Telegram не создал счёт — проверьте токен бота'))
         topup.external_id = f'stars:{stars}'
         topup.save(update_fields=['external_id'])
         return link
@@ -82,7 +84,7 @@ class Stars(Provider):
 
 class Click(Provider):
     """Click (Узбекистан): Uzcard, Humo. Подтверждение — Prepare/Complete на наш адрес."""
-    key, title, hint, icon = 'click', 'Uzcard / Humo', 'Через Click — карты Узбекистана', 'card'
+    key, title, hint, icon = 'click', 'Uzcard / Humo', _lazy('Через Click — карты Узбекистана'), 'card'
     env_keys = ('CLICK_SERVICE_ID', 'CLICK_MERCHANT_ID', 'CLICK_SECRET_KEY')
 
     def start(self, topup, request) -> str:
@@ -94,7 +96,7 @@ class Click(Provider):
 
 class Stripe(Provider):
     """Stripe Checkout: Visa/Mastercard мира, Apple Pay, Google Pay. Сумма — в долларах по курсу."""
-    key, title, hint, icon = 'stripe', 'Карта мира', 'Visa, Mastercard, Apple Pay, Google Pay — через Stripe', 'globe'
+    key, title, hint, icon = 'stripe', _lazy('Карта мира'), _lazy('Visa, Mastercard, Apple Pay, Google Pay — через Stripe'), 'globe'
     env_keys = ('STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET')
 
     def start(self, topup, request) -> str:
@@ -109,12 +111,12 @@ class Stripe(Provider):
                                   'line_items[0][price_data][currency]': 'usd',
                                   'line_items[0][price_data][unit_amount]': int(usd * 100),
                                   'line_items[0][price_data][product_data][name]':
-                                      f'Пополнение баланса ilm4: {int(topup.amount)} сум'})
+                                      _('Пополнение баланса ilm4: {v1} сум').format(v1=int(topup.amount))})
             data = r.json()
         except (requests.RequestException, ValueError):
-            raise ProviderNotReady('Stripe недоступен, попробуйте позже') from None
+            raise ProviderNotReady(_('Stripe недоступен, попробуйте позже')) from None
         if not data.get('url'):
-            raise ProviderNotReady('Stripe отклонил запрос: ' + str(data.get('error', {}).get('message', '')))
+            raise ProviderNotReady(_('Stripe отклонил запрос: ') + str(data.get('error', {}).get('message', '')))
         topup.external_id = data['id']
         topup.save(update_fields=['external_id'])
         return data['url']
@@ -122,7 +124,7 @@ class Stripe(Provider):
 
 class Crypto(Provider):
     """NOWPayments: USDT (TRC20/ERC20), BTC, ETH и др. Подтверждение — IPN с подписью."""
-    key, title, hint, icon = 'crypto', 'Криптовалюта', 'USDT, BTC, ETH — через NOWPayments', 'coin'
+    key, title, hint, icon = 'crypto', _lazy('Криптовалюта'), _lazy('USDT, BTC, ETH — через NOWPayments'), 'coin'
     env_keys = ('NOWPAYMENTS_API_KEY', 'NOWPAYMENTS_IPN_SECRET')
 
     def start(self, topup, request) -> str:
@@ -130,15 +132,15 @@ class Crypto(Provider):
             r = requests.post('https://api.nowpayments.io/v1/invoice', timeout=15,
                               headers={'x-api-key': settings.NOWPAYMENTS_API_KEY}, json={
                                   'price_amount': float(usd_amount(topup.amount)), 'price_currency': 'usd',
-                                  'order_id': str(topup.pk), 'order_description': f'ilm4 пополнение #{topup.pk}',
+                                  'order_id': str(topup.pk), 'order_description': _('ilm4 пополнение #{v1}').format(v1=topup.pk),
                                   'ipn_callback_url': _abs(request, 'payments:crypto_ipn'),
                                   'success_url': _abs(request, 'payments:done', topup.pk),
                                   'cancel_url': _abs(request, 'wallet:topup')})
             data = r.json()
         except (requests.RequestException, ValueError):
-            raise ProviderNotReady('Криптошлюз недоступен, попробуйте позже') from None
+            raise ProviderNotReady(_('Криптошлюз недоступен, попробуйте позже')) from None
         if not data.get('invoice_url'):
-            raise ProviderNotReady('Криптошлюз отклонил запрос')
+            raise ProviderNotReady(_('Криптошлюз отклонил запрос'))
         topup.external_id = str(data.get('id', ''))
         topup.save(update_fields=['external_id'])
         return data['invoice_url']

@@ -1,34 +1,35 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons reviews %}
-{% block title %}Перевозки — {{ block.super }}{% endblock %}
-{% block description %}Грузовые и пассажирские перевозки по направлениям: найдите перевозчика по маршруту — откуда и куда.{% endblock %}
+{% block title %}{% translate "Перевозки —" %} {{ block.super }}{% endblock %}
+{% block description %}{% translate "Грузовые и пассажирские перевозки по направлениям: найдите перевозчика по маршруту — откуда и куда." %}{% endblock %}
 {% block body_class %}s-migration{% endblock %}
 
 {% block content %}
 <div class="svc">
-{% include 'includes/section_hero.html' with icon="🚚" icslug="transport" title="Перевозки" desc="Грузовые и пассажирские перевозки, попутчики — находи перевозчика по маршруту" class="migration" cta="Добавить перевозку" cta_url="/transport/add/" %}
+{% include 'includes/section_hero.html' with icon="🚚" icslug="transport" title=_("Перевозки") desc=_("Грузовые и пассажирские перевозки, попутчики — находи перевозчика по маршруту") class="migration" cta=_("Добавить перевозку") cta_url="/transport/add/" %}
 
   <div class="toolbar">
     <div class="chips">
-      <a class="chip{% if not f_type %} chip--on{% endif %}" href="?from={{ f_from|urlencode }}&amp;to={{ f_to|urlencode }}">Все типы</a>
+      <a class="chip{% if not f_type %} chip--on{% endif %}" href="?from={{ f_from|urlencode }}&amp;to={{ f_to|urlencode }}">{% translate "Все типы" %}</a>
       {% for key, label in types %}
       <a class="chip{% if key == f_type %} chip--on{% endif %}" href="?from={{ f_from|urlencode }}&amp;to={{ f_to|urlencode }}&amp;type={{ key }}">{{ label }}</a>
       {% endfor %}
     </div>
     <form method="get" class="rroute" autocomplete="off">
       <input type="hidden" name="type" value="{{ f_type }}">
-      <label class="rroute__f">{% ico 'pin' %}<input type="text" name="from" value="{{ f_from }}" placeholder="Откуда" list="ride-cities" aria-label="Откуда"></label>
-      <button type="button" class="rroute__swap" id="route-swap" aria-label="Поменять местами">⇄</button>
-      <label class="rroute__f">{% ico 'pin' %}<input type="text" name="to" value="{{ f_to }}" placeholder="Куда" list="ride-cities" aria-label="Куда"></label>
-      <button type="submit" class="btn btn--p">Найти</button>
+      <label class="rroute__f">{% ico 'pin' %}<input type="text" name="from" value="{{ f_from }}" placeholder="{% translate 'Откуда' %}" list="ride-cities" aria-label="{% translate 'Откуда' %}"></label>
+      <button type="button" class="rroute__swap" id="route-swap" aria-label="{% translate 'Поменять местами' %}">⇄</button>
+      <label class="rroute__f">{% ico 'pin' %}<input type="text" name="to" value="{{ f_to }}" placeholder="{% translate 'Куда' %}" list="ride-cities" aria-label="{% translate 'Куда' %}"></label>
+      <button type="submit" class="btn btn--p">{% translate "Найти" %}</button>
       <datalist id="ride-cities">{% for c in cities %}<option value="{{ c }}">{% endfor %}</datalist>
     </form>
-    <p class="rroute__hint">Укажите один город — покажем всех, кто возит туда и оттуда. Оба — только это направление.</p>
+    <p class="rroute__hint">{% translate "Укажите один город — покажем всех, кто возит туда и оттуда. Оба — только это направление." %}</p>
   </div>
 
   {% if routes %}
   <div class="rpop">
-    <span class="rpop__l">Популярные направления</span>
+    <span class="rpop__l">{% translate "Популярные направления" %}</span>
     <div class="rpop__row">
       {% for r in routes %}<a class="rpop__i{% if r.from_city == f_from and r.to_city == f_to %} on{% endif %}" href="?from={{ r.from_city|urlencode }}&amp;to={{ r.to_city|urlencode }}{% if f_type %}&amp;type={{ f_type }}{% endif %}">{{ r.from_city }} <i>→</i> {{ r.to_city }} <small>{{ r.n }}</small></a>{% endfor %}
     </div>
@@ -37,7 +38,7 @@
 
   {% include 'includes/disclaimer.html' %}
 
-  {% if f_from or f_to %}<h2 class="rsec__t">{% if f_from and f_to %}{{ f_from }} → {{ f_to }}{% else %}Через {{ f_from|default:f_to }}{% endif %}: {{ rides_count }} {{ rides_count|ru_plural:"перевозчик,перевозчика,перевозчиков" }}</h2>{% endif %}
+  {% if f_from or f_to %}<h2 class="rsec__t">{% if f_from and f_to %}{{ f_from }} → {{ f_to }}{% else %}{% translate "Через" %} {{ f_from|default:f_to }}{% endif %}: {{ rides_count }} {{ rides_count|ru_plural:_("перевозчик,перевозчика,перевозчиков") }}</h2>{% endif %}
 
   {% for g in groups %}
   <section class="rgroup">
@@ -58,7 +59,7 @@
         <div class="ride__meta">
           {% if r.ride_date %}{% ico 'calendar' 'mmeta' %}{{ r.ride_date|date:"d.m.Y" }} · {% endif %}
           {% ico 'phone' 'mmeta' %}<b>{{ r.contact }}</b> · {{ r.created_at|date:"d.m" }}
-          {% if user.is_authenticated and user != r.owner %}<a class="ride__chat" href="{% url 'chat:start' %}?user={{ r.owner.pk }}&amp;subject={{ r.from_city|urlencode }}%20%E2%86%92%20{{ r.to_city|urlencode }}">{% ico 'chat' %}Написать</a>{% endif %}
+          {% if user.is_authenticated and user != r.owner %}<a class="ride__chat" href="{% url 'chat:start' %}?user={{ r.owner.pk }}&amp;subject={{ r.from_city|urlencode }}%20%E2%86%92%20{{ r.to_city|urlencode }}">{% ico 'chat' %}{% translate "Написать" %}</a>{% endif %}
         </div>
       </div>
       {% endfor %}
@@ -67,9 +68,9 @@
   {% empty %}
   <div class="empty">
     <div class="empty__plug"><svg viewBox="0 0 24 24"><path d="M3 6.5h11v9H3zM14 9.5h3.5L21 13v2.5h-7z"/><circle cx="7.5" cy="17" r="1.7"/><circle cx="17.5" cy="17" r="1.7"/></svg></div>
-    <h3 style="font-size:18px;font-weight:800">{% if f_from or f_to %}По этому направлению пока никого{% else %}Маршрутов пока нет{% endif %}</h3>
-    <p style="color:var(--ink-soft)">Возишь грузы или пассажиров? Добавьте свою перевозку — бесплатно, после модерации.</p>
-    <a class="btn btn--p" href="{% url 'transport:create' %}">Добавить перевозку</a>
+    <h3 style="font-size:18px;font-weight:800">{% if f_from or f_to %}{% translate "По этому направлению пока никого" %}{% else %}{% translate "Маршрутов пока нет" %}{% endif %}</h3>
+    <p style="color:var(--ink-soft)">{% translate "Возишь грузы или пассажиров? Добавьте свою перевозку — бесплатно, после модерации." %}</p>
+    <a class="btn btn--p" href="{% url 'transport:create' %}">{% translate "Добавить перевозку" %}</a>
   </div>
   {% endfor %}
 </div>

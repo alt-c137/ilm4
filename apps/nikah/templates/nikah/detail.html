@@ -1,66 +1,67 @@
 {% extends 'nikah/_base.html' %}
+{% load i18n %}
 {% load nikah_tags reports %}
-{% block nk_title %}{{ p.display_name }}, {{ p.age }} · Никях{% endblock %}
-{% block nk_back %}<a class="nkback" href="{% url 'nikah:home' %}" data-back>{% nk_icon 'back' %}Назад</a>{% endblock %}
+{% block nk_title %}{{ p.display_name }}, {{ p.age }} {% translate "· Никях" %}{% endblock %}
+{% block nk_back %}<a class="nkback" href="{% url 'nikah:home' %}" data-back>{% nk_icon 'back' %}{% translate "Назад" %}</a>{% endblock %}
 {% block nk %}
 <div class="nkprof">
   <header class="nkprof__head">
     <span class="nkava nkava--lg nkava--{{ p.gender }}">{% if p.gender == 'M' %}{% nk_icon 'brother' %}{% else %}{% nk_icon 'sister' %}{% endif %}</span>
     <div class="nkprof__who">
-      <h1>{{ p.display_name }}, {{ p.age }}{% if p.verified %}<i class="nkverified" title="Верифицирован(а): модератор видел кружок">✓</i>{% endif %}</h1>
+      <h1>{{ p.display_name }}, {{ p.age }}{% if p.verified %}<i class="nkverified" title="{% translate 'Верифицирован(а): модератор видел кружок' %}">✓</i>{% endif %}</h1>
       <p>{{ p.place|default:"—" }}{% if p.nationality %} · {{ p.nationality }}{% endif %} · {{ p.get_gender_display }}</p>
     </div>
-    {% if p.compat is not None %}<span class="nkcompat nkcompat--lg" style="--p:{{ p.compat }}"><b>{{ p.compat }}%</b><small>совместимость</small></span>{% endif %}
+    {% if p.compat is not None %}<span class="nkcompat nkcompat--lg" style="--p:{{ p.compat }}"><b>{{ p.compat }}%</b><small>{% translate "совместимость" %}</small></span>{% endif %}
   </header>
   {% if p.why %}<div class="nkwhy nkwhy--box">{% nk_icon 'check' %}{{ p.why|join:" · " }}</div>{% endif %}
 
   {% if match %}
-  <a class="nkbanner" href="{% url 'nikah:match' match.pk %}">{% nk_icon 'heart' %}<div><b>Взаимная симпатия</b><span>{{ match.get_stage_display|capfirst }} — открыть</span></div>{% nk_icon 'arrow' %}</a>
+  <a class="nkbanner" href="{% url 'nikah:match' match.pk %}">{% nk_icon 'heart' %}<div><b>{% translate "Взаимная симпатия" %}</b><span>{{ match.get_stage_display|capfirst }} {% translate "— открыть" %}</span></div>{% nk_icon 'arrow' %}</a>
   {% elif likes_me %}
-  <div class="nkbanner nkbanner--soft">{% nk_icon 'heart' %}<div><b>{% if p.gender == 'M' %}Брат проявил{% else %}Сестра проявила{% endif %} интерес к вам</b><span>Ответьте взаимностью — откроется следующий шаг.</span></div></div>
+  <div class="nkbanner nkbanner--soft">{% nk_icon 'heart' %}<div><b>{% if p.gender == 'M' %}{% translate "Брат проявил" %}{% else %}{% translate "Сестра проявила" %}{% endif %} {% translate "интерес к вам" %}</b><span>{% translate "Ответьте взаимностью — откроется следующий шаг." %}</span></div></div>
   {% endif %}
 
-  <section class="nksec"><h2>Вероубеждение и манхадж</h2>
+  <section class="nksec"><h2>{% translate "Вероубеждение и манхадж" %}</h2>
     <div class="nkkv">
-      <div><span>Вероубеждение</span><b>{{ p|nk:'aqida'|default:"—" }}</b></div>
-      <div><span>Мазхаб</span><b>{{ p|nk:'madhhab'|default:"—" }}</b></div>
-      <div><span>Намаз</span><b>{{ p|nk:'prayer'|default:"—" }}</b></div>
-      <div><span>Коран</span><b>{{ p|nk:'quran'|default:"—" }}</b></div>
-      <div class="nkkv__w"><span>Где Аллах?</span><b>{{ p|nk:'where_allah'|default:"—" }}</b></div>
-      <div><span>{% if p.gender == 'M' %}Борода{% else %}Покрытие{% endif %}</span><b>{{ p|nk:'look'|default:"—" }}</b></div>
+      <div><span>{% translate "Вероубеждение" %}</span><b>{{ p|nk:'aqida'|default:"—" }}</b></div>
+      <div><span>{% translate "Мазхаб" %}</span><b>{{ p|nk:'madhhab'|default:"—" }}</b></div>
+      <div><span>{% translate "Намаз" %}</span><b>{{ p|nk:'prayer'|default:"—" }}</b></div>
+      <div><span>{% translate "Коран" %}</span><b>{{ p|nk:'quran'|default:"—" }}</b></div>
+      <div class="nkkv__w"><span>{% translate "Где Аллах?" %}</span><b>{{ p|nk:'where_allah'|default:"—" }}</b></div>
+      <div><span>{% if p.gender == 'M' %}{% translate "Борода" %}{% else %}{% translate "Покрытие" %}{% endif %}</span><b>{{ p|nk:'look'|default:"—" }}</b></div>
     </div>
     <p class="nktext">{{ p.manhaj_text|linebreaksbr }}</p>
   </section>
 
-  <section class="nksec"><h2>О себе</h2><p class="nktext">{{ p.about|linebreaksbr }}</p></section>
-  <section class="nksec"><h2>{% if p.gender == 'M' %}Какую жену ищет{% else %}Какого мужа ищет{% endif %}</h2><p class="nktext">{{ p.partner_expectations|linebreaksbr }}</p>
-    <p class="nkmeta">Возраст {% if p.gender == 'M' %}жены{% else %}мужа{% endif %}: {{ p.age_from }}–{{ p.age_to }}</p></section>
+  <section class="nksec"><h2>{% translate "О себе" %}</h2><p class="nktext">{{ p.about|linebreaksbr }}</p></section>
+  <section class="nksec"><h2>{% if p.gender == 'M' %}{% translate "Какую жену ищет" %}{% else %}{% translate "Какого мужа ищет" %}{% endif %}</h2><p class="nktext">{{ p.partner_expectations|linebreaksbr }}</p>
+    <p class="nkmeta">{% translate "Возраст" %} {% if p.gender == 'M' %}{% translate "жены" %}{% else %}{% translate "мужа" %}{% endif %}: {{ p.age_from }}–{{ p.age_to }}</p></section>
 
-  <section class="nksec"><h2>Семья и планы</h2>
+  <section class="nksec"><h2>{% translate "Семья и планы" %}</h2>
     <div class="nkkv">
-      <div><span>Семейное положение</span><b>{{ p|nk:'marital'|default:"—" }}</b></div>
-      {% if p.gender == 'M' %}<div><span>Ищет жену</span><b>{{ p|nk:'wife_number'|default:"Первую" }}</b></div>
-      {% else %}<div><span>Многожёнство</span><b>{{ p|nk:'polygyny'|default:"—" }}</b></div>{% endif %}
-      <div><span>Свои дети</span><b>{{ p|nk:'children_want'|default:"—" }}</b></div>
-      <div><span>Дети партнёра</span><b>{{ p|nk:'children_accept'|default:"—" }}</b></div>
-      <div><span>Готов{% if p.gender == 'F' %}а{% endif %} к никяху</span><b>{{ p|nk:'ready_when'|default:"—" }}</b></div>
-      <div><span>Переезд</span><b>{{ p|nk:'relocation'|default:"—" }}</b></div>
-      {% if p.height %}<div><span>Рост</span><b>{{ p.height }} см</b></div>{% endif %}
-      {% if p.weight %}<div><span>Вес</span><b>{{ p.weight }} кг</b></div>{% endif %}
+      <div><span>{% translate "Семейное положение" %}</span><b>{{ p|nk:'marital'|default:"—" }}</b></div>
+      {% if p.gender == 'M' %}<div><span>{% translate "Ищет жену" %}</span><b>{{ p|nk:'wife_number'|default:_("Первую") }}</b></div>
+      {% else %}<div><span>{% translate "Многожёнство" %}</span><b>{{ p|nk:'polygyny'|default:"—" }}</b></div>{% endif %}
+      <div><span>{% translate "Свои дети" %}</span><b>{{ p|nk:'children_want'|default:"—" }}</b></div>
+      <div><span>{% translate "Дети партнёра" %}</span><b>{{ p|nk:'children_accept'|default:"—" }}</b></div>
+      <div><span>{% translate "Готов" %}{% if p.gender == 'F' %}{% translate "а" %}{% endif %} {% translate "к никяху" %}</span><b>{{ p|nk:'ready_when'|default:"—" }}</b></div>
+      <div><span>{% translate "Переезд" %}</span><b>{{ p|nk:'relocation'|default:"—" }}</b></div>
+      {% if p.height %}<div><span>{% translate "Рост" %}</span><b>{{ p.height }} {% translate "см" %}</b></div>{% endif %}
+      {% if p.weight %}<div><span>{% translate "Вес" %}</span><b>{{ p.weight }} {% translate "кг" %}</b></div>{% endif %}
     </div>
   </section>
 
   {% if p.pk != me.pk %}
-  <div class="personact">{% report_button p 'Пожаловаться на анкету' %}
-    <form method="post" action="{% url 'accounts:block' p.user_id %}" onsubmit="return confirm('Заблокировать? Вы перестанете видеть друг друга в никяхе и не сможете писать.')">{% csrf_token %}<input type="hidden" name="next" value="{% url 'nikah:home' %}">
-      <button class="linkbtn" type="submit">Заблокировать</button></form></div>
+  <div class="personact">{% report_button p _('Пожаловаться на анкету') %}
+    <form method="post" action="{% url 'accounts:block' p.user_id %}" onsubmit="return confirm('{{ _("Заблокировать? Вы перестанете видеть друг друга в никяхе и не сможете писать.")|escapejs }}')">{% csrf_token %}<input type="hidden" name="next" value="{% url 'nikah:home' %}">
+      <button class="linkbtn" type="submit">{% translate "Заблокировать" %}</button></form></div>
   <div class="nkdock">
     <form method="post" action="{% url 'nikah:save' p.pk %}">{% csrf_token %}<input type="hidden" name="back" value="{{ request.path }}">
-      <button class="nkicon nkicon--lg{% if saved %} on{% endif %}" type="submit" aria-label="Сохранить" title="{% if saved %}Убрать из сохранённых{% else %}Сохранить{% endif %}">{% nk_icon 'star' %}</button></form>
+      <button class="nkicon nkicon--lg{% if saved %} on{% endif %}" type="submit" aria-label="{% translate 'Сохранить' %}" title="{% if saved %}{% translate 'Убрать из сохранённых' %}{% else %}{% translate 'Сохранить' %}{% endif %}">{% nk_icon 'star' %}</button></form>
     {% if not match %}
     <form method="post" action="{% url 'nikah:interest' p.pk %}" class="nkdock__main">{% csrf_token %}<input type="hidden" name="back" value="{{ request.path }}">
-      {% if liked %}<input type="hidden" name="undo" value="1"><button class="nkbtn nkbtn--on nkbtn--lg" type="submit">{% nk_icon 'heart' %}Интерес отправлен · отозвать</button>
-      {% else %}<button class="nkbtn nkbtn--love nkbtn--lg" type="submit"{% if not me.is_published %} disabled title="После одобрения вашей анкеты"{% endif %}>{% nk_icon 'heart' %}{% if likes_me %}Ответить взаимностью{% else %}Проявить интерес{% endif %}</button>{% endif %}
+      {% if liked %}<input type="hidden" name="undo" value="1"><button class="nkbtn nkbtn--on nkbtn--lg" type="submit">{% nk_icon 'heart' %}{% translate "Интерес отправлен · отозвать" %}</button>
+      {% else %}<button class="nkbtn nkbtn--love nkbtn--lg" type="submit"{% if not me.is_published %} disabled title="{% translate 'После одобрения вашей анкеты' %}"{% endif %}>{% nk_icon 'heart' %}{% if likes_me %}{% translate "Ответить взаимностью" %}{% else %}{% translate "Проявить интерес" %}{% endif %}</button>{% endif %}
     </form>
     {% endif %}
   </div>

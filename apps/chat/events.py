@@ -1,6 +1,7 @@
 """Единый формат сообщения для WebSocket и HTTP (текст и вложения)."""
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _lazy
 
 
 def message_payload(m) -> dict:
@@ -19,7 +20,7 @@ def message_payload(m) -> dict:
     }
 
 
-PREVIEW = {'photo': 'Фото', 'voice': 'Голосовое сообщение', 'circle': 'Видеосообщение'}
+PREVIEW = {'photo': _lazy('Фото'), 'video': _lazy('Видео'), 'voice': _lazy('Голосовое сообщение'), 'circle': _lazy('Видеосообщение')}
 
 
 def preview(m) -> str:

@@ -11,6 +11,7 @@ import time
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from django.utils.translation import gettext as _
 
 SIGNAL_ACTIONS = {'ring', 'accept', 'decline', 'offer', 'answer', 'ice', 'end', 'busy'}
 # защита от флуда: не больше N сообщений за окно (сигналы звонка — отдельно, их много)
@@ -53,7 +54,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             await self._signal(content)
             return
         if not _allow(self._msgs, MSG_LIMIT, MSG_WINDOW):
-            await self.send_json({'type': 'error', 'error': 'Слишком часто — подождите немного.'})
+            await self.send_json({'type': 'error', 'error': _('Слишком часто — подождите немного.')})
             return
         if content.get('type') == 'calllog':
             payload = await self._call_log(content)
@@ -64,7 +65,11 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         if not body or len(body) > 2000:
             return
         if await self._blocked():
-            await self.send_json({'type': 'error', 'error': 'Переписка недоступна: блокировка'})
+            await self.send_json({'type': 'error', 'error': str(_('Переписка недоступна: блокировка'))})
+            return
+        if await self._nikah_contacts(body):
+            await self.send_json({'type': 'error', 'error': str(_(
+                'В чате никяха нельзя передавать телефоны, ники и ссылки — общение внутри ilm4, при махраме.'))})
             return
         payload = await self._save_message(body)
         await self.channel_layer.group_send(self.group, {'type': 'chat.message', 'payload': payload})
@@ -110,6 +115,11 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         return st.chat_video_calls_enabled if video else (st.chat_calls_enabled or st.chat_video_calls_enabled)
 
     @database_sync_to_async
+    def _nikah_contacts(self, body):
+        from .views import nikah_contacts_forbidden
+        return nikah_contacts_forbidden(self.thread_id, body)
+
+    @database_sync_to_async
     def _blocked(self):
         from apps.accounts.models import UserBlock
 
@@ -152,12 +162,12 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             sec = max(0, min(int(content.get('duration') or 0), 6 * 3600))
         except (TypeError, ValueError):
             sec = 0
-        kind = 'Видеозвонок' if video else 'Аудиозвонок'
+        kind = _('Видеозвонок') if video else _('Аудиозвонок')
         text = {
             'done': f'{kind} · {sec // 60}:{sec % 60:02d}',
-            'declined': f'{kind} отклонён',
-            'missed': f'Пропущенный {kind.lower()}',
-            'cancelled': f'{kind} отменён',
+            'declined': _('{kind} отклонён').format(kind=kind),
+            'missed': _('Пропущенный {v1}').format(v1=kind.lower()),
+            'cancelled': _('{kind} отменён').format(kind=kind),
         }.get(outcome)
         if not text:
             return None

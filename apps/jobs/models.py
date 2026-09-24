@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils.translation import gettext_lazy as _lazy
 
 from apps.core.models import Moderation
 
@@ -8,13 +9,13 @@ class Vacancy(models.Model):
     """Вакансия. Публикуется после модерации."""
 
     CATEGORIES = [
-        ('it', 'IT и интернет'), ('drive', 'Вождение и доставка'),
-        ('build', 'Строительство'), ('med', 'Медицина'),
-        ('edu', 'Образование'), ('trade', 'Торговля'), ('other', 'Другое'),
+        ('it', _lazy('IT и интернет')), ('drive', _lazy('Вождение и доставка')),
+        ('build', _lazy('Строительство')), ('med', _lazy('Медицина')),
+        ('edu', _lazy('Образование')), ('trade', _lazy('Торговля')), ('other', _lazy('Другое')),
     ]
 
     VACANCY, RESUME = 'vacancy', 'resume'
-    KINDS = [(VACANCY, 'Вакансия — ищу работника'), (RESUME, 'Резюме — ищу работу')]
+    KINDS = [(VACANCY, _lazy('Вакансия — ищу работника')), (RESUME, _lazy('Резюме — ищу работу'))]
 
     kind = models.CharField('тип', max_length=8, choices=KINDS, default=VACANCY, db_index=True)
     title = models.CharField('должность', max_length=160)

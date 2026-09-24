@@ -1,40 +1,41 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load humanize %}
-{% block title %}Профиль — {{ block.super }}{% endblock %}
+{% block title %}{% translate "Профиль —" %} {{ block.super }}{% endblock %}
 
 {% block content %}
 <form method="post" enctype="multipart/form-data" class="form form--wide">{% csrf_token %}
 <div class="profile">
   <aside class="idcard">
     <div class="idcard__band"></div>
-    <label class="idcard__ava-wrap" for="id_avatar" title="Поменять фото">
+    <label class="idcard__ava-wrap" for="id_avatar" title="{% translate 'Поменять фото' %}">
       {% if user.avatar %}
-      <img class="idcard__ava" src="{{ user.avatar.url }}" alt="Аватар">
+      <img class="idcard__ava" src="{{ user.avatar.url }}" alt="{% translate 'Аватар' %}">
       {% else %}
       <div class="idcard__ava idcard__ava--txt">{{ user.get_display_name|slice:":1"|upper }}</div>
       {% endif %}
-      <span class="idcard__cam">Поменять фото</span>
+      <span class="idcard__cam">{% translate "Поменять фото" %}</span>
     </label>
     {{ form.avatar }}
     <div class="idcard__name">{{ user.get_display_name }}</div>
     <div class="idcard__mail">{{ user.email }}</div>
-    {% if user.is_super_admin %}<span class="idcard__role idcard__role--su">Супер-админ</span>
-    {% elif user.is_admin_role %}<span class="idcard__role">Админ</span>{% endif %}
+    {% if user.is_super_admin %}<span class="idcard__role idcard__role--su">{% translate "Супер-админ" %}</span>
+    {% elif user.is_admin_role %}<span class="idcard__role">{% translate "Админ" %}</span>{% endif %}
     <div class="idcard__rows">
       {% if user.city %}<div><svg class="idrow-svg" viewBox="0 0 24 24"><path d="M12 21s-6.5-5.3-6.5-10a6.5 6.5 0 0 1 13 0c0 4.7-6.5 10-6.5 10z"/><circle cx="12" cy="10.6" r="2.3"/></svg>{{ user.city }}</div>{% endif %}
       {% if user.nickname %}<div>{{ user.nickname }}</div>{% endif %}
-      <div><svg class="idrow-svg" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="15" rx="2"/><path d="M4 10.5h16M8.5 3.5v4M15.5 3.5v4"/></svg>с нами с {{ user.date_joined|date:"m.Y" }}</div>
+      <div><svg class="idrow-svg" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="15" rx="2"/><path d="M4 10.5h16M8.5 3.5v4M15.5 3.5v4"/></svg>{% translate "с нами с" %} {{ user.date_joined|date:"m.Y" }}</div>
     </div>
     {% if user.is_staff %}
     <div class="idcard__staff">
-      <a class="btn btn--g" href="/admin/"><svg class="mmeta" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></svg>Админка</a>
-      <a class="link" href="{% url 'accounts:two_factor_setup' %}">настройки 2FA</a>
+      <a class="btn btn--g" href="/admin/"><svg class="mmeta" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></svg>{% translate "Админка" %}</a>
+      <a class="link" href="{% url 'accounts:two_factor_setup' %}">{% translate "настройки 2FA" %}</a>
     </div>
     {% endif %}
   </aside>
 
   <section class="pset">
-    <h1 class="pset__h">Настройки профиля</h1>
+    <h1 class="pset__h">{% translate "Настройки профиля" %}</h1>
     <div class="pset__grid">
       <div>
         <label for="{{ form.nickname.id_for_label }}">{{ form.nickname.label }}</label>
@@ -53,21 +54,21 @@
     <div>
       <label for="{{ form.phone.id_for_label }}">{{ form.phone.label }}</label>
       {{ form.phone }}
-      <span class="hint">Номер никому не показывается. Нужен, только чтобы друзья нашли вас в ilm4.</span>
+      <span class="hint">{% translate "Номер никому не показывается. Нужен, только чтобы друзья нашли вас в ilm4." %}</span>
     </div>
     <label class="fcheck">{{ form.findable_by_phone }} {{ form.findable_by_phone.label }}</label>
     {% endif %}
     {% for err in form.non_field_errors %}<span class="err">{{ err }}</span>{% endfor %}
-    <button type="submit" class="btn btn--p">Сохранить изменения</button>
-    <p class="hint">Фото меняется кликом по аватарке слева. Тема и цвет — в <a class="link" href="{% url 'core:settings' %}">настройках</a>.{% if contacts_on %} <a class="link" href="{% url 'chat:contacts' %}">Найти знакомых из контактов →</a>{% endif %}</p>
+    <button type="submit" class="btn btn--p">{% translate "Сохранить изменения" %}</button>
+    <p class="hint">{% translate "Фото меняется кликом по аватарке слева. Тема и цвет — в" %} <a class="link" href="{% url 'core:settings' %}">{% translate "настройках" %}</a>.{% if contacts_on %} <a class="link" href="{% url 'chat:contacts' %}">{% translate "Найти знакомых из контактов →" %}</a>{% endif %}</p>
   </section>
 </div>
 </form>
 <nav class="profnav">
-  <a class="profnav__i" href="{% url 'core:my' %}"><b>Мои публикации</b><span>Объявления, вакансии, услуги — изменить или удалить</span></a>
-  <a class="profnav__i" href="{% url 'wallet:index' %}"><b>Кошелёк</b><span>Баланс и история платежей</span></a>
-  <a class="profnav__i" href="{% url 'accounts:blocked' %}"><b>Заблокированные</b><span>Кого вы заблокировали</span></a>
-  <a class="profnav__i" href="{% url 'core:settings' %}"><b>Оформление</b><span>Тема и цвет</span></a>
-  <a class="profnav__i profnav__i--danger" href="{% url 'accounts:delete' %}"><b>Удалить аккаунт</b><span>Стереть личные данные навсегда</span></a>
+  <a class="profnav__i" href="{% url 'core:my' %}"><b>{% translate "Мои публикации" %}</b><span>{% translate "Объявления, вакансии, услуги — изменить или удалить" %}</span></a>
+  <a class="profnav__i" href="{% url 'wallet:index' %}"><b>{% translate "Кошелёк" %}</b><span>{% translate "Баланс и история платежей" %}</span></a>
+  <a class="profnav__i" href="{% url 'accounts:blocked' %}"><b>{% translate "Заблокированные" %}</b><span>{% translate "Кого вы заблокировали" %}</span></a>
+  <a class="profnav__i" href="{% url 'core:settings' %}"><b>{% translate "Оформление" %}</b><span>{% translate "Тема и цвет" %}</span></a>
+  <a class="profnav__i profnav__i--danger" href="{% url 'accounts:delete' %}"><b>{% translate "Удалить аккаунт" %}</b><span>{% translate "Стереть личные данные навсегда" %}</span></a>
 </nav>
 {% endblock %}

@@ -1,13 +1,14 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons %}
-{% block title %}Миграция — {{ block.super }}{% endblock %}
+{% block title %}{% translate "Миграция —" %} {{ block.super }}{% endblock %}
 {% block body_class %}s-migration{% endblock %}
 
 {% block content %}
-{% include 'includes/section_hero.html' with icon="✈️" title="Миграция" desc="Реальные истории переезда: визы, работа, жильё, ошибки и находки" class="migration" cta="Рассказать свою" cta_url="/migration/add/" %}
+{% include 'includes/section_hero.html' with icon="✈️" title=_("Миграция") desc=_("Реальные истории переезда: визы, работа, жильё, ошибки и находки") class="migration" cta=_("Рассказать свою") cta_url="/migration/add/" %}
 <section class="sec">
   <div class="sec__h">
-    {% if user.is_authenticated %}<a class="sec__l" href="{% url 'migration:create' %}">+ Рассказать свою</a>{% endif %}
+    {% if user.is_authenticated %}<a class="sec__l" href="{% url 'migration:create' %}">{% translate "+ Рассказать свою" %}</a>{% endif %}
   </div>
   <div class="grid g3">
     {% for s in stories %}
@@ -22,9 +23,9 @@
     {% empty %}
     <div class="empty" style="grid-column:1/-1">
       <div class="empty__plug"><svg viewBox="0 0 24 24"><path d="M10.5 13.5 3 11l1.5-1.5L10 10l4.5-4.5c.6-.6 1.6-.6 2.1 0 .6.6.6 1.6 0 2.1L12 12l.5 5.5L11 19l-2.5-7.5z"/><path d="M14 10l6-6"/><path d="M6 15l-2.5 1L5 18.5 8.5 17"/></svg></div>
-      <h3 style="font-size:18px;font-weight:800">Историй пока нет</h3>
-      <p style="color:var(--ink-soft)">Расскажите свою — визы, работа, жильё. Кому-то это очень поможет.</p>
-      <a class="btn btn--p" href="{% url 'migration:create' %}">Рассказать свою</a>
+      <h3 style="font-size:18px;font-weight:800">{% translate "Историй пока нет" %}</h3>
+      <p style="color:var(--ink-soft)">{% translate "Расскажите свою — визы, работа, жильё. Кому-то это очень поможет." %}</p>
+      <a class="btn btn--p" href="{% url 'migration:create' %}">{% translate "Рассказать свою" %}</a>
     </div>{% endfor %}
   </div>
 </section>

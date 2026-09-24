@@ -1,12 +1,13 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load icons %}
-{% block title %}Изменить: {{ title }} — {{ block.super }}{% endblock %}
+{% block title %}{% translate "Изменить:" %} {{ title }} — {{ block.super }}{% endblock %}
 {% block content %}
 <div class="fpage">
-  <a class="crumb" href="{% url 'core:my' %}">{% ico 'back' %}Мои публикации</a>
+  <a class="crumb" href="{% url 'core:my' %}">{% ico 'back' %}{% translate "Мои публикации" %}</a>
   <div class="dcard">
     <div class="fpage__h"><span class="fpage__ic">{% ico 'edit' %}</span>
-      <div><h1>{{ title }}</h1><div class="fpage__sub">{{ pub.label }}. После сохранения публикация снова пройдёт проверку модератора.</div></div></div>
+      <div><h1>{{ title }}</h1><div class="fpage__sub">{{ pub.label }}{% translate ". После сохранения публикация снова пройдёт проверку модератора." %}</div></div></div>
     <form method="post" enctype="multipart/form-data" class="form fgrid">{% csrf_token %}
       {% for field in form %}
       <div class="field{% if field.field.widget.input_type == 'checkbox' %} field--check{% endif %}{% if field.errors %} field--err{% endif %}{% if field.field.widget.attrs.rows or field.name == 'photo' or field.name == 'description' %} field--wide{% endif %}">
@@ -16,7 +17,7 @@
         {% if field.help_text %}<span class="hint">{{ field.help_text }}</span>{% endif %}
       </div>
       {% endfor %}
-      <button type="submit" class="btn btn--p">{% ico 'send' %}Сохранить и отправить на проверку</button>
+      <button type="submit" class="btn btn--p">{% ico 'send' %}{% translate "Сохранить и отправить на проверку" %}</button>
     </form>
   </div>
 </div>

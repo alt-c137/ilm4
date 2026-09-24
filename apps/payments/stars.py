@@ -1,5 +1,7 @@
 """Telegram Stars: бот получает pre_checkout_query (проверить заказ за 10 с) и
 successful_payment (оплачено — зачислить). Вызывается из apps.tgbot.dispatch."""
+from django.utils.translation import gettext as _
+
 from apps.accounts.telegram import api
 
 from .models import TopUp
@@ -18,7 +20,7 @@ def pre_checkout(q: dict) -> None:
               and t.external_id == f"stars:{q.get('total_amount')}"
               and t.user.telegram_id == q.get('from', {}).get('id'))
     api('answerPreCheckoutQuery', {'pre_checkout_query_id': q['id'], 'ok': 'true' if ok else 'false',
-                                   **({} if ok else {'error_message': 'Счёт устарел — создайте новый в приложении'})})
+                                   **({} if ok else {'error_message': _('Счёт устарел — создайте новый в приложении')})})
 
 
 def success(msg: dict) -> None:
@@ -30,4 +32,4 @@ def success(msg: dict) -> None:
         TopUp.objects.filter(pk=t.pk).update(external_id=f"stars:{sp.get('total_amount')}:"
                                                         f"{sp.get('telegram_payment_charge_id', '')}"[:120])
         api('sendMessage', {'chat_id': msg['chat']['id'],
-                            'text': f'Баланс пополнен на {int(t.amount):,} сум. БаракаЛлаху фикум!'.replace(',', ' ')})
+                            'text': _('Баланс пополнен на {v1:,} сум. БаракаЛлаху фикум!').format(v1=int(t.amount)).replace(',', ' ')})
