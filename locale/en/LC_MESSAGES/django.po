@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ilm4 VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-24 15:51+0500\n"
+"POT-Creation-Date: 2026-09-24 16:37+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -90,10 +90,6 @@ msgstr " to confirm"
 msgid ", чтобы подтвердить или уточнить."
 msgstr " to confirm or correct."
 
-#: apps/core/templates/core/blocks/banner.html
-msgid "-m.jpg). Пусто — три фирменных слайда-приглашения."
-msgstr "-m.jpg). Empty — three branded welcome slides."
-
 #: apps/maps/templates/maps/detail.html
 msgid ". Адрес, контакты и отзывы на ilm4."
 msgstr ". Address, contacts and reviews on ilm4."
@@ -125,10 +121,6 @@ msgstr ". After saving, the post will be reviewed by a moderator again."
 #: apps/nikah/templates/nikah/premium.html
 msgid ". Продлить — ещё"
 msgstr ". Extend — another"
-
-#: templates/includes/section_hero.html
-msgid ".svg в цвете темы), название, слоган и действие. Иконку можно заменить своей: static/img/icons/"
-msgstr ".svg in theme colour), title, slogan and action. The icon can be replaced with your own: static/img/icons/"
 
 #: apps/nikah/templates/nikah/wizard.html
 msgid "/900 · минимум 10"
@@ -165,10 +157,6 @@ msgstr ": it cannot be withdrawn or transferred to another person"
 #: apps/migration/templates/migration/detail.html
 msgid ": история переезда"
 msgstr ": a relocation story"
-
-#: apps/core/templates/core/blocks/banner.html
-msgid ": на компьютере широкий кадр с текстом слева, на телефоне — кадр сверху, текст снизу (своя обрезка banner/"
-msgstr ": on a computer — a wide frame with text on the left, on a phone — the frame on top, text below (own crop banner/"
 
 #: apps/refugee/templates/refugee/index.html
 msgid ": паспорт, свидетельства, справки. Сделайте фото и копии в облаке."
@@ -1165,10 +1153,6 @@ msgstr "Video message"
 msgid "Видеть, кто в сети"
 msgstr "See who is online"
 
-#: apps/core/templates/core/blocks/modules.html
-msgid "Витрина сервисов на главной: первые работающие разделы (порядок — из админки) и плитка «Все сервисы» → каталог по группам. Масштабируется на любое число разделов: на главной всегда один-два ряда, остальное — в каталоге."
-msgstr "Services showcase on the home page: the first working sections (order — from the admin) and the “All services” tile → catalogue by groups. Scales to any number of sections: the home page always has one or two rows, the rest — in the catalogue."
-
 #: apps/nikah/templates/nikah/edit.html
 msgid "Внешность"
 msgstr "Appearance"
@@ -1682,10 +1666,6 @@ msgstr "Gynaecologist"
 msgid "Главная"
 msgstr "Home"
 
-#: apps/core/templates/core/blocks/hero.html
-msgid "Главная: герой + ИНФОПАНЕЛЬ (хадис дня, ближайшая молитва, погода, курс валют). Картинки героя/хадиса — из админки (SiteSettings: hero_image, hadis_image). Погода — Open-Meteo с кешем; при недоступности панель просто без погоды."
-msgstr "Home: hero + INFO PANEL (hadith of the day, next prayer, weather, exchange rates). Hero/hadith images — from the admin (SiteSettings: hero_image, hadis_image). Weather — Open-Meteo with a cache; if unavailable, the panel simply has no weather."
-
 #: apps/core/catalog.py
 msgid "Главное из исламского мира"
 msgstr "Highlights from the Islamic world"
@@ -1983,10 +1963,6 @@ msgstr "Add the first place →"
 #, python-brace-format
 msgid "Добро пожаловать, {v1}!"
 msgstr "Welcome, {v1}!"
-
-#: templates/includes/pledge.html
-msgid "Договор автора: обязателен перед публикацией (проверка — core.decorators.pledge_required). Параметр kind: 'nikah' — формулировки для анкеты."
-msgstr "Author's covenant: mandatory before publishing (check — core.decorators.pledge_required). Parameter kind: 'nikah' — wording for the profile."
 
 #: templates/includes/pledge.html
 msgid "Договор перед Аллахом"
@@ -2779,10 +2755,6 @@ msgstr "Halal map"
 msgid "Карта халяль —"
 msgstr "Halal map —"
 
-#: apps/core/templates/core/includes/today.html
-msgid "Карточка «Сегодня»: три экрана, листаются свайпом (scroll-snap) или вкладками. 1) Сейчас — хадис дня + текущий намаз и отсчёт до следующего; 2) Намаз — расписание дня, текущий подсвечен, «Мечеть рядом»; 3) Погода и курс — если есть данные."
-msgstr "The “Today” card: three screens, swipe (scroll-snap) or tabs. 1) Now — hadith of the day + current prayer and countdown to the next; 2) Prayer — the day's schedule, current one highlighted, “Mosque nearby”; 3) Weather and exchange rates — if data is available."
-
 #: apps/market/templates/market/list.html
 msgid "Категории"
 msgstr "Categories"
@@ -3363,7 +3335,7 @@ msgstr "Every showing has the ID and time. A leak immediately points to the sour
 msgid "На модерации"
 msgstr "Under moderation"
 
-#: apps/core/my_views.py
+#: apps/api/views_pubs.py apps/core/my_views.py
 msgid "На проверке"
 msgstr "Under review"
 
@@ -3375,7 +3347,7 @@ msgstr "Under moderator review"
 msgid "На себя жаловаться не нужно."
 msgstr "No need to report yourself."
 
-#: apps/core/decorators.py
+#: apps/api/views_pubs.py apps/core/decorators.py
 msgid "На сегодня лимит публикаций исчерпан — защита от спама. Завтра можно снова."
 msgstr "Today's publishing limit has been reached — spam protection. You can post again tomorrow."
 
@@ -3730,7 +3702,7 @@ msgstr "Neurologist"
 msgid "Недвижимость"
 msgstr "Real estate"
 
-#: apps/health/views.py
+#: apps/api/views_pubs.py apps/health/views.py
 msgid "Недостаточно средств для платной публикации."
 msgstr "Not enough funds for a paid publication."
 
@@ -4265,11 +4237,11 @@ msgstr "Paid. The platform holds the money until the work is delivered."
 msgid "Опубликован"
 msgstr "Published"
 
-#: apps/core/my_views.py
+#: apps/api/views_pubs.py apps/core/my_views.py
 msgid "Опубликовано"
 msgstr "Published"
 
-#: apps/market/views.py
+#: apps/api/views_pubs.py apps/market/views.py
 msgid "Опубликовано!"
 msgstr "Published!"
 
@@ -4427,7 +4399,7 @@ msgstr "Apply"
 msgid "Отклонена"
 msgstr "Rejected"
 
-#: apps/core/my_views.py
+#: apps/api/views_pubs.py apps/core/my_views.py
 msgid "Отклонено"
 msgstr "Rejected"
 
@@ -4630,6 +4602,10 @@ msgstr "Sent"
 #: apps/market/views.py
 msgid "Отправлено на модерацию."
 msgstr "Sent for moderation."
+
+#: apps/api/views_pubs.py
+msgid "Отправлено на модерацию. Обычно это до суток."
+msgstr "Sent for moderation. This usually takes up to a day."
 
 #: apps/transport/views.py
 msgid "Отправлено — после модерации появится в списке."
@@ -5298,10 +5274,6 @@ msgstr "Offer a service —"
 msgid "Предпросмотр анкеты"
 msgstr "Profile preview"
 
-#: templates/includes/disclaimer.html
-msgid "Предупреждение для покупателей/клиентов: ilm4 — площадка, не сторона сделки. dkind: health | nikah | refugee | (по умолчанию — товары и услуги)"
-msgstr "A warning for buyers/clients: ilm4 is a platform, not a party to the deal. dkind: health | nikah | refugee | (default — goods and services)"
-
 #: apps/core/templates/core/blocks/banner.html
 msgid "Предыдущий слайд"
 msgstr "Previous slide"
@@ -5350,10 +5322,6 @@ msgstr "Invite friends"
 #: apps/nikah/templates/nikah/settings.html
 msgid "Пригласить свидетеля"
 msgstr "Invite a witness"
-
-#: apps/core/templates/core/blocks/basics.html
-msgid "Приглашение «Как принять ислам» — отдельной заметной карточкой на главной. «Как совершать намаз» и «Мечеть рядом» — в карточке «Сегодня» и в каталоге сервисов."
-msgstr "The “How to accept Islam” invitation — a separate prominent card on the home page. “How to perform the prayer” and “Mosque nearby” — in the “Today” card and in the services catalogue."
 
 #: apps/nikah/templates/nikah/settings.html
 msgid "Приглашено:"
@@ -5722,10 +5690,6 @@ msgstr "CV — looking for work"
 msgid "Реклама"
 msgstr "Advertising"
 
-#: apps/core/templates/core/blocks/banner.html
-msgid "Рекламная карусель главной (Playerok-стиль). Если в админке есть активные баннеры (Core → Баннеры) — показываются они: у каждого своя картинка, текст, кнопка и СВОЯ длительность показа. Картинка —"
-msgstr "The home page ad carousel (Playerok style). If there are active banners in the admin (Core → Banners), they are shown: each with its own image, text, button and ITS OWN display duration. Image —"
-
 #: apps/nikah/templates/nikah/edit.html apps/nikah/templates/nikah/wizard.html
 msgid "Религия"
 msgstr "Religion"
@@ -5996,7 +5960,7 @@ msgstr "Screenshots are forbidden by the rules"
 msgid "Скрыта — вас не видят в ленте"
 msgstr "Hidden — you are not seen in the feed"
 
-#: apps/core/my_views.py
+#: apps/api/views_pubs.py apps/core/my_views.py
 msgid "Скрыто вами"
 msgstr "Hidden by you"
 
@@ -7205,17 +7169,13 @@ msgstr "So that friends can find you too —"
 msgid "Чтобы завершить, примите условия."
 msgstr "To finish, accept the terms."
 
-#: apps/core/decorators.py
+#: apps/api/views_pubs.py apps/core/decorators.py
 msgid "Чтобы опубликовать, примите договор автора внизу формы."
 msgstr "To publish, accept the author's covenant at the bottom of the form."
 
 #: apps/deals/views.py
 msgid "Чтобы принять заказ, примите договор исполнителя."
 msgstr "To accept the order, accept the contractor's covenant."
-
-#: templates/includes/section_hero.html
-msgid "Шапка раздела: иконка (единый стиль — маска из static/img/icons/"
-msgstr "Section header: icon (single style — a mask from static/img/icons/"
 
 #: apps/maps/models.py apps/nikah/choices.py
 msgid "Шафиитский"
@@ -7343,6 +7303,10 @@ msgstr "This method is not available yet."
 msgid "Эту публикацию можно только удалить и добавить заново."
 msgstr "This post can only be deleted and added again."
 
+#: apps/api/views_pubs.py
+msgid "Эту публикацию нельзя скрыть — только удалить."
+msgstr "This publication can't be hidden — only deleted."
+
 #: apps/nikah/deck.py
 msgid "Южная Азия"
 msgstr "South Asia"
@@ -7363,7 +7327,7 @@ msgstr "I am a brother"
 msgid "Я веду общение с уважением и по шариату, без обмана и пустых обещаний."
 msgstr "I communicate respectfully and according to the Sharia, without deception or empty promises."
 
-#: templates/includes/pledge.html
+#: apps/api/views_pubs.py templates/includes/pledge.html
 msgid "Я выполню то, о чём договорюсь: цену, сроки, качество и условия."
 msgstr "I will do what I agree on: price, deadlines, quality and terms."
 
@@ -7371,11 +7335,11 @@ msgstr "I will do what I agree on: price, deadlines, quality and terms."
 msgid "Я здесь ради брака, а не общения ради общения."
 msgstr "I am here for marriage, not for chatting for the sake of it."
 
-#: templates/includes/pledge.html
+#: apps/api/views_pubs.py templates/includes/pledge.html
 msgid "Я отвечаю за свою публикацию и её исполнение — перед людьми и перед Аллахом. ilm4 — лишь площадка и не участвует в договорённостях."
 msgstr "I am responsible for my post and its fulfilment — before people and before Allah. ilm4 is only a platform and does not take part in agreements."
 
-#: templates/includes/pledge.html
+#: apps/api/views_pubs.py templates/includes/pledge.html
 msgid "Я публикую правдивые сведения — без обмана, скрытых недостатков и завышенных обещаний."
 msgstr "I publish truthful information — without deception, hidden defects or inflated promises."
 

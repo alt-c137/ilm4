@@ -82,6 +82,7 @@ def messages(request, pk):
                    'avatar': file_url(request, other.avatar) if other else '',
                    'blocked': _blocked(thread, request.user), 'features': {
                        k: v for k, v in _flags(thread).items() if k != 'turn'},
+                   'turn': _flags(thread).get('turn'),
                    'witnesses': [u.get_display_name() for u in thread.observers.exclude(pk=request.user.pk)],
                    'nikah': NikahMatch.objects.filter(thread=thread).exists()},
     }

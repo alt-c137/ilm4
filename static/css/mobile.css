@@ -345,6 +345,8 @@
 @media (max-width:380px){
   .wrap{padding-left:12px;padding-right:12px}
   .nav,.rail,.mside{margin-left:-12px;margin-right:-12px}
+  /* ленты «во всю ширину»: отступ совпадает с полем страницы (12px), иначе страница шире экрана */
+  .cat__chips,.rtabs{margin-left:-12px;margin-right:-12px;padding-left:12px;padding-right:12px}
   .nav__row,.rail,.mside{padding-left:12px;padding-right:12px}
   .top__row{padding-left:12px}
   .logo--text b{font-size:22px}
@@ -383,4 +385,10 @@
   .langm{margin-left:6px}
   .langm__btn{height:27px;padding:0 8px;font-size:11.5px;gap:0}
   .langm__btn svg{display:none}
+}
+
+/* узкие телефоны: «Поддержать» — только сердечко (подпись в меню профиля), шапка не вылезает на любом языке */
+@media (max-width:430px){
+  .top .donate-m{width:34px;height:34px;padding:0;margin:0 1px;justify-content:center;font-size:0;gap:0;border-radius:50%}
+  .top .donate-m svg{width:16px;height:16px}
 }

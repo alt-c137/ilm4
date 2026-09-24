@@ -1,6 +1,6 @@
 {% load i18n %}{% load icons %}
 {% comment %}
-{% translate "Шапка раздела: иконка (единый стиль — маска из static/img/icons/" %}<ключ>{% translate ".svg в цвете темы), название, слоган и действие. Иконку можно заменить своей: static/img/icons/" %}<ключ>.svg.
+Шапка раздела: иконка (единый стиль — маска из static/img/icons/<ключ>.svg в цвете темы), название, слоган и действие. Иконку можно заменить своей: static/img/icons/<ключ>.svg.
 {% endcomment %}
 <div class="shero shero--{{ class }}">
   <div class="shero__icon">{% if icslug %}{% svc_glyph icslug icon 'glyph' %}{% else %}{% svc_glyph class icon 'glyph' %}{% endif %}</div>

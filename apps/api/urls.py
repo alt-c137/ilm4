@@ -5,6 +5,7 @@ from . import views_account as a
 from . import views_chat as c
 from . import views_content as v
 from . import views_nikah as n
+from . import views_pubs as m
 
 app_name = 'api'
 
@@ -30,6 +31,10 @@ urlpatterns = [
     path('news/', v.news),
     path('news/<int:pk>/', v.news_detail),
     path('places/map/', v.places_map),
+    path('my/', m.my),
+    path('my/<str:key>/<int:pk>/', m.my_item),
+    path('pubs/<str:key>/form/', m.form_schema),
+    path('pubs/<str:key>/save/', m.save),
     path('pubs/<str:key>/', v.pubs),
     path('pubs/<str:key>/<int:pk>/', v.pub_detail),
     path('pubs/<str:key>/<int:pk>/message/', v.pub_message),

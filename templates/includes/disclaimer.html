@@ -1,4 +1,4 @@
-{% load i18n %}{% comment %}{% translate "Предупреждение для покупателей/клиентов: ilm4 — площадка, не сторона сделки. dkind: health | nikah | refugee | (по умолчанию — товары и услуги)" %}{% endcomment %}
+{% load i18n %}{% comment %}Предупреждение для покупателей/клиентов: ilm4 — площадка, не сторона сделки. dkind: health | nikah | refugee | (по умолчанию — товары и услуги){% endcomment %}
 <div class="disclaimer" role="note">
   <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 21 19.5H3z"/><path d="M12 10v4.5M12 17h.01"/></svg>
   <span>{% if dkind == 'health' %}<b>{% translate "ilm4 — только площадка." %}</b> {% translate "Мы не даём медицинских заключений и не отвечаем за лечение, диагнозы и стоимость приёма. Решение о лечении — между вами и врачом." %}

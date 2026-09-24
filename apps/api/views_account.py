@@ -68,6 +68,7 @@ def config(request):
             'default_method': 'Karachi',
         },
         'bot': getattr(settings, 'TELEGRAM_BOT_USERNAME', '') or '',
+        'map': {'maptiler': st.map_maptiler_key},
         'links': {'rules': abs_url(request, '/rules/'), 'privacy': abs_url(request, '/privacy/'),
                   'support': abs_url(request, '/support/'), 'shahada': abs_url(request, '/islam/')},
     }

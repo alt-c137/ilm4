@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ilm4 VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-24 15:51+0500\n"
+"POT-Creation-Date: 2026-09-24 16:37+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: uz\n"
@@ -90,10 +90,6 @@ msgstr ", tasdiqlash uchun"
 msgid ", чтобы подтвердить или уточнить."
 msgstr ", tasdiqlash yoki aniqlashtirish uchun."
 
-#: apps/core/templates/core/blocks/banner.html
-msgid "-m.jpg). Пусто — три фирменных слайда-приглашения."
-msgstr "-m.jpg). Boʻsh boʻlsa — uchta brend taklif slaydi."
-
 #: apps/maps/templates/maps/detail.html
 msgid ". Адрес, контакты и отзывы на ilm4."
 msgstr ". Manzil, kontaktlar va sharhlar ilm4 da."
@@ -125,10 +121,6 @@ msgstr ". Saqlangandan soʻng eʼlon yana moderator tekshiruvidan oʻtadi."
 #: apps/nikah/templates/nikah/premium.html
 msgid ". Продлить — ещё"
 msgstr ". Uzaytirish — yana"
-
-#: templates/includes/section_hero.html
-msgid ".svg в цвете темы), название, слоган и действие. Иконку можно заменить своей: static/img/icons/"
-msgstr ".svg mavzu rangida), nom, shior va harakat. Ikonkani oʻzingiznikiga almashtirish mumkin: static/img/icons/"
 
 #: apps/nikah/templates/nikah/wizard.html
 msgid "/900 · минимум 10"
@@ -165,10 +157,6 @@ msgstr ": uni yechib olish yoki boshqa odamga oʻtkazish mumkin emas"
 #: apps/migration/templates/migration/detail.html
 msgid ": история переезда"
 msgstr ": koʻchish hikoyasi"
-
-#: apps/core/templates/core/blocks/banner.html
-msgid ": на компьютере широкий кадр с текстом слева, на телефоне — кадр сверху, текст снизу (своя обрезка banner/"
-msgstr ": kompyuterda — chapda matnli keng kadr, telefonda — tepada kadr, pastda matn (alohida kesim banner/"
 
 #: apps/refugee/templates/refugee/index.html
 msgid ": паспорт, свидетельства, справки. Сделайте фото и копии в облаке."
@@ -1165,10 +1153,6 @@ msgstr "Videoxabar"
 msgid "Видеть, кто в сети"
 msgstr "Kim onlaynligini koʻrish"
 
-#: apps/core/templates/core/blocks/modules.html
-msgid "Витрина сервисов на главной: первые работающие разделы (порядок — из админки) и плитка «Все сервисы» → каталог по группам. Масштабируется на любое число разделов: на главной всегда один-два ряда, остальное — в каталоге."
-msgstr "Bosh sahifadagi xizmatlar vitrinasi: birinchi ishlayotgan boʻlimlar (tartib — admin paneldan) va «Barcha xizmatlar» plitkasi → guruhlar boʻyicha katalog. Istalgan miqdordagi boʻlimga moslashadi: bosh sahifada doim bir-ikki qator, qolgani — katalogda."
-
 #: apps/nikah/templates/nikah/edit.html
 msgid "Внешность"
 msgstr "Tashqi koʻrinish"
@@ -1682,10 +1666,6 @@ msgstr "Ginekolog"
 msgid "Главная"
 msgstr "Bosh sahifa"
 
-#: apps/core/templates/core/blocks/hero.html
-msgid "Главная: герой + ИНФОПАНЕЛЬ (хадис дня, ближайшая молитва, погода, курс валют). Картинки героя/хадиса — из админки (SiteSettings: hero_image, hadis_image). Погода — Open-Meteo с кешем; при недоступности панель просто без погоды."
-msgstr "Bosh sahifa: qahramon + INFOPANEL (kun hadisi, keyingi namoz, ob-havo, valyuta kursi). Qahramon/hadis rasmlari — admin paneldan (SiteSettings: hero_image, hadis_image). Ob-havo — Open-Meteo, kesh bilan; mavjud boʻlmasa, panel ob-havosiz."
-
 #: apps/core/catalog.py
 msgid "Главное из исламского мира"
 msgstr "Islom olamidagi asosiy voqealar"
@@ -1983,10 +1963,6 @@ msgstr "Birinchi joyni qoʻshing →"
 #, python-brace-format
 msgid "Добро пожаловать, {v1}!"
 msgstr "Xush kelibsiz, {v1}!"
-
-#: templates/includes/pledge.html
-msgid "Договор автора: обязателен перед публикацией (проверка — core.decorators.pledge_required). Параметр kind: 'nikah' — формулировки для анкеты."
-msgstr "Muallif ahdi: nashrdan oldin majburiy (tekshiruv — core.decorators.pledge_required). kind parametri: 'nikah' — anketa uchun matn."
 
 #: templates/includes/pledge.html
 msgid "Договор перед Аллахом"
@@ -2779,10 +2755,6 @@ msgstr "Halol xarita"
 msgid "Карта халяль —"
 msgstr "Halol xarita —"
 
-#: apps/core/templates/core/includes/today.html
-msgid "Карточка «Сегодня»: три экрана, листаются свайпом (scroll-snap) или вкладками. 1) Сейчас — хадис дня + текущий намаз и отсчёт до следующего; 2) Намаз — расписание дня, текущий подсвечен, «Мечеть рядом»; 3) Погода и курс — если есть данные."
-msgstr "«Bugun» kartasi: uchta ekran, svayp (scroll-snap) yoki tablar orqali. 1) Hozir — kun hadisi + joriy namoz va keyingisiga qadar hisob; 2) Namoz — kun jadvali, joriysi ajratilgan, «Yaqin masjid»; 3) Ob-havo va kurs — maʼlumot boʻlsa."
-
 #: apps/market/templates/market/list.html
 msgid "Категории"
 msgstr "Toifalar"
@@ -3363,7 +3335,7 @@ msgstr "Har bir koʻrsatishda ID va vaqt bor. Tarqalish darhol manbani koʻrsata
 msgid "На модерации"
 msgstr "Moderatsiyada"
 
-#: apps/core/my_views.py
+#: apps/api/views_pubs.py apps/core/my_views.py
 msgid "На проверке"
 msgstr "Tekshiruvda"
 
@@ -3375,7 +3347,7 @@ msgstr "Moderator tekshiruvida"
 msgid "На себя жаловаться не нужно."
 msgstr "Oʻzingiz ustidan shikoyat qilish shart emas."
 
-#: apps/core/decorators.py
+#: apps/api/views_pubs.py apps/core/decorators.py
 msgid "На сегодня лимит публикаций исчерпан — защита от спама. Завтра можно снова."
 msgstr "Bugungi nashr limiti tugadi — spamdan himoya. Ertaga yana mumkin."
 
@@ -3730,7 +3702,7 @@ msgstr "Nevrolog"
 msgid "Недвижимость"
 msgstr "Koʻchmas mulk"
 
-#: apps/health/views.py
+#: apps/api/views_pubs.py apps/health/views.py
 msgid "Недостаточно средств для платной публикации."
 msgstr "Pullik nashr uchun mablagʻ yetarli emas."
 
@@ -4265,11 +4237,11 @@ msgstr "Toʻlandi. Pulni platforma ish topshirilguncha ushlab turadi."
 msgid "Опубликован"
 msgstr "Eʼlon qilingan"
 
-#: apps/core/my_views.py
+#: apps/api/views_pubs.py apps/core/my_views.py
 msgid "Опубликовано"
 msgstr "Eʼlon qilindi"
 
-#: apps/market/views.py
+#: apps/api/views_pubs.py apps/market/views.py
 msgid "Опубликовано!"
 msgstr "Eʼlon qilindi!"
 
@@ -4427,7 +4399,7 @@ msgstr "Javob berish"
 msgid "Отклонена"
 msgstr "Rad etildi"
 
-#: apps/core/my_views.py
+#: apps/api/views_pubs.py apps/core/my_views.py
 msgid "Отклонено"
 msgstr "Rad etildi"
 
@@ -4630,6 +4602,10 @@ msgstr "Yuborildi"
 #: apps/market/views.py
 msgid "Отправлено на модерацию."
 msgstr "Moderatsiyaga yuborildi."
+
+#: apps/api/views_pubs.py
+msgid "Отправлено на модерацию. Обычно это до суток."
+msgstr "Moderatsiyaga yuborildi. Odatda bir sutkagacha."
 
 #: apps/transport/views.py
 msgid "Отправлено — после модерации появится в списке."
@@ -5298,10 +5274,6 @@ msgstr "Xizmat taklif qilish —"
 msgid "Предпросмотр анкеты"
 msgstr "Anketani oldindan koʻrish"
 
-#: templates/includes/disclaimer.html
-msgid "Предупреждение для покупателей/клиентов: ilm4 — площадка, не сторона сделки. dkind: health | nikah | refugee | (по умолчанию — товары и услуги)"
-msgstr "Xaridorlar/mijozlar uchun ogohlantirish: ilm4 — maydoncha, bitim tarafi emas. dkind: health | nikah | refugee | (standart — tovar va xizmatlar)"
-
 #: apps/core/templates/core/blocks/banner.html
 msgid "Предыдущий слайд"
 msgstr "Oldingi slayd"
@@ -5350,10 +5322,6 @@ msgstr "Doʻstlarni taklif qilish"
 #: apps/nikah/templates/nikah/settings.html
 msgid "Пригласить свидетеля"
 msgstr "Guvohni taklif qilish"
-
-#: apps/core/templates/core/blocks/basics.html
-msgid "Приглашение «Как принять ислам» — отдельной заметной карточкой на главной. «Как совершать намаз» и «Мечеть рядом» — в карточке «Сегодня» и в каталоге сервисов."
-msgstr "«Islomni qanday qabul qilish» taklifi — bosh sahifada alohida koʻzga koʻrinadigan karta. «Namozni qanday ado etish» va «Yaqin masjid» — «Bugun» kartasida va xizmatlar katalogida."
 
 #: apps/nikah/templates/nikah/settings.html
 msgid "Приглашено:"
@@ -5722,10 +5690,6 @@ msgstr "Rezyume — ish izlayman"
 msgid "Реклама"
 msgstr "Reklama"
 
-#: apps/core/templates/core/blocks/banner.html
-msgid "Рекламная карусель главной (Playerok-стиль). Если в админке есть активные баннеры (Core → Баннеры) — показываются они: у каждого своя картинка, текст, кнопка и СВОЯ длительность показа. Картинка —"
-msgstr "Bosh sahifadagi reklama karuseli (Playerok uslubida). Admin panelda faol bannerlar boʻlsa (Core → Bannerlar), ular koʻrsatiladi: har birining oʻz rasmi, matni, tugmasi va OʻZ koʻrsatish davomiyligi. Rasm —"
-
 #: apps/nikah/templates/nikah/edit.html apps/nikah/templates/nikah/wizard.html
 msgid "Религия"
 msgstr "Din"
@@ -5996,7 +5960,7 @@ msgstr "Skrinshotlar qoidalar bilan taqiqlangan"
 msgid "Скрыта — вас не видят в ленте"
 msgstr "Yashirilgan — sizni lentada koʻrishmaydi"
 
-#: apps/core/my_views.py
+#: apps/api/views_pubs.py apps/core/my_views.py
 msgid "Скрыто вами"
 msgstr "Siz yashirgansiz"
 
@@ -7205,17 +7169,13 @@ msgstr "Doʻstlaringiz sizni ham topishi uchun —"
 msgid "Чтобы завершить, примите условия."
 msgstr "Yakunlash uchun shartlarni qabul qiling."
 
-#: apps/core/decorators.py
+#: apps/api/views_pubs.py apps/core/decorators.py
 msgid "Чтобы опубликовать, примите договор автора внизу формы."
 msgstr "Eʼlon qilish uchun forma pastidagi muallif ahdini qabul qiling."
 
 #: apps/deals/views.py
 msgid "Чтобы принять заказ, примите договор исполнителя."
 msgstr "Buyurtmani qabul qilish uchun ijrochi ahdini qabul qiling."
-
-#: templates/includes/section_hero.html
-msgid "Шапка раздела: иконка (единый стиль — маска из static/img/icons/"
-msgstr "Boʻlim sarlavhasi: ikonka (yagona uslub — static/img/icons/ dan niqob"
 
 #: apps/maps/models.py apps/nikah/choices.py
 msgid "Шафиитский"
@@ -7343,6 +7303,10 @@ msgstr "Bu usul hozircha mavjud emas."
 msgid "Эту публикацию можно только удалить и добавить заново."
 msgstr "Bu nashrni faqat oʻchirib, qayta qoʻshish mumkin."
 
+#: apps/api/views_pubs.py
+msgid "Эту публикацию нельзя скрыть — только удалить."
+msgstr "Bu eʼlonni yashirib boʻlmaydi — faqat oʻchirish mumkin."
+
 #: apps/nikah/deck.py
 msgid "Южная Азия"
 msgstr "Janubiy Osiyo"
@@ -7363,7 +7327,7 @@ msgstr "Men aka-ukaman"
 msgid "Я веду общение с уважением и по шариату, без обмана и пустых обещаний."
 msgstr "Muloqotni hurmat bilan va shariatga koʻra, aldovsiz va quruq vaʼdalarsiz olib boraman."
 
-#: templates/includes/pledge.html
+#: apps/api/views_pubs.py templates/includes/pledge.html
 msgid "Я выполню то, о чём договорюсь: цену, сроки, качество и условия."
 msgstr "Kelishganimni bajaraman: narx, muddat, sifat va shartlar."
 
@@ -7371,11 +7335,11 @@ msgstr "Kelishganimni bajaraman: narx, muddat, sifat va shartlar."
 msgid "Я здесь ради брака, а не общения ради общения."
 msgstr "Men bu yerda nikoh uchunman, gaplashish uchun emas."
 
-#: templates/includes/pledge.html
+#: apps/api/views_pubs.py templates/includes/pledge.html
 msgid "Я отвечаю за свою публикацию и её исполнение — перед людьми и перед Аллахом. ilm4 — лишь площадка и не участвует в договорённостях."
 msgstr "Men nashrim va uning bajarilishi uchun javob beraman — odamlar oldida ham, Alloh oldida ham. ilm4 — faqat maydoncha va kelishuvlarda ishtirok etmaydi."
 
-#: templates/includes/pledge.html
+#: apps/api/views_pubs.py templates/includes/pledge.html
 msgid "Я публикую правдивые сведения — без обмана, скрытых недостатков и завышенных обещаний."
 msgstr "Men haqqoniy maʼlumot joylayman — aldovsiz, yashirin kamchiliklarsiz va oshirilgan vaʼdalarsiz."
 

@@ -1,5 +1,5 @@
 {% load i18n %}{% load icons prayer_tags weather humanize fx_tags %}{% comment %}
-{% translate "Карточка «Сегодня»: три экрана, листаются свайпом (scroll-snap) или вкладками. 1) Сейчас — хадис дня + текущий намаз и отсчёт до следующего; 2) Намаз — расписание дня, текущий подсвечен, «Мечеть рядом»; 3) Погода и курс — если есть данные." %}
+Карточка «Сегодня»: три экрана, листаются свайпом (scroll-snap) или вкладками. 1) Сейчас — хадис дня + текущий намаз и отсчёт до следующего; 2) Намаз — расписание дня, текущий подсвечен, «Мечеть рядом»; 3) Погода и курс — если есть данные.
 {% endcomment %}{% prayer_widget request.COOKIES.ilm4_city as w %}{% get_weather as wx %}{% get_fx as fx %}
 <aside class="today" id="today" aria-label="{% translate 'Сегодня' %}">
   <div class="today__tabs" role="tablist">

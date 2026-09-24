@@ -355,7 +355,7 @@ html[data-theme=dark] .hello__h{color:color-mix(in srgb,var(--accent) 60%,#fff)}
 .soclist__a small{font-size:12px;color:var(--ink-soft)}
 @media(max-width:560px){.soclist{grid-template-columns:1fr}}
 .tlinks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
-.tlinks a{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:9px 8px}
+.tlinks a{white-space:normal;text-align:center;line-height:1.2;padding:9px 8px;min-width:0}
 @media(max-width:380px){.tlinks a{font-size:12px;gap:5px}}
 .donate-m{display:none}
 @media(max-width:760px){
@@ -399,8 +399,10 @@ html[data-theme=dark] .donate-m{color:color-mix(in srgb,var(--accent) 60%,#fff)}
 .vbadge svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .vbadge--ok{color:#0e8f57;background:color-mix(in srgb,#12a150 10%,var(--card));border-color:color-mix(in srgb,#12a150 30%,var(--line))}
 .vbadge__tip{position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);width:250px;z-index:20;padding:10px 12px;border-radius:12px;
-  background:var(--ink);color:var(--card);font-size:12px;font-weight:500;line-height:1.45;box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:opacity .15s}
-.vbadge:hover .vbadge__tip,.vbadge:focus .vbadge__tip{opacity:1}
+  background:var(--ink);color:var(--card);font-size:12px;font-weight:500;line-height:1.45;box-shadow:var(--shadow-lg);pointer-events:none;
+  white-space:normal;max-width:calc(100vw - 40px);display:none}
+/* подсказка скрыта через display — иначе невидимый блок растягивал страницу на телефоне */
+.vbadge:hover .vbadge__tip,.vbadge:focus .vbadge__tip{display:block}
 html[data-theme=dark] .vbadge--ok{color:#34d399}
 .pcard__rep{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;margin-top:12px}
 .pcard__rep--left{justify-content:flex-start;margin-top:10px}
@@ -639,7 +641,7 @@ html[data-theme=dark] .mbrief{color:#34d399}
 .frail:active svg{transform:scale(.88)}
 .frail.on svg{background:#e5484d;fill:#fff}
 @media(max-width:760px){
-  .feedwrap{margin:0 -14px;max-width:none}
+  .feedwrap{width:100vw;max-width:none;margin:0 0 0 calc(50% - 50vw)}
   .feedtop{display:none}
   .feedv{height:calc(100dvh - 76px - var(--tab-h) - env(safe-area-inset-top) - env(safe-area-inset-bottom));border-radius:0;min-height:0;box-shadow:none}
   .page-feed .wrap{padding-bottom:0}

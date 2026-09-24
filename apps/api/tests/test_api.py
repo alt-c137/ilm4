@@ -350,3 +350,65 @@ def test_web_link_one_time(client):
     # чужой сайт в next не подставить
     url = call(client, 'post', '/api/v1/auth/web-link/', {'next': 'https://evil.com/'}, token=token_for(user)).json()['url']
     assert client.get(url.split('testserver')[-1])['Location'] == '/'
+
+
+# ---------- подача публикаций из приложения ----------
+
+def test_pub_form_schema_and_create(client, settings, tmp_path):
+    settings.MEDIA_ROOT = tmp_path
+    from apps.market.models import Category, Listing
+    Category.objects.get_or_create(slug='t-cat', defaults={'name': 'Тест'})
+    user = User.objects.create_user('pa', 'pa@x.com', 'x')
+    tok = token_for(user)
+    sch = call(client, 'get', '/api/v1/pubs/buy/form/', token=tok).json()
+    names = {f['name']: f for f in sch['fields']}
+    assert names['description']['kind'] == 'text' and names['photo']['kind'] == 'image'
+    assert any(ch['key'] for ch in names['category']['choices']) and sch['pledge']
+    cat = Category.objects.get(slug='t-cat')
+    data = {'title': 'Коврик', 'description': 'Новый', 'price': '100', 'currency': 'UZS', 'category': str(cat.pk),
+            'city': 'Ташкент'}
+    # без договора автора — нельзя
+    r = client.post('/api/v1/pubs/buy/save/', data, HTTP_AUTHORIZATION=f'Bearer {tok}')
+    assert r.status_code == 400 and r.json()['code'] == 'pledge'
+    r = client.post('/api/v1/pubs/buy/save/', {**data, 'pledge': '1', 'photo': jpeg()}, HTTP_AUTHORIZATION=f'Bearer {tok}')
+    assert r.status_code == 200, r.content
+    lst = Listing.objects.get(pk=r.json()['id'])
+    assert lst.owner == user and lst.photo
+    # ошибки — по полям
+    r = client.post('/api/v1/pubs/buy/save/', {'pledge': '1'}, HTTP_AUTHORIZATION=f'Bearer {tok}')
+    assert r.status_code == 400 and 'title' in r.json()['fields']
+    # правка своей → снова на проверку
+    lst.status = Moderation.APPROVED
+    lst.save()
+    r = client.post('/api/v1/pubs/buy/save/', {**data, 'id': lst.pk, 'title': 'Коврик новый'}, HTTP_AUTHORIZATION=f'Bearer {tok}')
+    assert r.status_code == 200
+    lst.refresh_from_db()
+    assert lst.title == 'Коврик новый' and lst.status == Moderation.PENDING
+    # чужую — нельзя
+    other = token_for(User.objects.create_user('pb', 'pb@x.com', 'x'))
+    r = client.post('/api/v1/pubs/buy/save/', {**data, 'id': lst.pk}, HTTP_AUTHORIZATION=f'Bearer {other}')
+    assert r.status_code == 404
+    assert call(client, 'get', f'/api/v1/pubs/buy/form/?id={lst.pk}', token=other).status_code == 404
+
+
+def test_my_publications_hide_delete(client):
+    from apps.jobs.models import Vacancy
+    from apps.market.models import Category, Listing
+    user = User.objects.create_user('pm', 'pm@x.com', 'x')
+    tok = token_for(user)
+    cat = Category.objects.create(name='Т2', slug='t2')
+    lst = Listing.objects.create(title='A', description='-', price=1, category=cat, city='T', owner=user,
+                                 status=Moderation.APPROVED)
+    Vacancy.objects.create(title='Повар', category=Vacancy._meta.get_field('category').choices[0][0], city='T',
+                           description='-', contact='-', owner=user)
+    data = call(client, 'get', '/api/v1/my/', token=tok).json()
+    keys = {g['key'] for g in data['groups']}
+    assert {'buy', 'jobs'} <= keys and any(c['key'] == 'buy' and c['native'] for c in data['create'])
+    assert call(client, 'post', f'/api/v1/my/buy/{lst.pk}/', token=tok).json()['hidden'] is True
+    lst.refresh_from_db()
+    assert not lst.is_active
+    assert call(client, 'delete', f'/api/v1/my/buy/{lst.pk}/', token=tok).status_code == 200
+    assert not Listing.objects.filter(pk=lst.pk).exists()
+    # чужое не удалить
+    v = Vacancy.objects.get(owner=user)
+    assert call(client, 'delete', f'/api/v1/my/jobs/{v.pk}/', token=token_for(User.objects.create_user('pz', 'pz@x.com', 'x'))).status_code == 404
