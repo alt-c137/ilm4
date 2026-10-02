@@ -60,8 +60,21 @@ def settings_view(request):
     """
     from django.shortcuts import redirect
 
-    from .models import Theme
-
+    from . import tabs
+    from .models import ModuleConfig, Theme
+    modules_on = set(ModuleConfig.objects.filter(status=ModuleConfig.ON).values_list('key', flat=True))
+    if request.method == 'POST' and request.POST.get('what') == 'tabs' and request.user.is_authenticated:
+        # нижние кнопки сайта: до четырёх своих + «Профиль»
+        picked = tabs.clean_ui({'tabs_site': [k for k in request.POST.getlist('tab') if k]})
+        user = request.user
+        ui = dict(user.ui or {})
+        if request.POST.get('reset') or not picked:
+            ui.pop('tabs_site', None)
+        else:
+            ui.update(picked)
+        user.ui = ui
+        user.save(update_fields=['ui'])
+        return redirect('/settings/#tabs')
     if request.method == 'POST':
         response = redirect('core:settings')
         mode = request.POST.get('mode')
@@ -75,7 +88,10 @@ def settings_view(request):
                 request.user.theme = theme
                 request.user.save(update_fields=['theme'])
         return response
-    return render(request, 'core/settings.html', {'all_themes': Theme.objects.all()})
+    mine = ((request.user.ui or {}).get('tabs_site') if request.user.is_authenticated else None) or tabs.DEFAULT_SITE
+    mine = (mine + [''] * tabs.SLOTS)[:tabs.SLOTS]
+    return render(request, 'core/settings.html', {
+        'all_themes': Theme.objects.all(), 'tab_choices': tabs.choices(modules_on), 'tab_slots': mine})
 
 
 def feed(request):
@@ -87,6 +103,7 @@ def feed(request):
         raise Http404
     from itertools import zip_longest
 
+    from apps.core import money
     from apps.core.models import Moderation
     from apps.forum.models import Topic
     from apps.jobs.models import Vacancy
@@ -97,7 +114,7 @@ def feed(request):
     news = [{'kind': _('Новости'), 'title': p.title, 'text': p.summary, 'img': p.cover.url if p.cover else '',
              'url': f'/news/{p.slug}/', 'meta': p.created_at} for p in NewsPost.objects.all()[:10]]
     buy = [{'kind': _('Маркет'), 'title': x.title, 'text': x.description[:160], 'img': x.photo.url if x.photo else '',
-            'url': f'/buy/{x.pk}/', 'meta': x.created_at, 'price': f'{x.price:,.0f} {x.get_currency_display()}'.replace(',', ' ')}
+            'url': f'/buy/{x.pk}/', 'meta': x.created_at, 'price': money.price_text(x.price, x.currency, request, _('Даром'))}
            for x in Listing.objects.filter(status=Moderation.APPROVED, is_active=True)[:10]]
     qa = [{'kind': _('Вопрос'), 'title': t.title, 'text': t.body[:200], 'img': '', 'url': f'/forum/{t.pk}/',
            'meta': t.created_at, 'author': t.author.get_display_name()}
@@ -113,6 +130,31 @@ def feed(request):
         it['id'] = i
         it['tone'] = i % 5
     return render(request, 'core/feed.html', {'items': items})
+
+
+def set_currency(request):
+    """Своя валюта для цен: кука + профиль (если вошёл). «auto» — снова определять по стране."""
+    from django.http import JsonResponse
+    from django.shortcuts import redirect
+    from django.utils.http import url_has_allowed_host_and_scheme
+
+    from . import money
+    code = request.POST.get('currency', '')
+    nxt = request.POST.get('next', '') or request.headers.get('Referer', '') or '/'
+    if not url_has_allowed_host_and_scheme(nxt, allowed_hosts={request.get_host()}):
+        nxt = '/'
+    wants_json = 'application/json' in request.headers.get('Accept', '')
+    response = JsonResponse({'ok': True, 'currency': code}) if wants_json else redirect(nxt)
+    if request.method == 'POST' and (code in money.SIGN or code == 'auto'):
+        value = '' if code == 'auto' else code
+        if value:
+            response.set_cookie(money.COOKIE, value, max_age=365 * 86400, samesite='Lax')
+        else:
+            response.delete_cookie(money.COOKIE)
+        if request.user.is_authenticated and request.user.currency != value:
+            request.user.currency = value
+            request.user.save(update_fields=['currency'])
+    return response
 
 
 def set_language(request):

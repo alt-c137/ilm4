@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Запуск ilm4 на своём ПК «как на сервере» — с https-адресом для Telegram, без ngrok и регистрации.
 #
-#   bash scripts/run_local.sh
+#   bash scripts/run_local.sh            # бесплатный адрес Cloudflare (каждый раз новый)
+#   bash scripts/run_local.sh ngrok      # через ngrok — адрес постоянный (тот, что выдан вашему аккаунту ngrok)
 #
 # Что делает:
 #   1) миграции; 2) сайт на http://127.0.0.1:8000;
@@ -31,16 +32,32 @@ trap cleanup EXIT INT TERM
 
 $PY manage.py migrate --noinput
 
-# https-адрес для Telegram и телефона: сначала Cloudflare, не вышло — localhost.run (тоже без регистрации)
+# https-адрес для Telegram и телефона
 find_url() { grep -oE "$1" "$2" 2>/dev/null | grep -v '//api\.' | head -1 || true; }
 URL=""
-echo "Запускаю туннель Cloudflare…"
-"$CF" tunnel --no-autoupdate --protocol http2 --url http://127.0.0.1:8000 >"$LOG/tunnel.log" 2>&1 &
-for _ in $(seq 1 30); do
-  URL=$(find_url 'https://[a-z0-9-]+\.trycloudflare\.com' "$LOG/tunnel.log")
-  [ -n "$URL" ] && break
-  sleep 1
-done
+if [ "${1:-}" = "ngrok" ]; then
+  # ngrok из Ubuntu или из Windows (ngrok.exe). Адрес у бесплатного аккаунта постоянный — удобно для бота и приложения.
+  NG=$(command -v ngrok || command -v ngrok.exe || true)
+  [ -n "$NG" ] || { echo "ngrok не найден. Установите его (ngrok.com) или запустите без слова ngrok."; exit 1; }
+  echo "Запускаю туннель ngrok…"
+  "$NG" http 8000 --log=stdout --log-format=logfmt >"$LOG/tunnel.log" 2>&1 &
+  for _ in $(seq 1 30); do
+    URL=$(find_url 'https://[a-zA-Z0-9.-]+\.ngrok(-free)?\.(dev|app|io)' "$LOG/tunnel.log")
+    [ -n "$URL" ] && break
+    sleep 1
+  done
+  [ -n "$URL" ] || { echo "ngrok не поднялся:"; tail -n 5 "$LOG/tunnel.log" | sed 's/^/    /'; }
+fi
+if [ -z "$URL" ]; then
+  # сначала Cloudflare, не вышло — localhost.run (оба без регистрации)
+  echo "Запускаю туннель Cloudflare…"
+  "$CF" tunnel --no-autoupdate --protocol http2 --url http://127.0.0.1:8000 >"$LOG/tunnel.log" 2>&1 &
+  for _ in $(seq 1 30); do
+    URL=$(find_url 'https://[a-z0-9-]+\.trycloudflare\.com' "$LOG/tunnel.log")
+    [ -n "$URL" ] && break
+    sleep 1
+  done
+fi
 if [ -z "$URL" ]; then
   echo "Cloudflare не ответил (последние строки лога):"
   tail -n 5 "$LOG/tunnel.log" | sed 's/^/    /'
@@ -56,9 +73,10 @@ fi
 [ -n "$URL" ] || { echo "Туннель не поднялся ни через Cloudflare, ни через localhost.run. Проверьте интернет. Логи: $LOG"; exit 1; }
 
 export SITE_URL="$URL"          # переменная окружения важнее .env — файл не меняем
-$PY manage.py runserver 127.0.0.1:8000 >"$LOG/server.log" 2>&1 &
+BIND=127.0.0.1; [ "${1:-}" = "ngrok" ] && BIND=0.0.0.0   # ngrok.exe из Windows заходит снаружи WSL
+$PY manage.py runserver $BIND:8000 >"$LOG/server.log" 2>&1 &
 # фоновые задачи раз в минуту: запланированные сообщения чата, таймеры фото никяха
-( while true; do $PY manage.py chat_send_due; $PY manage.py nikah_cleanup; sleep 60; done ) >"$LOG/jobs.log" 2>&1 &
+( while true; do $PY manage.py chat_send_due; $PY manage.py tracker_remind; $PY manage.py nikah_cleanup; sleep 60; done ) >"$LOG/jobs.log" 2>&1 &
 sleep 3
 
 # мобильное приложение (mobile/) на телефоне будет ходить на этот же адрес

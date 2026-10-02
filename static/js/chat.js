@@ -19,7 +19,8 @@
     n = n || 0;
     if (n < 1024) return n + ' ' + _t('Б');
     if (n < 1048576) return Math.round(n / 1024) + ' ' + _t('КБ');
-    return (n / 1048576).toFixed(1).replace('.0', '') + ' ' + _t('МБ');
+    if (n < 1073741824) return (n / 1048576).toFixed(1).replace('.0', '') + ' ' + _t('МБ');
+    return (n / 1073741824).toFixed(2).replace(/\.?0+$/, '') + ' ' + _t('ГБ');
   }
   function toBottom() { log.scrollTop = log.scrollHeight; }
   function toast(text) {
@@ -32,6 +33,7 @@
     clip: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5l-8.2 8.2a5 5 0 0 1-7-7l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8"/></svg>',
     shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><path d="M12 8v4.5M12 16h.01"/></svg>',
     clock: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+    eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg>',
     call: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5h3l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.5 5.7 2 2 0 0 1 6.5 3.5z"/></svg>'
   };
 
@@ -43,16 +45,36 @@
     if (d.kind === 'photo') media = '<a class="bub__photo" href="' + d.url + '" target="_blank" rel="noopener"><img src="' + d.url + '" alt="' + _t('Фото') + '"></a>';
     if (d.kind === 'voice') media = '<div class="voice" data-src="' + d.url + '"><button type="button" class="voice__play" aria-label="' + _t('Слушать') + '">' + ICON.play + '</button><span class="voice__bar"><i></i></span><span class="voice__t">' + mmss(d.duration) + '</span></div>';
     if (d.kind === 'video') media = '<div class="bub__video"><video src="' + d.url + '" controls preload="metadata" playsinline></video></div>';
-    if (d.kind === 'file') media = '<a class="bub__file" href="' + d.url + '" download><span class="bub__fileico">' + ICON.clip + '</span><span class="bub__fileb"><b>' + esc(d.file_name || _t('Файл')) + '</b><small>' + fsize(d.file_size) + '</small></span></a>';
+    if (d.kind === 'file') media = '<a class="bub__file" href="' + d.url + '" download><span class="bub__fileico">' + ICON.clip + '</span><span class="bub__fileb"><b>' + esc(d.file_name || _t('Файл')) + '</b><small>' + fsize(d.file_size) + '</small></span></a>' +
+      (d.file_risky && !mine ? '<span class="bub__risk">' + ICON.shield + _t('Это программа. Открывайте, только если доверяете отправителю.') + '</span>' : '');
     if (d.kind === 'circle') media = '<div class="circle" data-src="' + d.url + '"><video src="' + d.url + '" preload="metadata" playsinline></video><span class="circle__t">' + mmss(d.duration) + '</span><span class="circle__play">' + ICON.play + '</span></div>';
     var sched = d.scheduled ? '<span class="bub__sched">' + ICON.clock + _t('отправится') + ' ' + esc(d.scheduled_label) + '</span>' +
       '<span class="bub__schedact"><button type="button" data-sched-act="send">' + _t('Отправить сейчас') + '</button>' +
       '<button type="button" data-sched-act="cancel">' + _t('Удалить') + '</button></span>' : '';
+    var who = (d.room === 'group' && !mine && lastSender !== d.sender_id)
+      ? '<span class="bub__who bub__who--h' + (d.hue || 0) + '">' + esc(d.sender_name) + '</span>' : '';
+    var views = d.room === 'channel' && !d.scheduled ? '<span class="bub__views">' + ICON.eye + (d.views || 0) + '</span>' : '';
     return '<div class="bub bub--in bub--' + d.kind + (mine ? ' bub--me' : '') + (d.scheduled ? ' bub--sched' : '') +
-      ' bub--tail" data-id="' + d.id + '">' + media +
-      (d.body ? '<span class="bub__t">' + esc(d.body) + '</span>' : '') + sched +
-      '<span class="bub__meta">' + (d.scheduled ? '' : esc(d.time || '')) + (mine && !d.scheduled ? '<span class="tick"></span>' : '') + '</span></div>';
+      ' bub--tail" data-id="' + d.id + '">' + who + media +
+      (d.body ? '<span class="bub__t">' + rich(d.body) + '</span>' : '') + sched +
+      '<span class="bub__meta">' + views + (d.scheduled ? '' : esc(d.time || '')) + (mine && !d.scheduled && !d.room ? '<span class="tick"></span>' : '') + '</span></div>';
   }
+  /* оформление текста, как в Telegram: **жирный**, __курсив__, ~~зачёркнутый~~, `код`, ||скрытый||, ссылки.
+     Тот же разбор — на сервере (apps/chat/richtext.py): сначала экранируем, потом расставляем свои теги. */
+  function rich(text) {
+    var codes = [], out = esc(text);
+    out = out.replace(/`([^`\n]+)`/g, function (_m, c) { codes.push(c); return '\u0000' + (codes.length - 1) + '\u0000'; });
+    out = out.replace(/\*\*(?=\S)([\s\S]+?)\*\*/g, '<b>$1</b>').replace(/__(?=\S)([\s\S]+?)__/g, '<i>$1</i>')
+      .replace(/~~(?=\S)([\s\S]+?)~~/g, '<s>$1</s>')
+      .replace(/\|\|(?=\S)([\s\S]+?)\|\|/g, '<span class="spoiler" role="button" tabindex="0">$1</span>')
+      .replace(/(^|[\s(])(https?:\/\/[^\s<]+[^\s<.,:;!?)\]»"'])/g, '$1<a href="$2" target="_blank" rel="noopener nofollow ugc">$2</a>');
+    out = out.replace(/\u0000(\d+)\u0000/g, function (_m, i) { return '<code>' + codes[+i] + '</code>'; });
+    return out.replace(/\n/g, '<br>');
+  }
+  // скрытый текст открывается по нажатию
+  log.addEventListener('click', function (e) { var sp = e.target.closest('.spoiler'); if (sp) sp.classList.add('is-open'); });
+
+  var lastSender = null;      // чьё сообщение было последним — чтобы не повторять имя в группе
   function add(d) {
     if (seen[d.id]) {
       // запланированное ушло (или «отправить сейчас») — убираем черновик и показываем как обычное
@@ -70,11 +92,62 @@
     var prev = log.lastElementChild;
     if (prev && prev.classList.contains('bub') && prev.classList.contains('bub--me') === mine) prev.classList.remove('bub--tail');
     log.insertAdjacentHTML('beforeend', msgHTML(d, mine));
+    lastSender = d.kind === 'system' ? null : d.sender_id;
     if (d.warn && !mine && cfg.warn_text) {        // просят предоплату — предупреждаем получателя
       log.insertAdjacentHTML('beforeend', '<div class="tg__warn bub--in">' + ICON.shield + esc(cfg.warn_text) + '</div>');
     }
     toBottom();
   }
+
+  /* ---------- удалить сообщение: правая кнопка мыши или долгое нажатие ---------- */
+  function removeMsg(id) {
+    var el = log.querySelector('[data-id="' + id + '"]'); if (!el) return;
+    var w = log.querySelector('[data-warn="' + id + '"]'); if (w) w.remove();
+    el.classList.add('bub--gone'); setTimeout(function () { el.remove(); }, 180);
+    delete seen[id];
+  }
+  var msgMenu = document.createElement('div');
+  msgMenu.className = 'sendmenu msgmenu'; msgMenu.hidden = true; msgMenu.setAttribute('role', 'menu');
+  document.body.appendChild(msgMenu);
+  function openMsgMenu(bub, x, y) {
+    var mine = bub.classList.contains('bub--me'), txt = bub.querySelector('.bub__t');
+    var canDel = !bub.classList.contains('bub--sched') && (mine || cfg.admin);
+    var html = '';
+    if (txt) html += '<button type="button" role="menuitem" data-m="copy">' + _t('Копировать текст') + '</button>';
+    if (canDel) html += '<button type="button" role="menuitem" data-m="del" class="msgmenu__del">' + _t('Удалить у всех') + '</button>';
+    if (!html) return;
+    msgMenu.innerHTML = html; msgMenu.hidden = false; msgMenu.dataset.id = bub.dataset.id;
+    msgMenu.style.left = Math.max(8, Math.min(x, innerWidth - 210)) + 'px';
+    msgMenu.style.top = Math.max(8, Math.min(y, innerHeight - 110)) + 'px';
+    msgMenu.classList.remove('pop'); void msgMenu.offsetWidth; msgMenu.classList.add('pop');
+  }
+  log.addEventListener('contextmenu', function (e) {
+    var bub = e.target.closest('.bub[data-id]'); if (!bub || e.target.closest('a,video,button')) return;
+    e.preventDefault(); openMsgMenu(bub, e.clientX, e.clientY);
+  });
+  var mlp = null;
+  log.addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse') return;
+    var bub = e.target.closest('.bub[data-id]'); if (!bub || e.target.closest('a,video,button,.voice,.circle')) return;
+    var x = e.clientX, y = e.clientY;
+    mlp = setTimeout(function () { openMsgMenu(bub, x, y); }, 520);
+  });
+  ['pointerup', 'pointermove', 'pointercancel', 'scroll'].forEach(function (ev) { log.addEventListener(ev, function () { clearTimeout(mlp); }); });
+  document.addEventListener('click', function (e) { if (!msgMenu.hidden && !e.target.closest('.msgmenu')) msgMenu.hidden = true; });
+  msgMenu.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-m]'); if (!b) return;
+    var id = msgMenu.dataset.id, bub = log.querySelector('.bub[data-id="' + id + '"]');
+    msgMenu.hidden = true;
+    if (!bub) return;
+    if (b.dataset.m === 'copy') {
+      var t = bub.querySelector('.bub__t');
+      if (t && navigator.clipboard) navigator.clipboard.writeText(t.innerText).then(function () { toast(_t('Скопировано')); });
+      return;
+    }
+    fetch('/chat/msg/' + id + '/delete/', { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRFToken': csrf } })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) toast(j.error || _t('Не удалось удалить')); else removeMsg(id); }); })
+      .catch(function () { toast(_t('Нет соединения — попробуйте ещё раз')); });
+  });
 
   /* ---------- WebSocket с переподключением ---------- */
   var sock = null, queue = [];
@@ -86,6 +159,8 @@
       var d = JSON.parse(e.data);
       if (d.type === 'read') {
         (d.ids || []).forEach(function (id) { var t = log.querySelector('.bub[data-id="' + id + '"] .tick'); if (t) t.classList.add('tick--2'); });
+      } else if (d.type === 'del') {
+        (d.ids || []).forEach(removeMsg);
       } else if (d.type === 'signal') {
         Call.onSignal(d);
       } else if (d.type === 'error') {
@@ -198,7 +273,9 @@
   syncButtons();
 
   /* ---------- загрузка вложений ---------- */
+  var BIG = 16 * 1048576;       // крупнее — частями по 4 МБ: виден прогресс, обрыв связи не начинает заново
   function upload(kind, blob, duration, name) {
+    if ((kind === 'file' || kind === 'video') && blob.size > BIG) return uploadBig(kind, blob, duration, name);
     var fd = new FormData();
     fd.append('kind', kind); fd.append('file', blob, name || kind);
     if (duration) fd.append('duration', String(Math.round(duration)));
@@ -208,6 +285,63 @@
       .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
       .then(function (res) { bar.remove(); if (!res.ok) { toast(res.j.error || _t('Не удалось отправить')); return; } add(res.j); })
       .catch(function () { bar.remove(); toast(_t('Нет соединения — попробуйте ещё раз')); });
+  }
+  function uploadBig(kind, file, duration, name) {
+    var bar = document.createElement('div'); bar.className = 'tg__uploading tg__uploading--big';
+    bar.innerHTML = '<span class="tg__upname"></span><span class="tg__upbar"><i></i></span><span class="tg__uppct">0%</span>' +
+      '<button type="button" class="tg__upx" aria-label="' + _t('Отменить') + '">×</button>';
+    bar.querySelector('.tg__upname').textContent = name || _t('Файл');
+    log.appendChild(bar); toBottom();
+    var fill = bar.querySelector('i'), pct = bar.querySelector('.tg__uppct');
+    var id = null, stopped = false, hdr = { 'X-CSRFToken': csrf };
+    function show(done) {
+      var p = Math.min(100, Math.floor(done / file.size * 100));
+      fill.style.width = p + '%'; pct.textContent = p + '% · ' + fsize(done) + ' / ' + fsize(file.size);
+    }
+    function fail(text) { bar.remove(); if (!stopped) toast(text || _t('Не удалось отправить')); }
+    function call(url, opts) {
+      opts = opts || {}; opts.credentials = 'same-origin'; opts.headers = Object.assign({}, hdr, opts.headers || {});
+      return fetch(url, opts).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, status: r.status, j: j }; }); });
+    }
+    bar.querySelector('.tg__upx').addEventListener('click', function () {
+      stopped = true; bar.remove();
+      if (id) call('/chat/upload/' + id + '/cancel/', { method: 'POST' }).catch(function () {});
+    });
+    function part(offset, size, tries) {
+      if (stopped) return;
+      if (offset >= file.size) {
+        return call('/chat/upload/' + id + '/finish/', { method: 'POST' }).then(function (res) {
+          bar.remove(); if (!res.ok) { toast(res.j.error || _t('Не удалось отправить')); return; } add(res.j);
+        }).catch(function () { retry(offset, size, tries); });
+      }
+      return call('/chat/upload/' + id + '/part/?offset=' + offset, {
+        method: 'POST', body: file.slice(offset, offset + size), headers: { 'Content-Type': 'application/octet-stream' }
+      }).then(function (res) {
+        if (res.ok || res.status === 409) {            // 409 — сервер подсказал, с какого места продолжать
+          var got = res.j.received; if (typeof got !== 'number') return fail(res.j.error);
+          show(got); return part(got, size, 0);
+        }
+        fail(res.j.error);
+      }).catch(function () { retry(offset, size, tries); });
+    }
+    function retry(offset, size, tries) {              // связь пропала: ждём и продолжаем с того же места
+      if (stopped) return;
+      if (tries >= 8) return fail(_t('Нет соединения — попробуйте ещё раз'));
+      pct.textContent = _t('Нет связи, пробую ещё раз…');
+      setTimeout(function () {
+        call('/chat/upload/' + id + '/').then(function (res) {
+          if (!res.ok) return fail(res.j.error);
+          show(res.j.received); part(res.j.received, size, tries + 1);
+        }).catch(function () { retry(offset, size, tries + 1); });
+      }, Math.min(15000, 1500 * (tries + 1)));
+    }
+    var fd = new FormData();
+    fd.append('kind', kind); fd.append('name', name || file.name || kind); fd.append('size', String(file.size));
+    if (duration) fd.append('duration', String(Math.round(duration)));
+    return call('/chat/' + cfg.thread + '/upload/begin/', { method: 'POST', body: fd }).then(function (res) {
+      if (!res.ok) return fail(res.j.error);
+      id = res.j.upload; part(0, res.j.part, 0);
+    }).catch(function () { fail(_t('Нет соединения — попробуйте ещё раз')); });
   }
   // «скрепка»: фото/видео (сжимается) или файл (как есть) — как в Telegram
   var attachBtn = document.getElementById('attach-btn'), attachMenu = document.getElementById('attach-menu');
@@ -231,7 +365,7 @@
     var f = fileInput.files[0];
     fileInput.value = '';
     if (!f) return;
-    if (f.size > (F.file_max_mb || 100) * 1048576) { toast(_t('Файл слишком большой')); return; }
+    if (f.size > (F.file_max_mb || 2000) * 1048576) { toast(_t('Файл слишком большой')); return; }
     upload('file', f, 0, f.name);
   });
   // кнопки карточки объявления: «Отправить моё резюме» и т.п.
@@ -246,8 +380,13 @@
     var f = photoInput.files[0];
     photoInput.value = '';
     if (!f) return;
-    if (!/^video\//.test(f.type)) { upload('photo', f, 0, f.name); return; }
-    if (f.size > (F.file_max_mb || 100) * 1048576) { toast(_t('Файл слишком большой')); return; }
+    if (!/^video\//.test(f.type)) {
+      // как в Telegram: перед отправкой фото можно порисовать и подписать
+      if (window.ilm4PhotoEdit && !/gif$/.test(f.type)) window.ilm4PhotoEdit(f).then(function (r) { if (r) upload('photo', r, 0, r.name); });
+      else upload('photo', f, 0, f.name);
+      return;
+    }
+    if (f.size > (F.file_max_mb || 2000) * 1048576) { toast(_t('Файл слишком большой')); return; }
     // длительность — из метаданных файла (сервер всё равно ограничит 5 минутами)
     var v = document.createElement('video'), u = URL.createObjectURL(f), done = false;
     function go(sec) { if (done) return; done = true; URL.revokeObjectURL(u); upload('video', f, sec, f.name); }
@@ -271,7 +410,11 @@
   var R = null;                                   // текущая запись
   var recTime = document.getElementById('rec-time'), recSlide = document.getElementById('rec-slide');
   var recLock = document.getElementById('rec-lock'), recCancel = document.getElementById('rec-cancel');
-  var circleBox = document.getElementById('circle-rec');
+  var circleBox = document.getElementById('circle-rec'), recPause = document.getElementById('rec-pause');
+  // кружок снимается поверх переписки, а панель с таймером и кнопкой остаётся видна — как в Telegram
+  if (circleBox && document.getElementById('chat-main')) document.getElementById('chat-main').appendChild(circleBox);
+  function recSeconds(r) { return (Date.now() - r.t0 - r.idle - (r.pausedAt ? Date.now() - r.pausedAt : 0)) / 1000; }
+  function recClock(s) { return Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0') + ',' + Math.floor((s * 10) % 10); }
   var CANCEL_DX = -110, LOCK_DY = -70, HOLD_MS = 220;
   var LIMIT = { voice: 300, circle: 60 };
 
@@ -281,7 +424,8 @@
   }
   function recUI(on) {
     form.classList.toggle('is-recording', on);
-    if (!on) form.classList.remove('is-locked');
+    if (!on) form.classList.remove('is-locked', 'is-paused');
+    if (!on) { recBtn.style.removeProperty('--dx'); recBtn.style.removeProperty('--dy'); }
     recBtn.classList.toggle('is-rec', on);
     syncButtons();
   }
@@ -293,7 +437,8 @@
       toast(voice ? _t('Запись голоса не поддерживается в этом браузере') : _t('Видеозапись не поддерживается в этом браузере'));
       return;
     }
-    R = { mode: mode, ready: false, cancelled: false, locked: !!locked, chunks: [] };
+    R = { mode: mode, ready: false, cancelled: false, locked: !!locked, chunks: [], idle: 0, pausedAt: 0 };
+    form.classList.toggle('is-circle', !voice);
     var r = R;
     recUI(true); if (locked) form.classList.add('is-locked');
     navigator.mediaDevices.getUserMedia(voice ? { audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } }
@@ -309,7 +454,7 @@
         r.mr.onstop = function () {
           stopTracks(stream);
           if (!voice) { document.getElementById('circle-preview').srcObject = null; circleBox.hidden = true; }
-          var sec = (Date.now() - r.t0) / 1000;
+          var sec = r.sec;
           if (r.send && sec >= 1) upload(mode, new Blob(r.chunks, { type: r.mr.mimeType || mime }), sec);
           else if (r.send) toast(_t('Слишком коротко — удерживайте кнопку'));
         };
@@ -328,12 +473,11 @@
   }
   function tickRec(r) {
     if (r !== R) return;
-    var s = (Date.now() - r.t0) / 1000;
-    recTime.textContent = mmss(s);
+    var s = recSeconds(r);
+    recTime.textContent = recClock(s);
     if (r.mode === 'circle') {
       var ring = document.getElementById('circle-ring'), L = 2 * Math.PI * 48;
       ring.style.strokeDasharray = L; ring.style.strokeDashoffset = L * (1 - Math.min(s / 60, 1));
-      document.getElementById('circle-time').textContent = mmss(s) + ' / 1:00';
     }
     if (s >= LIMIT[r.mode]) { finishRec(true); return; }
     requestAnimationFrame(function () { tickRec(r); });
@@ -341,8 +485,9 @@
   function finishRec(send) {
     var r = R; if (!r) return;
     R = null; r.send = send; r.cancelled = !send;
+    r.sec = r.t0 ? recSeconds(r) : 0;
     recUI(false);
-    recSlide.style.transform = ''; recLock.style.transform = '';
+    recSlide.style.transform = ''; recSlide.style.opacity = ''; recLock.style.transform = '';
     if (r.mr && r.mr.state !== 'inactive') r.mr.stop();
     else if (!r.ready && send) toast(_t('Удерживайте кнопку, чтобы записать'));
     if (r.mode === 'circle' && !r.mr) circleBox.hidden = true;
@@ -350,6 +495,8 @@
   function lockRec() {
     if (!R || R.locked) return;
     R.locked = true; form.classList.add('is-locked'); circleBox.classList.add('is-locked');
+    recBtn.style.removeProperty('--dx'); recBtn.style.removeProperty('--dy');
+    recSlide.style.transform = ''; recSlide.style.opacity = '';
     if (navigator.vibrate) navigator.vibrate(10);
   }
 
@@ -369,6 +516,8 @@
       recSlide.style.transform = 'translateX(' + Math.max(dx, CANCEL_DX) + 'px)';
       recSlide.style.opacity = String(1 - Math.min(1, dx / CANCEL_DX) * 0.7);
       recLock.style.transform = 'translateY(' + Math.max(dy, LOCK_DY) / 2 + 'px)';
+      recBtn.style.setProperty('--dx', Math.max(dx, CANCEL_DX) + 'px');           // кнопка едет за пальцем
+      recBtn.style.setProperty('--dy', Math.max(dy, LOCK_DY) + 'px');
       if (dx <= CANCEL_DX) { press = null; finishRec(false); toast(_t('Запись отменена')); }
       else if (dy <= LOCK_DY) { lockRec(); press = null; }
     });
@@ -390,9 +539,35 @@
     });
   }
   if (recCancel) recCancel.addEventListener('click', function () { finishRec(false); });
+  // пауза в «замке»: остановить и продолжить запись (время на паузе не считается)
+  if (recPause) recPause.addEventListener('click', function () {
+    var r = R;
+    if (!r || !r.mr || !r.locked || !r.mr.pause) return;
+    if (r.pausedAt) { r.idle += Date.now() - r.pausedAt; r.pausedAt = 0; r.mr.resume(); }
+    else { r.pausedAt = Date.now(); r.mr.pause(); }
+    form.classList.toggle('is-paused', !!r.pausedAt);
+  });
   var cSend = document.getElementById('circle-send'), cCancel = document.getElementById('circle-cancel');
   if (cSend) cSend.addEventListener('click', function () { finishRec(true); });
   if (cCancel) cCancel.addEventListener('click', function () { finishRec(false); });
+
+  /* ---------- оформление выделенного текста: жирный, курсив, зачёркнутый, код, скрытый ---------- */
+  var fmtBar = document.getElementById('fmt-bar');
+  if (fmtBar && input) {
+    var fmtSync = function () { fmtBar.hidden = document.activeElement !== input || input.selectionStart === input.selectionEnd; };
+    ['select', 'keyup', 'mouseup', 'touchend', 'blur', 'input'].forEach(function (ev) { input.addEventListener(ev, function () { setTimeout(fmtSync, 0); }); });
+    document.addEventListener('selectionchange', fmtSync);
+    fmtBar.addEventListener('mousedown', function (e) { e.preventDefault(); });       // не терять выделение
+    fmtBar.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-fmt]'); if (!b) return;
+      var m = b.dataset.fmt, a = input.selectionStart, z = input.selectionEnd, v = input.value;
+      if (a === z) return;
+      input.value = v.slice(0, a) + m + v.slice(a, z) + m + v.slice(z);
+      input.setSelectionRange(z + m.length * 2, z + m.length * 2);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      fmtBar.hidden = true;
+    });
+  }
 
   /* ---------- свои запланированные: отправить сейчас / удалить ---------- */
   log.addEventListener('click', function (e) {
@@ -573,6 +748,12 @@
     document.querySelectorAll('[data-call]').forEach(function (b) {
       b.addEventListener('click', function () { start(b.dataset.call === 'video'); });
     });
+    // пришли из профиля по кнопке «Звонок» / «Видео» — сразу звоним (ждём, пока подключится чат)
+    var want = new URLSearchParams(location.search).get('call');
+    if (want === 'audio' || want === 'video') {
+      history.replaceState(null, '', location.pathname);
+      setTimeout(function () { var b = document.querySelector('[data-call="' + want + '"]'); if (b) b.click(); }, 1200);
+    }
     bAccept.addEventListener('click', accept);
     bEnd.addEventListener('click', function () {
       if (!c) return;

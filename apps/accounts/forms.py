@@ -106,18 +106,53 @@ class RegisterForm(forms.Form):
 class ProfileForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ['nickname', 'first_name', 'city', 'avatar', 'phone', 'findable_by_phone']
+        fields = ['first_name', 'last_name', 'handle', 'bio', 'city', 'avatar', 'phone', 'findable_by_phone',
+                  'phone_privacy', 'seen_privacy']
         labels = {
-            'nickname': 'Ник', 'first_name': 'Имя', 'city': 'Город',
-            'avatar': 'Аватар', 'phone': 'Телефон',
-            'findable_by_phone': 'Друзья из контактов могут найти меня по номеру',
+            'first_name': 'Имя', 'last_name': 'Фамилия', 'city': 'Город',
+            'avatar': 'Аватар', 'phone': 'Телефон', 'handle': 'Имя пользователя', 'bio': 'О себе',
+            'findable_by_phone': 'Меня можно найти по номеру телефона',
+            'phone_privacy': 'Кто видит мой номер', 'seen_privacy': 'Кто видит, когда я в сети',
         }
         widgets = {
             # аву меняем кликом по фото в карточке — стандартная кнопка не нужна
-            'avatar': forms.ClearableFileInput(attrs={'data-skip': '1'}),
+            'avatar': forms.FileInput(attrs={'data-skip': '1', 'hidden': True, 'accept': 'image/*'}),
             'phone': forms.TextInput(attrs={'placeholder': '+998 90 123 45 67', 'inputmode': 'tel',
                                             'autocomplete': 'tel'}),
+            'handle': forms.TextInput(attrs={'placeholder': 'ali_2024', 'autocapitalize': 'none', 'autocomplete': 'off',
+                                             'spellcheck': 'false', 'maxlength': 32}),
+            'bio': forms.TextInput(attrs={'maxlength': 160}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name in ('phone_privacy', 'seen_privacy'):       # не пришло в форме — остаётся как было
+            self.fields[name].required = False
+        # раньше вместо имени был «ник»: показываем его в поле «Имя», после сохранения ник больше не нужен
+        if not self.is_bound and not self.instance.first_name and self.instance.nickname:
+            self.initial['first_name'] = self.instance.nickname
+
+    def clean_phone_privacy(self):
+        return self.cleaned_data.get('phone_privacy') or self.instance.phone_privacy
+
+    def clean_seen_privacy(self):
+        return self.cleaned_data.get('seen_privacy') or self.instance.seen_privacy
+
+    def clean_handle(self):
+        from . import people
+        try:
+            return people.clean_handle(self.cleaned_data.get('handle'), user=self.instance)
+        except people.PeopleError as exc:
+            raise forms.ValidationError(exc.message) from exc
+
+    def save(self, commit=True):
+        from .phones import phone_key
+        if self.cleaned_data.get('first_name'):
+            self.instance.nickname = ''
+        if 'phone' in self.changed_data and phone_key(self.initial.get('phone') or '') != phone_key(
+                self.cleaned_data.get('phone') or ''):
+            self.instance.phone_verified_at = None        # номер другой — подтверждать заново (иначе «галочка» досталась бы чужому номеру)
+        return super().save(commit)
 
     def clean_avatar(self):
         avatar = self.cleaned_data.get('avatar')

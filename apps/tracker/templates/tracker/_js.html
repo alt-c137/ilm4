@@ -1,0 +1,28 @@
+<script>
+/* отметка без перезагрузки: кнопка → сервер → обновляем строку, кольцо и счётчик */
+(function () {
+  document.addEventListener('submit', function (e) {
+    var f = e.target.closest('.hb__f'); if (!f) return;
+    e.preventDefault();
+    var row = f.closest('.hb'), btn = e.submitter, body = new FormData(f);
+    if (btn && btn.dataset.step) {
+      var cur = parseInt((row.querySelector('.hb__val') || {}).textContent || '0', 10);
+      body.set('value', Math.max(0, cur + parseInt(btn.dataset.step, 10)));
+    }
+    fetch(f.action, { method: 'POST', body: body, credentials: 'same-origin', headers: { 'X-Requested-With': 'fetch' } })
+      .then(function (r) { return r.json(); }).then(function (d) {
+        if (d.error) { alert(d.error); return; }
+        row.classList.toggle('is-done', d.done);
+        var v = row.querySelector('.hb__val'); if (v) v.textContent = d.value;
+        var all = document.querySelectorAll('.hb[data-habit]').length, done = document.querySelectorAll('.hb.is-done').length;
+        var ring = document.getElementById('trk-ring');
+        if (ring) { var p = all ? Math.round(100 * done / all) : 0; ring.style.setProperty('--p', p); ring.querySelector('b').textContent = p + '%'; }
+        var cnt = document.getElementById('trk-count'); if (cnt) cnt.textContent = done + ' / ' + all;
+        if (navigator.vibrate && d.done) navigator.vibrate(12);
+      }).catch(function () { f.submit(); });
+  });
+  document.querySelectorAll('[data-copy-link]').forEach(function (b) {
+    b.addEventListener('click', function () { navigator.clipboard && navigator.clipboard.writeText(b.dataset.copyLink).then(function () { b.classList.add('ok'); }); });
+  });
+})();
+</script>

@@ -1,9 +1,9 @@
 /** Общее состояние приложения: язык, тема, вход, настройки сервера, намаз, сеть. */
 import NetInfo from '@react-native-community/netinfo';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { useColorScheme } from 'react-native';
+import { AppState, useColorScheme } from 'react-native';
 
-import { api, cachedGet, onAuthLost, onReachability, setApiLang, setApiToken } from '@/lib/api';
+import { api, cachedGet, onAuthLost, onReachability, setApiCurrency, setApiLang, setApiToken } from '@/lib/api';
 import { deviceLang, setLang as setI18nLang, t as translate, type Lang } from '@/lib/i18n';
 import { registerPush, schedulePrayers, type PrayerAlerts } from '@/lib/notify';
 import type { Asr, Method, Place } from '@/lib/prayer';
@@ -17,17 +17,28 @@ export type Config = {
   features: {
     chat: Record<'photo' | 'video' | 'voice' | 'circle' | 'calls' | 'video_calls', boolean>;
     nikah: { premium: boolean; daily_limit: number; premium_price: number; premium_days: number; restore_price: number; chat_price: number; photo_minutes: number };
-    telegram_login: boolean; hadith: boolean;
+    telegram_login: boolean; hadith: boolean; groups?: boolean; channels?: boolean;
   };
   prayer: { cities: { key: string; name: string; lat: number; lon: number; tz: number }[]; methods: { key: Method; name: string }[] };
   links: Record<string, string>;
+  currencies?: { code: string; name: string; sign: string }[]; currency?: string;
 };
+export type Privacy = 'all' | 'close' | 'nobody';
+export type SocialLink = { kind: string; title?: string; value: string; url?: string; privacy?: Privacy };
 export type User = {
   id: number; name: string; nickname: string; first_name: string; email: string; city: string; phone: string;
-  language: string; avatar: string; telegram: boolean; verified: boolean; balance: number | null;
+  language: string; currency?: string; currency_now?: string; avatar: string; telegram: boolean; verified: boolean; balance: number | null;
   phone_verified?: boolean; needs_phone?: { publish: boolean; nikah: boolean };
+  last_name?: string; ui?: { tabs_app?: string[] };
+  handle?: string; bio?: string; privacy?: { phone: Privacy; seen: Privacy; find_by_phone: boolean }; links?: SocialLink[];
   nikah: { id: number; status: string; active: boolean; gender: 'M' | 'F' } | null;
 };
+/** Фон переписки: узор, цвет или своё фото (хранится на телефоне, как обои в Telegram). */
+export type Wall = { pattern?: 'shapes' | 'dots' | 'waves' | 'grid' | 'bubbles' | 'none'; color?: string; photo?: string; blur?: number; dim?: number };
+/** Нижние кнопки, которые человек выбрал сам; «Профиль» всегда последний. */
+export const TAB_KEYS = ['home', 'prayer', 'services', 'chats', 'tracker', 'nikah', 'map', 'buy', 'news'] as const;
+export type TabKey = typeof TAB_KEYS[number];
+export const DEFAULT_TABS: TabKey[] = ['home', 'prayer', 'services', 'chats'];
 export type PrayerSettings = {
   place: (Place & { key: string; gps?: boolean }) | null; method: Method; asr: Asr; alerts: PrayerAlerts;
 };
@@ -47,6 +58,9 @@ type Ctx = {
   refreshMe: () => Promise<void>; setUser: (u: User) => void;
   prayer: PrayerSettings; setPrayer: (p: Partial<PrayerSettings>) => void;
   online: boolean; langTick: number;
+  currency: string; setCurrency: (code: string) => void;
+  tabs: TabKey[]; setTabs: (keys: TabKey[]) => void;
+  wall: Wall; setWall: (w: Wall) => void;
 };
 
 const AppContext = createContext<Ctx | null>(null);
@@ -58,9 +72,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [langTick, setLangTick] = useState(0);
   const [themeMode, setThemeModeState] = useState<ThemeMode>('system');
   const [config, setConfig] = useState<Config | null>(null);
+  const [currency, setCurrencyState] = useState('');     // '' — определять автоматически
   const [user, setUserState] = useState<User | null>(null);
   const [prayer, setPrayerState] = useState<PrayerSettings>(DEFAULT_PRAYER);
   const [online, setOnline] = useState(true);
+  const [tabs, setTabsState] = useState<TabKey[]>(DEFAULT_TABS);
+  const [wall, setWallState] = useState<Wall>({});
   const prayerRef = useRef(prayer);
 
   const applyLang = (l: Lang) => {
@@ -93,6 +110,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const { data } = await cachedGet<User>('/me/');
       setUserState(data);
       save('user', data);
+      const remote = (data.ui?.tabs_app ?? []).filter((k): k is TabKey => (TAB_KEYS as readonly string[]).includes(k));
+      if (remote.length >= 2 && !(await load<TabKey[] | null>('tabs', null))) {
+        setTabsState(remote);
+        save('tabs', remote);
+      }
     } catch {
       /* 401 обработает onAuthLost */
     }
@@ -122,6 +144,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const savedLang = await load<Lang | null>('lang', null);
       applyLang(savedLang ?? deviceLang());
       setThemeModeState(await load<ThemeMode>('theme', 'system'));
+      const savedCur = await load<string>('currency', '');
+      setCurrencyState(savedCur);
+      setApiCurrency(savedCur);
+      const savedTabs = await load<TabKey[] | null>('tabs', null);
+      if (savedTabs?.length) setTabsState(savedTabs.filter((k) => TAB_KEYS.includes(k)));
+      setWallState(await load<Wall>('wall', {}));
       const p = await load<PrayerSettings | null>('prayer', null);
       if (p) {
         setPrayerState(p);
@@ -148,12 +176,45 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // «в сети»: пока приложение открыто, раз в минуту сообщаем об этом серверу
+  const uid = user?.id;
+  useEffect(() => {
+    if (!uid) return;
+    const beat = () => { if (AppState.currentState === 'active') api('/ping/', { body: {} }).catch(() => {}); };
+    const timer = setInterval(beat, 60000);
+    const sub = AppState.addEventListener('change', (st) => { if (st === 'active') beat(); });
+    return () => { clearInterval(timer); sub.remove(); };
+  }, [uid]);
+
   const setLang = useCallback((l: Lang) => {
     applyLang(l);
     save('lang', l);
     refreshConfig();
     if (user) api('/me/', { method: 'PATCH', body: { language: l } }).catch(() => {});
   }, [refreshConfig, user]);
+
+  // своя валюта: цены остаются в валюте автора, рядом — «≈» в выбранной
+  const setCurrency = useCallback((code: string) => {
+    setCurrencyState(code);
+    setApiCurrency(code);
+    save('currency', code);
+    setLangTick((x) => x + 1);          // списки перечитают цены
+    refreshConfig();
+    if (user) api('/me/', { method: 'PATCH', body: { currency: code || 'auto' } }).catch(() => {});
+  }, [refreshConfig, user]);
+
+  const setTabs = useCallback((keys: TabKey[]) => {
+    const clean = keys.filter((k, i) => TAB_KEYS.includes(k) && keys.indexOf(k) === i).slice(0, 4);
+    const next = clean.length >= 2 ? clean : DEFAULT_TABS;
+    setTabsState(next);
+    save('tabs', next);
+    if (user) api('/me/', { method: 'PATCH', body: { ui: { tabs_app: next } } }).catch(() => {});   // переживёт переустановку
+  }, [user]);
+
+  const setWall = useCallback((w: Wall) => {
+    setWallState(w);
+    save('wall', w);
+  }, []);
 
   const setThemeMode = useCallback((m: ThemeMode) => {
     setThemeModeState(m);
@@ -188,9 +249,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const value = useMemo<Ctx>(() => ({
     ready, lang, setLang, t: translate, themeMode, setThemeMode, dark, c: dark ? palettes.dark : palettes.light,
     config, refreshConfig, moduleOn, user, signIn, signOut, refreshMe, setUser: (u: User) => { setUserState(u); save('user', u); },
-    prayer, setPrayer, online, langTick,
-  }), [ready, lang, setLang, themeMode, setThemeMode, dark, config, refreshConfig, moduleOn, user, signIn, signOut,
-    refreshMe, prayer, setPrayer, online, langTick]);
+    prayer, setPrayer, online, langTick, currency, setCurrency, tabs, setTabs, wall, setWall,
+  }), [tabs, setTabs, wall, setWall, ready, lang, setLang, themeMode, setThemeMode, dark, config, refreshConfig, moduleOn, user, signIn, signOut,
+    refreshMe, prayer, setPrayer, online, langTick, currency, setCurrency]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

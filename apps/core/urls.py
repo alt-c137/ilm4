@@ -24,6 +24,7 @@ urlpatterns = [
     # общий маршрут «одобрить/отклонить» — последним, чтобы не перехватывал chat/, user/, report/
     path('moderation/<slug:key>/<int:pk>/', moderation.act, name='moderation_act'),
     path('lang/', views.set_language, name='set_lang'),
+    path('currency/', views.set_currency, name='set_currency'),
     path('catalog/', views.catalog, name='catalog'),
     path('settings/', views.settings_view, name='settings'),
     path('feed/', views.feed, name='feed'),

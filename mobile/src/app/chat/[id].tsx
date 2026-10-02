@@ -5,27 +5,32 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { usePreventScreenCapture } from 'expo-screen-capture';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, View } from 'react-native';
-import Animated, { FadeInDown, ZoomOut } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, ZoomIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { api, authHeaders, cachedGet, chatFileUrl, wsUrl } from '@/lib/api';
 import { useApp } from '@/state/app';
-import { Avatar, Icon, OfflineBar, Txt } from '@/ui/kit';
+import { Avatar, Button, Icon, OfflineBar, Txt } from '@/ui/kit';
 import { callsSupported } from '@/lib/webrtc';
 import { setOpenThread } from '@/state/calls';
 import { CallView, type CallHandle } from '@/ui/call';
 import { Composer, type SendOpts } from '@/ui/composer';
 import { openSiteUrl } from '@/lib/links';
-import { ChatFile, ChatPhoto, ChatVideo, ChatVoice } from '@/ui/media';
+import { Bubble, DayPill, dayLabel, type Msg } from '@/ui/bubble';
+import { fileSize } from '@/ui/media';
+import { ChatWallpaper } from '@/ui/wallpaper';
+import { PhotoEditor, type EditPhoto } from '@/ui/photo-editor';
+import { statusText, type Presence } from '@/lib/presence';
+import { BIG, compressVideo, fileSizeOf, uploadInParts, type Stage } from '@/lib/upload';
 
-type Msg = { id: number; sender_id: number; sender_name: string; kind: string; body: string; url: string; duration: number; time: string; day: string;
-  mine?: boolean; read?: boolean; scheduled?: boolean; scheduled_label?: string; silent?: boolean;
-  file_name?: string; file_size?: number; warn?: boolean };
+type Room = { kind: 'group' | 'channel'; title: string; members: number; member: boolean; admin: boolean; muted: boolean;
+  can_post: boolean; closed: boolean; verified: boolean };
 type CtxCard = { title: string; label: string; price: string; image: string; url: string; closed: boolean; closed_text: string;
   actions: { kind: string; label: string; text: string }[] };
 type Thread = { id: number; title: string; subject: string; other_id: number | null; avatar: string; blocked: boolean; nikah: boolean;
   turn: { url: string; username: string; credential: string } | null;
-  witnesses: string[]; features: Record<string, any>; card: CtxCard | null; notice: string; warn_text: string };
+  witnesses: string[]; features: Record<string, any>; card: CtxCard | null; notice: string; warn_text: string;
+  room: Room | null; presence?: Presence | null; verified?: boolean };
 
 function NoScreenshots() {
   usePreventScreenCapture('nikah-chat');
@@ -33,12 +38,19 @@ function NoScreenshots() {
 }
 
 export default function ChatScreen() {
-  const { id, answer } = useLocalSearchParams<{ id: string; answer?: string }>();
-  const { c, t, user } = useApp();
+  const { id, answer, call: callNow } = useLocalSearchParams<{ id: string; answer?: string; call?: string }>();
+  const { c, t, user, dark, lang } = useApp();
   const [items, setItems] = useState<Msg[]>([]);
+  const [down, setDown] = useState(false);          // показать кнопку «вниз» (пролистали вверх)
+  const [fresh, setFresh] = useState(0);            // сколько пришло, пока читали старое
+  const list = useRef<FlatList<Msg>>(null);
+  const scrolledUp = useRef(false);
   const [thread, setThread] = useState<Thread | null>(null);
   const [more, setMore] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState<{ stage: Stage; done: number; total: number; name: string } | null>(null);
+  const cancelUpload = useRef(false);
+  const [editing, setEditing] = useState<EditPhoto | null>(null);
   const call = useRef<CallHandle>(null);
   const ws = useRef<WebSocket | null>(null);
   const initial = useRef<Set<number> | null>(null);   // загруженные сразу — без анимации появления
@@ -51,8 +63,9 @@ export default function ChatScreen() {
   const add = useCallback((m: Msg) => setItems((old) => {
     const prev = old.find((x) => x.id === m.id);
     if (prev && !(prev.scheduled && !m.scheduled)) return old;
+    if (scrolledUp.current && m.sender_id !== user?.id) setFresh((n) => n + 1);
     return [...old.filter((x) => x.id !== m.id), norm(m)];
-  }), [norm]);
+  }), [norm, user?.id]);
 
   const load = useCallback(async () => {
     try {
@@ -72,6 +85,19 @@ export default function ChatScreen() {
     if (answer === '1') call.current?.answerNext();
     return () => setOpenThread(null);
   }, [id, answer]);
+
+  // пришли из профиля по кнопке «Звонок» / «Видео» — звоним, как только чат подключился
+  const called = useRef(false);
+  const threadReady = !!thread;
+  useEffect(() => {
+    if (!threadReady || called.current || (callNow !== 'audio' && callNow !== 'video')) return;
+    called.current = true;
+    const timer = setTimeout(() => {
+      if (callsSupported) call.current?.start(callNow === 'video');
+      else Alert.alert(t('Звонки'), t('Звонки работают в установленном приложении ilm4. В тестовом Expo Go их нет — это ограничение Expo Go.'));
+    }, 900);
+    return () => clearTimeout(timer);
+  }, [threadReady, callNow, t]);
 
   const sendWs = useCallback((o: object) => {
     if (ws.current?.readyState === WebSocket.OPEN) ws.current.send(JSON.stringify(o));
@@ -104,6 +130,7 @@ export default function ChatScreen() {
         const d = JSON.parse(e.data);
         if (d.type === 'msg') add(d);
         else if (d.type === 'read') setItems((old) => old.map((m) => (d.ids.includes(m.id) ? { ...m, read: true } : m)));
+        else if (d.type === 'del') setItems((old) => old.filter((m) => !d.ids.includes(m.id)));
         else if (d.type === 'error') Alert.alert(d.error);
         else if (d.type === 'signal') call.current?.onSignal(d);
       };
@@ -140,6 +167,32 @@ export default function ChatScreen() {
     }
   };
 
+  // группа / канал: вступить, выйти из «без звука»
+  const roomAct = async (action: 'join' | 'mute' | 'unmute') => {
+    try {
+      await api(`/chat/${id}/room/${action}/`, { body: {} });
+      load();
+    } catch (e: any) {
+      Alert.alert(e.message);
+    }
+  };
+
+  // долгое нажатие на сообщение: удалить у всех (своё — автор, любое — админ группы или канала)
+  const messageMenu = (m: Msg) => {
+    if (m.scheduled || m.kind === 'system' || !(m.mine || thread?.room?.admin)) return;
+    Alert.alert(t('Сообщение'), undefined, [
+      { text: t('Удалить у всех'), style: 'destructive', onPress: async () => {
+        try {
+          await api(`/chat/msg/${m.id}/delete/`, { body: {} });
+          setItems((old) => old.filter((x) => x.id !== m.id));
+        } catch (e: any) {
+          Alert.alert(e.message);
+        }
+      } },
+      { text: t('Отмена'), style: 'cancel' },
+    ]);
+  };
+
   const scheduledAction = async (m: Msg, action: 'send' | 'cancel') => {
     try {
       const r = await api(`/chat/msg/${m.id}/${action}/`, { body: {} });
@@ -152,16 +205,31 @@ export default function ChatScreen() {
 
   const upload = async (kind: string, uri: string, name: string, type: string, duration = 0) => {
     setUploading(true);
+    cancelUpload.current = false;
     try {
+      const show = (stage: Stage, done: number, total: number) => setProgress({ stage, done, total, name });
+      let src = uri;
+      if (kind === 'video') {
+        // как Telegram: сжимаем на телефоне до отправки — быстрее уходит и экономит трафик
+        src = await compressVideo(uri, thread?.features.video_height || 720, show);
+        if (src !== uri) { name = name.replace(/\.\w+$/, '') + '.mp4'; type = 'video/mp4'; }
+      }
+      const size = kind === 'file' || kind === 'video' ? fileSizeOf(src) : 0;
+      if (size > (thread?.features.file_max_mb || 2000) * 1048576) throw new Error(t('Файл слишком большой'));
+      if (size > BIG) {
+        add(await uploadInParts(id, kind as 'file' | 'video', src, name, { duration }, show, () => cancelUpload.current));
+        return;
+      }
       const form = new FormData();
       form.append('kind', kind);
       form.append('duration', String(Math.round(duration)));
-      form.append('file', { uri, name, type } as any);
+      form.append('file', { uri: src, name, type } as any);
       add(await api(`/chat/${id}/upload/`, { form, timeout: 120000 }));
     } catch (e: any) {
-      Alert.alert(e.message);
+      if (e?.code !== 'cancelled') Alert.alert(e.message);
     } finally {
       setUploading(false);
+      setProgress(null);
     }
   };
 
@@ -178,9 +246,10 @@ export default function ChatScreen() {
     if (r.canceled || !r.assets[0]) return;
     const a = r.assets[0];
     if (a.type === 'video') {
-      if (a.fileSize && a.fileSize > (f.file_max_mb || 100) * 1048576) return Alert.alert(t('Файл слишком большой'));
       return upload('video', a.uri, a.fileName || 'video.mp4', a.mimeType || 'video/mp4', (a.duration || 0) / 1000);
     }
+    // как в Telegram: перед отправкой фото можно порисовать и подписать
+    if (Platform.OS !== 'web' && a.width && a.height && !/gif$/i.test(a.mimeType || '')) return setEditing({ uri: a.uri, width: a.width, height: a.height });
     return upload('photo', a.uri, a.fileName || 'photo.jpg', a.mimeType || 'image/jpeg');
   };
 
@@ -189,7 +258,7 @@ export default function ChatScreen() {
     const r = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true, multiple: false });
     if (r.canceled || !r.assets[0]) return;
     const a = r.assets[0];
-    const max = (thread?.features.file_max_mb || 100) * 1048576;
+    const max = (thread?.features.file_max_mb || 2000) * 1048576;
     if (a.size && a.size > max) return Alert.alert(t('Файл слишком большой'));
     return upload('file', a.uri, a.name || 'file', a.mimeType || 'application/octet-stream');
   };
@@ -211,28 +280,53 @@ export default function ChatScreen() {
   const f = thread?.features ?? {};
   const canAttach = !!(f.photo || f.video || f.file);
   const data = [...items].reverse();
+  const headBtn = { width: 36, height: 36, borderRadius: 18, backgroundColor: c.accentSoft, alignItems: 'center' as const, justifyContent: 'center' as const };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }} edges={['top', 'bottom']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: c.card }} edges={['top', 'bottom']}>
       {thread?.nikah && Platform.OS !== 'web' ? <NoScreenshots /> : null}
       <OfflineBar />
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: 0.5, borderBottomColor: c.line, backgroundColor: c.card }}>
-        <Pressable onPress={() => router.back()} hitSlop={12}><Icon name="chevron-back" size={26} color={c.accent} /></Pressable>
-        <Avatar uri={thread?.avatar} name={thread?.title ?? ''} size={38} hue={thread?.other_id ?? 0} />
-        <View style={{ flex: 1 }}>
-          <Txt kind="h3" numberOfLines={1}>{thread?.title ?? ''}</Txt>
-          {thread?.subject ? <Txt kind="small" numberOfLines={1}>{thread.subject}</Txt> : null}
-        </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 6, paddingRight: 10, paddingVertical: 7, backgroundColor: c.card,
+        borderBottomWidth: 0.5, borderBottomColor: c.line }}>
+        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/chats'))} hitSlop={10} style={{ padding: 4 }}>
+          <Icon name="chevron-back" size={27} color={c.accent} />
+        </Pressable>
+        <Pressable disabled={!thread?.room && !thread?.other_id}
+          onPress={() => router.push(thread?.room ? `/chat/info/${id}` : `/user/${thread?.other_id}`)}
+          style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <Avatar uri={thread?.avatar} name={thread?.title ?? ''} size={40} hue={thread?.other_id ?? Number(id)} />
+          <View style={{ flex: 1 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+              <Txt style={{ fontSize: 16.5, fontWeight: '700', flexShrink: 1 }} numberOfLines={1}>{thread?.title ?? ''}</Txt>
+              {thread?.room?.verified || thread?.verified ? <Icon name="checkmark-circle" size={16} color={c.accent} /> : null}
+            </View>
+            {thread?.room ? (
+              <Txt kind="small" numberOfLines={1}>
+                {thread.room.kind === 'channel' ? t('канал · подписчиков: {n}', { n: thread.room.members }) : t('группа · участников: {n}', { n: thread.room.members })}
+              </Txt>
+            ) : thread?.subject ? <Txt kind="small" numberOfLines={1}>{thread.subject}</Txt> : thread?.presence ? (
+              <Txt kind="small" numberOfLines={1} color={thread.presence.online ? c.accent : c.inkSoft}>{statusText(thread.presence, t, lang)}</Txt>
+            ) : thread ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Icon name="lock-closed" size={11} color={c.ok} />
+                <Txt kind="small" numberOfLines={1}>{t('переписка защищена')}</Txt>
+              </View>
+            ) : null}
+          </View>
+        </Pressable>
         {f.calls && !thread?.blocked && Platform.OS !== 'web' ? (
-          <Pressable hitSlop={8} onPress={() => startCall(false)} style={{ paddingHorizontal: 4 }}><Icon name="call-outline" size={22} color={c.accent} /></Pressable>
+          <Pressable hitSlop={6} onPress={() => startCall(false)} style={headBtn}><Icon name="call" size={19} color={c.accent} /></Pressable>
         ) : null}
         {f.video_calls && !thread?.blocked && Platform.OS !== 'web' ? (
-          <Pressable hitSlop={8} onPress={() => startCall(true)} style={{ paddingHorizontal: 4 }}><Icon name="videocam-outline" size={24} color={c.accent} /></Pressable>
+          <Pressable hitSlop={6} onPress={() => startCall(true)} style={headBtn}><Icon name="videocam" size={20} color={c.accent} /></Pressable>
         ) : null}
         {thread?.other_id ? (
-          <Pressable hitSlop={10} onPress={() => router.push({ pathname: '/report', params: { type: 'user', id: String(thread.other_id), user_id: String(thread.other_id) } })}>
-            <Icon name="ellipsis-vertical" size={22} color={c.inkSoft} />
+          <Pressable hitSlop={8} onPress={() => router.push(`/user/${thread.other_id}`)} style={{ padding: 4 }} accessibilityLabel={t('Профиль')}>
+            <Icon name="ellipsis-vertical" size={20} color={c.inkSoft} />
           </Pressable>
+        ) : null}
+        {thread?.room ? (
+          <Pressable hitSlop={8} onPress={() => router.push(`/chat/info/${id}`)} style={headBtn}><Icon name="information" size={20} color={c.accent} /></Pressable>
         ) : null}
       </View>
       {thread?.nikah ? (
@@ -267,76 +361,122 @@ export default function ChatScreen() {
         </View>
       ) : null}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <FlatList
-          inverted
-          data={data}
-          keyExtractor={(m) => String(m.id)}
-          onEndReached={older}
-          contentContainerStyle={{ padding: 12, gap: 6 }}
-          renderItem={({ item: m, index }) => {
-            const prev = data[index + 1];
-            const day = !prev || prev.day !== m.day ? m.day : '';
-            return (
-              <View>
-                {day ? <Txt kind="small" style={{ textAlign: 'center', marginVertical: 8 }}>{day.split('-').reverse().join('.')}</Txt> : null}
-                {m.kind === 'system' ? (
-                  <View style={{ alignSelf: 'center', backgroundColor: c.card2, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 5, maxWidth: '85%' }}>
-                    <Txt kind="small" style={{ textAlign: 'center' }}>{m.body} · {m.time}</Txt>
-                  </View>
-                ) : (
-                  <Animated.View
-                    entering={initial.current?.has(m.id) ? undefined : FadeInDown.springify().damping(15)}
-                    exiting={m.scheduled ? ZoomOut.duration(160) : undefined}
-                    style={{
-                      alignSelf: m.mine ? 'flex-end' : 'flex-start', maxWidth: '82%', backgroundColor: m.mine ? c.accent : c.card,
-                      borderRadius: 18, borderBottomRightRadius: m.mine ? 6 : 18, borderBottomLeftRadius: m.mine ? 18 : 6,
-                      padding: m.kind === 'text' || m.kind === 'voice' ? 10 : 4, gap: 4,
-                      opacity: m.scheduled ? 0.85 : 1, borderWidth: m.scheduled ? 1.5 : 0, borderStyle: 'dashed',
-                      borderColor: 'rgba(255,255,255,0.7)',
-                    }}>
-                    {m.kind === 'photo' ? <ChatPhoto uri={m.url} /> : null}
-                    {m.kind === 'video' ? <ChatVideo uri={m.url} /> : null}
-                    {m.kind === 'circle' ? <ChatVideo uri={m.url} round /> : null}
-                    {m.kind === 'voice' ? <ChatVoice uri={m.url} duration={m.duration} mine={!!m.mine} /> : null}
-                    {m.kind === 'file' ? <ChatFile uri={m.url} name={m.file_name ?? ''} size={m.file_size ?? 0} mine={!!m.mine} /> : null}
-                    {m.body && m.kind !== 'voice' ? <Txt color={m.mine ? '#fff' : c.ink} style={{ paddingHorizontal: m.kind === 'text' ? 0 : 6 }} selectable>{m.body}</Txt> : null}
-                    {m.scheduled ? (
-                      <View style={{ gap: 6, paddingHorizontal: 4 }}>
-                        <Txt kind="small" color="#fff" style={{ fontWeight: '700' }}>🕓 {m.scheduled_label}</Txt>
-                        <View style={{ flexDirection: 'row', gap: 6 }}>
-                          <Pressable onPress={() => scheduledAction(m, 'send')} style={{ backgroundColor: 'rgba(255,255,255,0.22)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
-                            <Txt kind="small" color="#fff">{t('Отправить сейчас')}</Txt>
-                          </Pressable>
-                          <Pressable onPress={() => scheduledAction(m, 'cancel')} style={{ backgroundColor: 'rgba(255,255,255,0.22)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
-                            <Txt kind="small" color="#fff">{t('Удалить')}</Txt>
-                          </Pressable>
-                        </View>
-                      </View>
-                    ) : (
-                      <Txt kind="small" color={m.mine ? 'rgba(255,255,255,0.75)' : c.inkSoft} style={{ alignSelf: 'flex-end', fontSize: 11, paddingHorizontal: 4 }}>
-                        {m.time}{m.mine ? (m.read ? ' ✓✓' : ' ✓') : ''}
-                      </Txt>
-                    )}
-                  </Animated.View>
-                )}
-                {m.warn && !m.mine && thread?.warn_text ? (
-                  <View style={{ alignSelf: 'flex-start', maxWidth: '82%', flexDirection: 'row', gap: 8, marginTop: 6, padding: 10, borderRadius: 14,
-                    backgroundColor: '#fff4d6', borderWidth: 1, borderColor: '#f0d58a' }}>
-                    <Icon name="shield-outline" size={17} color="#7a5600" />
-                    <Txt kind="small" color="#7a5600" style={{ flex: 1, fontWeight: '600' }}>{thread.warn_text}</Txt>
-                  </View>
+        <View style={{ flex: 1 }}>
+          {/* фон переписки — настраивается: узор, цвет или своё фото (Профиль → «Фон чата») */}
+          <ChatWallpaper />
+          <FlatList
+            ref={list}
+            inverted
+            data={data}
+            keyExtractor={(m) => String(m.id)}
+            onEndReached={older}
+            onEndReachedThreshold={0.4}
+            initialNumToRender={18} windowSize={11}
+            keyboardShouldPersistTaps="handled"
+            scrollEventThrottle={120}
+            onScroll={(e) => {
+              const up = e.nativeEvent.contentOffset.y > 320;
+              if (up !== scrolledUp.current) {
+                scrolledUp.current = up;
+                setDown(up);
+                if (!up) setFresh(0);
+              }
+            }}
+            contentContainerStyle={{ paddingHorizontal: 10, paddingTop: 8, paddingBottom: 6 }}
+            renderItem={({ item: m, index }) => {
+              const older1 = data[index + 1];               // список перевёрнут: следующий по индексу — более старое
+              const newer = data[index - 1];
+              const newDay = !older1 || older1.day !== m.day;
+              const first = newDay || older1.sender_id !== m.sender_id || older1.kind === 'system';
+              const last = !newer || newer.day !== m.day || newer.sender_id !== m.sender_id || newer.kind === 'system';
+              return (
+                <View>
+                  {newDay ? <DayPill text={dayLabel(m.day, lang, t)} /> : null}
+                  {m.kind === 'system' ? (
+                    <View style={{ alignSelf: 'center', marginVertical: 5, maxWidth: '85%', paddingHorizontal: 11, paddingVertical: 4, borderRadius: 12,
+                      backgroundColor: dark ? 'rgba(255,255,255,0.12)' : 'rgba(30,28,70,0.28)' }}>
+                      <Txt kind="small" color="#fff" style={{ textAlign: 'center', fontWeight: '600' }}>{m.body} · {m.time}</Txt>
+                    </View>
+                  ) : (
+                    <Bubble m={m} first={first} last={last} group={m.room === 'group'} animate={!initial.current?.has(m.id)}
+                      onLongPress={messageMenu} onScheduled={scheduledAction} />
+                  )}
+                  {m.warn && !m.mine && thread?.warn_text ? (
+                    <View style={{ alignSelf: 'flex-start', maxWidth: '86%', flexDirection: 'row', gap: 8, marginTop: 6, padding: 10, borderRadius: 14,
+                      backgroundColor: '#fff4d6', borderWidth: 1, borderColor: '#f0d58a' }}>
+                      <Icon name="shield-outline" size={17} color="#7a5600" />
+                      <Txt kind="small" color="#7a5600" style={{ flex: 1, fontWeight: '600' }}>{thread.warn_text}</Txt>
+                    </View>
+                  ) : null}
+                </View>
+              );
+            }}
+          />
+          {thread && !data.length ? (
+            // пустой диалог: приветствие вместо белого экрана
+            <Animated.View entering={FadeIn.duration(250)} pointerEvents="box-none"
+              style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+              <View style={{ alignItems: 'center', gap: 8, backgroundColor: c.card, borderRadius: 26, paddingVertical: 22, paddingHorizontal: 22, maxWidth: 320 }}>
+                <Avatar uri={thread.avatar} name={thread.title} size={72} hue={thread.other_id ?? Number(id)} />
+                <Txt kind="h3" style={{ textAlign: 'center' }}>{thread.title}</Txt>
+                <Txt kind="small" style={{ textAlign: 'center' }}>
+                  {thread.room ? (thread.room.kind === 'channel' ? t('Здесь будут публикации канала.') : t('Напишите первое сообщение в группу.')) : t('Здесь пока пусто. Начните с приветствия.')}
+                </Txt>
+                {!thread.room && !thread.blocked ? (
+                  <Pressable onPress={() => sendText('Ассаляму алейкум!')} style={{ marginTop: 4, backgroundColor: c.accentSoft, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 9 }}>
+                    <Txt color={c.accentD} style={{ fontWeight: '700' }}>Ассаляму алейкум! 👋</Txt>
+                  </Pressable>
                 ) : null}
               </View>
-            );
-          }}
-        />
+            </Animated.View>
+          ) : null}
+          {down ? (
+            <Animated.View entering={ZoomIn.duration(160)} exiting={FadeOut.duration(120)} style={{ position: 'absolute', right: 12, bottom: 12 }}>
+              <Pressable onPress={() => { list.current?.scrollToOffset({ offset: 0, animated: true }); setFresh(0); }}
+                accessibilityLabel={t('К последним сообщениям')}
+                style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: c.card, alignItems: 'center', justifyContent: 'center',
+                  shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 4 }}>
+                <Icon name="chevron-down" size={22} color={c.inkSoft} />
+                {fresh ? (
+                  <View style={{ position: 'absolute', top: -7, minWidth: 20, paddingHorizontal: 5, height: 20, borderRadius: 10, backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center' }}>
+                    <Txt kind="small" color="#fff" style={{ fontSize: 11, fontWeight: '800' }}>{fresh}</Txt>
+                  </View>
+                ) : null}
+              </Pressable>
+            </Animated.View>
+          ) : null}
+        </View>
+        {progress ? (
+          <View style={{ backgroundColor: c.card, paddingHorizontal: 14, paddingTop: 8, gap: 5 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Txt kind="small" style={{ flex: 1, fontWeight: '700' }} numberOfLines={1}>
+                {progress.stage === 'compress' ? t('Отправка…') : progress.name}</Txt>
+              {progress.stage === 'upload' ? (
+                <Txt kind="small" style={{ fontVariant: ['tabular-nums'] }}>{`${fileSize(progress.done, t)} / ${fileSize(progress.total, t)}`}</Txt>
+              ) : null}
+              {progress.stage === 'upload' ? (
+                <Pressable hitSlop={10} onPress={() => { cancelUpload.current = true; }}><Icon name="close" size={18} color={c.inkSoft} /></Pressable>
+              ) : null}
+            </View>
+            <View style={{ height: 4, borderRadius: 2, backgroundColor: c.line, overflow: 'hidden' }}>
+              <View style={{ height: 4, borderRadius: 2, backgroundColor: c.accent, width: `${Math.min(100, (progress.done / Math.max(1, progress.total)) * 100)}%` }} />
+            </View>
+          </View>
+        ) : null}
         {thread?.blocked ? (
           <View style={{ padding: 16, backgroundColor: c.card }}><Txt kind="muted" style={{ textAlign: 'center' }}>{t('Переписка недоступна: один из вас заблокировал другого.')}</Txt></View>
+        ) : thread?.room && !thread.room.can_post ? (
+          <View style={{ padding: 10, backgroundColor: c.card, borderTopWidth: 0.5, borderTopColor: c.line }}>
+            {thread.room.closed ? <Txt kind="muted" style={{ textAlign: 'center' }}>{t('Чат закрыт модератором.')}</Txt>
+              : !thread.room.member ? <Button title={thread.room.kind === 'channel' ? t('Подписаться') : t('Вступить в группу')} onPress={() => roomAct('join')} />
+                : <Button kind="ghost" title={thread.room.muted ? t('Включить звук') : t('Без звука')} onPress={() => roomAct(thread.room?.muted ? 'unmute' : 'mute')} />}
+          </View>
         ) : (
           <Composer features={f} busy={uploading} onText={sendText} onAttach={canAttach ? attach : undefined}
             onFile={(kind, uri, name, type, seconds) => upload(kind, uri, name, type, seconds)} />
         )}
       </KeyboardAvoidingView>
+      <PhotoEditor photo={editing} onDone={(uri) => { setEditing(null); if (uri) upload('photo', uri, 'photo.jpg', 'image/jpeg'); }} />
       <CallView ref={call} send={sendWs} name={thread?.title ?? ''} avatar={thread?.avatar} turn={thread?.turn ?? null} />
     </SafeAreaView>
   );

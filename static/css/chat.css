@@ -54,9 +54,7 @@
 
 /* переписка */
 .tg__main{position:relative;isolation:isolate;display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--bg)}
-.tg__main::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:var(--accent);opacity:.07;
-  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='black' stroke-width='1.4'%3E%3Crect x='14' y='14' width='18' height='18' rx='2'/%3E%3Crect x='14' y='14' width='18' height='18' rx='2' transform='rotate(45 23 23)'/%3E%3Cpath d='M86 70a12 12 0 1 1-10-18 9 9 0 1 0 10 18z'/%3E%3Ccircle cx='92' cy='22' r='3'/%3E%3Ccircle cx='30' cy='92' r='2'/%3E%3C/g%3E%3C/svg%3E") 0 0/120px repeat;
-  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='black' stroke-width='1.4'%3E%3Crect x='14' y='14' width='18' height='18' rx='2'/%3E%3Crect x='14' y='14' width='18' height='18' rx='2' transform='rotate(45 23 23)'/%3E%3Cpath d='M86 70a12 12 0 1 1-10-18 9 9 0 1 0 10 18z'/%3E%3Ccircle cx='92' cy='22' r='3'/%3E%3Ccircle cx='30' cy='92' r='2'/%3E%3C/g%3E%3C/svg%3E") 0 0/120px repeat}
+.tg__main::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:var(--accent)}
 .tg__head{display:flex;align-items:center;gap:12px;min-height:60px;padding:8px 16px;background:color-mix(in srgb,var(--card) 94%,transparent);
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);flex:none}
 .tg__back{display:none;width:38px;height:38px;border-radius:50%;place-items:center;color:var(--accent-d);flex:none}
@@ -374,3 +372,166 @@ html[data-theme=dark] .tg__warn{background:rgba(224,161,0,.14);color:#f3c95a;bor
 .sendmenu button span{display:flex;flex-direction:column;gap:1px}
 .sendmenu button small{font-size:12px;color:var(--ink-soft);font-weight:400}
 @media (max-width:480px){.ctxcard__act .btn{padding:6px 10px;font-size:12.5px}}
+
+/* большой файл: прогресс загрузки частями */
+.tg__uploading--big{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;min-width:min(280px,80%);animation:none;padding:10px 12px}
+.tg__upname{font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tg__upbar{grid-column:1/-1;height:4px;border-radius:4px;background:var(--line);overflow:hidden}
+.tg__upbar i{display:block;height:100%;width:0;background:var(--accent);border-radius:4px;transition:width .25s ease}
+.tg__uppct{font-size:12px;font-variant-numeric:tabular-nums}
+.tg__upx{grid-row:1;grid-column:2;border:0;background:none;color:var(--ink-soft);font-size:20px;line-height:1;cursor:pointer;padding:0 2px}
+.bub__risk{display:flex;gap:6px;align-items:flex-start;font-size:12px;line-height:1.35;margin-top:6px;padding:6px 8px;border-radius:10px;background:rgba(245,158,11,.14);color:#92400e}
+.bub__risk svg{width:15px;height:15px;flex:none;margin-top:1px}
+[data-theme="dark"] .bub__risk{color:#fbbf24}
+
+/* ---------- группы и каналы ---------- */
+.tava--md{width:56px;height:56px;font-size:21px}
+.tava--room{border-radius:32%}
+.tgk--room{display:inline-flex;vertical-align:-2px;margin-right:4px;color:var(--ink-soft)}
+.tgk--room svg{width:14px;height:14px}
+.tgver{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;background:var(--accent);color:#fff;margin-left:5px;vertical-align:1px;flex:none}
+.tgver svg{width:10px;height:10px;stroke-width:3}
+.tgrow__badge--muted{background:var(--ink-soft);opacity:.55}
+.tg__roomlink{display:flex;align-items:center;gap:10px;min-width:0;flex:1;color:inherit;text-decoration:none}
+.tg__roomlink .tg__who{min-width:0}
+.tg__roombar{justify-content:center;padding:10px 12px}
+.tg__roombar form{margin:0;flex:1;display:flex;justify-content:center}
+.tg__roombar .btn{min-width:min(320px,100%)}
+.bub__who{display:block;font-size:12.5px;font-weight:700;margin:0 0 2px;line-height:1.2}
+.bub__who--h0{color:#e8553d}.bub__who--h1{color:#d98a1b}.bub__who--h2{color:#665fff}.bub__who--h3{color:#3aa94f}
+.bub__who--h4{color:#17a595}.bub__who--h5{color:#2a8fdc}.bub__who--h6{color:#c453dd}
+.bub__views{display:inline-flex;align-items:center;gap:3px;margin-right:6px;opacity:.8}
+.bub__views svg{width:13px;height:13px}
+.bub--gone{opacity:0;transform:scale(.92);transition:opacity .18s ease,transform .18s ease}
+.msgmenu{position:fixed;z-index:60;min-width:190px}
+.msgmenu__del{color:#d93025!important}
+.roomcard{display:flex;align-items:center;gap:12px;color:inherit;text-decoration:none}
+.roomcard__b{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.roomcard__b b{font-size:15.5px;overflow-wrap:anywhere}
+.roomcard__b small{font-size:12px;color:var(--ink-soft)}
+.roomcard__b>span{font-size:13px;color:var(--ink-soft)}
+.roomcard__go{flex:none;font-size:12.5px;font-weight:700;padding:6px 12px;border-radius:var(--pill);background:var(--accent-soft);color:var(--accent-d)}
+.roomcard__go.is-mine{padding:6px;display:grid;place-items:center}
+.roomcard__go svg{width:15px;height:15px}
+.roompub{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px}
+.roompub h1{font-size:22px;font-weight:800;margin:4px 0 0}
+.roompub__meta{font-size:13px;color:var(--ink-soft)}
+.roompub__about{max-width:520px;color:var(--ink);margin:4px 0}
+.roomacts{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:8px}
+.roomacts form{margin:0}
+.roomreport{margin-top:6px}
+.fpage .dcard+.dcard{margin-top:14px}
+.fpage .contactbox+.contactbox{margin-top:8px}
+.fpage .contactbox+form{margin-top:10px}
+.handle{display:flex;align-items:center;border-radius:14px;border:1.5px solid var(--line);background:var(--card-2);overflow:hidden}
+.handle span{padding:0 4px 0 12px;color:var(--ink-soft);font-size:14px;white-space:nowrap}
+.handle input{border:0!important;background:transparent!important;flex:1;min-width:0;padding-left:0!important}
+.addpeople{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:4px 14px}
+.addpeople .check{display:flex;align-items:center;gap:8px;min-height:38px;cursor:pointer}
+.addpeople .check input{width:18px;height:18px;accent-color:var(--accent)}
+.addpeople .btn{grid-column:1/-1;justify-self:start;margin-top:8px}
+.roomkind{max-width:none;margin:14px 0 4px}
+.shero__icon--ui{display:grid;place-items:center;color:#fff}
+.shero__icon--ui svg{width:28px;height:28px}
+
+/* ---------- оформление переписки v2: как в приложении ---------- */
+/* свои сообщения — градиент в цвет темы и белый текст; чужие — светлая карточка */
+.bub{border-radius:20px;padding:8px 12px 7px 13px;font-size:15.5px;line-height:1.42}
+.bub--tail{border-bottom-left-radius:6px}
+.bub--me{background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 90%,#fff),var(--accent-d));color:#fff}
+.bub--me.bub--tail{border-bottom-left-radius:20px;border-bottom-right-radius:6px}
+.bub--me .bub__meta{color:rgba(255,255,255,.82)}
+.bub--me .tick{color:#fff}
+.bub--me .bub__t a{color:#fff;text-decoration:underline}
+.bub--me .voice__play{background:rgba(255,255,255,.26);color:#fff}
+.bub--me .voice__bar{background:repeating-linear-gradient(90deg,rgba(255,255,255,.38) 0 3px,transparent 3px 6px)}
+.bub--me .voice__bar i{background:repeating-linear-gradient(90deg,#fff 0 3px,transparent 3px 6px)}
+.bub--me .voice__t,.bub--me .bub__fileb small{color:rgba(255,255,255,.85)}
+.bub--me .bub__sched{color:#fff}
+html[data-theme=dark] .bub--me{background:linear-gradient(135deg,#7265f2,#5547d8)}
+html[data-theme=dark] .bub--me .bub__meta{color:rgba(255,255,255,.8)}
+.bub--photo,.bub--video{padding:3px 3px 6px}
+/* поле ввода — «пилюля», кнопка отправки с мягкой тенью */
+.tg__compose textarea{border-radius:23px;padding:12px 16px;background:var(--card-2)}
+.tg__send{box-shadow:0 4px 12px color-mix(in srgb,var(--accent) 38%,transparent)}
+/* фон переписки — мягкий градиент под узором */
+.tg__main{background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 9%,var(--bg)),var(--bg) 55%,color-mix(in srgb,#3b9cf0 7%,var(--bg)))}
+
+/* ===== запись голоса и кружка — как в Telegram =====
+   Панель: красная точка, время с десятыми, «‹ Влево — отмена» (едет за пальцем).
+   Кнопка под пальцем вырастает и «дышит» волной; над ней — замок; в «замке» — пауза, «ОТМЕНА» и ➤. */
+.tg__compose.is-recording{position:relative;z-index:6}
+.tg__compose.is-recording .recinfo{gap:9px;padding:0 4px 0 10px}
+.tg__rec-t{font-weight:500;font-size:16px;min-width:58px}
+.recinfo__slide{font-size:15px}
+.recinfo__cancel{display:none;flex:1;border:0;background:transparent;cursor:pointer;font:inherit;font-size:14.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--accent-d)}
+.tg__compose.is-locked .recinfo__cancel{display:block}
+.recwrap{z-index:3}
+.recbtn.is-rec{transform:translate(calc(var(--dx,0px) - 18px),calc(var(--dy,0px) - 16px)) scale(1.9);transform-origin:50% 50%;animation:none;box-shadow:0 10px 26px -8px var(--accent);transition:none;z-index:2}
+.recbtn.is-rec::before,.recbtn.is-rec::after{content:"";position:absolute;inset:-7px;border-radius:50%;background:var(--accent);opacity:.24;z-index:-1;animation:recWave 1s ease-in-out infinite alternate}
+.recbtn.is-rec::after{inset:-13px;opacity:.13;animation-duration:1.5s}
+.tg__compose.is-locked .recbtn{transform:translate(-6px,-6px) scale(1.3);transition:transform .2s cubic-bezier(.2,1.3,.4,1)}
+.tg__compose.is-locked .recbtn::before,.tg__compose.is-locked .recbtn::after,.tg__compose.is-paused .recbtn::before{animation:none;opacity:0}
+.reclock{bottom:calc(100% + 62px);width:42px;margin-left:-39px;padding:11px 0 8px;border-radius:21px;gap:4px;z-index:3}
+.reclock__ico svg{width:19px;height:19px}
+.recpause{display:none;position:absolute;left:50%;bottom:calc(100% + 26px);margin-left:-21px;width:42px;height:42px;border-radius:50%;border:0;cursor:pointer;place-items:center;
+  background:var(--card);color:var(--ink-soft);box-shadow:0 6px 20px -6px rgba(0,0,0,.35);z-index:3;animation:lockIn .25s ease-out}
+.recpause svg{width:19px;height:19px;stroke-width:2.4}
+.tg__compose.is-locked .recpause{display:grid}
+.tg__compose.is-circle .recpause{display:none}
+.recpause__b{display:none}
+.tg__compose.is-paused .recpause__a{display:none}
+.tg__compose.is-paused .recpause__b{display:block;color:var(--bad)}
+.tg__compose.is-paused .tg__rec-dot{animation:none;opacity:.35}
+@keyframes recWave{from{transform:scale(.9)}to{transform:scale(1.14)}}
+/* кружок: затемнённая переписка, большой круг по центру; панель ввода остаётся снизу */
+.tg__main .circlerec{position:absolute;inset:0;z-index:5;padding:0 0 76px;background:rgba(12,14,24,.8);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.tg__main .circlerec__view{width:min(86vw,58vh,440px)}
+.tg__main .circlerec__ring circle{stroke:#fff;stroke-width:1.6;opacity:.9}
+@media(prefers-reduced-motion:reduce){.recbtn.is-rec::before,.recbtn.is-rec::after{animation:none}}
+
+/* ===== фон переписки — настраивается (Настройки → «Фон чата»): узор, цвет или своё фото =====
+   Узоры нейтральные (фигуры, точки, волны): без религиозных символов — чат открывают где угодно. */
+.tg__main{background:var(--wall-bg,var(--bg))}
+.tg__main::before,.wallpv::before{-webkit-mask:var(--wall-mask) 0 0/var(--wall-size) repeat;mask:var(--wall-mask) 0 0/var(--wall-size) repeat;opacity:.08}
+.tg__main,.wallpv,.tg__main[data-wall=shapes],.wallpv[data-wall=shapes]{--wall-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='20' cy='22' r='7'/%3E%3Cpath d='M70 14l8 14H62z'/%3E%3Cpath d='M96 60h14M103 53v14'/%3E%3Crect x='14' y='74' width='14' height='14' rx='3'/%3E%3Cpath d='M50 92c4-6 8 6 12 0s8 6 12 0'/%3E%3Ccircle cx='100' cy='102' r='3'/%3E%3Cpath d='M44 44l10 10M54 44L44 54'/%3E%3C/g%3E%3C/svg%3E");--wall-size:120px}
+.tg__main[data-wall=dots],.wallpv[data-wall=dots]{--wall-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='4' cy='4' r='1.3' fill='black'/%3E%3Ccircle cx='16' cy='16' r='1.3' fill='black'/%3E%3C/g%3E%3C/svg%3E");--wall-size:24px}
+.tg__main[data-wall=waves],.wallpv[data-wall=waves]{--wall-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='24' viewBox='0 0 60 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M0 12c10-10 20 10 30 0s20 10 30 0'/%3E%3C/g%3E%3C/svg%3E");--wall-size:60px 24px}
+.tg__main[data-wall=grid],.wallpv[data-wall=grid]{--wall-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cg fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M0 .7h32M.7 0v32'/%3E%3C/g%3E%3C/svg%3E");--wall-size:32px}
+.tg__main[data-wall=bubbles],.wallpv[data-wall=bubbles]{--wall-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='90' viewBox='0 0 100 90'%3E%3Cg fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='18' cy='20' r='10'/%3E%3Ccircle cx='62' cy='14' r='5'/%3E%3Ccircle cx='78' cy='58' r='14'/%3E%3Ccircle cx='30' cy='70' r='6'/%3E%3Ccircle cx='52' cy='44' r='3'/%3E%3C/g%3E%3C/svg%3E");--wall-size:100px 90px}
+.tg__main[data-wall=none]::before,.wallpv[data-wall=none]::before,.tg__main.has-photo::before,.wallpv.has-photo::before{display:none}
+.tg__main.has-photo{overflow:hidden}
+.tg__wallphoto{position:absolute;inset:-28px;z-index:-2;background-size:cover;background-position:center;filter:blur(var(--wall-blur,0px));pointer-events:none}
+.tg__main.has-photo::after,.wallpv.has-photo::after{content:"";position:absolute;inset:0;z-index:-1;background:#000;opacity:var(--wall-dim,.15);pointer-events:none}
+.tg__main.has-photo .tg__day span,.tg__main.has-color .tg__day span{background:rgba(20,22,35,.45)}
+/* предпросмотр и выбор в настройках */
+.wallpv{position:relative;isolation:isolate;overflow:hidden;height:190px;border-radius:18px;background:var(--wall-bg,var(--bg));border:1px solid var(--line);display:flex;flex-direction:column;justify-content:flex-end;gap:5px;padding:12px}
+.wallpv::before{content:"";position:absolute;inset:0;z-index:-1;background:var(--accent)}
+.wallpv .bub{font-size:14px}
+.wallset{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.wallset button{border:2px solid var(--line);background:var(--card-2);color:var(--ink);border-radius:12px;padding:8px 12px;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
+.wallset button.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-d)}
+.wallset--c button{width:34px;height:34px;padding:0;border-radius:50%}
+.wallset--c button.on{box-shadow:0 0 0 2.5px var(--ink)}
+.wallrow{display:flex;align-items:center;gap:10px;font-size:13.5px;margin:8px 0}
+.wallrow input[type=range]{flex:1}
+.tabpick{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:10px 0}
+.tabpick select{width:100%;min-height:44px;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:var(--card-2);color:var(--ink);font:inherit}
+.circlerec:not([hidden]) .circlerec__view{animation:circleFade .18s ease-out}
+@keyframes circleFade{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+.tg__main .circlerec__view{box-shadow:0 0 0 3px rgba(255,255,255,.22)}
+.tg__main .circlerec__view video{border-radius:50%}
+.tg__main .circlerec__ring{inset:-7px;width:calc(100% + 14px);height:calc(100% + 14px)}
+.tg__main .circlerec__ring circle{stroke:#fff;stroke-width:1.5;opacity:1}
+
+/* оформление текста: скрытый текст (спойлер) — «шум», открывается по нажатию */
+.bub__t code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;padding:1px 5px;border-radius:6px;background:rgba(127,127,160,.18)}
+.spoiler{cursor:pointer;border-radius:5px;color:transparent;background:repeating-linear-gradient(45deg,rgba(127,127,150,.55) 0 3px,rgba(127,127,150,.3) 3px 6px);transition:color .2s,background .2s;user-select:none}
+.bub--me .spoiler{background:repeating-linear-gradient(45deg,rgba(255,255,255,.6) 0 3px,rgba(255,255,255,.3) 3px 6px)}
+.spoiler.is-open{color:inherit;background:rgba(127,127,150,.14);user-select:auto;cursor:text}
+/* панель оформления над полем ввода: появляется, когда выделен текст */
+.fmtbar{position:absolute;left:10px;bottom:calc(100% + 6px);z-index:7;display:flex;gap:2px;padding:4px;border-radius:13px;background:var(--card);box-shadow:0 8px 26px -8px rgba(15,17,30,.4)}
+.fmtbar[hidden]{display:none}
+.fmtbar button{border:0;background:transparent;color:var(--ink);font:inherit;font-size:14px;min-width:36px;height:34px;padding:0 9px;border-radius:9px;cursor:pointer}
+.fmtbar button:hover{background:var(--card-2)}
+.tg__compose{position:relative}

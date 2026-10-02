@@ -15,7 +15,10 @@ type Detail = {
   fields: { label: string; value: string }[]; contact: string; owner: { id: number; name: string } | null;
   mine: boolean; can_message: boolean; url: string; lat: number | null; lon: number | null; verified: boolean;
   replies?: { id: number; text: string; author: string; created_at: string }[]; features?: string[];
+  trip?: Trip;
 };
+type TripReq = { id: number; user_id?: number; name?: string; seats: number; status: string; status_name: string };
+type Trip = { driver: boolean; seats: number; seats_left: number; past: boolean; my_request: TripReq | null; requests: TripReq[] };
 
 export default function PubDetail() {
   const { key, id } = useLocalSearchParams<{ key: string; id: string }>();
@@ -42,6 +45,27 @@ export default function PubDetail() {
   const openMap = () => {
     const q = `${data.lat},${data.lon}`;
     Linking.openURL(Platform.OS === 'ios' ? `http://maps.apple.com/?ll=${q}&q=${encodeURIComponent(data.title)}` : `geo:${q}?q=${q}(${encodeURIComponent(data.title)})`);
+  };
+  // попутчики: занять место / ответить на заявку
+  const tripCall = async (path: string, body: object = {}) => {
+    if (!user) return router.push('/login');
+    setBusy(true);
+    try {
+      const r = await api<{ trip: Trip }>(path, { body });
+      setData({ ...data, trip: r.trip });
+    } catch (e: any) {
+      Alert.alert(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const book = () => {
+    const left = data.trip?.seats_left ?? 0;
+    if (left <= 1) return tripCall(`/trips/${id}/request/`, { seats: 1 });
+    Alert.alert(t('Сколько мест?'), undefined, [
+      ...Array.from({ length: Math.min(left, 4) }, (_x, i) => ({ text: String(i + 1), onPress: () => tripCall(`/trips/${id}/request/`, { seats: i + 1 }) })),
+      { text: t('Отмена'), style: 'cancel' as const },
+    ]);
   };
   const sendReply = async () => {
     if (!user) return router.push('/login');
@@ -90,8 +114,10 @@ export default function PubDetail() {
 
       {data.text ? <Card><Txt selectable>{data.text}</Txt></Card> : null}
 
+      {data.trip && !data.trip.past ? <TripBlock trip={data.trip} mine={data.mine} busy={busy} onBook={book} onAct={(rid, a) => tripCall(`/trips/request/${rid}/${a}/`)} /> : null}
+
       <View style={{ gap: 10 }}>
-        {data.can_message ? <Button title={t('Написать автору')} icon="chatbubble-ellipses" onPress={message} loading={busy} /> : null}
+        {data.can_message ? <Button kind={data.trip?.driver && !data.trip.my_request ? 'soft' : 'primary'} title={t('Написать автору')} icon="chatbubble-ellipses" onPress={message} loading={busy} /> : null}
         {phone ? <Button kind="soft" title={t('Позвонить: {n}', { n: data.contact })} icon="call" onPress={() => Linking.openURL(`tel:${phone}`)} /> : null}
         {data.contact && !phone ? (
           <Button kind="soft" title={data.contact} icon="copy-outline" onPress={async () => { await Clipboard.setStringAsync(data.contact); Alert.alert(t('Скопировано')); }} />
@@ -114,6 +140,53 @@ export default function PubDetail() {
       <Txt kind="small" style={{ textAlign: 'center' }}>{t('ilm4 — площадка для объявлений. За товары и услуги отвечают авторы. Не переводите предоплату незнакомцам.')}</Txt>
     </Screen>
   );
+}
+
+/** Попутчики: свободные места, моя заявка или заявки ко мне (водителю). */
+function TripBlock({ trip, mine, busy, onBook, onAct }: { trip: Trip; mine: boolean; busy: boolean; onBook: () => void;
+  onAct: (id: number, action: 'accept' | 'decline' | 'cancel') => void }) {
+  const { c, t } = useApp();
+  if (!trip.driver) return null;
+  if (mine) {
+    return (
+      <Card style={{ gap: 10 }}>
+        <Txt kind="h3">{t('Заявки на места')} · {t('свободно {n} из {m}', { n: trip.seats_left, m: trip.seats })}</Txt>
+        {trip.requests.length ? trip.requests.map((r) => (
+          <View key={r.id} style={{ gap: 8, paddingVertical: 6, borderTopWidth: 0.5, borderTopColor: c.line }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Txt style={{ flex: 1, fontWeight: '700' }}>{r.name}</Txt>
+              <Txt kind="small">{t('мест: {n}', { n: r.seats })} · {r.status_name}</Txt>
+            </View>
+            {r.status === 'pending' ? (
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <Button small title={t('Взять')} onPress={() => onAct(r.id, 'accept')} loading={busy} style={{ flex: 1 }} />
+                <Button small kind="ghost" title={t('Отказать')} onPress={() => onAct(r.id, 'decline')} style={{ flex: 1 }} />
+              </View>
+            ) : null}
+          </View>
+        )) : <Txt kind="muted">{t('Заявок пока нет. Когда кто-то попросит место, придёт уведомление.')}</Txt>}
+      </Card>
+    );
+  }
+  const my = trip.my_request;
+  if (my?.status === 'accepted') {
+    return (
+      <Card soft style={{ gap: 10 }}>
+        <Txt kind="h3" color={c.ok}>✓ {t('Место за вами')}: {my.seats}</Txt>
+        <Button kind="ghost" title={t('Не смогу поехать')} onPress={() => onAct(my.id, 'cancel')} loading={busy} />
+      </Card>
+    );
+  }
+  if (my?.status === 'pending') {
+    return (
+      <Card soft style={{ gap: 10 }}>
+        <Txt style={{ fontWeight: '700' }}>{t('Заявка отправлена — ждём ответа водителя.')}</Txt>
+        <Button kind="ghost" title={t('Отменить заявку')} onPress={() => onAct(my.id, 'cancel')} loading={busy} />
+      </Card>
+    );
+  }
+  if (!trip.seats_left) return <Card soft><Txt kind="muted">{t('Свободных мест нет — напишите водителю, вдруг кто-то откажется.')}</Txt></Card>;
+  return <Button title={t('Занять место')} icon="checkmark-circle" onPress={onBook} loading={busy} />;
 }
 
 function ReplyBox({ value, onChange, onSend }: { value: string; onChange: (s: string) => void; onSend: () => void }) {

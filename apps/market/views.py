@@ -55,7 +55,8 @@ def listing_list(request):
 @module_required('buy')
 def listing_detail(request, pk):
     listing = get_object_or_404(Listing, pk=pk, **visible(request, is_active=True))
-    Listing.objects.filter(pk=pk).update(views=F('views') + 1)
+    if not request.headers.get('Sec-Purpose', '').startswith('prefetch'):    # предзагрузка страницы — не просмотр
+        Listing.objects.filter(pk=pk).update(views=F('views') + 1)
     return render(request, 'market/detail.html', {'listing': listing})
 
 
@@ -63,7 +64,8 @@ def listing_detail(request, pk):
 @module_required('buy')
 @pledge_required
 def listing_create(request):
-    form = ListingForm(request.POST or None, request.FILES or None)
+    from apps.core import money
+    form = ListingForm(request.POST or None, request.FILES or None, initial={'currency': money.viewer_currency(request)})
     if request.method == 'POST' and form.is_valid():
         listing = form.save(commit=False)
         listing.owner = request.user

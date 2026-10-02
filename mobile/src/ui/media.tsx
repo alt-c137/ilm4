@@ -78,7 +78,8 @@ export function ChatVoice({ uri, duration, mine }: { uri: string; duration: numb
 export function fileSize(n: number, t: (s: string) => string) {
   if (n < 1024) return `${n} ${t('Б')}`;
   if (n < 1048576) return `${Math.round(n / 1024)} ${t('КБ')}`;
-  return `${(n / 1048576).toFixed(1).replace('.0', '')} ${t('МБ')}`;
+  if (n < 1073741824) return `${(n / 1048576).toFixed(1).replace('.0', '')} ${t('МБ')}`;
+  return `${(n / 1073741824).toFixed(2).replace(/\.?0+$/, '')} ${t('ГБ')}`;
 }
 
 /** «Отправлено файлом»: скачиваем (со входом по токену) и открываем меню «Открыть / Сохранить». */

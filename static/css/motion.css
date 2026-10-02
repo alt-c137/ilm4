@@ -1,0 +1,42 @@
+/* Движение: плавные переходы между страницами, отклик на нажатие, появление карточек.
+   Всё — на transform/opacity (не дёргает вёрстку, идёт на видеокарте) и выключается,
+   если человек попросил «меньше движения» в настройках телефона. */
+
+/* --- переход между страницами (Chrome, Edge, Safari 18+; остальные — обычный переход) --- */
+@view-transition { navigation: auto; }
+::view-transition-old(root){animation:vt-out .14s ease both}
+::view-transition-new(root){animation:vt-in .22s cubic-bezier(.2,.7,.2,1) both}
+@keyframes vt-out{to{opacity:0}}
+@keyframes vt-in{from{opacity:0;transform:translateY(8px)}}
+/* шапка и нижнее меню стоят на месте — меняется только содержимое */
+.top{view-transition-name:site-top}
+.tabbar{view-transition-name:site-tabbar}
+::view-transition-group(site-top),::view-transition-group(site-tabbar){animation-duration:0s}
+::view-transition-old(site-top),::view-transition-old(site-tabbar){display:none}
+::view-transition-new(site-top),::view-transition-new(site-tabbar){animation:none}
+
+/* --- появление карточек: первые экраны «поднимаются» по очереди --- */
+@keyframes rise{from{opacity:0;transform:translateY(10px)}}
+.grid>*,.trips>*,.plist>*,.tg__list>*{animation:rise .32s cubic-bezier(.2,.7,.2,1) both}
+.grid>:nth-child(2),.trips>:nth-child(2){animation-delay:.03s}
+.grid>:nth-child(3),.trips>:nth-child(3){animation-delay:.06s}
+.grid>:nth-child(4),.trips>:nth-child(4){animation-delay:.09s}
+.grid>:nth-child(5),.trips>:nth-child(5){animation-delay:.12s}
+.grid>:nth-child(6),.trips>:nth-child(6){animation-delay:.15s}
+.grid>:nth-child(n+7),.trips>:nth-child(n+7){animation-delay:.18s}
+
+/* --- отклик на нажатие: всё, на что можно нажать, слегка «проседает» --- */
+.panel[href],.chip,.rpop__i,.tabbar__i,.ibtn,.seg__i,.app,.person--link,.tgrow{transition:transform .12s ease,opacity .12s ease,background-color .2s ease,border-color .2s ease,box-shadow .2s ease}
+.chip:active,.rpop__i:active,.seg__i:active,.ibtn:active{transform:scale(.95)}
+.panel[href]:active,.person--link:active,.tgrow:active{transform:scale(.985)}
+.tabbar__i:active{transform:scale(.9)}
+/* кнопка «в работе»: не даём нажать дважды и показываем, что идёт отправка */
+.btn.is-busy{pointer-events:none;opacity:.75;position:relative}
+.btn.is-busy::after{content:"";width:14px;height:14px;margin-left:8px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;display:inline-block;vertical-align:-2px;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media (prefers-reduced-motion:reduce){
+  @view-transition { navigation: none; }
+  .grid>*,.trips>*,.plist>*,.tg__list>*{animation:none}
+  *{scroll-behavior:auto!important}
+}

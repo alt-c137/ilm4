@@ -8,6 +8,7 @@
 from datetime import timedelta
 
 from django.db import transaction
+from django.db.models import F
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
@@ -15,6 +16,10 @@ from .models import Message, Thread
 
 MAX_TEXT = 2000
 MAX_SCHEDULE_DAYS = 365
+MB = 1024 * 1024
+PART = 4 * MB                   # размер части при загрузке большого файла (кратен куску шифрования)
+PART_MAX = 8 * MB
+UPLOAD_TTL_HOURS = 24           # недокачанный файл живёт сутки — потом удаляется
 
 
 class ChatError(Exception):
@@ -88,10 +93,47 @@ def open_support(user) -> Thread:
 
 
 def thread_info(thread, user) -> dict:
-    """Всё о типе чата для клиента: папка, карточка объявления, подсказка раздела."""
-    from . import contexts
+    """Всё о типе чата для клиента: папка, карточка объявления, подсказка раздела, группа / канал."""
+    from . import contexts, rooms
     return {'folder': thread.folder, 'context': thread.context_type, 'card': contexts.card(thread, user),
-            'notice': contexts.notice(thread), 'warn_text': contexts.warn_text() if contexts.risky(thread) else ''}
+            'notice': contexts.notice(thread), 'warn_text': contexts.warn_text() if contexts.risky(thread) else '',
+            'room': rooms.info(thread, user) if thread.is_room else None}
+
+
+def inbox(user, limit: int = 300) -> list:
+    """Диалоги человека для списка чатов — фиксированным числом запросов, сколько бы чатов ни было.
+
+    Возвращает [(thread, other, last)]: собеседник (не свидетель; у группы и канала — None)
+    и последнее видимое сообщение. У thread есть .unread: в личном чате — по Message.read_at,
+    в группе и канале — всё, что новее Member.last_read_at."""
+    from django.db.models import Count, OuterRef, Q, Subquery
+
+    from . import rooms
+    from .models import Member
+    visible = Message.objects.filter(thread=OuterRef('pk')).filter(Q(scheduled_at__isnull=True) | Q(sender=user))
+    mine = Member.objects.filter(thread=OuterRef('pk'), user=user)
+    incoming = Q(messages__scheduled_at__isnull=True) & ~Q(messages__sender=user)
+    threads = list(
+        user.chat_threads.filter(kind__in=rooms.visible_kinds()).prefetch_related('participants', 'observers')
+        .annotate(read_until=Subquery(mine.values('last_read_at')[:1]), muted=Subquery(mine.values('muted')[:1]),
+                  last_id=Subquery(visible.order_by('-created_at', '-pk').values('pk')[:1]))
+        .annotate(unread_direct=Count('messages', filter=incoming & Q(messages__read_at__isnull=True)),
+                  unread_room=Count('messages', filter=incoming & ~Q(messages__kind=Message.SYSTEM)
+                                    & (Q(read_until__isnull=True) | Q(messages__created_at__gt=F('read_until')))))[:limit])
+    last = Message.objects.select_related('sender').in_bulk([t.last_id for t in threads if t.last_id])
+    rows = []
+    for t in threads:
+        t.unread = t.unread_room if t.is_room else t.unread_direct
+        other = None
+        if not t.is_room:
+            watchers = {u.pk for u in t.observers.all()}
+            others = [u for u in t.participants.all() if u.pk != user.pk]
+            other = next((u for u in others if u.pk not in watchers), None) or (others[0] if others else None)
+        msg = last.get(t.last_id)
+        if msg is not None:
+            msg.thread = t                       # для расшифровки и превью — без запроса за чатом
+        rows.append((t, other, msg))
+    return rows
 
 
 def folders_for(user, rows) -> list:
@@ -104,13 +146,58 @@ def folders_for(user, rows) -> list:
     return [{'key': k, 'name': str(label), **seen[k]} for k, label in Thread.FOLDERS if k in seen]
 
 
+def set_muted(thread, user, muted: bool) -> None:
+    """«Без звука» для этого человека: у группы и канала — в его участии, у личного диалога — отдельной отметкой."""
+    from . import rooms
+    from .models import Member
+    if thread.is_room:
+        return rooms.set_muted(thread, user, muted)
+    if not is_participant(thread, user):
+        raise ChatError(_('Нет доступа'), 403)
+    Member.objects.update_or_create(thread=thread, user=user, defaults={'muted': bool(muted)})
+
+
+def is_muted(thread, user) -> bool:
+    from .models import Member
+    return Member.objects.filter(thread=thread, user=user, muted=True).exists()
+
+
+def shared_media(thread, user, what: str = 'media', limit: int = 60, before: int = 0):
+    """Вложения чата для вкладок профиля: media — фото и видео, files — файлы, voice — голосовые и кружки."""
+    kinds = {'media': (Message.PHOTO, Message.VIDEO), 'files': (Message.FILE,),
+             'voice': (Message.VOICE, Message.CIRCLE)}.get(what)
+    if kinds is None or not can_read(thread, user):
+        raise ChatError(_('Нет доступа'), 403)
+    qs = thread.messages.delivered().filter(kind__in=kinds).select_related('sender').order_by('-pk')
+    if before:
+        qs = qs.filter(pk__lt=before)
+    rows = list(qs[:limit])
+    for m in rows:
+        m.thread = thread
+    return rows
+
+
+def direct_between(user, other):
+    """Обычный личный диалог двоих (без привязки к объявлению), если он уже есть."""
+    return (Thread.objects.filter(kind=Thread.DIRECT, participants=user, context_type='', context_id__isnull=True)
+            .filter(participants=other).first())
+
+
 def is_participant(thread, user) -> bool:
     return thread.participants.filter(pk=user.pk).exists()
 
 
+def can_read(thread, user) -> bool:
+    """Кому можно открыть чат: участникам; публичную группу или канал — любому вошедшему."""
+    from . import rooms
+    return rooms.can_read(thread, user)
+
+
 def blocked(thread, user) -> bool:
-    """Кто-то из участников заблокировал другого — писать нельзя."""
+    """Кто-то из участников заблокировал другого — писать нельзя (только личные диалоги)."""
     from apps.accounts.models import UserBlock
+    if thread.is_room:
+        return False
     return any(UserBlock.between(user, p) for p in thread.participants.exclude(pk=user.pk))
 
 
@@ -141,12 +228,15 @@ def flags(thread=None) -> dict:
     media = True
     if thread is not None and not st.nikah_chat_media:
         media = not is_nikah(thread.pk)
+    direct = thread is None or not thread.is_room          # звонки — только в личных диалогах
     return {'contacts': st.chat_contacts_enabled, 'photo': st.chat_photos_enabled and media,
             'video': st.chat_videos_enabled and media, 'voice': st.chat_voice_enabled,
             'circle': st.chat_circles_enabled and media,
             'file': st.chat_files_enabled and media, 'file_max_mb': st.chat_file_max_mb,
+            'video_height': st.chat_video_height,
             'support': bool(st.support_user_id),
-            'calls': st.chat_calls_enabled, 'video_calls': st.chat_video_calls_enabled,
+            'calls': st.chat_calls_enabled and direct, 'video_calls': st.chat_video_calls_enabled and direct,
+            'groups': st.chat_groups_enabled, 'channels': st.chat_channels_enabled,
             'schedule': True, 'silent': True,
             'turn': {'url': st.webrtc_turn_url, 'username': st.webrtc_turn_username,
                      'credential': st.webrtc_turn_credential} if st.webrtc_turn_url else None}
@@ -158,6 +248,10 @@ def visible_messages(thread, user):
 
 
 def mark_read(thread, user) -> int:
+    if thread.is_room:
+        from . import rooms
+        rooms.mark_read(thread, user)
+        return 0
     return (thread.messages.delivered().filter(read_at__isnull=True).exclude(sender=user)
             .update(read_at=timezone.now()))
 
@@ -165,6 +259,9 @@ def mark_read(thread, user) -> int:
 # ---------- отправка ----------
 
 def _check_can_write(thread, user):
+    if thread.is_room:
+        from . import rooms
+        return rooms.check_post(thread, user)
     if not is_participant(thread, user):
         raise ChatError(_('Нет доступа'), 403)
     if blocked(thread, user):
@@ -194,14 +291,23 @@ def _broadcast(msg) -> dict:
     from asgiref.sync import async_to_sync
     from channels.layers import get_channel_layer
 
-    from .events import message_payload, notify_recipients, preview
+    from .events import message_payload, preview
     payload = message_payload(msg)
     layer = get_channel_layer()
     if layer is not None:
         async_to_sync(layer.group_send)(f'chat_{msg.thread_id}', {'type': 'chat.message', 'payload': payload})
     if msg.kind != Message.SYSTEM:
-        notify_recipients(msg.thread, msg.sender, str(preview(msg)), silent=msg.silent)
+        notify(msg.thread, msg.sender, str(preview(msg)), silent=msg.silent)
     return payload
+
+
+def notify(thread, sender, text: str, silent: bool = False) -> None:
+    """Сообщить получателям: в личном диалоге — колокольчик и пуш, в группе и канале — только пуш."""
+    if thread.is_room:
+        from . import rooms
+        return rooms.notify(thread, sender, text, silent=silent)
+    from .events import notify_recipients
+    notify_recipients(thread, sender, text, silent=silent)
 
 
 def send_text(thread, user, body: str, silent: bool = False, schedule=None, broadcast: bool = True) -> dict:
@@ -236,6 +342,7 @@ def store_upload(thread, user, kind, upload_file, duration=None, caption='', sil
         raise ChatError(_('Эта функция сейчас отключена'), 403)
     if not upload_file:
         raise ChatError(_('Файл не получен'))
+    _check_room(user, upload_file.size)
     original = clean_name(getattr(upload_file, 'name', ''))
     try:
         content, sec = prepare(kind, upload_file, duration)
@@ -249,6 +356,7 @@ def store_upload(thread, user, kind, upload_file, duration=None, caption='', sil
         msg.set_meta(name=original, size=size)
     msg.attachment.save(content.name + SUFFIX, seal_file(thread.pk, content, size), save=False)
     msg.save()
+    _count_upload(user, size)
     if kind == 'video':
         from . import transcode
         transcode.schedule(msg.pk)
@@ -256,6 +364,217 @@ def store_upload(thread, user, kind, upload_file, duration=None, caption='', sil
         return message_payload(msg)
     thread.save(update_fields=['updated_at'])
     return _broadcast(msg)
+
+
+# ---------- большие файлы: загрузка частями ----------
+
+def _quota_key(user) -> str:
+    return f'chat:uploaded:{user.pk}:{timezone.localdate().isoformat()}'
+
+
+def _check_room(user, size: int) -> None:
+    """Место на диске и дневной лимит человека: один аккаунт не должен забить сервер файлами."""
+    import shutil
+
+    from django.conf import settings
+    from django.core.cache import cache
+
+    from apps.core.models import SiteSettings
+    daily = SiteSettings.get_solo().chat_daily_upload_mb * MB
+    if daily and cache.get(_quota_key(user), 0) + size > daily:
+        raise ChatError(_('Дневной лимит загрузки исчерпан ({v1} МБ в сутки). Попробуйте завтра.')
+                        .format(v1=daily // MB), 429)
+    reserve = getattr(settings, 'CHAT_DISK_RESERVE_MB', 1024) * MB
+    try:
+        free = shutil.disk_usage(settings.MEDIA_ROOT).free
+    except OSError:
+        return
+    if free - size < reserve:
+        raise ChatError(_('На сервере заканчивается место — файл пока не принять. Мы уже знаем об этом.'), 507)
+
+
+def _count_upload(user, size: int) -> None:
+    from django.core.cache import cache
+    key = _quota_key(user)
+    cache.set(key, cache.get(key, 0) + size, 26 * 3600)
+
+
+def _upload_path(name: str) -> str:
+    import os
+
+    from django.conf import settings
+    return os.path.join(settings.MEDIA_ROOT, name)
+
+
+def upload_begin(thread, user, kind, name, size, duration=None, caption='', silent=False, schedule=None) -> dict:
+    """Начать загрузку большого файла или видео частями. Возвращает id загрузки и размер части.
+
+    Дальше клиент шлёт части по порядку (upload_part) и завершает (upload_finish). Оборвалась
+    связь — спрашивает upload_status и продолжает с того же места."""
+    import json
+    import os
+    import uuid
+
+    from . import filecrypt
+    from .keyring import encrypt_text
+    from .media import LIMITS, clean_name
+    from .models import Upload
+
+    _check_can_write(thread, user)
+    if kind not in ('file', 'video') or not flags(thread).get(kind):
+        raise ChatError(_('Эта функция сейчас отключена'), 403)
+    try:
+        size = int(size)
+    except (TypeError, ValueError):
+        raise ChatError(_('Файл не получен')) from None
+    if size <= 0:
+        raise ChatError(_('Файл пустой'))
+    limit = allowed_file_mb() * MB
+    if size > limit:
+        raise ChatError(_('Файл больше {v1} МБ').format(v1=limit // MB))
+    _check_room(user, size)
+    parse_schedule(schedule)                                        # кривое время — отказать сразу, а не в конце
+    if Upload.objects.filter(user=user).count() >= 5:
+        raise ChatError(_('Сначала дождитесь, пока загрузятся предыдущие файлы.'), 429)
+    try:
+        sec = max(0, min(int(float(duration or 0)), LIMITS['video'][1])) if kind == 'video' else None
+    except (TypeError, ValueError):
+        sec = 0
+    rel = f'chat/tmp/{uuid.uuid4().hex}{filecrypt.SUFFIX}'
+    os.makedirs(os.path.dirname(_upload_path(rel)), exist_ok=True)
+    with open(_upload_path(rel), 'wb') as fh:
+        filecrypt.begin(fh)
+    info = {'name': clean_name(name), 'caption': (caption or '').strip()[:1000], 'silent': bool(silent),
+            'schedule': str(schedule or ''), 'duration': sec}
+    up = Upload.objects.create(thread=thread, user=user, kind=kind, path=rel, size=size,
+                               info_enc=encrypt_text(thread.pk, json.dumps(info, ensure_ascii=False)))
+    return {'upload': str(up.pk), 'part': PART, 'received': 0, 'size': size}
+
+
+def _upload(user, upload_id, lock=False):
+    from django.core.exceptions import ValidationError
+
+    from .models import Upload
+    qs = Upload.objects.select_for_update() if lock else Upload.objects
+    try:
+        up = qs.filter(pk=upload_id, user=user).select_related('thread').first()
+    except (ValidationError, ValueError):
+        up = None
+    if up is None:
+        raise ChatError(_('Загрузка не найдена — начните заново.'), 404)
+    return up
+
+
+def upload_status(user, upload_id) -> dict:
+    up = _upload(user, upload_id)
+    return {'upload': str(up.pk), 'part': PART, 'received': up.received, 'size': up.size}
+
+
+def upload_part(user, upload_id, offset, data: bytes) -> dict:
+    """Принять следующую часть. Не по порядку — вернуть, с какого места продолжать (409)."""
+    from . import filecrypt
+    from .media import video_ext
+    with transaction.atomic():
+        up = _upload(user, upload_id, lock=True)
+        try:
+            offset = int(offset)
+        except (TypeError, ValueError):
+            offset = -1
+        if offset != up.received:
+            err = ChatError(_('Часть файла пришла не по порядку'), 409)
+            err.received = up.received
+            raise err
+        last = offset + len(data) == up.size
+        if not data or len(data) > PART_MAX or offset + len(data) > up.size or (len(data) % filecrypt.CHUNK and not last):
+            raise ChatError(_('Неверная часть файла'))
+        if offset == 0 and up.kind == 'video' and not video_ext(data[:16]):
+            raise ChatError(_('Неподдерживаемый формат файла'))
+        with open(_upload_path(up.path), 'r+b') as fh:
+            filecrypt.append(up.thread_id, fh, data, offset, up.size)
+        up.received = offset + len(data)
+        up.save(update_fields=['received'])
+    return {'upload': str(up.pk), 'received': up.received, 'size': up.size}
+
+
+def upload_finish(user, upload_id) -> dict:
+    """Все части получены: превратить загрузку в сообщение и разослать участникам."""
+    import json
+    import os
+    import uuid
+
+    from . import filecrypt
+    from .events import message_payload
+    from .keyring import decrypt_text
+    from .media import video_ext
+    with transaction.atomic():
+        up = _upload(user, upload_id, lock=True)
+        if up.received != up.size:
+            raise ChatError(_('Файл загружен не полностью'), 409)
+        thread = up.thread
+        _check_can_write(thread, user)
+        info = json.loads(decrypt_text(thread.pk, up.info_enc))
+        when = parse_schedule(info.get('schedule') or None)
+        ext = 'bin'
+        if up.kind == 'video':
+            with open(_upload_path(up.path), 'rb') as fh:
+                reader = filecrypt.Reader(thread.pk, fh, os.path.getsize(_upload_path(up.path)))
+                ext = video_ext(b''.join(reader.iter_range(0, min(15, reader.size - 1)))) or 'mp4'
+        now = timezone.now()
+        rel = f'chat/{now:%Y}/{now:%m}/{uuid.uuid4().hex}.{ext}{filecrypt.SUFFIX}'
+        os.makedirs(os.path.dirname(_upload_path(rel)), exist_ok=True)
+        os.replace(_upload_path(up.path), _upload_path(rel))
+        msg = Message(thread=thread, sender=user, kind=up.kind, duration=info.get('duration'), body=info.get('caption', ''),
+                      silent=bool(info.get('silent')), scheduled_at=when)
+        if up.kind == 'file':
+            msg.set_meta(name=info.get('name', 'file'), size=up.size)
+        msg.attachment.name = rel
+        msg.save()
+        _count_upload(user, up.size)
+        kind = up.kind
+        up.delete()
+    if kind == 'video':
+        from . import transcode
+        transcode.schedule(msg.pk)
+    if when:
+        return message_payload(msg)
+    thread.save(update_fields=['updated_at'])
+    return _broadcast(msg)
+
+
+def upload_cancel(user, upload_id) -> None:
+    up = _upload(user, upload_id)
+    _drop_upload(up)
+
+
+def _drop_upload(up) -> None:
+    import os
+    try:
+        os.remove(_upload_path(up.path))
+    except OSError:
+        pass
+    up.delete()
+
+
+def purge_uploads(now=None) -> int:
+    """Удалить брошенные загрузки (старше суток) и их файлы — manage.py chat_send_due."""
+    import os
+
+    from .models import Upload
+    now = now or timezone.now()
+    old = list(Upload.objects.filter(created_at__lt=now - timedelta(hours=UPLOAD_TTL_HOURS)))
+    for up in old:
+        _drop_upload(up)
+    tmp = _upload_path('chat/tmp')
+    alive = {os.path.basename(p) for p in Upload.objects.values_list('path', flat=True)}
+    if os.path.isdir(tmp):                       # файлы без записи в базе (чат удалён во время загрузки)
+        for name in os.listdir(tmp):
+            full = os.path.join(tmp, name)
+            if name not in alive and now.timestamp() - os.path.getmtime(full) > UPLOAD_TTL_HOURS * 3600:
+                try:
+                    os.remove(full)
+                except OSError:
+                    pass
+    return len(old)
 
 
 def system_message(thread, sender, text: str, duration=None, broadcast: bool = False) -> dict:
@@ -266,6 +585,27 @@ def system_message(thread, sender, text: str, duration=None, broadcast: bool = F
         return _broadcast(msg)
     from .events import message_payload
     return message_payload(msg)
+
+
+def delete_message(user, message_id) -> dict:
+    """Удалить сообщение у всех: своё — автор, любое — владелец и админы группы / канала."""
+    from asgiref.sync import async_to_sync
+    from channels.layers import get_channel_layer
+
+    from . import rooms
+    msg = Message.objects.select_related('thread').filter(pk=message_id, scheduled_at__isnull=True).first()
+    if msg is None or not can_read(msg.thread, user):
+        raise ChatError(_('Сообщение не найдено'), 404)
+    if msg.sender_id != user.pk and not (msg.thread.is_room and rooms.is_admin(msg.thread, user)):
+        raise ChatError(_('Удалить можно только своё сообщение.'), 403)
+    thread_id = msg.thread_id
+    if msg.attachment:
+        msg.attachment.delete(save=False)
+    msg.delete()
+    layer = get_channel_layer()
+    if layer is not None:
+        async_to_sync(layer.group_send)(f'chat_{thread_id}', {'type': 'chat.deleted', 'ids': [int(message_id)]})
+    return {'ok': True, 'id': int(message_id)}
 
 
 def cancel_scheduled(user, message_id) -> None:

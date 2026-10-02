@@ -1,0 +1,203 @@
+/* ilm4 · люди и профиль «как в Telegram»: страница человека, свой профиль, поиск людей,
+   список чатов на телефоне (круглые аватары, кнопка «написать»), «в сети». */
+
+/* ---------- «в сети» ---------- */
+.tavawrap{position:relative;display:inline-flex;flex:none}
+.tavadot{position:absolute;right:1px;bottom:1px;width:14px;height:14px;border-radius:50%;background:#2fc55e;border:2.5px solid var(--card)}
+.tgrow.on .tavadot{border-color:var(--accent)}
+.tg__status{font-style:normal}
+.tg__status.is-on{color:var(--accent-d);font-weight:600}
+.tgmute{display:inline-flex;margin-left:5px;vertical-align:-2px;color:var(--ink-soft);opacity:.75}
+.tgmute svg{width:13px;height:13px}
+.tg__new--main{background:var(--accent);color:#fff}
+.tg__fab{display:none}
+.tava--room{border-radius:50%}
+
+/* ---------- страница человека / свой профиль ---------- */
+.tp{max-width:640px;margin:8px auto 28px;display:flex;flex-direction:column;gap:12px}
+.tp__head{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;padding:18px 16px 4px}
+.tp__back{position:absolute;left:0;top:6px;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--ink);background:var(--card);box-shadow:var(--shadow)}
+.tp__back svg{width:22px;height:22px}
+.tp__ava{position:relative;width:112px;height:112px;border-radius:50%;overflow:hidden;display:grid;place-items:center;flex:none;
+  background:linear-gradient(140deg,var(--accent),var(--accent-d));box-shadow:0 16px 34px -16px var(--accent)}
+.tp__ava img{width:100%;height:100%;object-fit:cover;display:block}
+.tp__ava>span{color:#fff;font-family:var(--disp);font-weight:800;font-size:44px;line-height:1}
+.tp__ava--edit{cursor:pointer}
+.tp__cam{position:absolute;inset:auto 0 0 0;height:34px;display:grid;place-items:center;background:rgba(15,17,30,.5);color:#fff}
+.tp__cam svg{width:17px;height:17px}
+.tp__name{font-size:23px;font-weight:800;letter-spacing:-.01em;margin-top:12px;display:flex;align-items:center;gap:2px;justify-content:center;flex-wrap:wrap}
+.tp__status{font-size:14px;color:var(--ink-soft);margin-top:2px}
+.tp__status.is-on{color:var(--accent-d);font-weight:600}
+.tp__role{margin-top:8px;background:var(--accent-soft);color:var(--accent-d);font-size:11.5px;font-weight:800;border-radius:16px;padding:3px 12px}
+.tp__role--su{background:color-mix(in srgb,#d97706 14%,var(--card));color:#b45309}
+html[data-theme=dark] .tp__role--su{color:#fbbf24}
+
+.tp__acts{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:8px}
+.tp__acts form{display:contents}
+.tp__act{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:62px;padding:9px 6px;border:0;border-radius:16px;cursor:pointer;
+  background:var(--card);color:var(--accent-d);font:inherit;font-size:12.5px;font-weight:700;text-decoration:none;box-shadow:var(--shadow);transition:transform .12s,background .15s}
+.tp__act:hover{background:var(--accent-soft)}
+.tp__act:active{transform:scale(.96)}
+.tp__act svg{width:22px;height:22px}
+.tp__act--wide{flex-direction:row;gap:8px;font-size:14px}
+
+.tp__card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);overflow:hidden}
+.tp__card form{display:contents}
+.tp__row{display:flex;align-items:center;gap:14px;width:100%;padding:11px 16px;border:0;background:transparent;color:var(--ink);font:inherit;text-align:left;text-decoration:none;cursor:default}
+a.tp__row,button.tp__row{cursor:pointer}
+a.tp__row:hover,button.tp__row:hover{background:var(--card-2)}
+.tp__row+.tp__row,.tp__card form+form .tp__row{box-shadow:inset 0 1px 0 var(--line)}
+.tp__row>svg{width:21px;height:21px;flex:none;color:var(--ink-soft)}
+.tp__row>span{display:flex;flex-direction:column;min-width:0;gap:1px}
+.tp__row b{font-size:15.5px;font-weight:600;overflow-wrap:anywhere}
+.tp__row small{font-size:12.5px;color:var(--ink-soft)}
+.tp__row--todo b{color:var(--accent-d)}
+.tp__row--bad b,.tp__row--bad>svg{color:var(--bad)}
+.tp__rep{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.tp__rep:empty{display:none}
+
+.tp__tabs{display:flex;gap:4px;padding:4px;border-radius:16px;background:var(--card);box-shadow:var(--shadow);overflow-x:auto;scrollbar-width:none}
+.tp__tabs::-webkit-scrollbar{display:none}
+.tp__tab{flex:1 0 auto;border:0;cursor:pointer;font:inherit;font-size:14px;font-weight:700;padding:9px 14px;border-radius:12px;background:transparent;color:var(--ink-soft);white-space:nowrap}
+.tp__tab.on{background:var(--accent-soft);color:var(--accent-d)}
+.tp__pane{display:flex;flex-direction:column;gap:12px}
+.tp__pane[hidden]{display:none}
+.tp__sec{padding:14px 16px}
+.tp__sec h2{font-size:16px;font-weight:800;margin-bottom:8px}
+.tp__sec h2 small{color:var(--ink-soft);font-weight:600}
+.tp__none{text-align:center;color:var(--ink-soft);font-size:14px;padding:26px 16px;background:var(--card);border-radius:20px;box-shadow:var(--shadow)}
+.tp__grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;border-radius:16px;overflow:hidden}
+.tp__cell{aspect-ratio:1;background:var(--card-2);display:grid;place-items:center;overflow:hidden}
+.tp__cell img{width:100%;height:100%;object-fit:cover}
+.tp__vid{width:44px;height:44px;border-radius:50%;background:rgba(15,17,30,.55);color:#fff;display:grid;place-items:center}
+.tp__vid svg{width:20px;height:20px;fill:currentColor}
+
+/* свои настройки: раскрывающиеся блоки */
+.tp__fold summary{display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;list-style:none;font-size:15.5px}
+.tp__fold summary::-webkit-details-marker{display:none}
+.tp__fold summary svg{width:21px;height:21px;color:var(--accent-d);flex:none}
+.tp__fold summary::after{content:"";margin-left:auto;width:9px;height:9px;border-right:2px solid var(--ink-soft);border-bottom:2px solid var(--ink-soft);transform:rotate(45deg);transition:transform .2s}
+.tp__fold[open] summary::after{transform:rotate(-135deg)}
+.tp__form{display:flex;flex-direction:column;gap:12px;padding:4px 16px 18px}
+.tp__form>div{display:flex;flex-direction:column;gap:6px}
+.tp__form label{font-size:13.5px;font-weight:700}
+.tp__form input[type=text],.tp__form input[type=tel],.tp__form input:not([type]),.tp__form select{width:100%;min-height:46px;padding:10px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card-2);color:var(--ink);font:inherit;font-size:15.5px;outline:none}
+.tp__form input:focus,.tp__form select:focus{border-color:var(--accent)}
+.tp__form .hint{font-size:12.5px;color:var(--ink-soft)}
+.tp__form .err{color:var(--bad);font-size:13px;font-weight:600}
+.tp__f2{display:grid!important;grid-template-columns:1fr 1fr;gap:12px}
+.tp__f2>div{display:flex;flex-direction:column;gap:6px;min-width:0}
+.tp__at{position:relative}
+.tp__at i{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-style:normal;color:var(--ink-soft);font-size:15.5px}
+.tp__at input{padding-left:32px!important}
+.tp__chips{display:flex;flex-wrap:wrap;gap:6px}
+.tp__save{align-self:stretch;min-height:50px;font-size:16px}
+.tp__nav{max-width:640px;margin:0 auto 30px}
+.lrow{display:grid;grid-template-columns:minmax(104px,130px) 1fr minmax(96px,150px) 38px;gap:6px;align-items:center;margin-bottom:8px}
+.lrow__del{width:38px;height:38px;border-radius:50%;border:0;cursor:pointer;background:var(--card-2);color:var(--ink-soft);font-size:20px;line-height:1}
+.lrow__del:hover{color:var(--bad)}
+.tp__toast{position:fixed;left:50%;bottom:calc(var(--tab-h,0px) + 26px);transform:translateX(-50%);z-index:400;padding:9px 16px;border-radius:14px;background:rgba(20,22,35,.9);color:#fff;font-size:14px;font-weight:600;transition:opacity .3s}
+.tp__toast.out{opacity:0}
+
+/* ---------- «Новое сообщение»: поиск людей ---------- */
+.ppl{max-width:640px;margin:8px auto 30px;display:flex;flex-direction:column}
+.ppl__head{display:flex;align-items:center;gap:6px;padding:4px 0 10px}
+.ppl__back{display:grid!important}
+.ppl__title{font-size:22px;font-weight:800}
+.ppl__search{margin:0 0 6px;height:46px;background:var(--card)}
+.ppl__tip{font-size:13px;color:var(--ink-soft);margin:2px 4px 10px}
+.ppl__acts,.ppl__list{background:var(--card);border-radius:20px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+.ppl__acts[hidden]{display:none}
+.ppl__ic{background:var(--accent-soft);color:var(--accent-d)}
+.ppl__ic svg{width:22px;height:22px}
+.ppl__h{font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);margin:16px 6px 8px}
+.ppl__hint{font-size:14px;color:var(--ink-soft);text-align:center;padding:22px 14px}
+.ppl__hint[hidden]{display:none}
+.prow{border-radius:0;padding:10px 14px}
+.prow+.prow{box-shadow:inset 76px 1px 0 -75px var(--line)}
+.prow .tgrow__msg i{font-style:normal;color:var(--accent-d);font-weight:600}
+
+/* ---------- нижние вкладки сайта: активная — мягкая «пилюля» вместо полоски у края ---------- */
+@media(max-width:760px){
+  .tabbar__i{z-index:0}
+  .tabbar__i.on:not(.tabbar__add)::before{top:7px;bottom:7px;left:50%;width:auto;height:auto;margin-left:0;inset:7px 9px;border-radius:16px;background:var(--accent-soft);z-index:-1}
+  .tabbar__i.on .tabbar__ava{box-shadow:0 0 0 2px var(--accent)}
+  .tabbar__i:active{opacity:1}
+}
+
+/* ---------- телефон: чаты как в Telegram ---------- */
+@media(max-width:760px){
+  .page-chat .foot,.page-tp .foot{display:none}
+  .page-chat main,.page-chat .wrap{min-height:0}
+  .tg__sidehead{padding:4px 2px 8px}
+  .tg__list{border:0;border-radius:0;background:transparent;margin:0 -12px;padding-bottom:86px}
+  .tgrow{padding:9px 14px;gap:13px}
+  .tgrow .tava{width:56px;height:56px;font-size:21px}
+  .tgrow+.tgrow{box-shadow:inset 84px 1px 0 -83px var(--line)}
+  .tgrow__top b{font-size:16.5px}
+  .tgrow__msg{font-size:14.5px}
+  .tgrow__top time{font-size:12.5px}
+  .tg__folders{padding:2px 0 10px}
+  .tg__fab{display:grid;place-items:center;position:fixed;right:16px;bottom:calc(var(--tab-h) + env(safe-area-inset-bottom) + 16px);z-index:90;width:58px;height:58px;border-radius:50%;
+    background:var(--accent);color:#fff;box-shadow:0 12px 26px -8px var(--accent);transition:transform .15s}
+  .tg__fab:active{transform:scale(.92)}
+  .tg__fab svg{width:25px;height:25px}
+  .tg--open .tg__fab{display:none}
+  .tg__sidehead .tg__new--main{display:none}
+  .tp{margin-top:4px}
+  .tp__ava{width:104px;height:104px}
+  .tp__f2{grid-template-columns:1fr}
+  .lrow{grid-template-columns:1fr 1fr 38px}
+  .lrow input{grid-column:1/-1;grid-row:1}
+  .lrow select:first-of-type{grid-row:2}
+  .lrow select:last-of-type{grid-row:2}
+  .lrow .lrow__del{grid-row:2}
+  .ppl{margin-top:0}
+}
+
+/* ---------- меню «⋮» (как в Telegram): редкие и опасные действия — здесь ---------- */
+.tp__menu{position:absolute;right:0;top:6px;z-index:20}
+.tp__menu summary{list-style:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;cursor:pointer;color:var(--ink);background:var(--card);box-shadow:var(--shadow)}
+.tp__menu summary::-webkit-details-marker{display:none}
+.tp__menu summary svg{width:20px;height:20px;fill:currentColor}
+.tp__pop{position:absolute;right:0;top:46px;min-width:250px;padding:6px;border-radius:16px;background:var(--card);box-shadow:0 14px 40px -10px rgba(15,17,30,.35);display:flex;flex-direction:column;animation:menuIn .16s ease-out}
+.tp__pop form{display:contents}
+.tp__pop a,.tp__pop button,.tp__pop-report .linkbtn,.tp__pop-report button{display:flex;align-items:center;gap:12px;width:100%;padding:11px 12px;border:0;border-radius:11px;background:transparent;color:var(--ink);font:inherit;font-size:15px;text-align:left;text-decoration:none;cursor:pointer}
+.tp__pop a:hover,.tp__pop button:hover{background:var(--card-2)}
+.tp__pop svg{width:19px;height:19px;flex:none;color:var(--ink-soft)}
+.tp__pop .bad,.tp__pop .bad svg{color:var(--bad)}
+.tp__menu--row{position:relative;right:auto;top:auto;margin-left:auto;flex:none}
+.tp__menu--row summary{width:34px;height:34px;box-shadow:none;background:transparent;color:var(--ink-soft)}
+.tp__menu--row .tp__pop{top:36px}
+.tp__man{padding:8px 10px 8px 14px;gap:8px}
+.tp__man-a{display:flex;align-items:center;gap:12px;flex:1;min-width:0;color:var(--ink);text-decoration:none}
+.tp__man-a>span:last-child{display:flex;flex-direction:column;min-width:0}
+.tp__card{overflow:visible}
+.tp__card>.tp__row:first-child,.tp__card>form:first-child .tp__row{border-radius:20px 20px 0 0}
+.tp__card>.tp__row:last-child,.tp__card>form:last-child .tp__row{border-radius:0 0 20px 20px}
+.tp__card>.tp__row:only-child{border-radius:20px}
+.tp__form input[type=file]{font-size:14px}
+.tg__sidehead{position:relative}
+.tg__more summary{width:38px;height:38px;background:var(--accent-soft)!important;color:var(--accent-d)!important}
+.tg__more .tp__pop{top:44px;z-index:30}
+@media(max-width:760px){.tabbar{grid-template-columns:repeat(var(--tabs,5),1fr)}}
+
+/* ---------- редактор фото и обрезка аватара ---------- */
+.pedit{position:fixed;inset:0;z-index:500;background:#0b0d16;color:#fff;display:flex;flex-direction:column;padding:calc(10px + env(safe-area-inset-top)) 12px calc(14px + env(safe-area-inset-bottom));gap:10px}
+.pedit__top{display:flex;align-items:center;gap:8px}
+.pedit__top span{flex:1;text-align:center;font-size:14px;color:rgba(255,255,255,.75)}
+.pedit button{border:0;cursor:pointer;font:inherit;color:#fff;background:rgba(255,255,255,.12);border-radius:50%;width:42px;height:42px;font-size:19px}
+.pedit .pedit__txt{width:auto;border-radius:21px;padding:0 16px;font-size:14px;font-weight:700}
+.pedit .pedit__txt.on{background:#fff;color:#111}
+.pedit__stage{flex:1;min-height:0;display:grid;place-items:center}
+.pedit__stage canvas{max-width:100%;max-height:100%;border-radius:10px;touch-action:none;cursor:crosshair}
+.pedit__tools{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px}
+.pedit__tools input[type=range]{flex:1}
+.pedit__colors{display:flex;gap:7px;flex-wrap:wrap}
+.pedit__colors button{width:30px;height:30px;border:2.5px solid rgba(255,255,255,.35)}
+.pedit__colors button.on{border-color:#fff;transform:scale(1.18)}
+.pedit .pedit__send{width:100%;border-radius:16px;height:50px;background:var(--accent);font-size:16px;font-weight:800}
+.pcrop{position:relative;width:min(86vw,58vh,420px);aspect-ratio:1}
+.pcrop canvas{width:100%;height:100%;border-radius:0;cursor:grab}
+.pcrop::after{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 2000px rgba(11,13,22,.72);border:2px solid rgba(255,255,255,.8);pointer-events:none}
+@media(max-width:760px){.page-trk .nav,.page-tp .nav{display:none}}

@@ -8,6 +8,7 @@
 {% block content %}
 <div class="svc">
 {% include 'includes/section_hero.html' with icon="🚚" icslug="transport" title=_("Перевозки") desc=_("Грузовые и пассажирские перевозки, попутчики — находи перевозчика по маршруту") class="migration" cta=_("Добавить перевозку") cta_url="/transport/add/" %}
+{% include 'transport/_tabs.html' with tab='rides' %}
 
   <div class="toolbar">
     <div class="chips">

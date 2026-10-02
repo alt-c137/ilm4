@@ -1,0 +1,7 @@
+{% load i18n icons %}<a class="tgrow prow" href="{{ p.chat }}" data-q="{{ p.name|lower }} {{ p.handle }}">
+  {% if p.online %}<span class="tavawrap">{% endif %}{% if p.avatar %}<img class="tava" src="{{ p.avatar }}" alt="" loading="lazy">{% else %}<span class="tava tava--h{{ p.hue }}">{{ p.letter }}</span>{% endif %}{% if p.online %}<i class="tavadot"></i></span>{% endif %}
+  <span class="tgrow__b">
+    <span class="tgrow__top"><b>{{ p.name }}{% if p.verified %}<i class="tgver" title="{% translate 'Проверен ilm4' %}">{% ico 'check' %}</i>{% endif %}</b></span>
+    <span class="tgrow__bot"><span class="tgrow__msg">{% if p.online %}<i>{% translate "в сети" %}</i>{% elif p.handle %}@{{ p.handle }}{% elif p.city %}{{ p.city }}{% else %}{% translate "на ilm4" %}{% endif %}{% if p.online and p.handle %} · @{{ p.handle }}{% endif %}</span></span>
+  </span>
+</a>

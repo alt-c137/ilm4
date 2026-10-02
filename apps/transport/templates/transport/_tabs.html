@@ -1,0 +1,4 @@
+{% load i18n %}<div class="seg seg--tabs" role="tablist">
+  <a class="seg__i{% if tab == 'trips' %} on{% endif %}" href="{% url 'transport:trips' %}">{% translate "Попутчики" %}</a>
+  <a class="seg__i{% if tab == 'rides' %} on{% endif %}" href="{% url 'transport:list' %}">{% translate "Перевозчики и грузы" %}</a>
+</div>

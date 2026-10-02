@@ -24,8 +24,9 @@ LIMITS = {  # kind: (макс. байт, макс. секунд); для вид�
     'video': (None, 600),
     'file': (None, None),
 }
-# исполняемые файлы не принимаем: через чат их рассылают мошенники
-BLOCKED_EXT = {'.exe', '.msi', '.bat', '.cmd', '.com', '.scr', '.pif', '.vbs', '.js', '.jse', '.wsf', '.ps1',
+# программы и скрипты принимаем, как Telegram, но получателю показываем предупреждение:
+# через чат их рассылают мошенники. Файл отдаётся только на скачивание, сайт его не запускает.
+RISKY_EXT = {'.exe', '.msi', '.bat', '.cmd', '.com', '.scr', '.pif', '.vbs', '.js', '.jse', '.wsf', '.ps1',
                '.jar', '.apk', '.app', '.dmg', '.sh', '.lnk', '.hta', '.cpl', '.reg'}
 
 
@@ -59,9 +60,6 @@ def prepare(kind: str, upload, duration) -> tuple[ContentFile, int | None]:
     name = uuid.uuid4().hex
 
     if kind == 'file':
-        ext = os.path.splitext(upload.name or '')[1].lower()
-        if ext in BLOCKED_EXT:
-            raise MediaError(_('Такие файлы отправлять нельзя (программы и скрипты) — защита от вирусов.'))
         if upload.size == 0:
             raise MediaError(_('Файл пустой'))
         upload.name = f'{name}.bin'            # на диске — без исходного имени; имя хранится зашифрованным
@@ -95,6 +93,17 @@ def prepare(kind: str, upload, duration) -> tuple[ContentFile, int | None]:
     ext = {'webm': 'webm', 'ogg': 'ogg', 'mp4': 'mp4', 'mp3': 'mp3'}[fmt]
     upload.name = f'{name}.{ext}'              # не читаем в память: шифруется потоком (filecrypt.seal_file)
     return upload, sec
+
+
+def is_risky_name(name: str) -> bool:
+    """Программа или скрипт — получателю показываем «открывайте, только если доверяете отправителю»."""
+    return os.path.splitext(name or '')[1].lower() in RISKY_EXT
+
+
+def video_ext(head: bytes) -> str:
+    """Расширение видео по первым байтам; пусто — это не видео, которое мы принимаем."""
+    fmt = _sniff(head)
+    return fmt if fmt in ('webm', 'mp4') else ''
 
 
 def content_type(path: str) -> str:

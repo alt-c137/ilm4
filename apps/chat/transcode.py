@@ -20,6 +20,27 @@ from django.db import transaction
 
 log = logging.getLogger(__name__)
 TIMEOUT = 15 * 60
+# Одновременно сжимается одно видео, и ffmpeg берёт не больше двух ядер: десять человек отправили
+# по ролику — сайт не «встаёт», ролики сжимаются по очереди. Замок — в процессе (_queue) и общий
+# на весь сервер (файл-замок): рабочих процессов несколько.
+_queue = threading.BoundedSemaphore(1)
+
+
+class _server_lock:
+    def __enter__(self):
+        self.fh = None
+        try:
+            import fcntl
+            self.fh = open(os.path.join(tempfile.gettempdir(), 'ilm4-transcode.lock'), 'w')
+            fcntl.flock(self.fh, fcntl.LOCK_EX)
+        except (ImportError, OSError):                  # Windows или нет прав — хватит замка процесса
+            pass
+        return self
+
+    def __exit__(self, *exc):
+        if self.fh:
+            self.fh.close()                             # закрытие снимает замок
+        return False
 
 
 def ffmpeg_path() -> str:
@@ -40,7 +61,8 @@ def schedule(message_id: int) -> None:
 def _safe(message_id: int) -> None:
     from django.db import connection
     try:
-        compress(message_id)
+        with _queue, _server_lock():
+            compress(message_id)
     except Exception:
         log.exception('Не удалось сжать видео сообщения %s', message_id)
     finally:
@@ -82,7 +104,7 @@ def compress(message_id: int) -> bool:
         info = probe(src)
         short_side = min(info['width'], info['height']) or target
         scale = f"scale='if(gt(iw,ih),-2,{target})':'if(gt(iw,ih),{target},-2)'" if short_side > target else 'scale=trunc(iw/2)*2:trunc(ih/2)*2'
-        cmd = [exe, '-hide_banner', '-loglevel', 'error', '-y', '-i', src, '-vf', scale,
+        cmd = [exe, '-hide_banner', '-loglevel', 'error', '-y', '-threads', '2', '-i', src, '-vf', scale,
                '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '26', '-pix_fmt', 'yuv420p',
                '-c:a', 'aac', '-b:a', '96k', '-ac', '2', '-movflags', '+faststart', '-map_metadata', '-1', dst]
         done = subprocess.run(cmd, capture_output=True, text=True, timeout=TIMEOUT, check=False)

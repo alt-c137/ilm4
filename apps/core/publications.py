@@ -51,6 +51,8 @@ PUBLICATIONS = [
         form='apps.services.forms.ServiceForm', create='/services/add/'),
     Pub('transport', _lazy('Перевозки'), 'transport.Ride', title='route', url='/transport/',
         form='apps.transport.forms.RideForm', create='/transport/add/'),
+    Pub('trips', _lazy('Попутчики'), 'transport.Trip', title='route', url='transport:trip',
+        form='apps.transport.forms.TripForm', active='is_active', create='/transport/trips/add/'),
     Pub('places', _lazy('Места на карте'), 'maps.HalalPlace', title='name', url='maps:detail',
         form='apps.maps.forms.HalalPlaceForm', create='/map/add/'),
     Pub('doctors', _lazy('Врачи'), 'health.Doctor', title='name', url='health:detail', form='apps.health.forms.DoctorForm',

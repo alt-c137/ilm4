@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load icons %}
+{% block title %}{% translate "Новая группа или канал —" %} {{ block.super }}{% endblock %}
+{% block body_class %}s-chat{% endblock %}
+
+{% block content %}
+<div class="fpage">
+  <a class="crumb" href="{% url 'chat:inbox' %}">{% ico 'back' %}{% translate "Чаты" %}</a>
+  <div class="dcard">
+    <div class="fpage__h">
+      <span class="fpage__ic">{% if kind == 'channel' %}{% ico 'megaphone' %}{% else %}{% ico 'users' %}{% endif %}</span>
+      <div>
+        <h1>{% if kind == 'channel' %}{% translate "Новый канал" %}{% else %}{% translate "Новая группа" %}{% endif %}</h1>
+        <div class="fpage__sub">{% if kind == 'channel' %}{% translate "Канал — это лента: пишете вы и ваши админы, подписчики читают. Подходит мечети, учителю, магазину." %}{% else %}{% translate "Группа — общий чат: пишут все участники. Семья, община, однокурсники, соседи." %}{% endif %}</div>
+      </div>
+    </div>
+    <div class="seg seg--tabs roomkind">
+      <a class="seg__i" href="{% url 'chat:start' %}">{% translate "Личный чат" %}</a>
+      {% if allowed.group %}<a class="seg__i{% if kind == 'group' %} on{% endif %}" href="?kind=group">{% translate "Группа" %}</a>{% endif %}
+      {% if allowed.channel %}<a class="seg__i{% if kind == 'channel' %} on{% endif %}" href="?kind=channel">{% translate "Канал" %}</a>{% endif %}
+    </div>
+    <form method="post" enctype="multipart/form-data" class="form fgrid">{% csrf_token %}
+      <input type="hidden" name="kind" value="{{ kind }}">
+      <div class="field field--wide">
+        <label for="r-title">{% translate "Название" %} <span class="req">*</span></label>
+        <input type="text" id="r-title" name="title" maxlength="120" required value="{{ data.title }}" placeholder="{% if kind == 'channel' %}{% translate 'Например: Мечеть «Нур» — объявления' %}{% else %}{% translate 'Например: Община Ташкента' %}{% endif %}">
+      </div>
+      <div class="field field--wide">
+        <label for="r-about">{% translate "Описание" %}</label>
+        <textarea id="r-about" name="about" rows="3" maxlength="500" placeholder="{% translate 'О чём этот чат, для кого он' %}">{{ data.about }}</textarea>
+      </div>
+      <div class="field field--wide">
+        <label for="r-avatar">{% translate "Картинка (необязательно)" %}</label>
+        <input type="file" id="r-avatar" name="avatar" accept="image/*">
+      </div>
+      <div class="field field--wide field--check">
+        <label class="check"><input type="checkbox" name="is_public" id="r-public"{% if data.is_public %} checked{% endif %}><span>{% if kind == 'channel' %}{% translate "Публичный: виден в каталоге, подписаться может любой" %}{% else %}{% translate "Публичная: видна в каталоге, вступить может любой" %}{% endif %}</span></label>
+        <span class="hint">{% translate "Без галочки попасть можно только по вашей ссылке-приглашению." %}</span>
+      </div>
+      <div class="field field--wide" id="r-handle-box">
+        <label for="r-handle">{% translate "Публичное имя" %}</label>
+        <div class="handle"><span>ilm4.com/c/</span><input type="text" id="r-handle" name="handle" maxlength="32" value="{{ data.handle }}" placeholder="masjid_nur" autocapitalize="none" spellcheck="false"></div>
+        <span class="hint">{% translate "Латинские буквы, цифры и «_», от 4 знаков. По этому адресу канал находят и делятся им." %}</span>
+      </div>
+      <button type="submit" class="btn btn--p">{% ico 'plus' %}{% translate "Создать" %}</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  var pub = document.getElementById('r-public'), box = document.getElementById('r-handle-box');
+  function sync() { box.hidden = !pub.checked; }
+  pub.addEventListener('change', sync); sync();
+})();
+</script>
+{% endblock %}

@@ -70,6 +70,31 @@ def seal_file(thread_id: int, src, size: int):
     return File(out)
 
 
+def begin(fh) -> None:
+    """Начать зашифрованный файл, который дописывается частями (большие файлы, services.upload_*)."""
+    fh.write(MAGIC + os.urandom(8))
+
+
+def append(thread_id: int, fh, data: bytes, offset: int, total: int) -> None:
+    """Дописать байты исходного файла с позиции offset (total — его полный размер).
+
+    offset кратен размеру куска: части ложатся ровно по границам. Файл сначала обрезается
+    до этой позиции — повтор той же части после обрыва связи ничего не ломает."""
+    if offset % CHUNK or offset + len(data) > total:
+        raise FileCryptError('часть файла не на границе куска')
+    fh.seek(len(MAGIC))
+    prefix = fh.read(8)
+    count = max(1, -(-total // CHUNK))
+    first = offset // CHUNK
+    pos = HEADER + first * (CHUNK + TAG)
+    fh.truncate(pos)
+    fh.seek(pos)
+    aes = AESGCM(dek_for(thread_id))
+    for n, lo in enumerate(range(0, len(data), CHUNK)):
+        i = first + n
+        fh.write(aes.encrypt(prefix + struct.pack('>I', i), data[lo:lo + CHUNK], _aad(thread_id, i, i == count - 1)))
+
+
 def plain_size(enc_size: int) -> int:
     body = enc_size - HEADER
     count = max(1, -(-body // (CHUNK + TAG)))

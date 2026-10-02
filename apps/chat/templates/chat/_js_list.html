@@ -1,3 +1,4 @@
+{% load static %}<script src="{% static 'js/wallpaper.js' %}?v={{ asset_v }}"></script>
 <script>
 /* поиск по списку диалогов */
 (function () {
@@ -10,4 +11,9 @@
     });
   });
 })();
+</script>
+<script>
+document.addEventListener('click', function (e) {
+  document.querySelectorAll('details.tp__menu[open]').forEach(function (d) { if (!d.contains(e.target)) d.open = false; });
+});
 </script>

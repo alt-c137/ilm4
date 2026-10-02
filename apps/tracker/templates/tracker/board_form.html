@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% load i18n icons %}
+{% block title %}{% translate "Общий трекер —" %} {{ block.super }}{% endblock %}
+{% block body_class %}page-trk{% endblock %}
+{% block content %}
+<div class="trk">
+  <header class="trk__head"><a class="tg__back ppl__back" href="{% url 'tracker:index' %}" aria-label="{% translate 'Назад' %}">{% ico 'back' %}</a>
+    <div><h1>{% translate "Общий трекер" %}</h1><span>{% translate "Привычки одни на всех — отметки у каждого свои" %}</span></div></header>
+  <form method="post" class="tp__card trk__form">{% csrf_token %}
+    <div><label for="b-title">{% translate "Название" %}</label><input type="text" id="b-title" name="title" maxlength="80" required placeholder="{% translate 'Например: Учим арабский' %}"></div>
+    <div><label>{% translate "Значок" %}</label><div class="trk__pick">{% for e in emoji %}<label><input type="radio" name="emoji" value="{{ e }}"{% if forloop.first %} checked{% endif %}><span>{{ e }}</span></label>{% endfor %}</div></div>
+    <label class="fcheck"><input type="checkbox" name="compete"> {% translate "Соревнование: показывать таблицу, кто сколько выполнил" %}</label>
+    <span class="hint">{% translate "Можно включить или выключить позже. Людей позовёте ссылкой — она появится на странице трекера." %}</span>
+    <button type="submit" class="btn btn--p tp__save">{% translate "Создать" %}</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% load i18n icons %}
+{% block title %}{% translate "Новое сообщение —" %} {{ block.super }}{% endblock %}
+{% block body_class %}s-chat page-chat page-people{% endblock %}
+
+{% block content %}
+<div class="ppl">
+  <header class="ppl__head">
+    <a class="tg__back ppl__back" href="{% url 'chat:inbox' %}" aria-label="{% translate 'Все чаты' %}">{% ico 'back' %}</a>
+    <h1 class="ppl__title">{% translate "Новое сообщение" %}</h1>
+  </header>
+  <form class="tg__search ppl__search" method="get" action="{% url 'chat:people' %}" role="search">
+    {% ico 'search' %}<input type="search" name="q" id="ppl-q" value="{{ q }}" placeholder="{% translate 'Имя пользователя или номер телефона' %}" autocomplete="off" autocapitalize="none" spellcheck="false" autofocus aria-label="{% translate 'Поиск людей' %}">
+  </form>
+  <p class="ppl__tip">{% translate "Найдите человека по @имени или по номеру — и сразу пишите. Знакомые из ваших чатов — ниже." %}</p>
+
+  <nav class="ppl__acts" id="ppl-acts"{% if q %} hidden{% endif %}>
+    {% if can_group %}<a class="tgrow prow" href="{% url 'chat:room_new' %}?kind=group"><span class="tava ppl__ic">{% ico 'users' %}</span><span class="tgrow__b"><span class="tgrow__top"><b>{% translate "Новая группа" %}</b></span><span class="tgrow__msg">{% translate "Общий чат: семья, община, соседи" %}</span></span></a>{% endif %}
+    {% if can_channel %}<a class="tgrow prow" href="{% url 'chat:room_new' %}?kind=channel"><span class="tava ppl__ic">{% ico 'megaphone' %}</span><span class="tgrow__b"><span class="tgrow__top"><b>{% translate "Новый канал" %}</b></span><span class="tgrow__msg">{% translate "Лента для мечети, учителя, магазина" %}</span></span></a>{% endif %}
+    {% if channels_on %}<a class="tgrow prow" href="{% url 'chat:channels' %}"><span class="tava ppl__ic">{% ico 'search' %}</span><span class="tgrow__b"><span class="tgrow__top"><b>{% translate "Найти каналы и группы" %}</b></span><span class="tgrow__msg">{% translate "Каталог открытых каналов и групп" %}</span></span></a>{% endif %}
+    {% if contacts_on %}<a class="tgrow prow" href="{% url 'chat:contacts' %}"><span class="tava ppl__ic">{% ico 'user' %}</span><span class="tgrow__b"><span class="tgrow__top"><b>{% translate "Найти знакомых из контактов" %}</b></span><span class="tgrow__msg">{% translate "Кто из телефонной книги уже на ilm4" %}</span></span></a>{% endif %}
+    {% if support_on %}<a class="tgrow prow" href="{% url 'chat:support' %}"><span class="tava ppl__ic">{% ico 'shield' %}</span><span class="tgrow__b"><span class="tgrow__top"><b>{% translate "Поддержка ilm4" %}</b></span><span class="tgrow__msg">{% translate "Написать команде площадки" %}</span></span></a>{% endif %}
+  </nav>
+
+  <div id="ppl-found">
+    {% if found %}<h2 class="ppl__h">{% translate "Найдены" %}</h2>
+    <div class="ppl__list">{% for p in found %}{% include 'chat/_person.html' %}{% endfor %}</div>{% endif %}
+  </div>
+  <p class="ppl__hint" id="ppl-hint"{% if not hint %} hidden{% endif %}>{{ hint }}</p>
+  <div id="ppl-contacts">
+    {% if contacts %}<h2 class="ppl__h">{% if q %}{% translate "Из ваших чатов" %}{% else %}{% translate "Контакты" %}{% endif %}</h2>
+    <div class="ppl__list">{% for p in contacts %}{% include 'chat/_person.html' %}{% endfor %}</div>
+    {% elif not q %}<p class="ppl__hint">{% translate "Контактов пока нет: здесь появятся люди, с которыми вы переписывались." %}</p>{% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* поиск людей без перезагрузки: ждём паузу в наборе и спрашиваем сервер */
+(function () {
+  var q = document.getElementById('ppl-q'), found = document.getElementById('ppl-found'), known = document.getElementById('ppl-contacts');
+  var hint = document.getElementById('ppl-hint'), acts = document.getElementById('ppl-acts'), timer = 0, seq = 0;
+  var T = {found: "{% filter escapejs %}{% translate "Найдены" %}{% endfilter %}", mine: "{% filter escapejs %}{% translate "Из ваших чатов" %}{% endfilter %}", all: "{% filter escapejs %}{% translate "Контакты" %}{% endfilter %}",
+           online: "{% filter escapejs %}{% translate "в сети" %}{% endfilter %}", here: "{% filter escapejs %}{% translate "на ilm4" %}{% endfilter %}"};
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]; }); }
+  function row(p) {
+    var ava = p.avatar ? '<img class="tava" src="' + esc(p.avatar) + '" alt="">' : '<span class="tava tava--h' + p.hue + '">' + esc(p.letter) + '</span>';
+    if (p.online) ava = '<span class="tavawrap">' + ava + '<i class="tavadot"></i></span>';
+    var sub = p.online ? '<i>' + T.online + '</i>' + (p.handle ? ' · @' + esc(p.handle) : '') : (p.handle ? '@' + esc(p.handle) : esc(p.city || T.here));
+    return '<a class="tgrow prow" href="' + esc(p.chat) + '">' + ava + '<span class="tgrow__b"><span class="tgrow__top"><b>' + esc(p.name) +
+      '</b></span><span class="tgrow__bot"><span class="tgrow__msg">' + sub + '</span></span></span></a>';
+  }
+  function block(title, list) { return list.length ? '<h2 class="ppl__h">' + title + '</h2><div class="ppl__list">' + list.map(row).join('') + '</div>' : ''; }
+  function run() {
+    var v = q.value.trim(), my = ++seq;
+    acts.hidden = !!v;
+    fetch('{% url "chat:people" %}?json=1&q=' + encodeURIComponent(v), {credentials: 'same-origin'}).then(function (r) { return r.json(); }).then(function (d) {
+      if (my !== seq) return;
+      found.innerHTML = block(T.found, d.found);
+      known.innerHTML = block(v ? T.mine : T.all, d.contacts);
+      hint.textContent = d.hint || ''; hint.hidden = !d.hint;
+    }).catch(function () {});
+  }
+  q.addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(run, 350); });
+  q.form.addEventListener('submit', function (e) { e.preventDefault(); clearTimeout(timer); run(); });
+})();
+</script>
+{% endblock %}

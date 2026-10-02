@@ -5,7 +5,9 @@ from . import views_account as a
 from . import views_chat as c
 from . import views_content as v
 from . import views_nikah as n
+from . import views_people as u
 from . import views_pubs as m
+from . import views_tracker as t
 
 app_name = 'api'
 
@@ -29,6 +31,13 @@ urlpatterns = [
     path('wallet/', a.wallet),
     path('report/', a.report),
     path('block/', a.block),
+    path('ping/', u.ping),
+    path('me/links/', u.my_links),
+    path('me/close/', u.close_friends),
+    path('people/', u.people_list),
+    path('users/<int:pk>/', u.user),
+    path('users/<int:pk>/chat/', u.user_chat),
+    path('users/<int:pk>/close/', u.user_close),
 
     path('news/', v.news),
     path('news/<int:pk>/', v.news_detail),
@@ -41,6 +50,8 @@ urlpatterns = [
     path('pubs/<str:key>/<int:pk>/', v.pub_detail),
     path('pubs/<str:key>/<int:pk>/message/', v.pub_message),
     path('forum/<int:pk>/reply/', v.topic_reply),
+    path('trips/<int:pk>/request/', v.trip_request),
+    path('trips/request/<int:req_id>/<str:action>/', v.trip_request_act),
 
     path('nikah/state/', n.state),
     path('nikah/options/', n.options),
@@ -61,12 +72,34 @@ urlpatterns = [
     path('nikah/match/<int:pk>/decide/', n.match_decide),
     path('nikah/match/<int:pk>/pay/', n.match_pay),
 
+    path('tracker/', t.day),
+    path('tracker/stats/', t.stats),
+    path('tracker/habits/', t.habits),
+    path('tracker/habits/new/', t.habit_create),
+    path('tracker/habits/<int:pk>/', t.habit),
+    path('tracker/habits/<int:pk>/log/', t.habit_log),
+    path('tracker/boards/new/', t.board_create),
+    path('tracker/boards/<int:pk>/', t.board),
+    path('tracker/join/<str:code>/', t.board_join),
+
     path('chat/', c.threads),
     path('chat/file/<int:msg_id>/', c.file),
     path('chat/support/', c.support),
+    path('chat/rooms/', c.rooms_catalog),
+    path('chat/rooms/new/', c.room_create),
+    path('chat/join/<str:code>/', c.room_link),
+    path('chat/c/<str:handle>/', c.room_handle),
+    path('chat/<int:pk>/mute/', c.mute),
+    path('chat/<int:pk>/media/', c.media),
+    path('chat/<int:pk>/room/', c.room),
+    path('chat/<int:pk>/room/<str:action>/', c.room_act),
+    path('chat/<int:pk>/member/<int:user_id>/<str:action>/', c.room_member),
     path('chat/<int:pk>/', c.messages),
     path('chat/<int:pk>/send/', c.send),
     path('chat/<int:pk>/upload/', c.upload),
+    path('chat/<int:pk>/upload/begin/', c.upload_begin),
+    path('chat/upload/<uuid:upload_id>/', c.upload_chunk),
+    path('chat/upload/<uuid:upload_id>/<str:step>/', c.upload_chunk),
     path('chat/<int:pk>/read/', c.read),
     path('chat/msg/<int:msg_id>/<str:action>/', c.scheduled),
 ]

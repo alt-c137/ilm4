@@ -256,3 +256,16 @@ document.querySelectorAll('[data-share]').forEach(function (b) {
   }
   connect();
 })();
+
+/* Валюта по умолчанию — по часовому поясу устройства (если человек не выбрал сам и нет страны от Cloudflare).
+   Сервер читает куку ilm4_cur_auto (apps/core/money.py). */
+(function () {
+  if (/(?:^|; )ilm4_cur_auto=/.test(document.cookie)) return;
+  var tz = ''; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {}
+  var map = { 'Asia/Tashkent': 'UZS', 'Asia/Samarkand': 'UZS', 'Europe/Moscow': 'RUB', 'Europe/Samara': 'RUB', 'Asia/Yekaterinburg': 'RUB',
+    'Asia/Novosibirsk': 'RUB', 'Europe/Minsk': 'RUB', 'Asia/Almaty': 'KZT', 'Asia/Qostanay': 'KZT', 'Asia/Aqtobe': 'KZT', 'Asia/Bishkek': 'KGS',
+    'Asia/Dushanbe': 'TJS', 'Europe/Kiev': 'UAH', 'Europe/Kyiv': 'UAH', 'Europe/Istanbul': 'TRY', 'Asia/Dubai': 'AED', 'Asia/Riyadh': 'SAR',
+    'Africa/Cairo': 'EGP', 'Europe/London': 'GBP' };
+  var cur = map[tz] || (/^Europe\//.test(tz) ? 'EUR' : /^America\//.test(tz) ? 'USD' : '');
+  if (cur) document.cookie = 'ilm4_cur_auto=' + cur + ';path=/;max-age=' + 180 * 86400 + ';samesite=lax';
+})();

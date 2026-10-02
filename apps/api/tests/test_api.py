@@ -150,7 +150,7 @@ def test_pubs_list_detail_and_message(client):
     assert call(client, 'get', '/api/v1/pubs/buy/', {'q': 'Ковр'}).json()['items']
     assert not call(client, 'get', '/api/v1/pubs/buy/', {'q': 'телефон'}).json()['items']
     d = call(client, 'get', f'/api/v1/pubs/buy/{ok.pk}/').json()
-    assert d['owner']['id'] == seller.pk and any(f['value'].startswith('50 000') for f in d['fields'])
+    assert d['owner']['id'] == seller.pk and any(f['value'].startswith('50\xa0000') for f in d['fields'])
     tok = token_for(buyer)
     r = call(client, 'post', f'/api/v1/pubs/buy/{ok.pk}/message/', token=tok)
     assert r.status_code == 200

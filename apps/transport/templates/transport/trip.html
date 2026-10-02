@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load staff %}
+{% load icons money reviews reports %}
+{% block title %}{{ trip.from_city }} → {{ trip.to_city }} — {{ block.super }}{% endblock %}
+{% block description %}{% translate "Попутчики" %}: {{ trip.from_city }} → {{ trip.to_city }}, {{ trip.departs_local|date:"j E H:i" }}{% endblock %}
+{% block body_class %}s-migration{% endblock %}
+
+{% block content %}
+{% staff_bar trip %}
+{% with owner=trip.owner %}
+<div class="fpage">
+  <a class="crumb" href="{% url 'transport:trips' %}">{% ico 'back' %}{% translate "Попутчики" %}</a>
+  <div class="dcard tripd">
+    {% if trip.is_past %}<div class="tripd__flag">{% translate "Поездка уже состоялась" %}</div>
+    {% elif not trip.is_active %}<div class="tripd__flag">{% translate "Скрыта автором" %}</div>{% endif %}
+    <div class="tripd__when"><b>{{ trip.departs_local|date:"H:i" }}</b><span>{{ trip.departs_local|date:"l, j E" }}</span></div>
+    <h1 class="tripd__route"><span>{{ trip.from_city }}</span><i></i><span>{{ trip.to_city }}</span></h1>
+    {% if trip.via %}<div class="trip__via">{% translate "через" %} {{ trip.via }}</div>{% endif %}
+
+    <div class="tripd__price">{% if trip.price %}{% money trip.price trip.currency %} <small>{% translate "за место" %}</small>{% else %}{% translate "Бесплатно" %}{% endif %}</div>
+
+    <div class="trip__chips">
+      {% if trip.is_driver %}
+        <span class="tchip{% if trip.seats_left == 0 %} tchip--off{% else %} tchip--acc{% endif %}">{% ico 'user' %}{% translate "свободно мест" %}: {{ trip.seats_left }} {% translate "из" %} {{ trip.seats }}</span>
+        {% if trip.front_seat %}<span class="tchip">{% translate "переднее место свободно" %}</span>{% endif %}
+        {% if trip.car %}<span class="tchip">{{ trip.car }}</span>{% endif %}
+      {% else %}
+        <span class="tchip tchip--seek">{% translate "ищу машину" %} · {% translate "нас" %}: {{ trip.seats }}</span>
+      {% endif %}
+      {% if trip.audience != 'any' %}<span class="tchip">{{ trip.get_audience_display }}</span>{% endif %}
+      {% if trip.parcels %}<span class="tchip">{% translate "возьму посылку" %}</span>{% endif %}
+    </div>
+
+    {% if trip.comment %}<div class="prose tripd__c">{{ trip.comment|linebreaks }}</div>{% endif %}
+
+    <div class="sepline"></div>
+    <a class="person person--link" href="{% url 'accounts:public' owner.pk %}">
+      {% if owner.avatar %}<img class="person__ava" src="{{ owner.avatar.url }}" alt="">{% else %}<span class="person__ava">{{ owner.get_display_name|slice:":1"|upper }}</span>{% endif %}
+      <div>
+        <div class="person__n">{{ owner.get_display_name }}</div>
+        <div class="person__s">{% if trip.is_driver %}{% translate "водитель" %}{% else %}{% translate "пассажир" %}{% endif %} · {% translate "на ilm4 с" %} {{ owner.date_joined|date:"E Y"|lower }}</div>
+      </div>
+      <svg class="person__go" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+    </a>
+    <div class="pcard__rep pcard__rep--left">{% rating_badge owner %}{% verified_badge owner %}</div>
+
+    {% if mine %}
+      <div class="dact"><a class="btn btn--g" href="{% url 'core:my' %}">{% ico 'edit' %}{% translate "Изменить или скрыть" %}</a></div>
+      {% if trip.is_driver %}
+      <h2 class="set__h">{% translate "Заявки на места" %}</h2>
+      {% for r in requests %}
+      <div class="treq treq--{{ r.status }}">
+        <a class="treq__who" href="{% url 'accounts:public' r.user_id %}"><b>{{ r.user.get_display_name }}</b>{% rating_badge r.user True %}</a>
+        <span class="treq__n">{% translate "мест" %}: {{ r.seats }}</span>
+        <span class="treq__st">{{ r.get_status_display }}</span>
+        {% if r.status == 'pending' %}
+        <form method="post" action="{% url 'transport:trip_request_act' r.pk 'accept' %}">{% csrf_token %}<button class="btn btn--s btn--p" type="submit">{% translate "Взять" %}</button></form>
+        <form method="post" action="{% url 'transport:trip_request_act' r.pk 'decline' %}">{% csrf_token %}<button class="btn btn--s btn--g" type="submit">{% translate "Отказать" %}</button></form>
+        {% endif %}
+        <a class="btn btn--s btn--g" href="{% url 'chat:start' %}?user={{ r.user_id }}">{% ico 'chat' %}</a>
+      </div>
+      {% empty %}<p class="tnote">{% translate "Заявок пока нет. Когда кто-то попросит место, придёт уведомление." %}</p>
+      {% endfor %}
+      {% endif %}
+    {% elif not trip.is_past %}
+      <div class="dact tripd__act">
+        {% if trip.is_driver %}
+          {% if my_request and my_request.status == 'pending' %}
+            <div class="tripd__my">{% translate "Заявка отправлена — ждём ответа водителя." %}</div>
+            <form method="post" action="{% url 'transport:trip_request_act' my_request.pk 'cancel' %}">{% csrf_token %}<button class="btn btn--g" type="submit">{% translate "Отменить заявку" %}</button></form>
+          {% elif my_request and my_request.status == 'accepted' %}
+            <div class="tripd__my tripd__my--ok">✓ {% translate "Место за вами" %}: {{ my_request.seats }}</div>
+            <form method="post" action="{% url 'transport:trip_request_act' my_request.pk 'cancel' %}">{% csrf_token %}<button class="btn btn--g" type="submit">{% translate "Не смогу поехать" %}</button></form>
+          {% elif trip.seats_left %}
+            <form method="post" action="{% url 'transport:trip_request' trip.pk %}" class="tripd__book">{% csrf_token %}
+              <label>{% translate "Мест" %}
+                <select name="seats">{% for i in "12345678" %}{% if forloop.counter <= trip.seats_left %}<option value="{{ forloop.counter }}">{{ forloop.counter }}</option>{% endif %}{% endfor %}</select>
+              </label>
+              <button class="btn btn--p" type="submit">{% translate "Занять место" %}</button>
+            </form>
+          {% else %}
+            <div class="tripd__my">{% translate "Свободных мест нет — напишите водителю, вдруг кто-то откажется." %}</div>
+          {% endif %}
+        {% endif %}
+        {% if user.is_authenticated %}
+        <a class="btn {% if trip.is_driver %}btn--g{% else %}btn--p{% endif %}" href="{% url 'chat:start' %}?user={{ owner.pk }}&amp;ctx=trips&amp;ctx_id={{ trip.pk }}">{% ico 'chat' %}{% translate "Написать" %}</a>
+        {% else %}
+        <a class="btn btn--g" href="{% url 'accounts:login' %}?next={{ request.path }}">{% translate "Войдите, чтобы написать" %}</a>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+  {% if not mine %}{% report_button trip %}{% endif %}
+  <div class="dnote">{% ico 'shield' %}<span>{% translate "Деньги — при посадке, не заранее. Сообщите близким маршрут и номер машины. Сёстрам — ехать с махрамом или в машине «только сёстры»." %}</span></div>
+</div>
+{% endwith %}
+{% endblock %}

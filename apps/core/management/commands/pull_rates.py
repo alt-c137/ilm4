@@ -32,4 +32,6 @@ class Command(BaseCommand):
             Rate.objects.update_or_create(
                 code=code, defaults={'rate': round(rate_uzs, 2)})
             self.stdout.write(f'{code}: {rate_uzs:.2f} сум')
+        from apps.core import fx
+        fx.refresh()                                   # все валюты и крипта — в общий кеш (пересчёт цен, «Сегодня»)
         self.stdout.write(self.style.SUCCESS('Курсы обновлены'))

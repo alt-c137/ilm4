@@ -10,7 +10,7 @@ from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LogoutView
 from django.shortcuts import redirect, render
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy as _lazy
@@ -131,12 +131,30 @@ password_reset_complete = auth_views.PasswordResetCompleteView.as_view(
 
 @login_required
 def profile(request):
-    form = ProfileForm(request.POST or None, request.FILES or None, instance=request.user)
+    from . import people
+    from .models import SocialLink
+    user = request.user
+    form = ProfileForm(request.POST or None, request.FILES or None, instance=user)
+    link_error = ''
     if request.method == 'POST' and form.is_valid():
+        rows = [{'kind': k, 'value': v, 'privacy': pr} for k, v, pr in zip(
+            request.POST.getlist('link_kind'), request.POST.getlist('link_value'), request.POST.getlist('link_privacy'))]
+        try:
+            people.set_links(user, rows)
+        except people.PeopleError as exc:
+            link_error = exc.message
         form.save()
-        messages.success(request, _('Профиль обновлён.'))
-        return redirect('accounts:profile')
-    return render(request, 'accounts/profile.html', {'form': form})
+        if not link_error:
+            messages.success(request, _('Профиль обновлён.'))
+            return redirect('accounts:profile')
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    me = User.objects.get(pk=user.pk)                 # без несохранённых правок формы
+    return render(request, 'accounts/profile.html', {
+        'form': form, 'me': me, 'links': people.links_for(me, me), 'link_error': link_error,
+        'link_kinds': SocialLink.KINDS, 'privacy_levels': User.PRIVACY,
+        'close_friends': people.close_friends(user)[:50],
+        'edit_open': request.method == 'POST' or request.GET.get('edit') == '1'})
 
 
 @login_required
@@ -178,6 +196,16 @@ def two_factor_verify(request):
     return render(request, 'accounts/2fa_verify.html')
 
 
+def _call_flags(thread) -> dict:
+    """Включены ли звонки (кнопки «Звонок» и «Видео» в профиле человека)."""
+    from apps.api.base import module_on
+    if not module_on('chat'):
+        return {}
+    from apps.chat import services as chat
+    f = chat.flags(thread)
+    return {'calls': f.get('calls'), 'video_calls': f.get('video_calls')}
+
+
 def public_profile(request, pk):
     """Публичная страница участника: продавец / исполнитель / перевозчик.
     Репутация — у человека, а не у одного объявления: рейтинг и отзывы здесь."""
@@ -186,10 +214,28 @@ def public_profile(request, pk):
 
     from apps.core.models import Moderation
 
+    from . import people
     person = get_object_or_404(get_user_model(), pk=pk, is_active=True)
     approved = {'status': Moderation.APPROVED}
+    viewer = request.user if request.user.is_authenticated else None
+    mine = viewer is not None and viewer.pk == person.pk
+    close = people.is_close(person, viewer)                    # зритель в близких у хозяина страницы
+    presence = people.presence(person, viewer, close)
+    thread, shared = None, {}
+    if viewer is not None and not mine:
+        from apps.chat import services as chat
+        thread = chat.direct_between(viewer, person)
+        if thread is not None:
+            shared = {'media': chat.shared_media(thread, viewer, 'media', limit=30),
+                      'files': chat.shared_media(thread, viewer, 'files', limit=30),
+                      'muted': chat.is_muted(thread, viewer)}
     return render(request, 'accounts/public.html', {
-        'person': person,
+        'person': person, 'mine': mine,
+        'status': people.status_text(presence), 'online': presence['online'],
+        'phone': people.phone_for(person, viewer, close), 'links': people.links_for(person, viewer, close),
+        'is_close': viewer is not None and not mine and people.is_close(viewer, person),
+        'thread': thread, 'shared': shared,
+        'calls': _call_flags(thread) if viewer is not None and not mine else {},
         'listings': person.listings.filter(is_active=True, **approved)[:8],
         'rides': person.rides.filter(**approved)[:6],
         'services': person.services.filter(**approved)[:6],
@@ -221,6 +267,31 @@ def block_toggle(request, pk):
         log_action(request, 'Заблокирован пользователь', f'#{other.pk}')
         messages.success(request, _('{v0} заблокирован(а): не сможет писать вам. Разблокировать — Профиль → Заблокированные.').format(v0=other.get_display_name()))
     return redirect(nxt or 'accounts:blocked')
+
+
+@login_required
+def close_toggle(request, pk):
+    """Добавить человека в близкие друзья / убрать: им видно то, что скрыто от остальных."""
+    from django.contrib.auth import get_user_model
+    from django.shortcuts import get_object_or_404
+
+    from . import people
+    other = get_object_or_404(get_user_model(), pk=pk, is_active=True)
+    if request.method == 'POST' and other.pk != request.user.pk:
+        on = people.set_close(request.user, other, not people.is_close(request.user, other))
+        name = other.get_display_name()
+        messages.success(request, _('{v0} — в близких друзьях.').format(v0=name) if on
+                         else _('{v0} убран(а) из близких друзей.').format(v0=name))
+    nxt = request.POST.get('next', '')
+    if not url_has_allowed_host_and_scheme(nxt, allowed_hosts={request.get_host()}):
+        nxt = ''
+    return redirect(nxt or reverse('accounts:public', args=[pk]))
+
+
+def ping(request):
+    """Открытая вкладка раз в минуту сообщает «я в сети» (сама отметка — в LastSeenMiddleware)."""
+    from django.http import JsonResponse
+    return JsonResponse({'ok': True})
 
 
 @login_required
@@ -267,7 +338,12 @@ def _wipe_user(user) -> None:
         user.avatar.delete(save=False)
     user.email = f'deleted-{user.pk}@deleted.ilm4.local'
     user.username = f'deleted-{user.pk}'
-    user.first_name = user.last_name = user.nickname = user.city = user.phone = ''
+    user.first_name = user.last_name = user.nickname = user.city = user.phone = user.bio = ''
+    user.handle = None                       # имя освобождается
+    user.last_seen_at = None
+    user.social_links.all().delete()
+    user.close_friends.all().delete()
+    user.close_of.all().delete()
     user.findable_by_phone = False
     user.phone_verified_at = None
     user.telegram_id = None

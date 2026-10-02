@@ -16,6 +16,12 @@ type F = { name: string; label: string; kind: string; required: boolean; help: s
   choices?: { key: string | number; name: string }[]; value?: any };
 type Schema = { key: string; title: string; fields: F[]; editing: boolean; pledge: string[]; price: number; geo: boolean };
 
+/** Дата и время «как на часах телефона»: 2026-10-05T14:30 (без перевода в UTC). */
+function localISO(d: Date) {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
 /** Подача и правка публикации. Поля приходят с сервера (те же формы и проверки, что на сайте). */
 export default function Publish() {
   const { key, id } = useLocalSearchParams<{ key: string; id?: string }>();
@@ -28,6 +34,7 @@ export default function Publish() {
   const [busy, setBusy] = useState(false);
   const [pick, setPick] = useState<F | null>(null);
   const [date, setDate] = useState<F | null>(null);
+  const [clock, setClock] = useState<{ f: F; day: Date } | null>(null);     // второй шаг «дата и время»: выбор времени
 
   useEffect(() => {
     api<Schema>(`/pubs/${key}/form/${id ? `?id=${id}` : ''}`).then((r) => {
@@ -69,6 +76,8 @@ export default function Publish() {
         if (f.kind === 'bool') { if (val) form.append(f.name, 'on'); continue; }
         if (val !== undefined && val !== null && val !== '') form.append(f.name, String(val));
       }
+      // время выезда человек вводит по своим часам — сообщаем серверу часовой пояс телефона
+      if (s.fields.some((f) => f.kind === 'datetime')) form.append('tz_offset', String(-new Date().getTimezoneOffset()));
       for (const [name, a] of Object.entries(files)) form.append(name, { uri: a.uri, name: a.fileName || 'photo.jpg', type: a.mimeType || 'image/jpeg' } as any);
       const r = await api(`/pubs/${key}/save/`, { form, timeout: 60000 });
       Alert.alert(r.message);
@@ -99,6 +108,8 @@ export default function Publish() {
               </View>
             );
           }
+          // «ищу машину»: поля про машину не нужны
+          if (key === 'trips' && v.role === 'passenger' && ['car', 'front_seat', 'parcels', 'audience'].includes(f.name)) return null;
           const label = `${f.label}${f.required ? ' *' : ''}`;
           if (f.kind === 'text' || f.kind === 'line' || f.kind === 'url' || f.kind === 'number') {
             return <Field key={f.name} label={label} value={v[f.name] === undefined ? '' : String(v[f.name])} onChangeText={(x) => set(f.name, x)}
@@ -144,6 +155,19 @@ export default function Publish() {
               </View>
             );
           }
+          if (f.kind === 'datetime') {
+            const val = v[f.name] ? String(v[f.name]) : '';
+            const shown = val ? `${val.slice(8, 10)}.${val.slice(5, 7)}.${val.slice(0, 4)} · ${val.slice(11, 16)}` : '';
+            return (
+              <View key={f.name} style={{ gap: 6 }}>
+                <Txt kind="small" style={{ fontWeight: '600', color: c.ink }}>{label}</Txt>
+                <Pressable onPress={() => setDate(f)} style={{ backgroundColor: c.card2, borderRadius: 16, padding: 14, borderWidth: 1, borderColor: errors[f.name] ? c.bad : c.line }}>
+                  <Txt color={val ? c.ink : c.inkSoft}>{shown || t('Выбрать дату и время')}</Txt>
+                </Pressable>
+                {errors[f.name] ? <Txt kind="small" color={c.bad}>{errors[f.name]}</Txt> : null}
+              </View>
+            );
+          }
           if (f.kind === 'image') {
             const uri = files[f.name]?.uri ?? f.value;
             return (
@@ -179,7 +203,24 @@ export default function Publish() {
         </Modal>
         {date ? (
           <DateTimePicker value={v[date.name] ? new Date(v[date.name]) : new Date()} mode="date" minimumDate={new Date()}
-            onChange={(e, d) => { const f = date; setDate(null); if (e.type === 'set' && d) set(f.name, d.toISOString().slice(0, 10)); }} />
+            onChange={(e, d) => {
+              const f = date;
+              setDate(null);
+              if (e.type !== 'set' || !d) return;
+              if (f.kind === 'datetime') setClock({ f, day: d });          // дальше — время
+              else set(f.name, localISO(d).slice(0, 10));
+            }} />
+        ) : null}
+        {clock ? (
+          <DateTimePicker value={v[clock.f.name] ? new Date(v[clock.f.name]) : clock.day} mode="time" is24Hour
+            onChange={(e, d) => {
+              const { f, day } = clock;
+              setClock(null);
+              if (e.type !== 'set' || !d) return;
+              const when = new Date(day);
+              when.setHours(d.getHours(), d.getMinutes(), 0, 0);
+              set(f.name, localISO(when));
+            }} />
         ) : null}
       </Screen>
     </KeyboardAvoidingView>

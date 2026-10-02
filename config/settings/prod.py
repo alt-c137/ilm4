@@ -33,3 +33,13 @@ STORAGES = {
 
 # Вложения чата отдаёт nginx после проверки участника в Django (location /protected-media/)
 CHAT_XACCEL = env('CHAT_XACCEL', default=True)
+
+# Набор готовых соединений с базой вместо «новое соединение на каждый запрос» — быстрее под нагрузкой.
+# Включается DB_POOL=True в .env (нужен пакет psycopg[pool], он в requirements).
+if env('DB_POOL', default=False):
+    DATABASES['default'].setdefault('OPTIONS', {})['pool'] = {'min_size': 2, 'max_size': env.int('DB_POOL_MAX', default=12)}
+
+# django-solo: «Настройки сайта» читаются на каждой странице — держим их в общем кеше (Redis),
+# сохранение в админке сразу его сбрасывает.
+SOLO_CACHE = 'default'
+SOLO_CACHE_TIMEOUT = 300

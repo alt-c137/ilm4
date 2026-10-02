@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load icons %}
+{% block title %}{% translate "Попутчики —" %} {{ block.super }}{% endblock %}
+{% block description %}{% translate "Попутчики: кто куда едет и берёт людей. Мекка, Медина, Джидда и любые города — выберите маршрут и дату, займите место." %}{% endblock %}
+{% block body_class %}s-migration{% endblock %}
+
+{% block content %}
+<div class="svc">
+{% include 'includes/section_hero.html' with icon="🚗" icslug="transport" title=_("Попутчики") desc=_("Едете сами — возьмите попутчиков. Нужно доехать — найдите машину. Мекка, Медина и любые города") class="migration" cta=_("Предложить поездку") cta_url="/transport/trips/add/" %}
+{% include 'transport/_tabs.html' with tab='trips' %}
+
+  <div class="toolbar">
+    <form method="get" class="rroute" autocomplete="off">
+      <label class="rroute__f">{% ico 'pin' %}<input type="text" name="from" value="{{ f_from }}" placeholder="{% translate 'Откуда' %}" list="trip-cities" aria-label="{% translate 'Откуда' %}"></label>
+      <button type="button" class="rroute__swap" id="route-swap" aria-label="{% translate 'Поменять местами' %}">⇄</button>
+      <label class="rroute__f">{% ico 'pin' %}<input type="text" name="to" value="{{ f_to }}" placeholder="{% translate 'Куда' %}" list="trip-cities" aria-label="{% translate 'Куда' %}"></label>
+      <label class="rroute__f rroute__f--date">{% ico 'calendar' %}<input type="date" name="date" value="{{ f_date }}" aria-label="{% translate 'Дата' %}"></label>
+      {% if f_role %}<input type="hidden" name="role" value="{{ f_role }}">{% endif %}
+      {% if f_who %}<input type="hidden" name="who" value="{{ f_who }}">{% endif %}
+      <button type="submit" class="btn btn--p">{% translate "Найти" %}</button>
+      <datalist id="trip-cities">{% for c in cities %}<option value="{{ c }}">{% endfor %}</datalist>
+    </form>
+    <div class="chips" style="margin-top:10px">
+      <a class="chip{% if not f_role %} chip--on{% endif %}" href="?from={{ f_from|urlencode }}&amp;to={{ f_to|urlencode }}&amp;date={{ f_date }}&amp;who={{ f_who }}">{% translate "Все" %}</a>
+      <a class="chip{% if f_role == 'driver' %} chip--on{% endif %}" href="?from={{ f_from|urlencode }}&amp;to={{ f_to|urlencode }}&amp;date={{ f_date }}&amp;who={{ f_who }}&amp;role=driver">{% translate "Есть места" %}</a>
+      <a class="chip{% if f_role == 'passenger' %} chip--on{% endif %}" href="?from={{ f_from|urlencode }}&amp;to={{ f_to|urlencode }}&amp;date={{ f_date }}&amp;who={{ f_who }}&amp;role=passenger">{% translate "Ищут машину" %}</a>
+      <span class="chips__sep"></span>
+      {% for key, label in audiences %}{% if key != 'any' %}
+      <a class="chip{% if f_who == key %} chip--on{% endif %}" href="?from={{ f_from|urlencode }}&amp;to={{ f_to|urlencode }}&amp;date={{ f_date }}&amp;role={{ f_role }}{% if f_who != key %}&amp;who={{ key }}{% endif %}">{{ label }}</a>
+      {% endif %}{% endfor %}
+    </div>
+  </div>
+
+  {% if routes %}
+  <div class="rpop">
+    <span class="rpop__l">{% translate "Куда едут чаще всего" %}</span>
+    <div class="rpop__row">
+      {% for r in routes %}<a class="rpop__i{% if r.from_city == f_from and r.to_city == f_to %} on{% endif %}" href="?from={{ r.from_city|urlencode }}&amp;to={{ r.to_city|urlencode }}">{{ r.from_city }} <i>→</i> {{ r.to_city }} <small>{{ r.n }}</small></a>{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="grid g2 trips">
+    {% for t in page %}{% include 'transport/_trip_card.html' %}{% empty %}
+    <div class="empty" style="grid-column:1/-1">
+      <div class="empty__plug"><svg viewBox="0 0 24 24"><path d="M4 15.5 5.6 10a2 2 0 0 1 1.9-1.5h9a2 2 0 0 1 1.9 1.5l1.6 5.5v3H4z"/><circle cx="8" cy="16" r="1.2"/><circle cx="16" cy="16" r="1.2"/></svg></div>
+      <h3 style="font-size:18px;font-weight:800">{% if f_from or f_to or f_date %}{% translate "По этому маршруту поездок пока нет" %}{% else %}{% translate "Поездок пока нет" %}{% endif %}</h3>
+      <p style="color:var(--ink-soft)">{% translate "Едете сами или ищете машину? Оставьте поездку — её увидят те, кому по пути." %}</p>
+      <a class="btn btn--p" href="{% url 'transport:trip_create' %}">{% translate "Предложить поездку" %}</a>
+    </div>
+    {% endfor %}
+  </div>
+  {% if page.has_other_pages %}
+  <div class="pager">
+    {% if page.has_previous %}<a class="btn btn--g" href="?from={{ f_from|urlencode }}&amp;to={{ f_to|urlencode }}&amp;date={{ f_date }}&amp;role={{ f_role }}&amp;who={{ f_who }}&amp;page={{ page.previous_page_number }}">←</a>{% endif %}
+    <span>{{ page.number }} / {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a class="btn btn--g" href="?from={{ f_from|urlencode }}&amp;to={{ f_to|urlencode }}&amp;date={{ f_date }}&amp;role={{ f_role }}&amp;who={{ f_who }}&amp;page={{ page.next_page_number }}">→</a>{% endif %}
+  </div>
+  {% endif %}
+  {% include 'includes/disclaimer.html' %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('route-swap').addEventListener('click', function () {
+  var f = document.querySelector('.rroute input[name=from]'), t = document.querySelector('.rroute input[name=to]');
+  var x = f.value; f.value = t.value; t.value = x;
+});
+</script>
+{% endblock %}

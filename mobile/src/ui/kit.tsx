@@ -1,13 +1,15 @@
 /** Общие элементы интерфейса в стиле ilm4. */
 import Ionicons from '@expo/vector-icons/Ionicons';
+import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import type { ComponentProps, ReactNode } from 'react';
+import { createContext, useContext, useEffect, type ComponentProps, type ReactNode } from 'react';
 import {
-  ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View,
+  ActivityIndicator, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View,
   type StyleProp, type TextInputProps, type TextStyle, type ViewStyle,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSpring, withTiming } from 'react-native-reanimated';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { radius } from '@/lib/theme';
 import { useApp } from '@/state/app';
@@ -51,12 +53,17 @@ export function OfflineBar() {
   );
 }
 
+/** Экран показан как вкладка (нижняя кнопка): стрелка «назад» не нужна. */
+export const TabMode = createContext(false);
+
 /** Экран: безопасные отступы, заголовок, прокрутка, «потяни, чтобы обновить». */
 export function Screen({ title, back = false, right, children, scroll = true, onRefresh, refreshing = false, padded = true, edges }: {
   title?: string; back?: boolean; right?: ReactNode; children: ReactNode; scroll?: boolean;
   onRefresh?: () => void; refreshing?: boolean; padded?: boolean; edges?: ('top' | 'bottom')[];
 }) {
   const { c } = useApp();
+  const inTab = useContext(TabMode);
+  if (inTab) back = false;
   const body = scroll ? (
     <ScrollView
       contentContainerStyle={[padded && { padding: 16, paddingBottom: 40 }, { gap: 14 }]}
@@ -85,6 +92,54 @@ export function Screen({ title, back = false, right, children, scroll = true, on
   );
 }
 
+const APressable = Animated.createAnimatedComponent(Pressable);
+
+/**
+ * Нажимаемый элемент с «живым» откликом: слегка проседает под пальцем и пружинит обратно.
+ * Анимация идёт в отдельном потоке интерфейса (Reanimated) — не подтормаживает, даже когда приложение занято.
+ */
+export function Press({ children, style, onPress, onLongPress, disabled, scale = 0.97, haptic, hitSlop, accessibilityRole }: {
+  children: ReactNode; style?: StyleProp<ViewStyle>; onPress?: () => void; onLongPress?: () => void; disabled?: boolean;
+  scale?: number; haptic?: boolean; hitSlop?: number; accessibilityRole?: 'button' | 'link' | 'tab';
+}) {
+  const v = useSharedValue(1);
+  const anim = useAnimatedStyle(() => ({ transform: [{ scale: v.get() }] }));
+  return (
+    <APressable
+      disabled={disabled} hitSlop={hitSlop} accessibilityRole={accessibilityRole} onLongPress={onLongPress}
+      onPress={() => { if (haptic) Haptics.selectionAsync().catch(() => {}); onPress?.(); }}
+      onPressIn={() => v.set(withTiming(scale, { duration: 90 }))}
+      onPressOut={() => v.set(withSpring(1, { damping: 14, stiffness: 260 }))}
+      style={[style, anim]}>
+      {children}
+    </APressable>
+  );
+}
+
+/** Заглушка на время загрузки списка: серые «карточки» мягко мерцают — понятно, что данные идут. */
+export function Skeleton({ rows = 6, image = false }: { rows?: number; image?: boolean }) {
+  const { c } = useApp();
+  const o = useSharedValue(0.45);
+  useEffect(() => {
+    o.set(withRepeat(withTiming(1, { duration: 750 }), -1, true));
+  }, [o]);
+  const anim = useAnimatedStyle(() => ({ opacity: o.get() }));
+  return (
+    <Animated.View style={[{ gap: 10 }, anim]}>
+      {Array.from({ length: rows }, (_x, i) => (
+        <View key={i} style={{ flexDirection: 'row', gap: 12, backgroundColor: c.card, borderRadius: 20, padding: 12 }}>
+          {image ? <View style={{ width: 84, height: 84, borderRadius: 14, backgroundColor: c.card2 }} /> : null}
+          <View style={{ flex: 1, gap: 9, justifyContent: 'center', paddingVertical: image ? 0 : 6 }}>
+            <View style={{ height: 15, width: `${72 - (i % 3) * 12}%`, borderRadius: 6, backgroundColor: c.card2 }} />
+            <View style={{ height: 12, width: `${48 + (i % 2) * 14}%`, borderRadius: 6, backgroundColor: c.card2 }} />
+            <View style={{ height: 10, width: '26%', borderRadius: 6, backgroundColor: c.card2 }} />
+          </View>
+        </View>
+      ))}
+    </Animated.View>
+  );
+}
+
 export function Card({ children, style, onPress, soft }: { children: ReactNode; style?: StyleProp<ViewStyle>; onPress?: () => void; soft?: boolean }) {
   const { c, dark } = useApp();
   const st = [{
@@ -92,7 +147,7 @@ export function Card({ children, style, onPress, soft }: { children: ReactNode; 
     ...(dark || soft ? {} : { shadowColor: '#15172a', shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 1 }),
   }, style];
   if (!onPress) return <View style={st}>{children}</View>;
-  return <Pressable onPress={onPress} style={({ pressed }) => [st, pressed && { opacity: 0.85, transform: [{ scale: 0.99 }] }]}>{children}</Pressable>;
+  return <Press onPress={onPress} scale={0.98} style={st}>{children}</Press>;
 }
 
 export function Button({ title, onPress, kind = 'primary', icon, loading, disabled, style, small, color }: {
@@ -103,16 +158,16 @@ export function Button({ title, onPress, kind = 'primary', icon, loading, disabl
   const bg = { primary: c.accent, ghost: 'transparent', soft: c.accentSoft, danger: c.bad }[kind];
   const fg = color ?? { primary: c.onAccent, ghost: c.accent, soft: c.accentD, danger: '#fff' }[kind];
   return (
-    <Pressable
-      onPress={onPress} disabled={disabled || loading} accessibilityRole="button"
-      style={({ pressed }) => [{
+    <Press
+      onPress={onPress} disabled={disabled || loading} accessibilityRole="button" scale={0.96} haptic={kind === 'primary'}
+      style={[{
         backgroundColor: bg, borderRadius: radius.pill, paddingVertical: small ? 9 : 14, paddingHorizontal: small ? 14 : 20,
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-        borderWidth: kind === 'ghost' ? 1.5 : 0, borderColor: color ?? c.accent, opacity: disabled ? 0.5 : pressed ? 0.85 : 1,
+        borderWidth: kind === 'ghost' ? 1.5 : 0, borderColor: color ?? c.accent, opacity: disabled ? 0.5 : 1,
       }, style]}>
       {loading ? <ActivityIndicator color={fg} /> : icon ? <Icon name={icon} size={small ? 16 : 19} color={fg} /> : null}
       <Text style={{ color: fg, fontWeight: '700', fontSize: small ? 14 : 16, flexShrink: 1 }} numberOfLines={1} adjustsFontSizeToFit>{title}</Text>
-    </Pressable>
+    </Press>
   );
 }
 
@@ -137,13 +192,13 @@ export function Field({ label, error, style, ...props }: TextInputProps & { labe
 export function Chip({ label, on, onPress, icon }: { label: string; on?: boolean; onPress?: () => void; icon?: IconName }) {
   const { c } = useApp();
   return (
-    <Pressable onPress={onPress} style={{
+    <Press onPress={onPress} scale={0.94} haptic style={{
       flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 14, borderRadius: radius.pill,
       backgroundColor: on ? c.accent : c.card, borderWidth: 1, borderColor: on ? c.accent : c.line,
     }}>
       {icon ? <Icon name={icon} size={15} color={on ? '#fff' : c.inkSoft} /> : null}
       <Text style={{ color: on ? '#fff' : c.ink, fontWeight: '600', fontSize: 14 }}>{label}</Text>
-    </Pressable>
+    </Press>
   );
 }
 
@@ -220,12 +275,23 @@ export function ErrorBox({ error, onRetry }: { error: string; onRetry?: () => vo
   return <Empty icon="alert-circle-outline" title={error} action={onRetry ? <Button small kind="soft" title={t('Повторить')} onPress={onRetry} /> : null} />;
 }
 
-export function Avatar({ uri, name, size = 44, hue = 0 }: { uri?: string; name: string; size?: number; hue?: number }) {
+export function Avatar({ uri, name, size = 44, hue = 0, online }: { uri?: string; name: string; size?: number; hue?: number; online?: boolean }) {
+  const { c } = useApp();
   const colors = ['#6d5efc', '#0ea5e9', '#10b981', '#f97316', '#ec4899', '#8b5cf6', '#14b8a6'];
-  if (uri) return <Image source={{ uri }} style={{ width: size, height: size, borderRadius: size / 2 }} contentFit="cover" />;
-  return (
+  const font = Math.round(size * 0.4);
+  const face = uri ? <Image source={{ uri }} style={{ width: size, height: size, borderRadius: size / 2 }} contentFit="cover" /> : (
     <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: colors[Math.abs(hue) % colors.length], alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ color: '#fff', fontWeight: '800', fontSize: size * 0.4 }}>{(name || '?').slice(0, 1).toUpperCase()}</Text>
+      {/* высота строки и отступы шрифта заданы явно — иначе на Android буква уезжает вверх */}
+      <Text allowFontScaling={false} style={{ color: '#fff', fontWeight: '800', fontSize: font, lineHeight: Math.round(font * 1.22), textAlign: 'center',
+        includeFontPadding: false, textAlignVertical: 'center' }}>{(name || '?').trim().slice(0, 1).toUpperCase()}</Text>
+    </View>
+  );
+  if (!online) return face;
+  const dot = Math.max(11, Math.round(size * 0.26));
+  return (
+    <View style={{ width: size, height: size }}>
+      {face}
+      <View style={{ position: 'absolute', right: 0, bottom: 0, width: dot, height: dot, borderRadius: dot / 2, backgroundColor: '#2fc55e', borderWidth: 2.5, borderColor: c.card }} />
     </View>
   );
 }
@@ -237,6 +303,36 @@ export function Badge({ n }: { n: number }) {
     <View style={{ minWidth: 20, height: 20, borderRadius: 10, backgroundColor: c.bad, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center' }}>
       <Text style={{ color: '#fff', fontSize: 12, fontWeight: '800' }}>{n > 99 ? '99+' : n}</Text>
     </View>
+  );
+}
+
+export type SheetItem = { title: string; subtitle?: string; icon?: IconName; danger?: boolean; on?: boolean; onPress: () => void };
+
+/** Меню снизу экрана (как в Telegram): сколько угодно пунктов — системное окно Android вмещает только три. */
+export function Sheet({ open, onClose, title, items }: { open: boolean; onClose: () => void; title?: string; items: SheetItem[] }) {
+  const { c } = useApp();
+  const insets = useSafeAreaInsets();
+  return (
+    <Modal visible={open} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
+      <Pressable style={{ flex: 1, backgroundColor: c.overlay }} onPress={onClose} accessibilityLabel="close" />
+      <View style={{ backgroundColor: c.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 8, paddingBottom: 10 + insets.bottom, maxHeight: '75%' }}>
+        <View style={{ alignSelf: 'center', width: 38, height: 4, borderRadius: 2, backgroundColor: c.line, marginBottom: 6 }} />
+        {title ? <Txt kind="label" style={{ paddingHorizontal: 20, paddingVertical: 6 }}>{title}</Txt> : null}
+        <ScrollView>
+          {items.map((it) => (
+            <Pressable key={it.title} onPress={() => { onClose(); it.onPress(); }}
+              style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingVertical: 13, backgroundColor: pressed ? c.card2 : 'transparent' })}>
+              {it.icon ? <Icon name={it.icon} size={22} color={it.danger ? c.bad : c.inkSoft} /> : null}
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 16, color: it.danger ? c.bad : c.ink, fontWeight: it.on ? '700' : '500' }}>{it.title}</Text>
+                {it.subtitle ? <Txt kind="small">{it.subtitle}</Txt> : null}
+              </View>
+              {it.on ? <Icon name="checkmark" size={20} color={c.accent} /> : null}
+            </Pressable>
+          ))}
+        </ScrollView>
+      </View>
+    </Modal>
   );
 }
 

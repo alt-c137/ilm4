@@ -5,6 +5,7 @@ from django.contrib import admin
 from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path
 
+from apps.chat.views_rooms import public_page as chat_public_page
 from apps.core import seo
 
 admin.site.site_header = 'ilm4 — управление'
@@ -16,6 +17,7 @@ urlpatterns = [
     path('sitemap.xml', sitemap, {'sitemaps': seo.SITEMAPS}, name='sitemap'),
     path('sw.js', seo.service_worker),
     path('offline/', seo.offline),
+    path('healthz/', seo.healthz),
     path('accounts/', include('apps.accounts.urls')),
     path('wallet/', include('apps.wallet.urls')),
     path('prayer/', include('apps.prayer.urls')),
@@ -30,8 +32,10 @@ urlpatterns = [
     path('library/', include('apps.library.urls')),
     path('nikah/', include('apps.nikah.urls')),
     path('chat/', include('apps.chat.urls')),
+    path('c/<str:handle>/', chat_public_page, name='channel_public'),
     path('refugee/', include('apps.refugee.urls')),
     path('transport/', include('apps.transport.urls')),
+    path('tracker/', include('apps.tracker.urls')),
     path('reviews/', include('apps.reviews.urls')),
     path('deals/', include('apps.deals.urls')),
     path('payments/', include('apps.payments.urls')),

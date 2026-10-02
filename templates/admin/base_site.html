@@ -1,5 +1,5 @@
 {% extends "admin/base.html" %}
-{% load i18n %}
+{% load i18n static %}
 {% comment %}
 Фирменная тема админки ilm4: палитра сайта (фиолетовый акцент) + шрифт Inter,
 светлая и тёмная тема (переключатель Django справа вверху: авто / светлая / тёмная).
@@ -27,9 +27,7 @@
 {% endblock %}
 
 {% block extrastyle %}{{ block.super }}
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/fonts.css' %}">
 <style>
   /* ---------- светлая тема ---------- */
   :root{

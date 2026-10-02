@@ -1,49 +1,82 @@
 {% extends 'base.html' %}
+{% load money %}
 {% load i18n %}
-{% load icons reviews humanize %}{% load reports %}
+{% load icons reviews humanize static %}{% load reports %}
 {% block title %}{{ person.get_display_name }} — {{ block.super }}{% endblock %}
 {% block description %}{{ person.get_display_name }} {% translate "на ilm4: отзывы, рейтинг, объявления и услуги." %}{% endblock %}
+{% block body_class %}page-tp{% endblock %}
 
 {% block content %}
-<div class="dpage">
-  <div class="dgrid dgrid--rev">
-    <aside class="dside">
-      <div class="dcard pcard">
-        <div class="pcard__ava pcard__ava--m">{% if person.avatar %}<img src="{{ person.avatar.url }}" alt="">{% else %}{{ person.get_display_name|slice:":1"|upper }}{% endif %}</div>
-        <h1 class="dtitle">{{ person.get_display_name }}</h1>
-        <div class="dmeta">
-          {% if person.city %}<span class="mchip">{% ico 'pin' %}{{ person.city }}</span>{% endif %}
-          <span class="mchip">{% ico 'calendar' %}{% translate "на ilm4 с" %} {{ person.date_joined|date:"E Y"|lower }}</span>
-        </div>
-        <div class="pcard__rep">{% rating_badge person %}{% verified_badge person %}</div>
-        {% if user.is_authenticated and user != person %}
-        <div class="dact"><a class="btn btn--p" href="{% url 'chat:start' %}?user={{ person.pk }}">{% ico 'chat' %}{% translate "Написать" %}</a>
-          {% if escrow_on %}<a class="btn btn--g" href="{% url 'deals:new' %}?to={{ person.pk }}">{% ico 'shield' %}{% translate "Заказать с гарантией" %}</a>{% endif %}</div>
-        {% endif %}
-      </div>
-    </aside>
-    <div class="dmain">
-      {% if listings %}
-      <section class="dcard"><h2 class="dcard__h">{% translate "Объявления" %} <small>{{ listings|length }}</small></h2>
-        <div class="plist">{% for l in listings %}<a class="plist__i" href="{% url 'market:detail' l.pk %}"><b>{{ l.title }}</b><span>{% if l.price == 0 %}{% translate "Даром" %}{% else %}{{ l.price|intcomma }} {{ l.get_currency_display }}{% endif %} · {{ l.city }}</span></a>{% endfor %}</div>
-      </section>{% endif %}
-      {% if rides %}
-      <section class="dcard"><h2 class="dcard__h">{% translate "Перевозки" %} <small>{{ rides|length }}</small></h2>
-        <div class="plist">{% for r in rides %}<a class="plist__i" href="/transport/?from={{ r.from_city|urlencode }}&amp;to={{ r.to_city|urlencode }}"><b>{{ r.from_city }} → {{ r.to_city }}</b><span>{{ r.get_type_display }}{% if r.price_text %} · {{ r.price_text }}{% endif %}</span></a>{% endfor %}</div>
-      </section>{% endif %}
-      {% if services %}
-      <section class="dcard"><h2 class="dcard__h">{% translate "Услуги" %} <small>{{ services|length }}</small></h2>
-        <div class="plist">{% for x in services %}<div class="plist__i"><b>{{ x.name }}</b><span>{{ x.get_kind_display }}{% if x.price_text %} · {{ x.price_text }}{% endif %}</span></div>{% endfor %}</div>
-      </section>{% endif %}
-      {% if vacancies %}
-      <section class="dcard"><h2 class="dcard__h">{% translate "Вакансии" %} <small>{{ vacancies|length }}</small></h2>
-        <div class="plist">{% for v in vacancies %}<a class="plist__i" href="{% url 'jobs:detail' v.pk %}"><b>{{ v.title }}</b><span>{{ v.company }} · {{ v.city }}</span></a>{% endfor %}</div>
-      </section>{% endif %}
-      {% reviews_block person _("Отзывы об участнике") %}
-      <div class="personact">{% report_button person _('Пожаловаться на участника') %}
-        {% if user.is_authenticated and user != person %}<form method="post" action="{% url 'accounts:block' person.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}">
-          <button class="linkbtn" type="submit">{% if is_blocked %}{% translate "Разблокировать" %}{% else %}{% translate "Заблокировать" %}{% endif %}</button></form>{% endif %}</div>
-    </div>
+<div class="tp">
+  <header class="tp__head">
+    <a class="tp__back" href="{% if thread %}{% url 'chat:thread' thread.pk %}{% else %}javascript:history.back(){% endif %}" aria-label="{% translate 'Назад' %}">{% ico 'back' %}</a>
+    <div class="tp__ava">{% if person.avatar %}<img src="{{ person.avatar.url }}" alt="">{% else %}<span>{{ person.get_display_name|slice:":1"|upper }}</span>{% endif %}</div>
+    <h1 class="tp__name">{{ person.get_display_name }}{% if person.platform_verified %}<i class="tgver" title="{% translate 'Проверен ilm4' %}">{% ico 'check' %}</i>{% endif %}</h1>
+    <div class="tp__status{% if online %} is-on{% endif %}">{{ status }}</div>
+  </header>
+
+  {% if mine %}
+  <div class="tp__acts">
+    <a class="tp__act" href="{% url 'accounts:profile' %}?edit=1">{% ico 'edit' %}<span>{% translate "Изменить" %}</span></a>
+    <a class="tp__act" href="{% url 'core:my' %}">{% ico 'tag' %}<span>{% translate "Публикации" %}</span></a>
+    <a class="tp__act" href="{% url 'accounts:profile' %}#privacy">{% ico 'lock' %}<span>{% translate "Приватность" %}</span></a>
   </div>
+  {% elif user.is_authenticated %}
+  <div class="tp__acts">
+    <a class="tp__act" href="{% url 'chat:start' %}?user={{ person.pk }}">{% ico 'chat' %}<span>{% translate "Чат" %}</span></a>
+    {% if thread %}<form method="post" action="{% url 'chat:mute' thread.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}">
+      <button class="tp__act" type="submit">{% if shared.muted %}{% ico 'belloff' %}{% else %}{% ico 'bell' %}{% endif %}<span>{% if shared.muted %}{% translate "Без звука" %}{% else %}{% translate "Звук" %}{% endif %}</span></button></form>{% endif %}
+    {% if calls.calls %}<a class="tp__act" href="{% url 'chat:start' %}?user={{ person.pk }}&amp;call=audio">{% ico 'call' %}<span>{% translate "Звонок" %}</span></a>{% endif %}
+    {% if calls.video_calls %}<a class="tp__act" href="{% url 'chat:start' %}?user={{ person.pk }}&amp;call=video">{% ico 'video' %}<span>{% translate "Видео" %}</span></a>{% endif %}
+    {% if escrow_on %}<a class="tp__act" href="{% url 'deals:new' %}?to={{ person.pk }}">{% ico 'shield' %}<span>{% translate "Сделка" %}</span></a>{% endif %}
+  </div>
+  {% else %}
+  <div class="tp__acts"><a class="tp__act tp__act--wide" href="{% url 'accounts:login' %}?next={{ request.path }}">{% ico 'chat' %}<span>{% translate "Войдите, чтобы написать" %}</span></a></div>
+  {% endif %}
+
+  <section class="tp__card">{% include 'accounts/_tprows.html' %}</section>
+  <div class="tp__rep">{% rating_badge person %}{% verified_badge person %}</div>
+
+  <nav class="tp__tabs" role="tablist">
+    <button type="button" class="tp__tab on" data-tab="pubs" role="tab">{% translate "Публикации" %}</button>
+    {% if thread %}<button type="button" class="tp__tab" data-tab="media" role="tab">{% translate "Медиа" %}</button>
+    <button type="button" class="tp__tab" data-tab="files" role="tab">{% translate "Файлы" %}</button>{% endif %}
+    <button type="button" class="tp__tab" data-tab="reviews" role="tab">{% translate "Отзывы" %}</button>
+  </nav>
+
+  <div class="tp__pane" data-pane="pubs">
+    {% if listings %}<section class="tp__card tp__sec"><h2>{% translate "Объявления" %} <small>{{ listings|length }}</small></h2>
+      <div class="plist">{% for l in listings %}<a class="plist__i" href="{% url 'market:detail' l.pk %}"><b>{{ l.title }}</b><span>{% if l.price == 0 %}{% translate "Даром" %}{% else %}{% money l.price l.currency %}{% endif %} · {{ l.city }}</span></a>{% endfor %}</div></section>{% endif %}
+    {% if rides %}<section class="tp__card tp__sec"><h2>{% translate "Перевозки" %} <small>{{ rides|length }}</small></h2>
+      <div class="plist">{% for r in rides %}<a class="plist__i" href="/transport/?from={{ r.from_city|urlencode }}&amp;to={{ r.to_city|urlencode }}"><b>{{ r.from_city }} → {{ r.to_city }}</b><span>{{ r.get_type_display }}{% if r.price_text %} · {{ r.price_text }}{% endif %}</span></a>{% endfor %}</div></section>{% endif %}
+    {% if services %}<section class="tp__card tp__sec"><h2>{% translate "Услуги" %} <small>{{ services|length }}</small></h2>
+      <div class="plist">{% for x in services %}<div class="plist__i"><b>{{ x.name }}</b><span>{{ x.get_kind_display }}{% if x.price_text %} · {{ x.price_text }}{% endif %}</span></div>{% endfor %}</div></section>{% endif %}
+    {% if vacancies %}<section class="tp__card tp__sec"><h2>{% translate "Вакансии" %} <small>{{ vacancies|length }}</small></h2>
+      <div class="plist">{% for v in vacancies %}<a class="plist__i" href="{% url 'jobs:detail' v.pk %}"><b>{{ v.title }}</b><span>{{ v.company }} · {{ v.city }}</span></a>{% endfor %}</div></section>{% endif %}
+    {% if not listings and not rides and not services and not vacancies %}<p class="tp__none">{% translate "Публикаций пока нет." %}</p>{% endif %}
+  </div>
+  {% if thread %}
+  <div class="tp__pane" data-pane="media" hidden>
+    {% if shared.media %}<div class="tp__grid">{% for m in shared.media %}<a href="{% url 'chat:thread' thread.pk %}" class="tp__cell">{% if m.kind == 'photo' %}<img src="{% url 'chat:file' m.pk %}" alt="" loading="lazy">{% else %}<span class="tp__vid">{% ico 'play' %}</span>{% endif %}</a>{% endfor %}</div>
+    {% else %}<p class="tp__none">{% translate "В вашей переписке пока нет фото и видео." %}</p>{% endif %}
+  </div>
+  <div class="tp__pane" data-pane="files" hidden>
+    {% if shared.files %}<section class="tp__card">{% for m in shared.files %}<a class="tp__row" href="{% url 'chat:file' m.pk %}" download>{% ico 'file' %}<span><b>{{ m.meta.name|default:_("Файл") }}</b><small>{{ m.meta.size|filesizeformat }} · {{ m.created_at|date:"d.m.Y" }}</small></span></a>{% endfor %}</section>
+    {% else %}<p class="tp__none">{% translate "В вашей переписке пока нет файлов." %}</p>{% endif %}
+  </div>
+  {% endif %}
+  <div class="tp__pane" data-pane="reviews" hidden>{% reviews_block person _("Отзывы об участнике") %}</div>
+
+  {% if user.is_authenticated and not mine %}
+  <section class="tp__card tp__more">
+    <form method="post" action="{% url 'accounts:close' person.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}">
+      <button class="tp__row" type="submit">{% ico 'heart' %}<span><b>{% if is_close %}{% translate "Убрать из близких друзей" %}{% else %}{% translate "Добавить в близкие друзья" %}{% endif %}</b><small>{% translate "Близким видно то, что вы скрыли от остальных: номер, соцсети, время в сети" %}</small></span></button></form>
+    <form method="post" action="{% url 'accounts:block' person.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}">
+      <button class="tp__row tp__row--bad" type="submit">{% ico 'shield' %}<span><b>{% if is_blocked %}{% translate "Разблокировать" %}{% else %}{% translate "Заблокировать" %}{% endif %}</b><small>{% translate "Не сможет писать вам" %}</small></span></button></form>
+  </section>
+  <div class="personact">{% report_button person _('Пожаловаться на участника') %}</div>
+  {% endif %}
 </div>
 {% endblock %}
+
+{% block extra_js %}<script src="{% static 'js/people.js' %}?v={{ asset_v }}" defer></script>{% endblock %}

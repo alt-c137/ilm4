@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load i18n icons %}
+{% block title %}{% translate "Графики —" %} {{ block.super }}{% endblock %}
+{% block body_class %}page-trk{% endblock %}
+
+{% block content %}
+<div class="trk">
+  <header class="trk__head"><a class="tg__back ppl__back" href="{% url 'tracker:index' %}" aria-label="{% translate 'Назад' %}">{% ico 'back' %}</a>
+    <div><h1>{% translate "Графики" %}</h1><span>{% blocktranslate with n=period %}за {{ n }} дней{% endblocktranslate %}</span></div></header>
+  <nav class="tp__tabs">{% for p in periods %}<a class="tp__tab{% if p == period %} on{% endif %}" href="?days={{ p }}">{{ p }} {% translate "дней" %}</a>{% endfor %}</nav>
+
+  <section class="trk__kpi">
+    <div><b>{{ rate }}%</b><span>{% translate "выполнено" %}</span></div>
+    <div><b>{{ done }}</b><span>{% translate "отметок" %}</span></div>
+    <div><b>{{ perfect_days }}</b><span>{% translate "дней на 100%" %}</span></div>
+  </section>
+
+  <section class="tp__card trk__chart">
+    <h2>{% translate "По дням" %}</h2>
+    <div class="trk__bars" style="--n:{{ days|length }}">{% for d in days %}<span title="{{ d.day }}: {{ d.done }}/{{ d.total }}"><i style="height:{{ d.hh }}%"><u style="height:{% if d.total %}{% widthratio d.done d.total 100 %}{% else %}0{% endif %}%"></u></i>{% if days|length <= 31 %}<small>{{ d.label }}</small>{% endif %}</span>{% endfor %}</div>
+    <p class="trk__legend"><i class="a"></i>{% translate "сделано" %} <i class="b"></i>{% translate "запланировано" %}</p>
+  </section>
+
+  {% if habits %}
+  <section class="tp__card trk__chart">
+    <h2>{% translate "По привычкам" %}</h2>
+    {% for h in habits %}
+    <div class="trk__row" style="--hc:{{ h.color }}">
+      <div class="trk__row-top"><span>{{ h.emoji }} <b>{{ h.title }}</b></span><em>{{ h.rate }}%</em></div>
+      <div class="trk__line"><i style="width:{{ h.rate }}%"></i></div>
+      <div class="trk__cells">{% for c in h.cells %}<i class="{% if c %}on{% endif %}"></i>{% endfor %}</div>
+      <small>{{ h.done }} {% translate "из" %} {{ h.total }}{% if h.sum %} · {% translate "всего" %} {{ h.sum }} {{ h.unit }}{% endif %} · 🔥 {% translate "серия" %} {{ h.streak }} · {% translate "лучшая" %} {{ h.best }}</small>
+    </div>
+    {% endfor %}
+  </section>
+  {% else %}<p class="tp__none">{% translate "Пока нечего показывать: добавьте привычку и отмечайте её несколько дней." %}</p>{% endif %}
+
+  {% if archived %}<section class="tp__card trk__chart"><h2>{% translate "Архив" %}</h2>
+    {% for h in archived %}<a class="tp__row" href="{% url 'tracker:edit' h.pk %}">{% ico 'edit' %}<span><b>{{ h.emoji }} {{ h.title }}</b><small>{% translate "в архиве — открыть, чтобы вернуть или удалить" %}</small></span></a>{% endfor %}</section>{% endif %}
+</div>
+{% endblock %}

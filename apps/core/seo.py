@@ -86,3 +86,15 @@ SITEMAPS = {
     'doctors': _sm('health.Doctor', 'health:detail'), 'stories': _sm('migration.Story', 'migration:detail'),
     'forum': _sm('forum.Topic', 'forum:detail'),
 }
+
+
+def healthz(request):
+    """Проверка «сайт жив» для Docker и мониторинга: отвечает 200, только если база доступна."""
+    from django.db import connection
+    from django.http import HttpResponse
+    try:
+        with connection.cursor() as cur:
+            cur.execute('SELECT 1')
+    except Exception:                                  # noqa: BLE001 — любая беда с базой = «не жив»
+        return HttpResponse('db', status=503, content_type='text/plain')
+    return HttpResponse('ok', content_type='text/plain')

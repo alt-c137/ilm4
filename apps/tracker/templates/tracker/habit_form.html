@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load i18n icons %}
+{% block title %}{% if habit %}{% translate "Изменить —" %}{% else %}{% translate "Новая привычка —" %}{% endif %} {{ block.super }}{% endblock %}
+{% block body_class %}page-trk{% endblock %}
+
+{% block content %}
+<div class="trk">
+  <header class="trk__head"><a class="tg__back ppl__back" href="{% if board %}{% url 'tracker:board' board.pk %}{% else %}{% url 'tracker:index' %}{% endif %}" aria-label="{% translate 'Назад' %}">{% ico 'back' %}</a>
+    <div><h1>{% if habit %}{% translate "Изменить" %}{% else %}{% translate "Новая привычка или дело" %}{% endif %}</h1>{% if board %}<span>{{ board.emoji }} {{ board.title }}</span>{% endif %}</div></header>
+  <form method="post" class="tp__card trk__form">{% csrf_token %}
+    <input type="hidden" name="tz_offset" id="trk-tz" value="300"><input type="hidden" name="day" value="{{ today }}">
+    <div><label for="trk-title">{% translate "Что нужно делать" %}</label>
+      <input type="text" id="trk-title" name="title" maxlength="80" required value="{{ habit.title }}" placeholder="{% translate 'Например: выпить витамины' %}"></div>
+    <div><label>{% translate "Значок" %}</label>
+      <div class="trk__pick">{% for e in emoji %}<label><input type="radio" name="emoji" value="{{ e }}"{% if habit.emoji == e or not habit and forloop.first %} checked{% endif %}><span>{{ e }}</span></label>{% endfor %}</div></div>
+    <div><label>{% translate "Цвет" %}</label>
+      <div class="trk__pick trk__pick--c">{% for c in colors %}<label><input type="radio" name="color" value="{{ c }}"{% if habit.color == c or not habit and forloop.first %} checked{% endif %}><span style="background:{{ c }}"></span></label>{% endfor %}</div></div>
+    <div><label>{% translate "Как отмечать" %}</label>
+      <div class="trk__seg">
+        <label><input type="radio" name="kind" value="check"{% if not habit or habit.kind == 'check' %} checked{% endif %}><span>{% translate "Сделал — галочка" %}</span></label>
+        <label><input type="radio" name="kind" value="count"{% if habit.kind == 'count' %} checked{% endif %}><span>{% translate "Считать количество" %}</span></label>
+      </div></div>
+    <div class="trk__f2" id="trk-count-box">
+      <div><label for="trk-target">{% translate "Цель в день" %}</label><input type="number" id="trk-target" name="target" min="1" max="100000" value="{{ habit.target|default:8 }}"></div>
+      <div><label for="trk-unit">{% translate "Чего" %}</label><input type="text" id="trk-unit" name="unit" maxlength="16" value="{{ habit.unit }}" placeholder="{% translate 'стаканов, страниц, минут' %}"></div>
+    </div>
+    <div><label>{% translate "Когда" %}</label>
+      <div class="trk__seg">
+        <label><input type="radio" name="repeat" value="days"{% if not habit.once_on and not once %} checked{% endif %}><span>{% translate "По дням недели" %}</span></label>
+        <label><input type="radio" name="repeat" value="once"{% if habit.once_on or once %} checked{% endif %}><span>{% translate "Один раз" %}</span></label>
+      </div></div>
+    <div id="trk-days-box"><div class="trk__pick trk__pick--d">{% for k, n in weekdays %}<label><input type="checkbox" name="days" value="{{ k }}"{% if not habit or k in habit.days %} checked{% endif %}><span>{{ n }}</span></label>{% endfor %}</div></div>
+    <div id="trk-once-box"><label for="trk-once">{% translate "В какой день" %}</label><input type="date" id="trk-once" name="once_on" value="{% if habit.once_on %}{{ habit.once_on|date:'Y-m-d' }}{% else %}{{ today }}{% endif %}"></div>
+    <div><label for="trk-rem">{% translate "Напомнить в (необязательно)" %}</label><input type="time" id="trk-rem" name="remind_at" value="{% if habit.remind_at %}{{ habit.remind_at|time:'H:i' }}{% endif %}"></div>
+    {% if not habit and boards %}
+    <div><label for="trk-board">{% translate "Где вести" %}</label>
+      <select id="trk-board" name="board"><option value="">{% translate "Только у меня (личное)" %}</option>{% for b in boards %}<option value="{{ b.pk }}"{% if board and b.pk == board.pk %} selected{% endif %}>{{ b.emoji }} {{ b.title }}</option>{% endfor %}</select></div>
+    {% elif board %}<input type="hidden" name="board" value="{{ board.pk }}">{% endif %}
+    <button type="submit" class="btn btn--p tp__save" name="action" value="save">{% translate "Сохранить" %}</button>
+    {% if habit %}<div class="trk__danger">
+      <button type="submit" class="linkbtn" name="action" value="archive" formnovalidate>{% translate "В архив (отметки сохранятся)" %}</button>
+      <button type="submit" class="linkbtn linkbtn--bad" name="action" value="delete" formnovalidate onclick="return confirm('{% translate 'Удалить вместе со всеми отметками?' %}')">{% translate "Удалить" %}</button>
+    </div>{% endif %}
+  </form>
+</div>
+{% endblock %}
+{% block extra_js %}<script>
+(function () {
+  document.getElementById('trk-tz').value = -new Date().getTimezoneOffset();
+  function sync() {
+    var kind = document.querySelector('input[name=kind]:checked').value, rep = document.querySelector('input[name=repeat]:checked').value;
+    document.getElementById('trk-count-box').hidden = kind !== 'count';
+    document.getElementById('trk-days-box').hidden = rep !== 'days';
+    document.getElementById('trk-once-box').hidden = rep !== 'once';
+  }
+  document.querySelectorAll('input[name=kind],input[name=repeat]').forEach(function (r) { r.addEventListener('change', sync); });
+  sync();
+})();
+</script>{% endblock %}

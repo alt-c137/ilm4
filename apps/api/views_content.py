@@ -1,6 +1,7 @@
 """API: новости и публикации разделов (объявления, вакансии, услуги, перевозки, места,
 врачи, истории, книги, форум) — одним механизмом: список с поиском и карточка."""
 from collections.abc import Callable
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 
 from django.apps import apps
@@ -12,6 +13,9 @@ from django.utils.translation import gettext_lazy as _lazy
 from apps.core.models import Moderation
 
 from .base import MODULE_OF, ApiError, abs_url, api, file_url, module_on, page
+
+# текущий запрос — чтобы показать «≈» в валюте того, кто смотрит (apps/core/money.py)
+_REQ: ContextVar = ContextVar('api_request', default=None)
 
 
 def _money(v) -> str:
@@ -41,10 +45,34 @@ class Kind:
     extra_filter: dict = field(default_factory=dict)
     order: tuple = ('-created_at',)
     web: str = ''                                   # адрес на сайте (для «Поделиться»)
+    scope: Callable | None = None                   # доп. отбор, зависящий от времени (поездки — только будущие)
 
 
 def _price(o):
-    return _('Даром') if o.price == 0 else f'{_money(o.price)} {o.currency}'
+    from apps.core import money
+    return money.price_text(o.price, o.currency, _REQ.get(), _('Даром'))
+
+
+def _trip_when(o):
+    return o.departs_local.strftime('%d.%m %H:%M')
+
+
+def _trip_seats(o):
+    if not o.is_driver:
+        return _('ищу машину · нас: {n}').format(n=o.seats)
+    return _('мест: {n}').format(n=o.seats_left) if o.seats_left else _('мест нет')
+
+
+def _trip_price(o):
+    from apps.core import money
+    return money.price_text(o.price, o.currency, _REQ.get(), _('Бесплатно'))
+
+
+def _trips_scope(qs):
+    from datetime import timedelta
+
+    from django.utils import timezone
+    return qs.filter(is_active=True, departs_at__gte=timezone.now() - timedelta(hours=1))
 
 
 def _book_price(o):
@@ -75,6 +103,16 @@ KINDS = {
                       fields=[(_lazy('Тип'), _disp('type')), (_lazy('Откуда'), _attr('from_city')),
                               (_lazy('Куда'), _attr('to_city')), (_lazy('Дата'), lambda o: o.ride_date.strftime('%d.%m.%Y') if o.ride_date else ''),
                               (_lazy('Перевозчик'), _attr('company')), (_lazy('Цена'), _attr('price_text'))]),
+    'trips': Kind('transport.Trip', lambda o: f'{o.from_city} → {o.to_city}',
+                  lambda o: ' · '.join(x for x in (_trip_when(o), _trip_seats(o), _trip_price(o)) if x),
+                  text='comment', contact='', category='role', search=('from_city', 'to_city', 'via', 'comment'),
+                  order=('departs_at',), web='/transport/trips/{pk}/', scope=_trips_scope,
+                  fields=[(_lazy('Выезд'), _trip_when), (_lazy('Откуда'), _attr('from_city')), (_lazy('Куда'), _attr('to_city')),
+                          (_lazy('По пути'), _attr('via')), (_lazy('Места'), _trip_seats),
+                          (_lazy('Переднее место'), lambda o: _('свободно') if o.front_seat and o.is_driver else ''),
+                          (_lazy('Цена за место'), _trip_price), (_lazy('Машина'), _attr('car')),
+                          (_lazy('Кого беру'), lambda o: o.get_audience_display() if o.is_driver else ''),
+                          (_lazy('Посылки'), lambda o: _('возьму') if o.parcels else '')]),
     'places': Kind('maps.HalalPlace', _attr('name'), lambda o: ' · '.join(x for x in (o.get_category_display(), o.city) if x),
                    image='photo', search=('name', 'description', 'address', 'city'), category='category',
                    contact='phone', web='/map/{pk}/',
@@ -111,7 +149,8 @@ def _kind(key) -> Kind:
 
 
 def _qs(k: Kind):
-    return apps.get_model(k.model).objects.filter(status=Moderation.APPROVED, **k.extra_filter)
+    qs = apps.get_model(k.model).objects.filter(status=Moderation.APPROVED, **k.extra_filter)
+    return k.scope(qs) if k.scope else qs
 
 
 def card(request, key, k: Kind, o) -> dict:
@@ -124,6 +163,7 @@ def card(request, key, k: Kind, o) -> dict:
 
 @api()
 def pubs(request, key):
+    _REQ.set(request)
     k = _kind(key)
     qs = _qs(k)
     q = request.GET.get('q', '').strip()[:100]
@@ -146,7 +186,12 @@ def pubs(request, key):
     qs = qs.order_by(*k.order)
     if k.owner:
         qs = qs.select_related(k.owner)
-    data = page(request, qs, lambda o: card(request, key, k, o))
+    if key == 'trips':                              # занятые места — одним запросом на страницу
+        from apps.transport.services import with_taken
+        data = page(request, qs, lambda o: o)
+        data['items'] = [card(request, key, k, o) for o in with_taken(data['items'])]
+    else:
+        data = page(request, qs, lambda o: card(request, key, k, o))
     if request.GET.get('page', '1') == '1':
         data['categories'] = _categories(key, k)
     return data
@@ -165,8 +210,13 @@ def _categories(key, k: Kind) -> list:
 
 @api()
 def pub_detail(request, key, pk):
+    _REQ.set(request)
     k = _kind(key)
-    o = get_object_or_404(_qs(k), pk=pk)
+    if key == 'trips' and request.user.is_authenticated:      # свою поездку автор видит и после выезда
+        o = get_object_or_404(apps.get_model(k.model).objects.filter(
+            Q(pk__in=_qs(k).values('pk')) | Q(owner=request.user)), pk=pk)
+    else:
+        o = get_object_or_404(_qs(k), pk=pk)
     owner = getattr(o, k.owner, None) if k.owner else None
     data = card(request, key, k, o)
     data.update({
@@ -181,6 +231,8 @@ def pub_detail(request, key, pk):
     if key == 'buy':
         from django.db.models import F
         type(o).objects.filter(pk=o.pk).update(views=F('views') + 1)
+    if key == 'trips':
+        data['trip'] = trip_state(request, o)
     if key == 'topics':
         data['replies'] = [{'id': r.pk, 'text': r.body, 'author': r.author.get_display_name(),
                             'created_at': r.created_at.isoformat()}
@@ -191,6 +243,56 @@ def pub_detail(request, key, pk):
             ('has_wudu', _lazy('Место для омовения')), ('has_parking', _lazy('Парковка')),
             ('accessible', _lazy('Доступно для колясок'))) if getattr(o, flag, False)]
     return data
+
+
+def trip_state(request, trip) -> dict:
+    """Места и заявки для экрана поездки: попутчику — его заявка, водителю — все заявки."""
+    from apps.transport.models import TripRequest
+    user = request.user
+    mine = user.is_authenticated and trip.owner_id == user.pk
+    data = {'driver': trip.is_driver, 'seats': trip.seats, 'seats_left': trip.seats_left, 'past': trip.is_past,
+            'my_request': None, 'requests': []}
+    if mine:
+        data['requests'] = [{'id': r.pk, 'user_id': r.user_id, 'name': r.user.get_display_name(), 'seats': r.seats,
+                             'status': r.status, 'status_name': r.get_status_display()}
+                            for r in trip.requests.select_related('user').exclude(status=TripRequest.CANCELLED)]
+    elif user.is_authenticated:
+        r = trip.requests.filter(user=user).first()
+        if r and r.status != TripRequest.CANCELLED:
+            data['my_request'] = {'id': r.pk, 'seats': r.seats, 'status': r.status, 'status_name': r.get_status_display()}
+    return data
+
+
+@api(methods=('POST',), auth=True, module='transport')
+def trip_request(request, pk):
+    """Занять место в поездке."""
+    from apps.transport import services as trips
+    from apps.transport.models import Trip
+    trip = get_object_or_404(Trip, pk=pk)
+    try:
+        trips.request_seat(trip, request.user, request.data.get('seats'))
+    except trips.TripError as exc:
+        raise ApiError(exc.message, exc.status) from exc
+    trip = Trip.objects.get(pk=pk)
+    return {'ok': True, 'trip': trip_state(request, trip)}
+
+
+@api(methods=('POST',), auth=True, module='transport')
+def trip_request_act(request, req_id, action):
+    """accept / decline — водитель; cancel — попутчик."""
+    from apps.transport import services as trips
+    from apps.transport.models import Trip, TripRequest
+    req = get_object_or_404(TripRequest.objects.select_related('trip', 'user'), pk=req_id)
+    try:
+        if action in ('accept', 'decline'):
+            trips.answer(req, request.user, action == 'accept')
+        elif action == 'cancel':
+            trips.cancel(req, request.user)
+        else:
+            raise ApiError('action', 404)
+    except trips.TripError as exc:
+        raise ApiError(exc.message, exc.status) from exc
+    return {'ok': True, 'trip': trip_state(request, Trip.objects.get(pk=req.trip_id))}
 
 
 @api(methods=('POST',), auth=True, module='forum')

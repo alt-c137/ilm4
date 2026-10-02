@@ -6,13 +6,14 @@ from django.utils.translation import gettext as _
 
 from apps.accounts import phone_verify
 from apps.accounts.views import LOGIN_MAX_PER_IP, LOGIN_MAX_PER_LOGIN, LOGIN_WINDOW, client_ip
+from apps.core import money
 
 from . import tglogin
 from .base import ApiError, abs_url, api, as_int, file_url, limit, module_on, page
 from .models import ApiToken, PushDevice
 
 APP_KEYS = ('prayer', 'buy', 'jobs', 'services', 'transport', 'map', 'health', 'migration', 'library', 'forum',
-            'news', 'nikah', 'chat', 'wallet')
+            'news', 'nikah', 'chat', 'wallet', 'tracker')
 
 
 def _icon(request, key):
@@ -48,6 +49,8 @@ def config(request):
         'min_version': st.app_min_version,
         'notice': st.app_notice,
         'languages': [{'code': c, 'name': n} for c, n in settings.LANGUAGES],
+        'currencies': money.choices_json(),
+        'currency': money.viewer_currency(request),
         'modules': modules,
         'groups': [{'key': g, 'name': str(label)} for g, label, _k in GROUPS],
         'features': {
@@ -62,6 +65,7 @@ def config(request):
                                    and getattr(settings, 'TELEGRAM_BOT_TOKEN', '')),
             'google_login': False,
             'hadith': st.hadis_enabled,
+            'groups': st.chat_groups_enabled, 'channels': st.chat_channels_enabled,
         },
         'prayer': {
             'cities': [{'key': k, 'name': tr(v[0]), 'lat': v[1], 'lon': v[2], 'tz': v[3]} for k, v in CITIES.items()],
@@ -78,14 +82,20 @@ def config(request):
 # ---------- вход ----------
 
 def me_json(request, user) -> dict:
+    from apps.accounts import people
     from apps.wallet.services import balance_of
     nk = getattr(user, 'nikah_profile', None)
     return {
-        'id': user.pk, 'name': user.get_display_name(), 'nickname': user.nickname, 'first_name': user.first_name,
+        'id': user.pk, 'name': user.get_display_name(), 'nickname': user.nickname,
+        'first_name': user.first_name or user.nickname, 'last_name': user.last_name, 'ui': user.ui or {},
         'email': '' if user.email.endswith('.ilm4.local') else user.email,
         'city': user.city, 'phone': user.phone, 'language': user.language, 'avatar': file_url(request, user.avatar),
+        'currency': user.currency, 'currency_now': money.viewer_currency(request),
         'telegram': bool(user.telegram_id), 'verified': user.platform_verified,
         'phone_verified': user.phone_verified,
+        'handle': user.handle or '', 'bio': user.bio,
+        'privacy': {'phone': user.phone_privacy, 'seen': user.seen_privacy, 'find_by_phone': user.findable_by_phone},
+        'links': people.links_for(user, user),
         'needs_phone': {w: phone_verify.needed(user, w) for w in ('publish', 'nikah')},
         'balance': int(balance_of(user)) if module_on('wallet') else None,
         'nikah': {'id': nk.pk, 'status': nk.status, 'active': nk.is_active, 'gender': nk.gender} if nk else None,
@@ -209,13 +219,39 @@ def me(request):
     if request.method in ('PATCH', 'POST'):
         d = request.data
         fields = []
-        for f, n in (('nickname', 40), ('first_name', 150), ('city', 80)):
+        for f, n in (('nickname', 40), ('first_name', 150), ('last_name', 150), ('city', 80), ('bio', 160)):
             if f in d:
                 setattr(user, f, str(d[f]).strip()[:n])
                 fields.append(f)
+        if str(d.get('first_name', '')).strip() and 'nickname' not in d:
+            user.nickname = ''                     # имя задано — старый «ник» больше не нужен
+            fields.append('nickname')
+        if isinstance(d.get('ui'), dict):
+            from apps.core.tabs import clean_ui
+            user.ui = {**(user.ui or {}), **clean_ui(d['ui'])}
+            fields.append('ui')
+        if 'handle' in d:
+            from apps.accounts import people
+            try:
+                user.handle = people.clean_handle(str(d['handle']), user=user)
+            except people.PeopleError as exc:
+                raise ApiError(exc.message, exc.status) from exc
+            fields.append('handle')
+        levels = dict(get_user_model().PRIVACY)
+        for key, f in (('phone_privacy', 'phone_privacy'), ('seen_privacy', 'seen_privacy')):
+            if d.get(key) in levels:
+                setattr(user, f, d[key])
+                fields.append(f)
+        if 'find_by_phone' in d:
+            user.findable_by_phone = str(d['find_by_phone']).lower() in ('1', 'true', 'on')
+            fields.append('findable_by_phone')
         if 'language' in d and d['language'] in dict(settings.LANGUAGES):
             user.language = d['language']
             fields.append('language')
+        if 'currency' in d and (d['currency'] in money.SIGN or d['currency'] in ('', 'auto')):
+            user.currency = '' if d['currency'] == 'auto' else d['currency']
+            fields.append('currency')
+            request._ilm4_currency = None
         if 'avatar' in request.FILES:
             from apps.core.uploads import clean_image
             user.avatar = clean_image(request.FILES['avatar'])
@@ -310,7 +346,7 @@ def wallet(request):
 REPORT_TARGETS = {'buy': 'market.listing', 'jobs': 'jobs.vacancy', 'services': 'services.service',
                   'transport': 'transport.ride', 'places': 'maps.halalplace', 'doctors': 'health.doctor',
                   'stories': 'migration.story', 'books': 'library.book', 'topics': 'forum.topic',
-                  'nikah': 'nikah.nikahprofile', 'user': 'accounts.user'}
+                  'trips': 'transport.trip', 'nikah': 'nikah.nikahprofile', 'user': 'accounts.user', 'thread': 'chat.thread'}
 
 
 @api(methods=('POST',), auth=True)
@@ -335,7 +371,9 @@ def report(request):
     owner = getattr(obj, 'owner', None) or getattr(obj, 'author', None) or getattr(obj, 'user', None)
     if obj == request.user or owner == request.user:
         raise ApiError(_('На себя жаловаться не нужно.'))
-    thread = report_thread(request.user, request.data.get('thread'))
+    thread = report_thread(request.user, obj.pk if target == 'chat.thread' else request.data.get('thread'))
+    if target == 'chat.thread' and (thread is None or not obj.is_room):
+        raise ApiError(_('Не найдено'), 404)
     _r, created = Report.objects.get_or_create(
         content_type=ct, object_id=obj.pk, reporter=request.user,
         defaults={'reason': reason, 'text': str(request.data.get('text', '')).strip()[:500], 'thread': thread})

@@ -1,3 +1,5 @@
+import uuid
+
 from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext as _
@@ -25,6 +27,20 @@ class Thread(models.Model):
     context_type = models.CharField('раздел', max_length=20, blank=True, db_index=True)
     context_id = models.PositiveBigIntegerField('объект раздела', null=True, blank=True)
     updated_at = models.DateTimeField('обновлён', auto_now=True, db_index=True)
+    # --- группы и каналы (rooms.py). У личных диалогов эти поля пустые ---
+    about = models.TextField('описание', blank=True, max_length=500)
+    avatar = models.ImageField('аватар', upload_to='chat_avatars/', blank=True, null=True)
+    handle = models.CharField('публичное имя (адрес /c/имя/)', max_length=32, blank=True, null=True, unique=True)
+    is_public = models.BooleanField('публичный', default=False,
+                                    help_text='Виден в каталоге, вступить может любой. Иначе — только по ссылке-приглашению')
+    invite_code = models.CharField('код приглашения', max_length=24, blank=True, db_index=True)
+    only_admins_post = models.BooleanField('пишут только админы', default=False,
+                                           help_text='Для группы. В канале всегда пишут только владелец и админы')
+    members_count = models.PositiveIntegerField('участников', default=0)
+    platform_verified = models.BooleanField('официальный (галочка ilm4)', default=False,
+                                            help_text='Мечеть, учитель, организация — проверено командой ilm4')
+    closed = models.BooleanField('закрыт модератором', default=False,
+                                 help_text='Нельзя писать и вступать, пропадает из каталога')
 
     class Meta:
         ordering = ['-updated_at']
@@ -35,17 +51,71 @@ class Thread(models.Model):
         return _('Диалог #{v1} ({v3} участников)').format(v1=self.pk, v3=self.participants.count())
 
     # папки в списке чатов (как папки Telegram): раздел → папка
-    FOLDERS = [('personal', _lazy('Личные')), ('nikah', _lazy('Никях')), ('buy', _lazy('Покупки')),
+    FOLDERS = [('personal', _lazy('Личные')), ('groups', _lazy('Группы')), ('channels', _lazy('Каналы')),
+               ('nikah', _lazy('Никях')), ('buy', _lazy('Покупки')),
                ('work', _lazy('Работа')), ('services', _lazy('Услуги')), ('support', _lazy('Поддержка'))]
     FOLDER_OF = {'': 'personal', 'nikah': 'nikah', 'buy': 'buy', 'jobs': 'work', 'support': 'support'}
 
     @property
     def folder(self) -> str:
+        if self.kind == self.GROUP:
+            return 'groups'
+        if self.kind == self.CHANNEL:
+            return 'channels'
         return self.FOLDER_OF.get(self.context_type, 'services')
+
+    @property
+    def is_room(self) -> bool:
+        """Группа или канал (не личный диалог)."""
+        return self.kind != self.DIRECT
+
+    @property
+    def is_channel(self) -> bool:
+        return self.kind == self.CHANNEL
 
     def other_participant(self, user):
         others = self.participants.exclude(pk=user.pk)
         return others.exclude(pk__in=self.observers.values('pk')).first() or others.first()
+
+
+class Room(Thread):
+    """Группа или канал — тот же Thread, отдельное имя для админки (личных диалогов там нет)."""
+
+    class Meta:
+        proxy = True
+        verbose_name = 'группа / канал'
+        verbose_name_plural = 'группы и каналы'
+
+
+class Member(models.Model):
+    """Участник группы / подписчик канала: роль, «без звука», до какого момента прочитано.
+
+    Сам список участников — Thread.participants (на нём держатся доступ и рассылка);
+    здесь — то, чего в личном диалоге нет. Удалённый админом остаётся строкой с ролью
+    «banned» и не может вернуться по ссылке."""
+
+    OWNER, ADMIN, MEMBER, BANNED = 'owner', 'admin', 'member', 'banned'
+    ROLES = [(OWNER, _lazy('Владелец')), (ADMIN, _lazy('Админ')), (MEMBER, _lazy('Участник')), (BANNED, _lazy('Удалён'))]
+
+    thread = models.ForeignKey(Thread, on_delete=models.CASCADE, related_name='members')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='chat_memberships')
+    role = models.CharField('роль', max_length=8, choices=ROLES, default=MEMBER)
+    muted = models.BooleanField('без звука', default=False)
+    last_read_at = models.DateTimeField('прочитано до', null=True, blank=True)
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['thread', 'user'], name='one_membership')]
+        indexes = [models.Index(fields=['user', 'thread'])]
+        verbose_name = 'участник группы / канала'
+        verbose_name_plural = 'участники групп и каналов'
+
+    def __str__(self):
+        return f'{self.user} в #{self.thread_id} ({self.role})'
+
+    @property
+    def is_admin(self) -> bool:
+        return self.role in (self.OWNER, self.ADMIN)
 
 
 class ThreadKey(models.Model):
@@ -61,6 +131,26 @@ class ThreadKey(models.Model):
     class Meta:
         verbose_name = 'ключ чата'
         verbose_name_plural = 'ключи чатов'
+
+
+class Upload(models.Model):
+    """Загрузка большого файла частями (как в Telegram): файл до 2 ГБ идёт кусками по 4 МБ,
+    обрыв связи не начинает всё заново. Каждая часть сразу шифруется ключом чата и дописывается
+    в файл — открытого текста на диске нет. После последней части запись превращается в сообщение."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    thread = models.ForeignKey(Thread, on_delete=models.CASCADE, related_name='uploads')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='chat_uploads')
+    kind = models.CharField(max_length=8, default='file')
+    path = models.CharField('файл (внутри MEDIA_ROOT)', max_length=200)
+    size = models.BigIntegerField('полный размер, байт')
+    received = models.BigIntegerField('получено, байт', default=0)
+    info_enc = models.TextField('имя, подпись, время отправки (зашифрованы)', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        verbose_name = 'загрузка файла'
+        verbose_name_plural = 'загрузки файлов'
 
 
 class MessageQuerySet(models.QuerySet):
@@ -98,6 +188,7 @@ class Message(models.Model):
     read_at = models.DateTimeField('прочитано', null=True, blank=True)
     silent = models.BooleanField('без звука', default=False)
     scheduled_at = models.DateTimeField('отправить в (запланированное)', null=True, blank=True, db_index=True)
+    views = models.PositiveIntegerField('просмотры (посты канала)', default=0)
 
     objects = MessageQuerySet.as_manager()
 

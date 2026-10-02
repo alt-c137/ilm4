@@ -45,6 +45,8 @@ def _kind(field) -> str:
         return 'bool'
     if isinstance(field, forms.ChoiceField):   # и ModelChoiceField (подкласс)
         return 'choice'
+    if isinstance(field, forms.DateTimeField):
+        return 'datetime'
     if isinstance(field, forms.DateField):
         return 'date'
     if isinstance(field, (forms.IntegerField, forms.DecimalField, forms.FloatField)):
@@ -71,6 +73,8 @@ def _value(v):
 def schema(request, form, instance=None) -> list:
     out = []
     for name, f in form.fields.items():
+        if f.widget.is_hidden:                         # служебные поля (часовой пояс) приложение шлёт само
+            continue
         kind = _kind(f)
         item = {'name': name, 'label': str(f.label or name), 'kind': kind, 'required': f.required,
                 'help': str(f.help_text or ''), 'max_length': getattr(f, 'max_length', None)}
@@ -79,10 +83,10 @@ def schema(request, form, instance=None) -> list:
             item['choices'] = [{'key': _value(getattr(k, 'value', k)), 'name': _(str(v))}
                                for k, v in f.choices if getattr(k, 'value', k) not in ('', None)]
         if instance is not None:
-            val = getattr(instance, name, None)
+            val = form.initial.get(name, getattr(instance, name, None))
             item['value'] = file_url(request, val) if kind in ('image', 'file') else _value(val)
-        elif f.initial is not None:
-            item['value'] = _value(f.initial)
+        elif (initial := form.get_initial_for_field(f, name)) is not None:
+            item['value'] = _value(initial)
         out.append(item)
     return out
 
@@ -95,7 +99,9 @@ def form_schema(request, key):
     pk = request.GET.get('id')
     if pk:
         obj = get_object_or_404(pub.get_model(), pk=pk, **{pub.owner: request.user})
-    form = pub.get_form()(instance=obj)
+    from apps.core import money
+    initial = {'currency': money.viewer_currency(request)} if obj is None else None      # валюта — по человеку
+    form = pub.get_form()(instance=obj, initial=initial)
     price = SiteSettings.get_solo().doctor_publish_price if key == 'doctors' and obj is None else 0
     return {'key': key, 'title': str(pub.label), 'fields': schema(request, form, obj), 'editing': obj is not None,
             'pledge': [str(x) for x in PLEDGE] if obj is None else [], 'price': price,
@@ -129,6 +135,8 @@ def save(request, key):
         item.status = Moderation.PENDING
         if key == 'buy' and obj is None and not st.market_moderation and not is_newbie(request.user):
             item.status = Moderation.APPROVED          # маркет без модерации (настройка админа)
+        if key == 'trips' and not st.trips_moderation and not is_newbie(request.user):
+            item.status = Moderation.APPROVED          # поездка может быть уже сегодня — публикуем сразу
     if key == 'doctors' and obj is None and st.doctor_publish_price:
         from apps.wallet import services as wallet
         from apps.wallet.models import Transaction

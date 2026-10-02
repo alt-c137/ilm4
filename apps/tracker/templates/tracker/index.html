@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load i18n icons %}
+{% block title %}{% translate "Трекер привычек —" %} {{ block.super }}{% endblock %}
+{% block body_class %}page-trk{% endblock %}
+
+{% block content %}
+<div class="trk">
+  <header class="trk__head">
+    <div><h1>{% translate "Трекер" %}</h1><span>{% if is_today %}{% translate "Сегодня" %}, {% endif %}{{ day_obj|date:"j E, l"|lower }}</span></div>
+    <span class="trk__tools">
+      <a class="tg__new" href="{% url 'tracker:stats' %}" title="{% translate 'Графики' %}" aria-label="{% translate 'Графики' %}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M5 20V11M12 20V4M19 20v-6"/></svg></a>
+      <a class="tg__new tg__new--main" href="{% url 'tracker:new' %}" title="{% translate 'Добавить привычку или дело' %}" aria-label="{% translate 'Добавить' %}">{% ico 'plus' %}</a>
+    </span>
+  </header>
+
+  <nav class="trk__week" aria-label="{% translate 'Неделя' %}">
+    <a class="trk__nav" href="?day={{ prev }}" aria-label="{% translate 'Прошлая неделя' %}">‹</a>
+    {% for d in week %}<a class="trk__d{% if d.day == day %} on{% endif %}{% if d.today %} is-today{% endif %}{% if d.total and d.done == d.total %} is-full{% endif %}" href="?day={{ d.day }}">
+      <small>{% cycle 'Пн' 'Вт' 'Ср' 'Чт' 'Пт' 'Сб' 'Вс' %}</small><b>{{ d.n }}</b><i>{% if d.total %}{{ d.done }}/{{ d.total }}{% else %}·{% endif %}</i></a>{% endfor %}
+    <a class="trk__nav" href="?day={{ next }}" aria-label="{% translate 'Следующая неделя' %}">›</a>
+  </nav>
+
+  {% if items %}
+  <section class="trk__sum">
+    <div class="trk__ring" id="trk-ring" style="--p:{{ percent }}"><b>{{ percent }}%</b></div>
+    <div><b id="trk-count">{{ done }} / {{ total }}</b><span>{% if percent == 100 %}{% translate "Всё сделано, ма шаа Аллах!" %}{% else %}{% translate "выполнено за день" %}{% endif %}</span></div>
+  </section>
+  <div class="trk__list">{% for h in items %}{% include 'tracker/_habit.html' %}{% endfor %}</div>
+  {% else %}
+  <div class="trk__empty">
+    <span class="trk__empty-ic">🎯</span>
+    <b>{% if habits_total %}{% translate "На этот день ничего не запланировано" %}{% else %}{% translate "Начните с одной привычки" %}{% endif %}</b>
+    <span>{% translate "Таблетки, вода, чтение, зарядка, слова на арабском — что угодно. Отмечайте каждый день и смотрите, как растёт серия." %}</span>
+    <a class="btn btn--p" href="{% url 'tracker:new' %}">{% ico 'plus' %}{% translate "Добавить привычку" %}</a>
+  </div>
+  {% endif %}
+  <div class="trk__adds">
+    <a class="btn btn--g btn--s" href="{% url 'tracker:new' %}">{% ico 'plus' %}{% translate "Привычка" %}</a>
+    <a class="btn btn--g btn--s" href="{% url 'tracker:new' %}?once=1">{% ico 'plus' %}{% translate "Дело на день" %}</a>
+  </div>
+
+  <h2 class="trk__h">{% translate "Вместе" %}</h2>
+  <div class="trk__boards">
+    {% for b in boards %}<a class="trk__board" href="{% url 'tracker:board' b.id %}"><span>{{ b.emoji }}</span><b>{{ b.title }}</b><small>{% translate "участников:" %} {{ b.members }}{% if b.compete %} · 🏆{% endif %}</small></a>{% endfor %}
+    <a class="trk__board trk__board--new" href="{% url 'tracker:board_new' %}"><span>＋</span><b>{% translate "Общий трекер" %}</b><small>{% translate "с семьёй, друзьями, напарниками" %}</small></a>
+  </div>
+  <p class="trk__note">{% ico 'lock' %}{% translate "Свои привычки видите только вы. В общем трекере участники видят отметки друг друга." %}</p>
+</div>
+{% endblock %}
+{% block extra_js %}{% include 'tracker/_js.html' %}{% endblock %}

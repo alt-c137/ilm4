@@ -1,17 +1,26 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import AuditLog, BannedIdentity, RegistrationField, User
+from .models import AuditLog, BannedIdentity, RegistrationField, SocialLink, User
+
+
+class SocialLinkInline(admin.TabularInline):
+    model = SocialLink
+    extra = 0
+    fields = ('kind', 'value', 'privacy')
 
 
 @admin.register(User)
 class Ilm4UserAdmin(UserAdmin):
-    list_display = ('username', 'email', 'role', 'phone_ok', 'platform_verified', 'is_staff', 'is_active')
+    inlines = [SocialLinkInline]
+    readonly_fields = ('last_seen_at',)
+    list_display = ('username', 'email', 'handle', 'role', 'phone_ok', 'platform_verified', 'is_staff', 'is_active')
     list_filter = ('role', 'platform_verified', 'is_staff', 'is_active',
                    ('phone_verified_at', admin.EmptyFieldListFilter))
-    search_fields = UserAdmin.search_fields + ('phone', 'telegram_username')
+    search_fields = UserAdmin.search_fields + ('phone', 'telegram_username', 'handle', 'nickname')
     fieldsets = UserAdmin.fieldsets + (
-        ('Профиль ilm4', {'fields': ('nickname', 'city', 'avatar', 'role', 'platform_verified', 'theme')}),
+        ('Профиль ilm4', {'fields': ('nickname', 'handle', 'bio', 'city', 'avatar', 'role', 'platform_verified', 'theme')}),
+        ('Приватность', {'fields': ('phone_privacy', 'findable_by_phone', 'seen_privacy', 'last_seen_at')}),
         ('Номер и Telegram', {'fields': ('phone', 'phone_verified_at', 'telegram_id', 'telegram_username')}),
     )
 

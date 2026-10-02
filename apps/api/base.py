@@ -19,9 +19,9 @@ from django.views.decorators.csrf import csrf_exempt
 PAGE_SIZE = 20
 
 # раздел приложения → ключ ModuleConfig (выключен в админке — пропадает и в приложении)
-MODULE_OF = {'buy': 'buy', 'jobs': 'jobs', 'services': 'services', 'transport': 'transport', 'places': 'map',
+MODULE_OF = {'buy': 'buy', 'jobs': 'jobs', 'services': 'services', 'transport': 'transport', 'trips': 'transport', 'places': 'map',
              'doctors': 'health', 'stories': 'migration', 'books': 'library', 'topics': 'forum', 'news': 'news',
-             'nikah': 'nikah', 'chat': 'chat', 'wallet': 'wallet', 'prayer': 'prayer'}
+             'nikah': 'nikah', 'chat': 'chat', 'wallet': 'wallet', 'prayer': 'prayer', 'tracker': 'tracker'}
 
 
 class ApiError(Exception):
@@ -72,7 +72,7 @@ def _cors(response):
     """API без кук (только токен в заголовке) — открывать для любых источников безопасно:
     чужая страница не получит ничего, чего не может получить и без браузера."""
     response['Access-Control-Allow-Origin'] = '*'
-    response['Access-Control-Allow-Headers'] = 'Authorization, Content-Type, X-Lang, Accept-Language'
+    response['Access-Control-Allow-Headers'] = 'Authorization, Content-Type, X-Lang, X-Currency, Accept-Language, ngrok-skip-browser-warning'
     response['Access-Control-Allow-Methods'] = 'GET, POST, PATCH, DELETE, OPTIONS'
     response['Access-Control-Max-Age'] = '86400'
     return response
@@ -100,6 +100,9 @@ def api(methods=('GET',), auth=False, module=None):
             with translation.override(_lang(request, request.user)):
                 if auth and not request.user.is_authenticated:
                     return JsonResponse({'error': _('Войдите в аккаунт'), 'code': 'auth'}, status=401)
+                if tok:
+                    from apps.accounts.people import touch
+                    touch(request.user)                     # «в сети» — раз в 45 секунд, не на каждый запрос
                 if module and not module_on(MODULE_OF.get(module, module)):
                     return JsonResponse({'error': _('Раздел сейчас выключен'), 'code': 'module_off'}, status=404)
                 if module == 'nikah' and need_phone(request.user, 'nikah'):

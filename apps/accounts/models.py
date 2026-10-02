@@ -36,11 +36,24 @@ class User(AbstractUser):
         help_text='Когда номер подтверждён через Telegram (кнопка «Отправить мой номер»). '
                   'Один номер — один аккаунт: так боты не плодят объявления и анкеты')
     findable_by_phone = models.BooleanField(
-        'меня можно найти по номеру', default=False,
-        help_text='Друзья, у которых ваш номер в контактах, увидят, что вы на ilm4')
+        'меня можно найти по номеру', default=True,
+        help_text='Кто знает ваш номер, найдёт вас в поиске чатов. Сам номер при этом не показывается')
+    # --- профиль и приватность «как в Telegram» (people.py) ---
+    ALL, CLOSE, NOBODY = 'all', 'close', 'nobody'
+    PRIVACY = [(ALL, _lazy('Все')), (CLOSE, _lazy('Близкие друзья')), (NOBODY, _lazy('Никто'))]
+    handle = models.CharField('имя пользователя (@имя)', max_length=32, blank=True, null=True, unique=True,
+                              help_text='По нему вас находят в поиске. Латинские буквы, цифры и «_»')
+    bio = models.CharField('о себе', max_length=160, blank=True)
+    last_seen_at = models.DateTimeField('был(а) в сети', null=True, blank=True, editable=False)
+    phone_privacy = models.CharField('кто видит мой номер', max_length=6, choices=PRIVACY, default=NOBODY)
+    seen_privacy = models.CharField('кто видит, когда я в сети', max_length=6, choices=PRIVACY, default=ALL)
+    # свои настройки интерфейса: какие кнопки внизу экрана (сайт и приложение — отдельно)
+    ui = models.JSONField('настройки интерфейса', default=dict, blank=True)
     telegram_id = models.BigIntegerField('Telegram ID', null=True, blank=True, unique=True,
                                          help_text='Заполняется при входе из Telegram (мини-приложение)')
     telegram_username = models.CharField('Telegram @', max_length=64, blank=True)
+    currency = models.CharField('валюта для цен', max_length=3, blank=True,
+                                help_text='В ней показываем «≈» рядом с ценами. Пусто — определяем сами: по стране или номеру')
     language = models.CharField('язык интерфейса', max_length=8, blank=True,
                                 help_text='Уведомления и сообщения бота приходят на этом языке')
     platform_verified = models.BooleanField(
@@ -78,10 +91,47 @@ class User(AbstractUser):
         return self.phone_verified_at is not None
 
     def get_display_name(self) -> str:
-        return self.nickname or self.first_name or self.username
+        # как в Telegram: имя и фамилия; старый «ник» — только если имени нет
+        return f'{self.first_name} {self.last_name}'.strip() or self.nickname or self.username
 
     def __str__(self):
         return f'{self.get_display_name()} ({self.email})'
+
+
+class SocialLink(models.Model):
+    """Ссылка на соцсеть в профиле: Instagram, Telegram, YouTube… У каждой — кто её видит."""
+
+    KINDS = [('telegram', 'Telegram'), ('instagram', 'Instagram'), ('youtube', 'YouTube'), ('tiktok', 'TikTok'),
+             ('whatsapp', 'WhatsApp'), ('facebook', 'Facebook'), ('x', 'X (Twitter)'), ('vk', 'VK'),
+             ('github', 'GitHub'), ('discord', 'Discord'), ('linkedin', 'LinkedIn'), ('website', _lazy('Сайт')),
+             ('other', _lazy('Другое'))]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='social_links')
+    kind = models.CharField('сеть', max_length=12, choices=KINDS)
+    value = models.CharField('имя или ссылка', max_length=120)
+    privacy = models.CharField('кто видит', max_length=6, choices=User.PRIVACY, default=User.ALL)
+    order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', 'id']
+        verbose_name = 'ссылка на соцсеть'
+        verbose_name_plural = 'ссылки на соцсети'
+
+    def __str__(self):
+        return f'{self.get_kind_display()}: {self.value}'
+
+
+class CloseFriend(models.Model):
+    """«Близкие друзья»: кому человек показывает то, что скрыто от остальных (номер, соцсети, время в сети)."""
+
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='close_friends')
+    friend = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='close_of')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['owner', 'friend'], name='one_close_friend')]
+        verbose_name = 'близкий друг'
+        verbose_name_plural = 'близкие друзья'
 
 
 class RegistrationField(models.Model):

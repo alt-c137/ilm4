@@ -57,7 +57,7 @@ SOURCES = [Source('nikah', _lazy('Анкеты никяха'), 'nikah.NikahProfi
 BY_KEY = {s.key: s for s in SOURCES}
 
 # что не показываем в карточке: служебное, координаты, закрытое
-SKIP = {'id', 'status', 'created_at', 'updated_at', 'is_active', 'boosted_until', 'premium_until', 'views',
+SKIP = {'id', 'status', 'tz_offset', 'created_at', 'updated_at', 'is_active', 'boosted_until', 'premium_until', 'views',
         'lat', 'lon', 'platform_verified', 'photo', 'photo_private', 'faith_answers', 'agreed_at', 'verified',
         'verified_at', 'referred_by', 'ref_bonus_given', 'witness', 'witness_token', 'last_seen', 'cover', 'file'}
 
@@ -179,6 +179,11 @@ def _reports(user) -> list:
         g['title'] = src.title_of(g['obj']) if (src and g['obj']) else str(g['obj'] or _('(удалено)'))
         g['url'] = src.url_of(g['obj']) if (src and g['obj']) else ''
         g['author'] = getattr(g['obj'], src.owner, None) if (src and g['obj']) else None
+        if model._meta.label == 'chat.Thread' and g['obj']:            # жалоба на группу / канал
+            from django.urls import reverse
+            g['title'] = g['obj'].title or g['title']
+            g['author'] = g['obj'].owner
+            g['url'] = reverse('chat:room_info', args=[g['obj'].pk])
         if model._meta.label == 'accounts.User' and g['obj']:
             g['author'] = g['obj']
             from django.urls import reverse

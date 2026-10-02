@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'apps.chat',
     'apps.refugee',
     'apps.transport',
+    'apps.tracker',
     'apps.reviews',
     'apps.deals',
     'apps.payments',
@@ -69,6 +70,7 @@ MIDDLEWARE = [
     'apps.core.middleware.UserLanguageMiddleware',  # язык из профиля (с другого устройства, из Telegram)
     'django_otp.middleware.OTPMiddleware',
     'apps.accounts.middleware.Staff2FARequired',
+    'apps.accounts.middleware.LastSeenMiddleware',   # «в сети / был(а) в 14:05»
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -209,14 +211,18 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# Кэш: в проде — Redis (общий для всех процессов: лимиты входа, контактов);
-# в деве без Redis — локальная память.
-CACHES = {
-    'default': (
-        {'BACKEND': 'django.core.cache.backends.redis.RedisCache', 'LOCATION': env('REDIS_URL')}
-        if env('REDIS_URL', default='') else
-        {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}
-    ),
-}
+# Кэш: в проде — Redis (общий для всех процессов: лимиты входа, одноразовые коды входа через Telegram).
+# На ПК без Redis — файлы в .cache/: сайт и бот — разные процессы, и память у каждого своя; с кешем
+# «в памяти» бот не видел код, выданный сайтом, и отвечал «ссылка устарела». В тестах — память (быстро).
+import sys as _sys
+
+if env('REDIS_URL', default=''):
+    _cache = {'BACKEND': 'django.core.cache.backends.redis.RedisCache', 'LOCATION': env('REDIS_URL')}
+elif 'pytest' in _sys.modules:
+    _cache = {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}
+else:
+    _cache = {'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache', 'LOCATION': str(BASE_DIR / '.cache'),
+              'OPTIONS': {'MAX_ENTRIES': 20000}}
+CACHES = {'default': _cache}
 
 LOCALE_PATHS = [BASE_DIR / 'locale']

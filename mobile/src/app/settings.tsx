@@ -6,10 +6,10 @@ import { Alert, View } from 'react-native';
 import { api } from '@/lib/api';
 import { LANGS } from '@/lib/i18n';
 import { useApp } from '@/state/app';
-import { Button, Card, Divider, Field, Icon, Row, Screen, Section, Segmented, Txt } from '@/ui/kit';
+import { Button, Card, Chip, Divider, Field, Icon, Row, Screen, Section, Segmented, Txt } from '@/ui/kit';
 
 export default function Settings() {
-  const { c, t, lang, setLang, themeMode, setThemeMode, user, signOut } = useApp();
+  const { c, t, lang, setLang, themeMode, setThemeMode, user, signOut, config, currency, setCurrency } = useApp();
   const [confirm, setConfirm] = useState('');
   const [deleting, setDeleting] = useState(false);
 
@@ -44,6 +44,15 @@ export default function Settings() {
         <Segmented value={themeMode} onChange={setThemeMode}
           options={[{ key: 'system', label: t('Как в телефоне') }, { key: 'light', label: t('Светлая') }, { key: 'dark', label: t('Тёмная') }]} />
       </Section>
+      {config?.currencies?.length ? (
+        <Section title={t('Валюта')}>
+          <Txt kind="small">{t('Цены остаются в валюте автора, а рядом показываем «≈» в вашей.')}</Txt>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            <Chip label={`${t('Авто')}${!currency && config.currency ? ` · ${config.currency}` : ''}`} on={!currency} onPress={() => setCurrency('')} />
+            {config.currencies.map((x) => <Chip key={x.code} label={`${x.code} · ${x.name}`} on={currency === x.code} onPress={() => setCurrency(x.code)} />)}
+          </View>
+        </Section>
+      ) : null}
       {user ? (
         <Section title={t('Удаление аккаунта')}>
           <Card style={{ gap: 10 }}>

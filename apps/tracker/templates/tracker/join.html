@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% load i18n icons %}
+{% block title %}{{ board.title }} — {{ block.super }}{% endblock %}
+{% block body_class %}page-trk{% endblock %}
+{% block content %}
+<div class="trk">
+  <div class="trk__empty">
+    <span class="trk__empty-ic">{{ board.emoji }}</span>
+    <b>{{ board.title }}</b>
+    <span>{{ board.owner.get_display_name }} {% translate "зовёт вас вести трекер вместе. Участники видят отметки друг друга." %}</span>
+    {% if habits %}<span>{% for h in habits %}{{ h.emoji }} {{ h.title }}{% if not forloop.last %} · {% endif %}{% endfor %}</span>{% endif %}
+    <form method="post">{% csrf_token %}<button class="btn btn--p" type="submit">{% translate "Присоединиться" %}</button></form>
+    <a class="link" href="{% url 'tracker:index' %}">{% translate "Не сейчас" %}</a>
+  </div>
+</div>
+{% endblock %}

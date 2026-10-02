@@ -1,51 +1,109 @@
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, View } from 'react-native';
 
-import { api } from '@/lib/api';
-import { useApp } from '@/state/app';
-import { Avatar, Button, Field, Screen, Txt } from '@/ui/kit';
+import { api, ApiError } from '@/lib/api';
+import { useApp, type Privacy, type SocialLink, type User } from '@/state/app';
+import { Avatar, Button, Card, Field, Icon, Screen, Section, Sheet, Txt } from '@/ui/kit';
+import { privacyName, SOCIAL } from '@/ui/profile';
 
+type Link = { kind: string; value: string; privacy: Privacy };
+
+/** Правка профиля: фото, имя, @имя пользователя, «о себе», город и соцсети (у каждой — кто её видит). */
 export default function ProfileEdit() {
   const { c, t, user, setUser } = useApp();
   const [first, setFirst] = useState(user?.first_name ?? '');
-  const [nick, setNick] = useState(user?.nickname ?? '');
+  const [last, setLast] = useState(user?.last_name ?? '');
+  const [handle, setHandle] = useState(user?.handle ?? '');
+  const [bio, setBio] = useState(user?.bio ?? '');
   const [city, setCity] = useState(user?.city ?? '');
+  const [links, setLinks] = useState<Link[]>((user?.links ?? []).map((l) => ({ kind: l.kind, value: l.value, privacy: l.privacy ?? 'all' })));
   const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [busy, setBusy] = useState(false);
+  const [pick, setPick] = useState<{ row: number; what: 'kind' | 'privacy' } | null>(null);
   if (!user) return null;
 
-  const pick = async () => {
-    const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.8 });
+  const pickPhoto = async () => {
+    const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.85 })   // системная обрезка: двигать и приближать;
     if (!r.canceled && r.assets[0]) setPhoto(r.assets[0]);
   };
+  const setLink = (i: number, part: Partial<Link>) => setLinks((old) => old.map((l, n) => (n === i ? { ...l, ...part } : l)));
+  const kindName = (k: string) => (k === 'website' ? t('Сайт') : k === 'other' ? t('Другое') : SOCIAL.find((x) => x.key === k)?.name ?? k);
+
   const save = async () => {
     setBusy(true);
     try {
       const form = new FormData();
       form.append('first_name', first);
-      form.append('nickname', nick);
+      form.append('last_name', last);
+      form.append('handle', handle);
+      form.append('bio', bio);
       form.append('city', city);
       if (photo) form.append('avatar', { uri: photo.uri, name: photo.fileName || 'avatar.jpg', type: photo.mimeType || 'image/jpeg' } as any);
-      setUser(await api('/me/', { form }));
+      const me = await api<User>('/me/', { form });
+      const r = await api<{ links: SocialLink[] }>('/me/links/', { body: { links: links.filter((l) => l.value.trim()) } });
+      setUser({ ...me, links: r.links });
       router.back();
-    } catch (e: any) {
-      Alert.alert(e.message);
+    } catch (e) {
+      Alert.alert((e as ApiError).message);
     } finally {
       setBusy(false);
     }
   };
+
+  const row = pick ? links[pick.row] : null;
   return (
-    <Screen title={t('Профиль')} back>
-      <Pressable onPress={pick} style={{ alignItems: 'center', gap: 8 }}>
-        <Avatar uri={photo?.uri ?? user.avatar} name={user.name} size={96} hue={user.id} />
-        <Txt kind="small" color={c.accent}>{t('Сменить фото')}</Txt>
-      </Pressable>
-      <Field label={t('Имя')} value={first} onChangeText={setFirst} />
-      <Field label={t('Ник')} value={nick} onChangeText={setNick} />
-      <Field label={t('Город')} value={city} onChangeText={setCity} />
-      <Button title={t('Сохранить')} onPress={save} loading={busy} />
-    </Screen>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <Screen title={t('Профиль')} back>
+        <Pressable onPress={pickPhoto} style={{ alignItems: 'center', gap: 8 }}>
+          <Avatar uri={photo?.uri ?? user.avatar} name={user.name} size={104} hue={user.id} />
+          <Txt kind="small" color={c.accent} style={{ fontWeight: '700' }}>{t('Сменить фото')}</Txt>
+        </Pressable>
+        <Field label={t('Имя')} value={first} onChangeText={setFirst} maxLength={150} />
+        <Field label={t('Фамилия (необязательно)')} value={last} onChangeText={setLast} maxLength={150} />
+        <View style={{ gap: 4 }}>
+          <Field label={t('Имя пользователя')} value={handle} onChangeText={(x) => setHandle(x.replace(/^@/, '').toLowerCase())} maxLength={32}
+            autoCapitalize="none" autoCorrect={false} placeholder="ali_2024" />
+          <Txt kind="small">{t('По нему вас находят в поиске: @имя. Латинские буквы, цифры и «_», от 4 знаков, первая — буква.')}</Txt>
+        </View>
+        <Field label={t('О себе')} value={bio} onChangeText={setBio} maxLength={160} placeholder={t('Пара слов о себе')} />
+        <Field label={t('Город')} value={city} onChangeText={setCity} maxLength={80} />
+
+        <Section title={t('Соцсети и ссылки')}>
+          <Txt kind="small">{t('Instagram, Telegram, YouTube, GitHub, Discord — что хотите. Для каждой ссылки выберите, кто её видит.')}</Txt>
+          {links.map((l, i) => (
+            <Card key={i} soft style={{ gap: 8, padding: 12 }}>
+              <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                <Pressable onPress={() => setPick({ row: i, what: 'kind' })} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: c.card, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9, borderWidth: 1, borderColor: c.line }}>
+                  <Icon name={SOCIAL.find((x) => x.key === l.kind)?.icon ?? 'link-outline'} size={17} color={c.accent} />
+                  <Txt style={{ fontWeight: '700' }}>{kindName(l.kind)}</Txt>
+                  <Icon name="chevron-down" size={14} color={c.inkSoft} />
+                </Pressable>
+                <View style={{ flex: 1 }} />
+                <Pressable onPress={() => setLinks((old) => old.filter((_x, n) => n !== i))} hitSlop={10} accessibilityLabel={t('Убрать')}>
+                  <Icon name="trash-outline" size={20} color={c.bad} />
+                </Pressable>
+              </View>
+              <Field value={l.value} onChangeText={(x) => setLink(i, { value: x })} maxLength={120} autoCapitalize="none" autoCorrect={false}
+                placeholder={SOCIAL.find((x) => x.key === l.kind)?.hint || t('имя или ссылка')} />
+              <Pressable onPress={() => setPick({ row: i, what: 'privacy' })} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Icon name="eye-outline" size={16} color={c.inkSoft} />
+                <Txt kind="small">{t('Кто видит')}: </Txt>
+                <Txt kind="small" color={c.accent} style={{ fontWeight: '700' }}>{privacyName(l.privacy, t)}</Txt>
+              </Pressable>
+            </Card>
+          ))}
+          {links.length < 12 ? <Button kind="soft" small icon="add" title={t('Добавить ссылку')} onPress={() => { setLinks((old) => [...old, { kind: 'telegram', value: '', privacy: 'all' }]); setPick({ row: links.length, what: 'kind' }); }} /> : null}
+        </Section>
+        <Button title={t('Сохранить')} onPress={save} loading={busy} />
+      </Screen>
+      <Sheet open={!!pick && pick.what === 'kind'} onClose={() => setPick(null)} title={t('Сеть')}
+        items={SOCIAL.map((x) => ({ icon: x.icon, title: kindName(x.key), on: row?.kind === x.key, onPress: () => pick && setLink(pick.row, { kind: x.key }) }))} />
+      <Sheet open={!!pick && pick.what === 'privacy'} onClose={() => setPick(null)} title={t('Кто видит')}
+        items={(['all', 'close', 'nobody'] as Privacy[]).map((p) => ({ title: privacyName(p, t), on: row?.privacy === p,
+          subtitle: p === 'close' ? t('Только те, кого вы добавили в близкие друзья') : p === 'nobody' ? t('Ссылка сохранена, но никому не показывается') : undefined,
+          onPress: () => pick && setLink(pick.row, { privacy: p }) }))} />
+    </KeyboardAvoidingView>
   );
 }

@@ -12,7 +12,7 @@ from django.utils.translation import gettext_lazy as _lazy
 GROUPS = [
     ('faith', _lazy('Вера и знания'), ['prayer', 'learn', 'library', 'forum', 'news']),
     ('shop', _lazy('Покупки и деньги'), ['buy', 'services', 'finance', 'invest', 'digital', 'wallet']),
-    ('life', _lazy('Жизнь и семья'), ['map', 'health', 'nikah', 'realestate', 'sport', 'fun']),
+    ('life', _lazy('Жизнь и семья'), ['tracker', 'map', 'health', 'nikah', 'realestate', 'sport', 'fun']),
     ('move', _lazy('Работа, переезд и право'), ['jobs', 'migration', 'transport', 'refugee', 'lawyers']),
     ('talk', _lazy('Общение'), ['chat']),
 ]
@@ -42,6 +42,7 @@ DESCR = {
     'chat': _lazy('Личные сообщения'),
     'lawyers': _lazy('Юридическая помощь, адвокаты по странам'),
     'fun': _lazy('Халяль-досуг: события, отдых, игры'),
+    'tracker': _lazy('Привычки и дела на день — одному или вместе'),
 }
 
 

@@ -4,10 +4,18 @@
 #   cp .env.example .env        # вписать SECRET_KEY, POSTGRES_PASSWORD, ALLOWED_HOSTS
 #   docker compose -f docker-compose.prod.yml up -d --build
 #   docker compose -f docker-compose.prod.yml exec app python manage.py createsuperuser
+# Журналы контейнеров не растут бесконечно (иначе через месяцы забьют диск и сервер встанет)
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "5"
+
 services:
   db:
     image: postgis/postgis:16-3.4
     restart: unless-stopped
+    logging: *logging
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-ilm4}
       POSTGRES_USER: ${POSTGRES_USER:-ilm4}
@@ -21,12 +29,21 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    logging: *logging
+    # память ограничена: переполнение вытесняет старые записи кеша, а не роняет сервер
+    command: ["redis-server", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
     volumes:
       - ilm4_redis_prod:/data
 
   app:
     build: .
     restart: unless-stopped
+    logging: *logging
+    init: true                # корректно завершает дочерние процессы (ffmpeg)
+    stop_grace_period: 30s    # при обновлении даём дописаться запросам
     env_file: .env
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.prod
@@ -39,19 +56,27 @@ services:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
+    # «жив ли сайт»: не отвечает 3 раза подряд — Docker помечает контейнер нездоровым (видно в docker ps)
+    healthcheck:
+      test: ["CMD", "python", "scripts/healthcheck.py"]
+      interval: 30s
+      timeout: 6s
+      retries: 3
+      start_period: 90s
 
   # Задачи по расписанию: никях — просроченные фото и ИИ-модерация (раз в минуту),
   # автопринятие сделок (раз в час), курсы валют (раз в 6 часов)
   jobs:
     build: .
     restart: unless-stopped
+    logging: *logging
     env_file: .env
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.prod
       DATABASE_URL: postgis://${POSTGRES_USER:-ilm4}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-ilm4}
       REDIS_URL: redis://redis:6379/0
-    entrypoint: ["sh", "-c", "sleep 60; i=0; while true; do python manage.py nikah_cleanup; python manage.py chat_send_due; python manage.py ai_moderate; [ $$((i % 60)) -eq 0 ] && python manage.py release_due_deals; [ $$((i % 360)) -eq 0 ] && python manage.py pull_rates; i=$$((i + 1)); sleep 60; done"]
+    entrypoint: ["sh", "-c", "sleep 60; i=0; while true; do python manage.py nikah_cleanup; python manage.py chat_send_due; python manage.py tracker_remind; python manage.py ai_moderate; [ $$((i % 60)) -eq 0 ] && python manage.py release_due_deals; [ $$((i % 360)) -eq 0 ] && python manage.py pull_rates; i=$$((i + 1)); sleep 60; done"]
     volumes:
       - ilm4_media_prod:/app/media
     depends_on:
@@ -60,6 +85,7 @@ services:
   nginx:
     image: nginx:alpine
     restart: unless-stopped
+    logging: *logging
     ports:
       - "80:80"
     volumes:

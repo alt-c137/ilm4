@@ -1,3 +1,4 @@
+{% load money %}
 {% load i18n %}{% load market_tags %}
 {% load icons %}{% load humanize %}{% recent_listings 10 as recent %}
 {% if recent %}
@@ -11,7 +12,7 @@
     <a class="card rcard" href="/buy/{{ l.pk }}/">
       <div class="rcard__img rcard__img--{% cycle 'a' 'b' 'c' 'd' 'e' %}">{% if l.photo %}<img class="rcard__photo" src="{{ l.photo.url }}" alt="" loading="lazy" decoding="async">{% else %}{% svc_icon 'cat-'|add:l.category.slug l.category.icon 'rcard__emoji' %}{% endif %}{% if l.is_boosted %}<span class="badge">{% translate "ТОП" %}</span>{% endif %}</div>
       <div class="card__b">
-        <div class="price">{% if l.price == 0 %}{% translate "Даром" %}{% else %}{{ l.price|intcomma }} {{ l.get_currency_display }}{% endif %}</div>
+        <div class="price">{% if l.price == 0 %}{% translate "Даром" %}{% else %}{% money l.price l.currency %}{% endif %}</div>
         <div class="card__t">{{ l.title }}</div>
         <div class="card__d">{{ l.city }} · {{ l.created_at|date:"d.m" }}</div>
       </div>

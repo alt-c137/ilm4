@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load icons %}
+{% block title %}{% translate "Предложить поездку —" %} {{ block.super }}{% endblock %}
+{% block body_class %}s-migration{% endblock %}
+
+{% block content %}
+<div class="fpage">
+  <a class="crumb" href="{% url 'transport:trips' %}">{% ico 'back' %}{% translate "Попутчики" %}</a>
+  <div class="dcard">
+    <div class="fpage__h">
+      <span class="fpage__ic">{% ico 'pin' %}</span>
+      <div>
+        <h1>{% translate "Предложить поездку" %}</h1>
+        <div class="fpage__sub">{% translate "Едете сами — укажите маршрут, время и свободные места. Ищете машину — выберите «Ищу машину»." %}</div>
+      </div>
+    </div>
+    <form method="post" class="form fgrid">{% csrf_token %}
+      {% if form.non_field_errors %}<div class="field field--wide"><span class="err">{{ form.non_field_errors.0 }}</span></div>{% endif %}
+      {% for field in form.hidden_fields %}{{ field }}{% endfor %}
+      {% for field in form.visible_fields %}
+      <div class="field{% if field.name in 'role via comment' %} field--wide{% endif %}{% if field.errors %} field--err{% endif %}{% if field.field.widget.input_type == 'checkbox' %} field--check{% endif %}" data-f="{{ field.name }}">
+        {% if field.field.widget.input_type == 'checkbox' %}
+        <label class="check">{{ field }}<span>{{ field.label }}</span></label>
+        {% else %}
+        <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span class="req">*</span>{% endif %}</label>
+        {{ field }}
+        {% endif %}
+        {% if field.errors %}<span class="err">{{ field.errors.0 }}</span>{% endif %}
+        {% if field.help_text %}<span class="hint">{{ field.help_text }}</span>{% endif %}
+      </div>
+      {% endfor %}
+      {% include 'includes/pledge.html' %}
+      <button type="submit" class="btn btn--p">{% ico 'plus' %}{% translate "Опубликовать" %}</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* «Ищу машину» — поля про машину не нужны */
+(function () {
+  var role = document.getElementById('id_role');
+  function sync() {
+    var seek = role.value === 'passenger';
+    ['car', 'front_seat', 'parcels', 'audience'].forEach(function (n) {
+      var el = document.querySelector('[data-f="' + n + '"]'); if (el) el.hidden = seek;
+    });
+  }
+  role.addEventListener('change', sync); sync();
+  // время выезда — по часам автора: сообщаем серверу часовой пояс устройства
+  var tz = document.getElementById('id_tz_offset'); if (tz) tz.value = -new Date().getTimezoneOffset();
+})();
+</script>
+{% endblock %}

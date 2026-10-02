@@ -4,7 +4,7 @@ django-environ
 django-solo
 django-taggit              # теги объявлений (market)
 praytimes                  # расчёт времени намаза (apps/prayer)
-psycopg[binary]
+psycopg[binary,pool]       # PostgreSQL; pool — общий набор соединений (DB_POOL=True в .env)
 Pillow                     # изображения (аватары, фазы с фото)
 whitenoise                 # статики в проде
 gunicorn                   # прод-сервер (unix)
@@ -12,7 +12,8 @@ django-otp                 # 2FA (TOTP) для админов — PASSPORT §3 (
 qrcode                     # QR-код для подключения 2FA
 channels                   # WebSocket-чат (фаза 8)
 channels-redis             # прод-слой channel layers (в деве — InMemory)
-daphne                     # ASGI-сервер (runserver-WS + прод)
+daphne                     # ASGI-сервер для разработки (runserver с WebSocket) и запасной для прода
+uvicorn[standard]          # ASGI-сервер прода: несколько процессов, автоперезапуск (entrypoint.sh)
 requests                   # вход через Google (OAuth-обмен кода на токен)
 cryptography               # шифрование переписки и файлов (AES-256-GCM, Fernet для старых данных)
 imageio-ffmpeg             # встроенный ffmpeg: сжатие видео в чате (apps/chat/transcode.py)

@@ -107,7 +107,7 @@ class SiteSettings(SingletonModel):
     chat_photos_enabled = models.BooleanField('чат: фото', default=True)
     chat_voice_enabled = models.BooleanField('чат: голосовые сообщения', default=True)
     chat_circles_enabled = models.BooleanField('чат: видеокружки', default=True)
-    chat_videos_enabled = models.BooleanField('чат: видео (файлом, до 50 МБ)', default=True)
+    chat_videos_enabled = models.BooleanField('чат: видео', default=True)
     app_min_version = models.CharField(
         'приложение: минимальная версия', max_length=20, blank=True,
         help_text='Например 1.2.0. Кто на более старой версии — увидит «Обновите приложение». Пусто — без проверки')
@@ -132,10 +132,24 @@ class SiteSettings(SingletonModel):
     phone_for_contacts = models.BooleanField(
         'подтверждённый номер — для «найти знакомых»', default=True,
         help_text='Поиск знакомых по контактам телефона — только тем, чей номер подтверждён')
+    chat_groups_enabled = models.BooleanField(
+        'чат: группы', default=True, help_text='Выключено — новые группы создавать нельзя, существующие скрыты')
+    chat_channels_enabled = models.BooleanField(
+        'чат: каналы', default=True,
+        help_text='Каналы мечетей, учителей, организаций. Выключено — раздел каналов и сами каналы скрыты')
+    chat_channels_staff_only = models.BooleanField(
+        'чат: каналы создают только сотрудники', default=False,
+        help_text='Включите, если хотите сами заводить каналы (мечети, учителя), а людям — только подписываться')
+    chat_group_max_members = models.PositiveIntegerField('чат: в группе не больше, человек', default=1000)
     chat_files_enabled = models.BooleanField(
         'чат: файлы без сжатия', default=True,
         help_text='«Отправить файлом»: документы, а также фото и видео в исходном качестве')
-    chat_file_max_mb = models.PositiveSmallIntegerField('чат: файл не больше, МБ', default=100)
+    chat_file_max_mb = models.PositiveSmallIntegerField(
+        'чат: файл не больше, МБ', default=2000,
+        help_text='2000 МБ ≈ 2 ГБ, как в Telegram. Большие файлы загружаются частями и продолжаются после обрыва связи')
+    chat_daily_upload_mb = models.PositiveIntegerField(
+        'чат: один человек в сутки загружает не больше, МБ', default=10000,
+        help_text='Защита диска сервера от того, кто решит завалить его файлами. 0 — без ограничения')
     chat_video_height = models.PositiveSmallIntegerField(
         'чат: качество видео после сжатия', default=720, choices=[(480, '480p — экономно'), (720, '720p — как в Telegram'),
                                                                  (1080, '1080p — высокое')],
@@ -203,6 +217,14 @@ class SiteSettings(SingletonModel):
     doctor_publish_price = models.PositiveIntegerField(
         'цена публикации врача, сум (0 — бесплатно)', default=0,
     )
+    default_currency = models.CharField(
+        'валюта по умолчанию', max_length=3, default='USD',
+        help_text='Код валюты (USD, UZS, RUB…). В ней показываем цены тем, чью страну не удалось определить. '
+                  'Каждый может выбрать свою в «Настройках»')
+    trips_moderation = models.BooleanField(
+        'модерация попутчиков', default=False,
+        help_text='Выключено — поездка публикуется сразу (она может быть уже сегодня). Первые публикации новичка '
+                  'всё равно проверяются вручную')
     market_moderation = models.BooleanField(
         'модерация объявлений ilmbuy', default=True,
         help_text='Выключи, если объявлений слишком много для ручной проверки',

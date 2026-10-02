@@ -1,0 +1,23 @@
+{% load i18n icons money reviews %}<a class="panel trip{% if t.seats_left == 0 and t.is_driver %} trip--full{% endif %}" href="{% url 'transport:trip' t.pk %}">
+  <div class="trip__top">
+    <div class="trip__when"><b>{{ t.departs_local|date:"H:i" }}</b><span>{{ t.departs_local|date:"j E, D" }}</span></div>
+    <div class="trip__price">{% if t.price %}{% money t.price t.currency %}<small>{% translate "за место" %}</small>{% else %}{% translate "Бесплатно" %}{% endif %}</div>
+  </div>
+  <div class="trip__route"><b>{{ t.from_city }}</b><i></i><b>{{ t.to_city }}</b></div>
+  {% if t.via %}<div class="trip__via">{% translate "через" %} {{ t.via }}</div>{% endif %}
+  <div class="trip__chips">
+    {% if t.is_driver %}
+      <span class="tchip{% if t.seats_left == 0 %} tchip--off{% else %} tchip--acc{% endif %}">{% ico 'user' %}{% if t.seats_left == 0 %}{% translate "мест нет" %}{% else %}{% translate "мест" %}: {{ t.seats_left }}{% endif %}</span>
+      {% if t.front_seat and t.seats_left %}<span class="tchip">{% translate "переднее свободно" %}</span>{% endif %}
+    {% else %}
+      <span class="tchip tchip--seek">{% translate "ищу машину" %} · {{ t.seats }}</span>
+    {% endif %}
+    {% if t.audience != 'any' %}<span class="tchip">{{ t.get_audience_display }}</span>{% endif %}
+    {% if t.parcels %}<span class="tchip">{% translate "возьму посылку" %}</span>{% endif %}
+  </div>
+  <div class="trip__who">
+    {% if t.owner.avatar %}<img class="person__ava person__ava--sm" src="{{ t.owner.avatar.url }}" alt="" loading="lazy" decoding="async">{% else %}<span class="person__ava person__ava--sm">{{ t.owner.get_display_name|slice:":1"|upper }}</span>{% endif %}
+    <span><b>{{ t.owner.get_display_name }}</b>{% rating_badge t.owner True %}</span>
+    {% if t.car %}<span class="trip__car">{{ t.car }}</span>{% endif %}
+  </div>
+</a>

@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load icons %}
+{% block title %}{{ room.title }} — {{ block.super }}{% endblock %}
+{% block description %}{{ room.about|default:room.title|truncatechars:150 }}{% endblock %}
+{% block body_class %}s-chat{% endblock %}
+
+{% block content %}
+<div class="fpage">
+  <div class="dcard roompub">
+    {% include 'chat/_pic.html' with p=pic size='lg' %}
+    <h1>{{ room.title }}{% if room.platform_verified %}<i class="tgver" title="{% translate 'Официальный' %}">{% ico 'check' %}</i>{% endif %}</h1>
+    <div class="roompub__meta">{% if room.kind == 'channel' %}{% translate "канал" %}{% else %}{% translate "группа" %}{% endif %} · {{ room.members_count }} {% if room.kind == 'channel' %}{% translate "подписчиков" %}{% else %}{% translate "участников" %}{% endif %}{% if room.handle %} · @{{ room.handle }}{% endif %}</div>
+    {% if room.about %}<p class="roompub__about">{{ room.about|linebreaksbr }}</p>{% endif %}
+    {% if user.is_authenticated %}
+    <form method="post"{% if code %} action="{% url 'chat:room_join' code %}"{% else %} action="{% url 'chat:room_act' room.pk 'join' %}"{% endif %}>{% csrf_token %}
+      <button class="btn btn--p" type="submit">{% if room.kind == 'channel' %}{% translate "Подписаться" %}{% else %}{% translate "Вступить в группу" %}{% endif %}</button>
+    </form>
+    {% else %}
+    <a class="btn btn--p" href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">{% translate "Войти и читать" %}</a>
+    <p class="tnote">{% translate "ilm4 — платформа для мусульман: намаз, общение, объявления. Вход через Telegram или почту занимает минуту." %}</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

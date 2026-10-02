@@ -13,7 +13,7 @@
   <div class="dgrid dgrid--rev">
     <aside class="dside">
       <div class="dcard pcard">
-        <div class="pcard__ava pcard__ava--health">{% if doctor.photo %}<img src="{{ doctor.photo.url }}" alt="">{% else %}{% ico 'pulse' %}{% endif %}</div>
+        <div class="pcard__ava pcard__ava--health">{% if doctor.photo %}<img src="{{ doctor.photo.url }}" alt="" decoding="async">{% else %}{% ico 'pulse' %}{% endif %}</div>
         <h1 class="dtitle">{{ doctor.name }}</h1>
         <div class="dmeta">
           <span class="mchip mchip--acc">{{ doctor.specialization }}</span>

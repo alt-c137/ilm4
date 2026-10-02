@@ -58,11 +58,12 @@ NS_TO_KEY = {
     'prayer': 'prayer', 'market': 'buy', 'maps': 'map', 'health': 'health',
     'nikah': 'nikah', 'forum': 'forum', 'news': 'news', 'jobs': 'jobs',
     'migration': 'migration', 'services': 'services', 'library': 'library',
-    'chat': 'chat', 'wallet': 'wallet', 'refugee': 'refugee', 'transport': 'transport',
+    'chat': 'chat', 'wallet': 'wallet', 'refugee': 'refugee', 'transport': 'transport', 'tracker': 'tracker',
 }
 
 
 def site(request):
+    from . import tabs
     settings_obj = SiteSettings.get_solo()
     themes = Theme.objects.all()
     # Активная тема: профиль → кука → дефолт из настроек
@@ -112,6 +113,7 @@ def site(request):
         'menu_modules': [m for m in modules if m.key != 'wallet'],  # меню (футер, пилюли)
         'wallet_on': any(m.key == 'wallet' for m in modules),
         'escrow_on': settings_obj.escrow_enabled,
+        'channels_on': settings_obj.chat_channels_enabled and any(m.key == 'chat' for m in modules),
         'contacts_on': settings_obj.chat_contacts_enabled,
         'calls_on': (settings_obj.chat_calls_enabled or settings_obj.chat_video_calls_enabled)
         and any(m.key == 'chat' for m in modules),
@@ -119,6 +121,7 @@ def site(request):
         'mod_pending': mod_pending,
         'active_section': active_section,
         'menu_more_keys': [m.key for m in more],
+        'site_tabs': tabs.site_tabs(user, {m.key for m in modules}, request.path, is_home),
         'is_home': is_home,
         'is_dark': request.COOKIES.get('ilm4_dark') == '1',
         # кнопка Google — только когда ключи заданы (иначе она вела обратно на вход и путала)

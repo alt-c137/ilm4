@@ -60,10 +60,16 @@ def my_edit(request, key, pk):
         obj = form.save(commit=False)
         if hasattr(obj, 'status'):
             obj.status = Moderation.PENDING
+            if key == 'trips':                 # поездку правят в последний момент (время, места) — без ожидания
+                from .models import SiteSettings
+                from .moderation import is_newbie
+                if not SiteSettings.get_solo().trips_moderation and not is_newbie(request.user):
+                    obj.status = Moderation.APPROVED
         obj.save()
         form.save_m2m()
         log_action(request, f'Изменена публикация ({pub.label})', f'{key}#{obj.pk}')
-        messages.success(request, _('Сохранено. После проверки модератором изменения появятся на сайте.'))
+        messages.success(request, _('Сохранено.') if getattr(obj, 'status', '') == Moderation.APPROVED
+                         else _('Сохранено. После проверки модератором изменения появятся на сайте.'))
         return redirect('core:my')
     return render(request, 'core/my_edit.html', {'form': form, 'pub': pub, 'obj': obj, 'title': pub.title_of(obj)})
 
@@ -134,8 +140,10 @@ def report_thread(user, thread_id):
     """Переписка, из которой пожаловались: только если жалующийся — её участник."""
     if not str(thread_id or '').isdigit():
         return None
+    from apps.chat import services
     from apps.chat.models import Thread
-    return Thread.objects.filter(pk=int(thread_id), participants=user).first()
+    thread = Thread.objects.filter(pk=int(thread_id)).first()       # участник; публичную группу / канал — любой, кто читает
+    return thread if thread is not None and services.can_read(thread, user) else None
 
 
 def _after_report(ct, obj, reason):

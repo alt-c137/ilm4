@@ -11,7 +11,13 @@ def _isolated_settings(settings):
     settings.TELEGRAM_MODERATION_CHAT_ID = ''
     settings.GOOGLE_OAUTH_CLIENT_ID = ''
     settings.GOOGLE_OAUTH_CLIENT_SECRET = ''
+    settings.FX_AUTO_REFRESH = False      # курсы валют: в тестах в сеть не ходим
+    from django.core.cache import cache
+
     from apps.chat import keyring
+    from apps.core import fx
+    cache.clear()                 # счётчики лимитов из прошлого теста не должны влиять на следующий
     keyring.forget_cache()        # ключи чатов из прошлого теста (другая база) не переиспользуем
+    fx.forget()
     yield
     keyring.forget_cache()

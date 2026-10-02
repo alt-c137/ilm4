@@ -13,6 +13,16 @@ export function openSiteUrl(url: string) {
   const path = url.replace(API_URL, '');
   let m = path.match(/^\/chat\/(\d+)\/?/);
   if (m) return router.push(`/chat/${m[1]}`);
+  m = path.match(/^\/c\/([A-Za-z0-9_]+)\/?$/);                 // публичный адрес канала
+  if (m) return router.push({ pathname: '/chat/channels', params: { handle: m[1] } });
+  m = path.match(/^\/chat\/join\/([\w-]+)\/?$/);               // ссылка-приглашение
+  if (m) return router.push({ pathname: '/chat/channels', params: { code: m[1] } });
+  if (path.startsWith('/chat/channels')) return router.push('/chat/channels');
+  m = path.match(/^\/tracker\/join\/([\w-]+)\/?$/);            // приглашение в общий трекер
+  if (m) return router.push({ pathname: '/habits/join', params: { code: m[1] } });
+  if (path.startsWith('/tracker')) return router.push('/tracker');
+  m = path.match(/^\/accounts\/u\/(\d+)\/?$/);               // страница человека
+  if (m) return router.push(`/user/${m[1]}`);
   m = path.match(/^\/nikah\/match\/(\d+)\/?/);
   if (m) return router.push(`/nikah/match/${m[1]}`);
   m = path.match(/^\/nikah\/(\d+)\/?$/);

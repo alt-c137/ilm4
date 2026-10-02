@@ -35,7 +35,8 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         self.user = self.scope['user']
         self.thread_id = self.scope['url_route']['kwargs']['thread_id']
         self.group = f'chat_{self.thread_id}'
-        if not self.user.is_authenticated or not await self._is_participant():
+        self.room = False
+        if not self.user.is_authenticated or not await self._can_read():
             await self.close()
             return
         self._msgs, self._signals = [], []
@@ -45,10 +46,12 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def disconnect(self, code):
         if hasattr(self, 'group'):
             await self.channel_layer.group_discard(self.group, self.channel_name)
+            if self.room:
+                await self._room_read()      # всё, что пришло, пока человек был в чате, — прочитано
 
     async def receive_json(self, content):
         if content.get('type') == 'signal':
-            if not _allow(self._signals, SIGNAL_LIMIT, SIGNAL_WINDOW):
+            if self.room or not _allow(self._signals, SIGNAL_LIMIT, SIGNAL_WINDOW):
                 return
             if not await self._calls_allowed(bool(content.get('video'))):
                 return   # звонки выключены в админке — сигналы не пересылаем
@@ -58,6 +61,8 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             await self.send_json({'type': 'error', 'error': _('Слишком часто — подождите немного.')})
             return
         if content.get('type') == 'calllog':
+            if self.room:
+                return
             payload = await self._call_log(content)
             if payload:
                 await self.channel_layer.group_send(self.group, {'type': 'chat.message', 'payload': payload})
@@ -79,11 +84,14 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         # поддержка старого формата события (без payload)
         payload = event.get('payload') or {k: v for k, v in event.items() if k != 'type'}
         await self.send_json({'type': 'msg', **payload})
-        # получатель сейчас в диалоге — сообщение прочитано, отправителю ✓✓
-        if payload['sender_id'] != self.user.id:
+        # получатель сейчас в диалоге — сообщение прочитано, отправителю ✓✓ (в группах и каналах галочек нет)
+        if payload['sender_id'] != self.user.id and not self.room:
             await self._mark_read(payload['id'])
             await self.channel_layer.group_send(self.group, {'type': 'chat.read', 'ids': [payload['id']],
                                                              'reader_id': self.user.id})
+
+    async def chat_deleted(self, event):
+        await self.send_json({'type': 'del', 'ids': event['ids']})
 
     async def chat_read(self, event):
         if event['reader_id'] != self.user.id:
@@ -115,10 +123,24 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         return st.chat_video_calls_enabled if video else (st.chat_calls_enabled or st.chat_video_calls_enabled)
 
     @database_sync_to_async
-    def _is_participant(self):
+    def _can_read(self):
+        from . import services
         from .models import Thread
 
-        return Thread.objects.filter(pk=self.thread_id, participants=self.user).exists()
+        thread = Thread.objects.filter(pk=self.thread_id).first()
+        if thread is None or not services.can_read(thread, self.user):
+            return False
+        self.room = thread.is_room
+        return True
+
+    @database_sync_to_async
+    def _room_read(self):
+        from . import rooms
+        from .models import Thread
+
+        thread = Thread.objects.filter(pk=self.thread_id).first()
+        if thread is not None:
+            rooms.mark_read(thread, self.user)
 
     @database_sync_to_async
     def _others(self):
@@ -167,11 +189,11 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
     @database_sync_to_async
     def _notify_recipient(self, payload):
-        from .events import notify_recipients
+        from . import services
         from .models import Thread
 
-        notify_recipients(Thread.objects.get(pk=self.thread_id), self.user, payload['body'],
-                          silent=payload.get('silent', False))
+        services.notify(Thread.objects.get(pk=self.thread_id), self.user, payload['body'],
+                        silent=payload.get('silent', False))
 
 
 class UserConsumer(AsyncJsonWebsocketConsumer):

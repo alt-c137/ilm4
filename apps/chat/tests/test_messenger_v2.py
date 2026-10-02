@@ -266,7 +266,7 @@ def test_each_listing_has_its_own_chat_with_card(pair, client):
     assert services.open_direct(a, b, context=('buy', one.pk)).pk == t1.pk
     assert t1.folder == 'buy' and personal.folder == 'personal'
     info = services.thread_info(t1, a)
-    assert info['card']['title'] == 'Финики аджва' and '28 000' in info['card']['price'] and not info['card']['closed']
+    assert info['card']['title'] == 'Финики аджва' and '28\xa0000' in info['card']['price'] and not info['card']['closed']
     assert 'предоплату' in info['notice']
     one.is_active = False
     one.save()
@@ -341,12 +341,114 @@ def test_send_as_file_keeps_original_and_downloads(pair, settings, tmp_path, cli
     assert got['Content-Disposition'].startswith('attachment') and got['Content-Type'] == 'application/octet-stream'
 
 
-def test_programs_are_refused(pair, settings, tmp_path, client):
+def test_programs_are_sent_but_marked_risky(pair, settings, tmp_path, client):
+    """Как в Telegram: программы и скрипты отправляются, но получатель видит предупреждение,
+    а сайт отдаёт файл только на скачивание."""
+    settings.MEDIA_ROOT = tmp_path
+    a, b, t = pair
+    client.force_login(a)
+    r = client.post(f'/chat/{t.pk}/upload/', {'kind': 'file', 'file': SimpleUploadedFile('tool.apk', b'PK..')})
+    assert r.status_code == 200 and r.json()['file_risky'] is True
+    r2 = client.post(f'/chat/{t.pk}/upload/', {'kind': 'file', 'file': SimpleUploadedFile('notes.txt', b'hello')})
+    assert r2.json()['file_risky'] is False
+    client.force_login(b)
+    page = client.get(f'/chat/{t.pk}/').content.decode()
+    assert page.count('bub__risk') == 1
+    got = client.get(f"/chat/file/{r.json()['id']}/")
+    assert got['Content-Disposition'].startswith('attachment') and got['X-Content-Type-Options'] == 'nosniff'
+
+
+def _send_parts(client, base, t, data, name='big.bin', kind='file', part=None, **extra):
+    r = client.post(f'{base}/{t.pk}/upload/begin/', {'kind': kind, 'name': name, 'size': len(data), **extra})
+    assert r.status_code == 200, r.content
+    up, size = r.json()['upload'], part or r.json()['part']
+    for off in range(0, len(data), size):
+        r = client.post(f'{base}/upload/{up}/part/?offset={off}', data[off:off + size],
+                        content_type='application/octet-stream')
+        assert r.status_code == 200, r.content
+    return up
+
+
+def test_big_file_goes_in_parts_and_survives_a_dropped_connection(pair, settings, tmp_path, client):
+    """Файл больше одного запроса: части по 4 МБ шифруются сразу, обрыв — продолжение с того же места."""
+    settings.MEDIA_ROOT = tmp_path
+    a, b, t = pair
+    data = os.urandom(services.PART * 2 + 70_000)                 # три части, последняя неполная
+    client.force_login(a)
+    r = client.post(f'/chat/{t.pk}/upload/begin/', {'kind': 'file', 'name': 'Фильм.mkv', 'size': len(data)})
+    up, part = r.json()['upload'], r.json()['part']
+    assert part == services.PART
+    assert client.post(f'/chat/upload/{up}/part/?offset=0', data[:part], content_type='application/octet-stream').status_code == 200
+    # часть «потерялась» и пришла не та: сервер говорит, с какого места продолжать
+    skip = client.post(f'/chat/upload/{up}/part/?offset={part * 2}', data[part * 2:], content_type='application/octet-stream')
+    assert skip.status_code == 409 and skip.json()['received'] == part
+    assert client.get(f'/chat/upload/{up}/').json()['received'] == part
+    early = client.post(f'/chat/upload/{up}/finish/')
+    assert early.status_code == 409 and not Message.objects.filter(kind='file').exists()
+    for off in (part, part * 2):
+        client.post(f'/chat/upload/{up}/part/?offset={off}', data[off:off + part], content_type='application/octet-stream')
+    tmp_file = next((tmp_path / 'chat' / 'tmp').iterdir())
+    assert data[:64] not in tmp_file.read_bytes()                  # на диске — только зашифрованное
+    done = client.post(f'/chat/upload/{up}/finish/')
+    assert done.status_code == 200, done.content
+    p = done.json()
+    assert p['file_name'] == 'Фильм.mkv' and p['file_size'] == len(data)
+    assert not list((tmp_path / 'chat' / 'tmp').iterdir())
+    client.force_login(b)
+    got = client.get(f"/chat/file/{p['id']}/")
+    assert hashlib.sha256(b''.join(got.streaming_content)).digest() == hashlib.sha256(data).digest()
+    tail = client.get(f"/chat/file/{p['id']}/", HTTP_RANGE=f'bytes={len(data) - 10}-')
+    assert b''.join(tail.streaming_content) == data[-10:]
+
+
+def test_big_upload_rules(pair, settings, tmp_path, client):
+    """Чужую загрузку не тронуть, предел размера и дневной лимит работают, брошенное удаляется."""
+    from django.core.cache import cache
+
+    from apps.chat.models import Upload
+    from apps.core.models import SiteSettings
+    settings.MEDIA_ROOT = tmp_path
+    cache.clear()
+    a, b, t = pair
+    client.force_login(a)
+    st = SiteSettings.get_solo()
+    st.chat_file_max_mb, st.chat_daily_upload_mb = 1, 1
+    st.save()
+    assert client.post(f'/chat/{t.pk}/upload/begin/', {'kind': 'file', 'name': 'x', 'size': 5_000_000}).status_code == 400
+    data = os.urandom(700_000)
+    up = _send_parts(client, '/chat', t, data)
+    client.force_login(b)
+    assert client.post(f'/chat/upload/{up}/finish/').status_code == 404              # чужая загрузка
+    assert client.post(f'/chat/upload/{up}/cancel/').status_code == 404
+    client.force_login(a)
+    assert client.post(f'/chat/upload/{up}/finish/').status_code == 200
+    again = client.post(f'/chat/{t.pk}/upload/begin/', {'kind': 'file', 'name': 'y', 'size': 700_000})
+    assert again.status_code == 429                                                  # 0.7 + 0.7 МБ > 1 МБ в сутки
+    cache.clear()
+    left = client.post(f'/chat/{t.pk}/upload/begin/', {'kind': 'file', 'name': 'z', 'size': 700_000}).json()['upload']
+    Upload.objects.filter(pk=left).update(created_at=timezone.now() - timedelta(hours=30))
+    assert services.purge_uploads() == 1
+    assert not Upload.objects.exists() and not list((tmp_path / 'chat' / 'tmp').iterdir())
+
+
+def test_big_upload_from_app_api(pair, settings, tmp_path, client):
+    from apps.api.models import ApiToken
     settings.MEDIA_ROOT = tmp_path
     a, _b, t = pair
-    client.force_login(a)
-    r = client.post(f'/chat/{t.pk}/upload/', {'kind': 'file', 'file': SimpleUploadedFile('free_money.apk', b'PK..')})
-    assert r.status_code == 400
+    auth = {'HTTP_AUTHORIZATION': 'Bearer ' + ApiToken.issue(a)}
+    data = os.urandom(200_000)
+    r = client.post(f'/api/v1/chat/{t.pk}/upload/begin/', json.dumps({'kind': 'file', 'name': 'a.zip', 'size': len(data),
+                                                                    'silent': True}),
+                    content_type='application/json', **auth)
+    assert r.status_code == 200, r.content
+    up = r.json()['upload']
+    assert client.post(f'/api/v1/chat/upload/{up}/part/?offset=0', data, content_type='application/octet-stream',
+                       **auth).status_code == 200
+    done = client.post(f'/api/v1/chat/upload/{up}/finish/', **auth)
+    assert done.status_code == 200, done.content
+    assert done.json()['file_name'] == 'a.zip' and done.json()['mine'] is True and done.json()['silent'] is True
+    got = client.get(f"/api/v1/chat/file/{done.json()['id']}/", **auth)
+    assert b''.join(got.streaming_content) == data
 
 
 def test_video_is_compressed_like_telegram(pair, settings, tmp_path):

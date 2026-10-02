@@ -16,7 +16,7 @@ from apps.core.models import Moderation
 from apps.core.publications import BY_KEY
 
 NIKAH, SUPPORT = 'nikah', 'support'
-RISKY = {'buy', 'services', 'transport', 'jobs'}        # где встречаются просьбы о предоплате
+RISKY = {'buy', 'services', 'transport', 'trips', 'jobs'}        # где встречаются просьбы о предоплате
 
 # «переведи на карту», «предоплата», номер карты, ссылки на оплату — признаки мошенничества
 SCAM = re.compile(
@@ -41,7 +41,8 @@ def _price(obj) -> str:
     if getattr(obj, 'price', None) not in (None, ''):
         try:
             if float(obj.price) > 0:
-                return f'{int(obj.price):,}'.replace(',', ' ') + ' ' + (getattr(obj, 'currency', '') or '')
+                from apps.core import money
+                return money.fmt(obj.price, getattr(obj, 'currency', '') or '')
         except (TypeError, ValueError):
             pass
     for name in ('price_text', 'salary'):
@@ -70,12 +71,14 @@ def card(thread, user) -> dict | None:
     if obj is None:
         return {'title': thread.subject or str(pub.label), 'label': str(pub.label), 'closed': True,
                 'closed_text': _('Объявление удалено'), 'url': '', 'price': '', 'image': '', 'actions': []}
+    past = bool(getattr(obj, 'is_past', False))        # поездка уже уехала
     closed = (getattr(obj, 'status', Moderation.APPROVED) != Moderation.APPROVED
-              or (pub.active and not getattr(obj, pub.active)))
+              or (pub.active and not getattr(obj, pub.active)) or past)
     mine = getattr(obj, f'{pub.owner}_id', None) == user.pk
     data = {'title': pub.title_of(obj), 'label': str(pub.label), 'price': _price(obj), 'image': _image(obj),
             'url': pub.url_of(obj) if not closed or mine else '', 'closed': closed,
-            'closed_text': _('Снято с публикации') if closed else '', 'mine': mine, 'actions': []}
+            'closed_text': (_('Поездка состоялась') if past else _('Снято с публикации')) if closed else '',
+            'mine': mine, 'actions': []}
     if thread.context_type == 'jobs' and not mine and not getattr(obj, 'is_resume', False):
         # соискатель в чате по вакансии: отправить своё резюме одним нажатием
         resume = pub.get_model().objects.filter(owner=user, kind='resume', status=Moderation.APPROVED).first()
@@ -94,6 +97,9 @@ def notice(thread) -> str:
     if ctx in ('buy', 'services', 'transport'):
         return _('Не переводите предоплату незнакомым людям. Договаривайтесь и платите через «Безопасную сделку» '
                  'или при встрече.')
+    if ctx == 'trips':
+        return _('Договоритесь о месте встречи и времени. Деньги — при посадке, не заранее. Сёстрам — ехать с махрамом '
+                 'или в машине «только сёстры».')
     if ctx == 'jobs':
         return _('Работодатель не должен просить деньги за трудоустройство, обучение или «оформление».')
     if ctx == SUPPORT:

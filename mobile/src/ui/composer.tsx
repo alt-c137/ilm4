@@ -1,9 +1,11 @@
 /**
- * Панель ввода чата «как в Telegram» (docs/MESSENGER.md §3):
+ * Панель ввода чата — по образцу Telegram (docs/MESSENGER.md §3):
  * - одна кнопка голос/кружок: короткое нажатие — переключить, удержание — запись;
  *   отпустил — отправилось, увёл влево — отмена, вверх — «замок» (запись без рук);
- * - долгое нажатие на «Отправить» — без звука или запланировать;
- * - анимации кнопок и подсказок (Reanimated).
+ * - во время записи: красная точка, время с десятыми, «‹ Влево — отмена»; кнопка под пальцем
+ *   вырастает и «дышит» волной, над ней — замок; в «замке» — пауза, «ОТМЕНА» посередине и ➤;
+ * - кружок: переписка затемняется, большой круг с камерой по центру, слева снизу — смена камеры и фонарик;
+ * - долгое нажатие на «Отправить» — без звука или запланировать.
  * Отправку делает экран чата (onText / onFile) — здесь только ввод и запись.
  */
 /* eslint-disable react-hooks/refs, react-hooks/purity -- обработчики жестов (Gesture….runOnJS) и кнопок вызываются
@@ -13,21 +15,31 @@ import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, 
 import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Platform, Pressable, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Platform, Pressable, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Svg, { Circle as SvgCircle } from 'react-native-svg';
 import Animated, {
-  FadeIn, FadeInDown, FadeOut, interpolate, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming,
+  FadeIn, FadeInDown, FadeOut, interpolate, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming,
   ZoomIn, ZoomOut,
 } from 'react-native-reanimated';
 
 import { useApp } from '@/state/app';
 
 import { Button, Icon, Txt } from './kit';
-import { mmss } from './media';
 
 export type SendOpts = { silent?: boolean; schedule?: string };
 type Mode = 'voice' | 'circle';
-type Rec = { kind: Mode; locked: boolean; started: number; cancelled: boolean; sendAfter: boolean; recording: boolean };
+type Rec = { kind: Mode; locked: boolean; started: number; cancelled: boolean; sendAfter: boolean; recording: boolean;
+  idle: number; pausedAt: number; gen: number };
+
+/** Сколько длится запись (без пауз), в секундах. */
+function elapsed(r: Rec) {
+  return Math.max(0, (Date.now() - r.started - r.idle - (r.pausedAt ? Date.now() - r.pausedAt : 0)) / 1000);
+}
+/** Время записи, как в Telegram: 0:07,2 */
+function clock(s: number) {
+  return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')},${Math.floor((s * 10) % 10)}`;
+}
 
 // голос — моно, 32 кбит/с, как в Telegram: речь звучит так же, а файл в несколько раз меньше «высокого качества»
 const VOICE_PRESET = { ...RecordingPresets.HIGH_QUALITY, numberOfChannels: 1, bitRate: 32000, sampleRate: 24000 };
@@ -45,6 +57,7 @@ export function Composer({ features: f, busy, onText, onFile, onAttach }: {
   onAttach?: () => void;
 }) {
   const { c, t } = useApp();
+  const win = useWindowDimensions();
   const canVoice = !!f.voice;
   const canCircle = !!f.circle && Platform.OS !== 'web';
   const [text, setText] = useState('');
@@ -52,6 +65,9 @@ export function Composer({ features: f, busy, onText, onFile, onAttach }: {
   const [rec, setRec] = useState<Rec | null>(null);
   const [sec, setSec] = useState(0);
   const [iosPicker, setIosPicker] = useState<Date | null>(null);
+  const [sel, setSel] = useState({ start: 0, end: 0 });
+  const [facing, setFacing] = useState<'front' | 'back'>('front');
+  const [torch, setTorch] = useState(false);
   const recRef = useRef<Rec | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const cam = useRef<CameraView>(null);
@@ -63,11 +79,13 @@ export function Composer({ features: f, busy, onText, onFile, onAttach }: {
   const lockY = useSharedValue(0);
   const btnScale = useSharedValue(1);
   const arrow = useSharedValue(0);
+  const wave = useSharedValue(0);
 
   useEffect(() => () => { if (timer.current) clearInterval(timer.current); }, []);
   useEffect(() => {
     arrow.value = withRepeat(withSequence(withTiming(-4, { duration: 500 }), withTiming(0, { duration: 500 })), -1);
-  }, [arrow]);
+    wave.value = withRepeat(withTiming(1, { duration: 900 }), -1, true);
+  }, [arrow, wave]);
 
   const current = (): Rec | null => recRef.current;   // без сужения типа TypeScript после await
   const update = (r: Rec | null) => {
@@ -85,29 +103,30 @@ export function Composer({ features: f, busy, onText, onFile, onAttach }: {
     timer.current = setInterval(() => {
       const r = recRef.current;
       if (!r) return;
-      const s = Math.floor((Date.now() - r.started) / 1000);
+      const s = r.recording ? elapsed(r) : 0;
       setSec(s);
       if (s >= LIMIT[kind]) finish(true);
-    }, 250);
+    }, 100);
   };
 
   const reset = () => {
     stopTimer();
-    slideX.value = withSpring(0);
-    lockY.value = withSpring(0);
-    btnScale.value = withSpring(1);
+    slideX.value = withTiming(0, { duration: 140 });
+    lockY.value = withTiming(0, { duration: 140 });
+    btnScale.value = withTiming(1, { duration: 140 });
     update(null);
   };
 
   // ---------- запись ----------
   const start = async (kind: Mode) => {
     if (recRef.current) return;
-    const r: Rec = { kind, locked: false, started: Date.now(), cancelled: false, sendAfter: false, recording: false };
+    const r: Rec = { kind, locked: false, started: Date.now(), cancelled: false, sendAfter: false, recording: false,
+      idle: 0, pausedAt: 0, gen: 0 };
     if (kind === 'voice') {
       const perm = await requestRecordingPermissionsAsync();
       if (!perm.granted) return Alert.alert(t('Нет доступа к микрофону'));
       update(r);
-      btnScale.value = withSpring(1.5, { damping: 12 });
+      btnScale.value = withTiming(2, { duration: 160 });
       await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: true });
       await recorder.prepareToRecordAsync();
       if (current() !== r || r.cancelled) return;          // отпустили, пока готовился микрофон
@@ -120,8 +139,10 @@ export function Composer({ features: f, busy, onText, onFile, onAttach }: {
         await askMic();
         return Alert.alert(t('Доступ дан'), t('Теперь удерживайте кнопку, чтобы записать кружок.'));
       }
+      setFacing('front');
+      setTorch(false);
       update(r);                                          // камера появится, запись начнётся в onCameraReady
-      btnScale.value = withSpring(1.5, { damping: 12 });
+      btnScale.value = withTiming(2, { duration: 160 });
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     startTimer(kind);
@@ -130,19 +151,48 @@ export function Composer({ features: f, busy, onText, onFile, onAttach }: {
   const onCameraReady = async () => {
     const r = recRef.current;
     if (!r || r.kind !== 'circle' || r.recording || !cam.current) return;
+    const gen = r.gen;                                    // сменили камеру — прежняя запись «устарела»
     r.recording = true;
     r.started = Date.now();
+    r.idle = 0;
     try {
       const res = await cam.current.recordAsync({ maxDuration: LIMIT.circle, maxFileSize: 24 * 1024 * 1024 });
-      const seconds = Math.round((Date.now() - r.started) / 1000);
-      if (res?.uri && r.sendAfter && seconds >= 1) {
+      const seconds = Math.round(elapsed(r));
+      if (res?.uri && r.gen === gen && r.sendAfter && seconds >= 1) {
         onFile('circle', res.uri, Platform.OS === 'ios' ? 'circle.mov' : 'circle.mp4', 'video/mp4', seconds);
       }
     } catch {
       // камера закрыта раньше времени — ничего не отправляем
     } finally {
-      if (recRef.current === r) reset();
+      if (recRef.current === r && r.gen === gen) reset();
     }
+  };
+
+  // другая камера: кружок начинается заново (камера телефона не умеет переключаться посреди записи)
+  const flip = () => {
+    const r = recRef.current;
+    if (!r || r.kind !== 'circle') return;
+    r.gen += 1;
+    r.recording = false;
+    setTorch(false);
+    setFacing((x) => (x === 'front' ? 'back' : 'front'));
+    Haptics.selectionAsync();
+  };
+
+  // пауза в «замке» (голос): остановить и продолжить; время на паузе не считается
+  const togglePause = () => {
+    const r = recRef.current;
+    if (!r || r.kind !== 'voice' || !r.recording) return;
+    if (r.pausedAt) {
+      r.idle += Date.now() - r.pausedAt;
+      r.pausedAt = 0;
+      recorder.record();
+    } else {
+      r.pausedAt = Date.now();
+      recorder.pause();
+    }
+    update(r);
+    Haptics.selectionAsync();
   };
 
   const finish = async (send: boolean) => {
@@ -150,7 +200,7 @@ export function Composer({ features: f, busy, onText, onFile, onAttach }: {
     if (!r) return;
     r.sendAfter = send;
     r.cancelled = !send;
-    const seconds = Math.round((Date.now() - r.started) / 1000);
+    const seconds = Math.round(elapsed(r));
     if (r.kind === 'voice') {
       reset();
       if (!r.recording) {
@@ -173,21 +223,26 @@ export function Composer({ features: f, busy, onText, onFile, onAttach }: {
     if (!r || r.locked) return;
     r.locked = true;
     update(r);
-    lockY.value = withSpring(0);
-    btnScale.value = withSpring(1);
+    slideX.value = withTiming(0, { duration: 140 });
+    lockY.value = withTiming(0, { duration: 140 });
+    btnScale.value = withTiming(1.35, { duration: 160 });
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
   // ---------- жесты кнопки записи ----------
   const both = canVoice && canCircle;
   const tap = Gesture.Tap().maxDuration(HOLD_MS).runOnJS(true).onEnd((_e, ok) => {
-    if (ok && both) {
+    if (ok && recRef.current?.locked) finish(true);       // в «замке» кнопка — «отправить»
+    else if (ok && both && !recRef.current) {
       setMode((m) => (m === 'voice' ? 'circle' : 'voice'));
       Haptics.selectionAsync();
     }
   });
   const pan = Gesture.Pan().activateAfterLongPress(HOLD_MS).runOnJS(true)
-    .onStart(() => { start(mode); })
+    .onStart(() => {
+      if (recRef.current?.locked) finish(true);
+      else start(mode);
+    })
     .onUpdate((e) => {
       const r = recRef.current;
       if (!r || r.locked || r.cancelled) return;
@@ -203,6 +258,15 @@ export function Composer({ features: f, busy, onText, onFile, onAttach }: {
       if (r && !r.locked && !r.cancelled) finish(true);
     });
   const gesture = Gesture.Race(pan, tap);
+
+  // оформление выделенного текста, как в Telegram: жирный, курсив, зачёркнутый, код, скрытый
+  const format = (mark: string) => {
+    const { start, end } = sel;
+    if (end <= start) return;
+    setText(text.slice(0, start) + mark + text.slice(start, end) + mark + text.slice(end));
+    setSel({ start: 0, end: 0 });
+    Haptics.selectionAsync();
+  };
 
   // ---------- отправка текста и меню ----------
   const sendText = async (opts?: SendOpts) => {
@@ -242,109 +306,153 @@ export function Composer({ features: f, busy, onText, onFile, onAttach }: {
 
   // ---------- анимации ----------
   const slideStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: slideX.value }], opacity: interpolate(slideX.value, [CANCEL_DX, 0], [0.25, 1]),
+    transform: [{ translateX: slideX.value * 0.6 }], opacity: interpolate(slideX.value, [CANCEL_DX, 0], [0.2, 1]),
   }));
   const lockStyle = useAnimatedStyle(() => ({ transform: [{ translateY: lockY.value / 2 }] }));
   const arrowStyle = useAnimatedStyle(() => ({ transform: [{ translateY: arrow.value }] }));
-  const btnStyle = useAnimatedStyle(() => ({ transform: [{ scale: btnScale.value }] }));
+  // кнопка едет за пальцем; выросшая — чуть отходит от края, чтобы круг был виден целиком
+  const btnStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: slideX.value + interpolate(btnScale.value, [1, 2], [0, -20]) },
+      { translateY: lockY.value + interpolate(btnScale.value, [1, 2], [0, -16]) },
+      { scale: btnScale.value },
+    ],
+  }));
+  const wave1 = useAnimatedStyle(() => ({ transform: [{ scale: 1.12 + wave.value * 0.16 }], opacity: 0.26 }));
+  const wave2 = useAnimatedStyle(() => ({ transform: [{ scale: 1.26 + (1 - wave.value) * 0.18 }], opacity: 0.13 }));
 
   const canRecord = canVoice || canCircle;
   const recording = !!rec;
   const showSend = !recording && (!!text.trim() || !canRecord);
   const round = { width: 46, height: 46, borderRadius: 23, alignItems: 'center' as const, justifyContent: 'center' as const };
+  const shadow = { shadowColor: c.accent, shadowOpacity: 0.35, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 3 };
+  const floating = { position: 'absolute' as const, backgroundColor: c.card, alignItems: 'center' as const, justifyContent: 'center' as const,
+    shadowColor: '#000', shadowOpacity: 0.22, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 6 };
+  const circleSize = Math.min(win.width - 36, win.height * 0.5, 380);
 
   return (
     <View>
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8, padding: 8, backgroundColor: c.card, borderTopWidth: 0.5, borderTopColor: c.line }}>
-        {recording ? (
-          <Animated.View entering={FadeIn.duration(150)} style={{ flex: 1, height: 46, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 6 }}>
-            {rec?.locked ? (
-              <Pressable onPress={() => finish(false)} hitSlop={10} accessibilityLabel={t('Отменить запись')}>
-                <Icon name="trash-outline" size={24} color={c.bad} />
+      {rec?.kind === 'circle' ? (
+        // не Modal: окно перехватило бы касание, и удержание кнопки оборвалось бы
+        <Animated.View entering={FadeIn.duration(180)} exiting={FadeOut.duration(140)} pointerEvents="box-none"
+          style={{ position: 'absolute', left: 0, right: 0, bottom: '100%', height: win.height, alignItems: 'center', justifyContent: 'center',
+            backgroundColor: 'rgba(10,12,22,0.84)' }}>
+          {/* круг с камерой: появляется спокойно, без «прыжка»; вокруг — полоска, сколько записано из минуты */}
+          <View pointerEvents="none" style={{ width: circleSize + 16, height: circleSize + 16, alignItems: 'center', justifyContent: 'center', marginTop: win.height * 0.16 }}>
+            <View style={{ width: circleSize, height: circleSize, borderRadius: circleSize / 2, overflow: 'hidden', backgroundColor: '#000' }}>
+              <CameraView key={facing} ref={cam} style={{ flex: 1 }} facing={facing} enableTorch={torch} mode="video" videoQuality="480p"
+                videoBitrate={1_500_000} onCameraReady={onCameraReady} />
+            </View>
+            <Svg width={circleSize + 16} height={circleSize + 16} style={{ position: 'absolute', transform: [{ rotate: '-90deg' }] }}>
+              <SvgCircle cx={(circleSize + 16) / 2} cy={(circleSize + 16) / 2} r={circleSize / 2 + 4} stroke="rgba(255,255,255,0.22)" strokeWidth={3} fill="none" />
+              <SvgCircle cx={(circleSize + 16) / 2} cy={(circleSize + 16) / 2} r={circleSize / 2 + 4} stroke="#fff" strokeWidth={3} fill="none" strokeLinecap="round"
+                strokeDasharray={`${Math.PI * (circleSize + 8)}`} strokeDashoffset={Math.PI * (circleSize + 8) * (1 - Math.min(1, sec / LIMIT.circle))} />
+            </Svg>
+          </View>
+          <View style={{ position: 'absolute', left: 12, bottom: 14, flexDirection: 'row', backgroundColor: 'rgba(30,34,48,0.9)', borderRadius: 23 }}>
+            <Pressable onPress={flip} hitSlop={6} accessibilityLabel={t('Другая камера')} style={{ width: 48, height: 46, alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="camera-reverse-outline" size={23} color="#fff" />
+            </Pressable>
+            {facing === 'back' ? (
+              <Pressable onPress={() => setTorch((x) => !x)} hitSlop={6} accessibilityLabel={t('Фонарик')} style={{ width: 48, height: 46, alignItems: 'center', justifyContent: 'center' }}>
+                <Icon name={torch ? 'flash' : 'flash-outline'} size={21} color="#fff" />
               </Pressable>
             ) : null}
-            <RecDot color={c.bad} />
-            <Txt style={{ fontWeight: '800', fontVariant: ['tabular-nums'] }}>{mmss(sec)}</Txt>
+          </View>
+        </Animated.View>
+      ) : null}
+
+      {!recording && sel.end > sel.start ? (
+        <View style={{ position: 'absolute', left: 10, bottom: '100%', marginBottom: 6, flexDirection: 'row', backgroundColor: c.card, borderRadius: 13, padding: 4, gap: 2,
+          shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 6 }}>
+          {([['**', 'Ж', { fontWeight: '800' }], ['__', 'К', { fontStyle: 'italic' }], ['~~', 'З', { textDecorationLine: 'line-through' }], ['`', 'M', { fontFamily: 'monospace' }]] as const).map(([mark, label, st]) => (
+            <Pressable key={mark} onPress={() => format(mark)} style={{ minWidth: 38, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 9 }}>
+              <Text style={[{ color: c.ink, fontSize: 15 }, st]}>{label}</Text>
+            </Pressable>
+          ))}
+          <Pressable onPress={() => format('||')} style={{ height: 36, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center', borderRadius: 9 }}>
+            <Text style={{ color: c.ink, fontSize: 14 }}>▒ {t('Скрытый')}</Text>
+          </Pressable>
+        </View>
+      ) : null}
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8, paddingHorizontal: 8, paddingVertical: 7, backgroundColor: c.card, borderTopWidth: 0.5, borderTopColor: c.line }}>
+        {recording ? (
+          <Animated.View entering={FadeIn.duration(150)} style={{ flex: 1, height: 46, flexDirection: 'row', alignItems: 'center', gap: 9, paddingLeft: 10 }}>
+            <RecDot color={c.bad} still={!!rec?.pausedAt} />
+            <Text style={{ color: c.ink, fontSize: 16, minWidth: 62, fontVariant: ['tabular-nums'] }}>{clock(sec)}</Text>
             {rec?.locked ? (
-              <Txt kind="small" numberOfLines={1} style={{ flex: 1 }}>{t('Без рук · ➤ — отправить')}</Txt>
+              <Pressable onPress={() => finish(false)} hitSlop={10} accessibilityLabel={t('Отменить запись')} style={{ flex: 1, alignItems: 'center' }}>
+                <Text style={{ color: c.accent, fontSize: 14.5, fontWeight: '800', letterSpacing: 0.6 }}>{t('Отмена').toUpperCase()}</Text>
+              </Pressable>
             ) : (
-              <Animated.View style={[{ flex: 1, alignItems: 'center' }, slideStyle]}>
-                <Txt kind="small" numberOfLines={1}>‹ {t('влево — отмена')}</Txt>
+              <Animated.View style={[{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3 }, slideStyle]}>
+                <Icon name="chevron-back" size={17} color={c.inkSoft} />
+                <Text style={{ color: c.inkSoft, fontSize: 15 }} numberOfLines={1}>{t('Влево — отмена')}</Text>
               </Animated.View>
             )}
           </Animated.View>
         ) : (
-          <>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-end', minHeight: 46, backgroundColor: c.card2, borderRadius: 23,
+            borderWidth: 1, borderColor: c.line, paddingLeft: 16, paddingRight: onAttach ? 2 : 12 }}>
+            <TextInput value={text} onChangeText={setText} onSelectionChange={(e) => setSel(e.nativeEvent.selection)} placeholder={t('Сообщение')} placeholderTextColor={c.inkSoft} multiline maxLength={2000}
+              {...(Platform.OS === 'web' ? { rows: 1 } : {})}
+              style={{ flex: 1, maxHeight: 120, paddingTop: Platform.OS === 'ios' ? 12 : 9, paddingBottom: Platform.OS === 'ios' ? 12 : 9, fontSize: 16, lineHeight: 21, color: c.ink }} />
             {onAttach ? (
-              <Pressable onPress={onAttach} disabled={busy} style={{ padding: 8 }} accessibilityLabel={t('Отправить файл')}>
-                {busy ? <ActivityIndicator color={c.accent} /> : <Icon name="attach" size={26} color={c.inkSoft} />}
+              <Pressable onPress={onAttach} disabled={busy} hitSlop={6} accessibilityLabel={t('Отправить файл')}
+                style={{ width: 42, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+                {busy ? <ActivityIndicator color={c.accent} /> : <Icon name="attach" size={25} color={c.inkSoft} style={{ transform: [{ rotate: '35deg' }] }} />}
               </Pressable>
             ) : null}
-            <TextInput value={text} onChangeText={setText} placeholder={t('Сообщение')} placeholderTextColor={c.inkSoft} multiline maxLength={2000}
-              style={{ flex: 1, maxHeight: 120, backgroundColor: c.card2, borderRadius: 20, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 10, fontSize: 16, color: c.ink }} />
-          </>
+          </View>
         )}
 
         {showSend ? (
-          <Animated.View key="send" entering={ZoomIn.springify().damping(14)} exiting={ZoomOut.duration(120)}>
+          <Animated.View key="send" entering={ZoomIn.duration(140)} exiting={ZoomOut.duration(100)}>
             <Pressable onPress={() => sendText()} onLongPress={menu} delayLongPress={400} disabled={!text.trim()}
               accessibilityLabel={t('Отправить')} accessibilityHint={t('Долгое нажатие — без звука или по расписанию')}
-              style={[round, { backgroundColor: text.trim() ? c.accent : c.line }]}>
-              <Icon name="send" size={20} color="#fff" />
-            </Pressable>
-          </Animated.View>
-        ) : rec?.locked ? (
-          <Animated.View key="locked-send" entering={ZoomIn.springify().damping(14)}>
-            <Pressable onPress={() => finish(true)} accessibilityLabel={t('Отправить')} style={[round, { backgroundColor: c.accent }]}>
+              style={[round, shadow, { backgroundColor: text.trim() ? c.accent : c.line }]}>
               <Icon name="send" size={20} color="#fff" />
             </Pressable>
           </Animated.View>
         ) : canRecord ? (
-          <View>
-            {recording ? (
-              <Animated.View entering={FadeInDown.duration(200)} style={[{
-                position: 'absolute', bottom: 64, left: 4, width: 38, paddingVertical: 8, borderRadius: 19, backgroundColor: c.card,
-                alignItems: 'center', gap: 2, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 10, elevation: 6,
-              }, lockStyle]}>
-                <Icon name="lock-closed-outline" size={18} color={c.inkSoft} />
-                <Animated.View style={arrowStyle}><Icon name="chevron-up" size={16} color={c.inkSoft} /></Animated.View>
+          <View style={{ width: 46, height: 46 }}>
+            {recording && !rec?.locked ? (
+              // «замок»: потяни вверх — запись без рук
+              // появление — на внешнем слое, движение за пальцем — на внутреннем (иначе Reanimated ругается: одно перебивает другое)
+              <Animated.View entering={FadeInDown.duration(200)} style={{ position: 'absolute', bottom: 126, left: -16 }}>
+                <Animated.View style={[floating, { position: 'relative', width: 42, paddingTop: 11, paddingBottom: 8, borderRadius: 21, gap: 3 }, lockStyle]}>
+                  <Icon name="lock-closed" size={18} color={c.inkSoft} />
+                  <Animated.View style={arrowStyle}><Icon name="chevron-up" size={15} color={c.inkSoft} /></Animated.View>
+                </Animated.View>
+              </Animated.View>
+            ) : null}
+            {rec?.locked && rec.kind === 'voice' ? (
+              <Animated.View entering={ZoomIn.duration(160)} style={[floating, { bottom: 78, left: -4, width: 42, height: 42, borderRadius: 21 }]}>
+                <Pressable onPress={togglePause} hitSlop={8} accessibilityLabel={rec.pausedAt ? t('Продолжить запись') : t('Пауза')}
+                  style={{ width: 42, height: 42, alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon name={rec.pausedAt ? 'mic' : 'pause'} size={20} color={rec.pausedAt ? c.bad : c.inkSoft} />
+                </Pressable>
               </Animated.View>
             ) : null}
             <GestureDetector gesture={gesture}>
-              <Animated.View key="rec" entering={ZoomIn.springify().damping(14)} style={[round, { backgroundColor: c.accent }, btnStyle]}
+              <Animated.View style={[{ width: 46, height: 46 }, btnStyle]}
                 accessible accessibilityRole="button"
-                accessibilityLabel={mode === 'voice' ? t('Голосовое сообщение') : t('Видеокружок')}
+                accessibilityLabel={rec?.locked ? t('Отправить') : mode === 'voice' ? t('Голосовое сообщение') : t('Видеокружок')}
                 accessibilityHint={t('Нажмите — голос или кружок. Удерживайте — записать: отпустите — отправить, влево — отмена, вверх — без рук')}>
-                <Animated.View key={mode} entering={ZoomIn.duration(180)} exiting={ZoomOut.duration(120)}>
-                  <Icon name={mode === 'voice' ? 'mic' : 'aperture-outline'} size={22} color="#fff" />
-                </Animated.View>
+                {recording && !rec?.locked && !rec?.pausedAt ? (
+                  <>
+                    <Animated.View pointerEvents="none" style={[{ position: 'absolute', width: 46, height: 46, borderRadius: 23, backgroundColor: c.accent }, wave2]} />
+                    <Animated.View pointerEvents="none" style={[{ position: 'absolute', width: 46, height: 46, borderRadius: 23, backgroundColor: c.accent }, wave1]} />
+                  </>
+                ) : null}
+                <View style={[round, shadow, { backgroundColor: c.accent }]}>
+                  <Icon name={rec?.locked ? 'send' : (rec?.kind ?? mode) === 'voice' ? 'mic' : 'aperture-outline'} size={rec?.locked ? 18 : 22} color="#fff" />
+                </View>
               </Animated.View>
             </GestureDetector>
           </View>
         ) : null}
       </View>
-
-      {rec?.kind === 'circle' ? (
-        // не Modal: окно перехватило бы касание, и удержание кнопки оборвалось бы
-        <Animated.View entering={FadeIn.duration(150)} pointerEvents="box-none"
-          style={{ position: 'absolute', left: 0, right: 0, bottom: '100%', height: 460, alignItems: 'center', justifyContent: 'center',
-            gap: 16, backgroundColor: 'rgba(10,12,22,0.86)' }}>
-          <Animated.View entering={ZoomIn.springify().damping(13)} pointerEvents="none"
-            style={{ width: 260, height: 260, borderRadius: 130, overflow: 'hidden', borderWidth: 4, borderColor: '#e5484d' }}>
-            <CameraView ref={cam} style={{ flex: 1 }} facing="front" mode="video" videoQuality="480p" videoBitrate={1_500_000}
-              onCameraReady={onCameraReady} />
-          </Animated.View>
-          <Txt color="#fff" style={{ fontSize: 22, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{mmss(sec)} / {mmss(LIMIT.circle)}</Txt>
-          {rec.locked ? (
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <Button kind="ghost" title={t('Отмена')} color="#fff" onPress={() => finish(false)} />
-              <Button title={t('Отправить')} onPress={() => finish(true)} />
-            </View>
-          ) : (
-            <Txt kind="small" color="rgba(255,255,255,0.8)">{t('Отпустите — отправить · влево — отмена · вверх — без рук')}</Txt>
-          )}
-        </Animated.View>
-      ) : null}
 
       {iosPicker ? (
         <Modal transparent animationType="slide" onRequestClose={() => setIosPicker(null)}>
@@ -361,11 +469,11 @@ export function Composer({ features: f, busy, onText, onFile, onAttach }: {
   );
 }
 
-function RecDot({ color }: { color: string }) {
+function RecDot({ color, still }: { color: string; still?: boolean }) {
   const o = useSharedValue(1);
   useEffect(() => {
-    o.value = withRepeat(withTiming(0.3, { duration: 600 }), -1, true);
-  }, [o]);
+    o.value = still ? 0.35 : withRepeat(withTiming(0.25, { duration: 550 }), -1, true);
+  }, [o, still]);
   const style = useAnimatedStyle(() => ({ opacity: o.value }));
-  return <Animated.View exiting={FadeOut} style={[{ width: 12, height: 12, borderRadius: 6, backgroundColor: color }, style]} />;
+  return <Animated.View style={[{ width: 11, height: 11, borderRadius: 6, backgroundColor: color }, style]} />;
 }

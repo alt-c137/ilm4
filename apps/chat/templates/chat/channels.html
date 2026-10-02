@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load icons %}
+{% block title %}{% translate "Каналы и группы —" %} {{ block.super }}{% endblock %}
+{% block description %}{% translate "Каналы мечетей, учителей и общин: объявления, уроки, новости. Подпишитесь и читайте в ilm4." %}{% endblock %}
+{% block body_class %}s-chat{% endblock %}
+
+{% block content %}
+<div class="svc">
+  <div class="shero shero--chat">
+    <div class="shero__icon shero__icon--ui">{% ico 'megaphone' %}</div>
+    <div class="shero__text">
+      <div class="shero__crumb"><a href="/">ilm4</a> · <a href="{% url 'chat:inbox' %}">{% translate "Чаты" %}</a> · {% translate "Каналы и группы" %}</div>
+      <h1 class="shero__title">{% translate "Каналы и группы" %}</h1>
+      <p class="shero__desc">{% translate "Мечети, учителя, общины: объявления, уроки и новости в одном месте" %}</p>
+    </div>
+    {% if can_channel or can_group %}<a class="btn shero__cta" href="{% url 'chat:room_new' %}{% if can_channel %}?kind=channel{% endif %}">{% translate "Создать свой" %}</a>{% endif %}
+  </div>
+
+  <div class="toolbar">
+    <form method="get" class="rroute" autocomplete="off">
+      <label class="rroute__f">{% ico 'search' %}<input type="search" name="q" value="{{ q }}" placeholder="{% translate 'Название, тема или @имя' %}" aria-label="{% translate 'Поиск' %}"></label>
+      {% if kind %}<input type="hidden" name="kind" value="{{ kind }}">{% endif %}
+      <button type="submit" class="btn btn--p">{% translate "Найти" %}</button>
+    </form>
+    <div class="chips" style="margin-top:10px">
+      <a class="chip{% if not kind %} chip--on{% endif %}" href="?q={{ q|urlencode }}">{% translate "Все" %}</a>
+      <a class="chip{% if kind == 'channel' %} chip--on{% endif %}" href="?q={{ q|urlencode }}&amp;kind=channel">{% translate "Каналы" %}</a>
+      <a class="chip{% if kind == 'group' %} chip--on{% endif %}" href="?q={{ q|urlencode }}&amp;kind=group">{% translate "Группы" %}</a>
+    </div>
+  </div>
+
+  <div class="grid g2 trips">
+    {% for t, p in cards %}
+    <a class="panel roomcard" href="{% url 'chat:thread' t.pk %}">
+      {% include 'chat/_pic.html' with p=p size='md' %}
+      <span class="roomcard__b">
+        <b>{{ t.title }}{% if t.platform_verified %}<i class="tgver" title="{% translate 'Официальный' %}">{% ico 'check' %}</i>{% endif %}</b>
+        <small>{% if t.kind == 'channel' %}{% translate "канал" %}{% else %}{% translate "группа" %}{% endif %} · {{ t.members_count }} {% if t.kind == 'channel' %}{% translate "подписчиков" %}{% else %}{% translate "участников" %}{% endif %}{% if t.handle %} · @{{ t.handle }}{% endif %}</small>
+        {% if t.about %}<span>{{ t.about|truncatechars:120 }}</span>{% endif %}
+      </span>
+      <span class="roomcard__go{% if t.pk in mine %} is-mine{% endif %}">{% if t.pk in mine %}{% ico 'check' %}{% else %}{% translate "Открыть" %}{% endif %}</span>
+    </a>
+    {% empty %}
+    <div class="empty" style="grid-column:1/-1">
+      <div class="empty__plug">{% ico 'megaphone' %}</div>
+      <h3 style="font-size:18px;font-weight:800">{% if q %}{% translate "Ничего не нашлось" %}{% else %}{% translate "Публичных каналов пока нет" %}{% endif %}</h3>
+      <p style="color:var(--ink-soft)">{% translate "Заведите канал своей мечети, уроков или общины — его увидят все." %}</p>
+      {% if can_channel %}<a class="btn btn--p" href="{% url 'chat:room_new' %}?kind=channel">{% translate "Создать канал" %}</a>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% if page.has_other_pages %}
+  <div class="pager">
+    {% if page.has_previous %}<a class="btn btn--g" href="?q={{ q|urlencode }}&amp;kind={{ kind }}&amp;page={{ page.previous_page_number }}">←</a>{% endif %}
+    <span>{{ page.number }} / {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a class="btn btn--g" href="?q={{ q|urlencode }}&amp;kind={{ kind }}&amp;page={{ page.next_page_number }}">→</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

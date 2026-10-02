@@ -41,7 +41,7 @@ python manage.py shell -c "from django_otp.plugins.otp_totp.models import TOTPDe
 
 ### Полная «серверная» сборка на своём ПК
 
-Да, на ПК можно поднять **то же самое, что на сервере**: PostgreSQL, Redis, daphne, nginx
+Да, на ПК можно поднять **то же самое, что на сервере**: PostgreSQL, Redis, uvicorn, nginx
 и фоновые задачи. Это удобно, чтобы проверить всё перед выкладкой.
 
 1. Установить **Docker Desktop** (Windows) → Settings → Resources → WSL Integration → включить Ubuntu.
@@ -97,7 +97,7 @@ docker compose -f docker-compose.prod.yml logs -f app
 ```
 
 Что поднимается: `db` (PostgreSQL 16 + PostGIS), `redis` (чат/звонки, кэш,
-лимиты), `app` (daphne: страницы + WebSocket), `nginx` (порт 80, статика,
+лимиты), `app` (uvicorn, несколько процессов с автоперезапуском: страницы + WebSocket), `nginx` (порт 80, статика,
 медиа), `jobs` (раз в час автопринятие сделок, раз в 6 ч курсы валют).
 Миграции и сборка статики выполняются автоматически при старте.
 

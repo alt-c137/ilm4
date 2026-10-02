@@ -13,7 +13,7 @@
   <div class="dgrid dgrid--rev">
     <aside class="dside">
       <div class="dcard pcard">
-        <div class="pcard__ava">{% if place.photo %}<img src="{{ place.photo.url }}" alt="">{% elif place.is_mosque %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5c1.4 1 1.4 2.6 0 3.6M5.5 20v-6M18.5 20v-6M5.5 14a6.5 6.5 0 0 1 13 0M4 20h16M9 20v-3.2a3 3 0 0 1 6 0V20"/></svg>{% else %}{% ico 'pin' %}{% endif %}</div>
+        <div class="pcard__ava">{% if place.photo %}<img src="{{ place.photo.url }}" alt="" decoding="async">{% elif place.is_mosque %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5c1.4 1 1.4 2.6 0 3.6M5.5 20v-6M18.5 20v-6M5.5 14a6.5 6.5 0 0 1 13 0M4 20h16M9 20v-3.2a3 3 0 0 1 6 0V20"/></svg>{% else %}{% ico 'pin' %}{% endif %}</div>
         <h1 class="dtitle">{{ place.name }}</h1>
         <div class="dmeta">
           <span class="mchip mchip--acc">{{ place.get_category_display }}</span>

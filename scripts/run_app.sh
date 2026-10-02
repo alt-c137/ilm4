@@ -13,5 +13,15 @@ if [ -f .env.local ]; then
 else
   echo "Сервер для приложения: https://ilm4.com (mobile/.env.local нет — запустите scripts/run_local.sh, чтобы тестировать свой ПК)"
 fi
+# iPhone: Expo Go открывает проект, только если ПК и телефон вошли в один аккаунт Expo (Android — без этого).
+if ! npx expo whoami >/dev/null 2>&1; then
+  echo
+  echo "Вы не вошли в аккаунт Expo. Для Android это не обязательно, для iPhone — обязательно."
+  echo "Аккаунт бесплатный: https://expo.dev/signup . В Expo Go на iPhone войдите тем же логином."
+  read -r -p "Войти сейчас? [y/N] " ans || ans=n
+  case "$ans" in y|Y|д|Д) npx expo login || true ;; esac
+else
+  echo "Аккаунт Expo: $(npx expo whoami 2>/dev/null) — на iPhone в Expo Go войдите тем же логином."
+fi
 # --tunnel: телефон подключается через интернет, не нужно быть в одной Wi-Fi-сети с ПК
 npx expo start --tunnel

@@ -22,3 +22,17 @@ class Staff2FARequired:
             has_device = user.totpdevice_set.filter(confirmed=True).exists()
             return redirect(VERIFY_URL if has_device else SETUP_URL)
         return self.get_response(request)
+
+
+class LastSeenMiddleware:
+    """«В сети»: отмечаем вошедшего человека на каждом запросе (в базу — не чаще раза в 45 секунд)."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        user = getattr(request, 'user', None)
+        if user is not None and user.is_authenticated:
+            from .people import touch
+            touch(user)
+        return self.get_response(request)
