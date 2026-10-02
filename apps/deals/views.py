@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
+from apps.accounts import phone_verify
 from apps.core.decorators import pledge_required
 from apps.wallet import services as wallet
 
@@ -27,6 +28,7 @@ def index(request):
 
 @login_required
 @pledge_required
+@phone_verify.required('money')
 def new(request):
     st = services.settings_()
     User = get_user_model()
@@ -71,6 +73,7 @@ def detail(request, pk):
 
 @login_required
 @require_POST
+@phone_verify.required('money')
 def act(request, pk, action):
     order = get_object_or_404(Order, pk=pk)
     handlers = {

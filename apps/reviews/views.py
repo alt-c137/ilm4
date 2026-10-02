@@ -9,6 +9,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
+from apps.accounts import phone_verify
 from apps.accounts.audit import log_action
 
 from .models import REVIEWABLE, Review
@@ -34,6 +35,7 @@ def _back(request):
 
 @login_required
 @require_POST
+@phone_verify.required('reviews')
 def submit(request, ct_id, obj_id):
     ct, obj = _target(ct_id, obj_id)
     if not can_review(request.user, obj):

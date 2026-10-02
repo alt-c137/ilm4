@@ -35,6 +35,7 @@ def claude(monkeypatch, settings):
 def test_verdict_saved_and_auto_approve(claude):
     st = SiteSettings.get_solo()
     st.ai_auto_approve = True
+    st.newbie_manual_count = 0          # правило «первые публикации новичка — вручную» проверяется отдельно
     st.save()
     owner = User.objects.create_user('o', 'o@x.com', 'x')
     good = Vacancy.objects.create(owner=owner, **VAC)
@@ -86,5 +87,17 @@ def test_nikah_chat_blocks_contacts(client):
     client.force_login(b.user)
     client.post(f'/chat/{m.thread_id}/', {'body': 'мой номер +998 90 123 45 67'})
     client.post(f'/chat/{m.thread_id}/', {'body': 'Ассаляму алейкум! Как ваши дела?'})
-    bodies = list(m.thread.messages.exclude(kind='system').values_list('body', flat=True))
+    bodies = [x.body for x in m.thread.messages.exclude(kind='system')]     # текст в базе зашифрован
     assert bodies == ['Ассаляму алейкум! Как ваши дела?']
+
+
+def test_newbie_not_auto_approved(claude):
+    st = SiteSettings.get_solo()
+    st.ai_auto_approve = True
+    st.save()                            # newbie_manual_count = 3 по умолчанию
+    owner = User.objects.create_user('nb', 'nb@x.com', 'x')
+    v = Vacancy.objects.create(owner=owner, **VAC)
+    claude.append('{"verdict": "ok", "reasons": []}')
+    call_command('ai_moderate')
+    v.refresh_from_db()
+    assert v.status == Moderation.PENDING   # ИИ пропустил, но первые публикации проверяет человек

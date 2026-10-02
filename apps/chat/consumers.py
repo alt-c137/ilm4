@@ -3,7 +3,8 @@
 /ws/chat/<thread_id>/ — диалог: сообщения, «прочитано», сигналинг звонков (WebRTC).
 /ws/me/               — личный канал пользователя: входящие звонки на любой странице.
 
-Подключаются только участники диалога. Текст сохраняется зашифрованным (см. crypto.py).
+Подключаются только участники диалога. Вся логика отправки — в services.py (общая с сайтом
+и приложением); текст сохраняется зашифрованным ключом чата (keyring.py).
 Звонки: браузеры соединяются напрямую (WebRTC), сервер лишь передаёт служебные
 сигналы (offer/answer/ice) — медиа через наш сервер не идёт.
 """
@@ -61,19 +62,18 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             if payload:
                 await self.channel_layer.group_send(self.group, {'type': 'chat.message', 'payload': payload})
             return
-        body = (content.get('body') or '').strip()
-        if not body or len(body) > 2000:
+        from .services import ChatError
+        try:
+            payload = await self._send_text(content.get('body') or '', bool(content.get('silent')),
+                                            content.get('schedule'))
+        except ChatError as exc:
+            await self.send_json({'type': 'error', 'error': exc.message})
             return
-        if await self._blocked():
-            await self.send_json({'type': 'error', 'error': str(_('Переписка недоступна: блокировка'))})
+        if payload['scheduled']:
+            await self.send_json({'type': 'msg', **payload})    # запланированное видит только автор
             return
-        if await self._nikah_contacts(body):
-            await self.send_json({'type': 'error', 'error': str(_(
-                'В чате никяха нельзя передавать телефоны, ники и ссылки — общение внутри ilm4, при махраме.'))})
-            return
-        payload = await self._save_message(body)
         await self.channel_layer.group_send(self.group, {'type': 'chat.message', 'payload': payload})
-        await self._notify_recipient(body)
+        await self._notify_recipient(payload)
 
     async def chat_message(self, event):
         # поддержка старого формата события (без payload)
@@ -115,19 +115,6 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         return st.chat_video_calls_enabled if video else (st.chat_calls_enabled or st.chat_video_calls_enabled)
 
     @database_sync_to_async
-    def _nikah_contacts(self, body):
-        from .views import nikah_contacts_forbidden
-        return nikah_contacts_forbidden(self.thread_id, body)
-
-    @database_sync_to_async
-    def _blocked(self):
-        from apps.accounts.models import UserBlock
-
-        from .models import Thread
-        others = Thread.objects.get(pk=self.thread_id).participants.exclude(pk=self.user.pk)
-        return any(UserBlock.between(self.user, o) for o in others)
-
-    @database_sync_to_async
     def _is_participant(self):
         from .models import Thread
 
@@ -141,20 +128,16 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         return list(thread.participants.exclude(pk=self.user.pk).values_list('pk', flat=True))
 
     @database_sync_to_async
-    def _save_message(self, body):
-        from .events import message_payload
-        from .models import Message, Thread
-
-        thread = Thread.objects.get(pk=self.thread_id)
-        message = Message.objects.create(thread=thread, sender=self.user, body=body)
-        thread.save(update_fields=['updated_at'])
-        return message_payload(message)
+    def _send_text(self, body, silent, schedule):
+        from .models import Thread
+        from .services import send_text
+        return send_text(Thread.objects.get(pk=self.thread_id), self.user, body, silent=silent,
+                         schedule=schedule, broadcast=False)
 
     @database_sync_to_async
     def _call_log(self, content):
         """Запись о звонке в переписке (пишет звонивший): длительность или исход."""
-        from .events import message_payload
-        from .models import Message, Thread
+        from .models import Thread
 
         video = bool(content.get('video'))
         outcome = content.get('outcome')
@@ -171,11 +154,8 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         }.get(outcome)
         if not text:
             return None
-        thread = Thread.objects.get(pk=self.thread_id)
-        m = Message.objects.create(thread=thread, sender=self.user, kind=Message.SYSTEM, body=text,
-                                   duration=sec or None)
-        thread.save(update_fields=['updated_at'])
-        return message_payload(m)
+        from .services import system_message
+        return system_message(Thread.objects.get(pk=self.thread_id), self.user, text, duration=sec or None)
 
     @database_sync_to_async
     def _mark_read(self, message_id):
@@ -186,11 +166,12 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         Message.objects.filter(pk=message_id, read_at__isnull=True).update(read_at=timezone.now())
 
     @database_sync_to_async
-    def _notify_recipient(self, body):
+    def _notify_recipient(self, payload):
         from .events import notify_recipients
         from .models import Thread
 
-        notify_recipients(Thread.objects.get(pk=self.thread_id), self.user, body)
+        notify_recipients(Thread.objects.get(pk=self.thread_id), self.user, payload['body'],
+                          silent=payload.get('silent', False))
 
 
 class UserConsumer(AsyncJsonWebsocketConsumer):

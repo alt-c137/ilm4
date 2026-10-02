@@ -29,7 +29,7 @@ def staff_bar(context, obj):
     return render_to_string('core/includes/staff_bar.html', {
         'obj': obj, 'key': src.key, 'status': getattr(obj, 'status', ''), 'admin_url': admin_url,
         'status_label': obj.get_status_display() if hasattr(obj, 'get_status_display') else '',
-        'next': request.get_full_path(), 'request': request,
+        'next': request.get_full_path(), 'request': request, 'author': getattr(obj, src.owner, None),
     }, request=request)
 
 

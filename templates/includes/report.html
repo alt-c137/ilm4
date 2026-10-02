@@ -4,7 +4,9 @@
   <form method="post" action="{% url 'core:report' %}" class="report__f">{% csrf_token %}
     <input type="hidden" name="ct" value="{{ ct_id }}"><input type="hidden" name="id" value="{{ obj_id }}">
     <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    {% if thread %}<input type="hidden" name="thread" value="{{ thread }}">{% endif %}
     <p class="report__h">{% translate "Что не так? Автор не узнает, кто пожаловался." %}</p>
+    {% if thread %}<p class="report__h">{% translate "Модератор сможет прочитать последние сообщения этого чата — только по этой жалобе." %}</p>{% endif %}
     {% for key, text in reasons %}<label class="report__r"><input type="radio" name="reason" value="{{ key }}" required> {{ text }}</label>{% endfor %}
     <textarea name="text" rows="2" maxlength="500" placeholder="{% translate 'Подробности (необязательно)' %}"></textarea>
     <button class="btn btn--s btn--p" type="submit">{% translate "Отправить модератору" %}</button>

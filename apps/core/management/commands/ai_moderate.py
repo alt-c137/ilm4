@@ -74,6 +74,11 @@ class Command(BaseCommand):
             from apps.nikah.bot import approve
             approve(obj)
         else:
+            from apps.core.moderation import is_newbie
+            from apps.core.publications import pub_for_model
+            pub = pub_for_model(type(obj))
+            if pub and is_newbie(getattr(obj, pub.owner, None)):
+                return                              # первые публикации новичка — только человек
             from apps.core.signals import set_status
             set_status(type(obj).objects.filter(pk=obj.pk), Moderation.APPROVED)
 

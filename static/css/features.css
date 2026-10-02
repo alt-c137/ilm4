@@ -791,3 +791,16 @@ html[data-theme=dark] .modc__ai--reject,html[data-theme=dark] .btn.modc__no{back
 html[data-theme=dark] .modc__why{color:#f3c95a}
 html[data-theme=dark] .staffbar--pending{background:rgba(224,161,0,.1)}
 html[data-theme=dark] .staffbar--rejected{background:rgba(229,72,77,.1)}
+.phonev__private{font-size:13.5px;color:var(--ink-soft);background:var(--card-2);border-radius:12px;padding:10px 12px;margin:14px 0 0;text-align:left}
+.modc__banwarn{font-size:13px;color:var(--ink-soft);margin:0 0 4px;line-height:1.45}
+/* вход через Telegram — главная кнопка на входе и регистрации */
+.tgbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px 16px;border-radius:14px;background:#229ED9;color:#fff;font-weight:700;font-size:15px;text-decoration:none;transition:.15s}
+.tgbtn:hover{background:#1b8cc2;color:#fff}
+.tgbtn:focus-visible{outline:3px solid color-mix(in srgb,#229ED9 45%,transparent);outline-offset:2px}
+.tgbtn svg{width:20px;height:20px;fill:currentColor;flex:none}
+.tgbtn__hint{font-size:12.5px;color:var(--ink-soft);margin:-2px 0 4px;line-height:1.45}
+.modchat__warn{font-size:14px;background:var(--card-2);border-radius:12px;padding:10px 12px;margin:6px 0 10px;max-width:720px}
+.modchat{display:flex;flex-direction:column;gap:10px}
+.modchat__m{padding:8px 10px;border-radius:12px;background:var(--card-2);max-width:640px}
+.modchat__m.is-reporter{align-self:flex-end;background:var(--accent-soft)}
+.modchat__t{overflow-wrap:anywhere;margin-top:2px}

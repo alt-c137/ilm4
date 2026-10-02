@@ -80,7 +80,8 @@ cp .env.example .env && nano .env
 | `POSTGRES_PASSWORD` | длинный случайный пароль |
 | `ALLOWED_HOSTS` | `ilm4.com,www.ilm4.com,<IP сервера>` |
 | `CSRF_TRUSTED_ORIGINS` | `https://ilm4.com,https://www.ilm4.com` |
-| `CHAT_ENCRYPTION_KEY` | `python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` — **сохранить копию**, без ключа переписку не прочитать |
+| `CHAT_MASTER_KEYS` | `python manage.py chat_keys generate` — главный ключ переписки (docs/MESSENGER.md). **Сразу** `chat_keys split` → 3 части, любые 2 восстанавливают ключ; части — офлайн и у разных людей. Без ключа переписку не прочитать |
+| `CHAT_ENCRYPTION_KEY` | `python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` — ключ фото анкет никяха и старых сообщений; **сохранить копию** |
 | `SECURE_SSL` | `True` — после подключения Cloudflare (шаг 3) |
 
 ```bash

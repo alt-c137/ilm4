@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% translate "Переписка по жалобе —" %} {{ block.super }}{% endblock %}
+{% block content %}
+<div class="dpage modq">
+  <a class="crumb" href="{% url 'core:moderation' %}?tab=reports">← {% translate "Жалобы" %}</a>
+  <h1 class="mypubs__h">{% translate "Переписка по жалобе" %}</h1>
+  <p class="modchat__warn">🔒 {% translate "Вы видите личную переписку только потому, что на неё пожаловались. Это открытие записано в журнал: кто, когда и по какой жалобе. Используйте только для решения по жалобе." %}</p>
+  <p class="mypubs__sub">{% translate "Жалоба:" %} <b>{{ report.get_reason_display }}</b>{% if report.text %} — «{{ report.text }}»{% endif %} · {% translate "от" %} {{ report.reporter.get_display_name }} · {{ report.created_at|date:"j E, H:i" }}</p>
+  <p class="modc__meta">{% blocktranslate %}Последние {{ limit }} сообщений.{% endblocktranslate %}</p>
+  <div class="dcard modchat">
+    {% for m in msgs %}
+    <div class="modchat__m{% if m.sender_id == report.reporter_id %} is-reporter{% endif %}">
+      <div class="modchat__who"><b>{{ m.sender.get_display_name }}</b> <span class="modc__meta">{{ m.created_at|date:"j E, H:i" }}</span></div>
+      {% if m.kind == 'system' %}<i class="modc__meta">{{ m.body }}</i>
+      {% else %}
+        {% if m.attachment %}<a class="link" href="{% url 'core:moderation_chat_file' report.pk m.pk %}" target="_blank" rel="noopener">[{{ m.get_kind_display }}]</a>{% endif %}
+        {% if m.body %}<div class="modchat__t">{{ m.body|linebreaksbr }}</div>{% endif %}
+      {% endif %}
+    </div>
+    {% empty %}<p class="modc__meta">{% translate "Сообщений нет." %}</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

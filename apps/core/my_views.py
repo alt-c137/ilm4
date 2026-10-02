@@ -118,13 +118,24 @@ def report(request):
     if obj == request.user or owner == request.user:
         messages.info(request, _('На себя жаловаться не нужно.'))
         return redirect(back)
+    thread = report_thread(request.user, request.POST.get('thread'))
     _r, created = Report.objects.get_or_create(
         content_type=ct, object_id=obj.pk, reporter=request.user,
-        defaults={'reason': reason, 'text': request.POST.get('text', '').strip()[:500]})
+        defaults={'reason': reason, 'text': request.POST.get('text', '').strip()[:500], 'thread': thread})
+    if not created and thread and _r.thread_id is None:
+        Report.objects.filter(pk=_r.pk).update(thread=thread)
     if created:
         _after_report(ct, obj, reason)
     messages.success(request, _('Спасибо! Жалоба у модератора. Мы не сообщаем автору, кто пожаловался.'))
     return redirect(back)
+
+
+def report_thread(user, thread_id):
+    """Переписка, из которой пожаловались: только если жалующийся — её участник."""
+    if not str(thread_id or '').isdigit():
+        return None
+    from apps.chat.models import Thread
+    return Thread.objects.filter(pk=int(thread_id), participants=user).first()
 
 
 def _after_report(ct, obj, reason):

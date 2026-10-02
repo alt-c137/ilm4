@@ -8,6 +8,10 @@ DEBUG = False
 # Прод не стартует с дев-заглушкой секрета — только настоящий ключ из .env
 if 'dev-insecure' in SECRET_KEY:
     raise ImproperlyConfigured('Прод требует настоящий SECRET_KEY в .env')
+# Переписка шифруется главным ключом — без него в проде не стартуем (иначе ключ зависел бы от SECRET_KEY)
+if not env('CHAT_MASTER_KEYS', default=''):
+    raise ImproperlyConfigured('Прод требует CHAT_MASTER_KEYS в .env: python manage.py chat_keys generate '
+                               '(и сразу сделайте резервную копию: chat_keys split)')
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 

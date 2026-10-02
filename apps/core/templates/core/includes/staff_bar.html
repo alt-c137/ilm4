@@ -22,6 +22,7 @@
       </form>
     </details>
     {% endif %}
+    {% include 'core/includes/ban_button.html' %}
     <a class="btn btn--s btn--g" href="{% url 'core:moderation' %}">{% translate "Очередь" %}</a>
     {% if admin_url %}<a class="btn btn--s btn--g" href="{{ admin_url }}">{% translate "Изменить" %}</a>{% endif %}
   </div>

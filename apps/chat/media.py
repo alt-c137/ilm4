@@ -17,12 +17,16 @@ from django.core.files.base import ContentFile
 from django.http import FileResponse, HttpResponse, StreamingHttpResponse
 from django.utils.translation import gettext as _
 
-LIMITS = {  # kind: (макс. байт, макс. секунд)
+LIMITS = {  # kind: (макс. байт, макс. секунд); для видео и файла предел — из «Настроек сайта»
     'photo': (10 * 1024 * 1024, None),
     'voice': (6 * 1024 * 1024, 300),
     'circle': (25 * 1024 * 1024, 60),
-    'video': (50 * 1024 * 1024, 300),
+    'video': (None, 600),
+    'file': (None, None),
 }
+# исполняемые файлы не принимаем: через чат их рассылают мошенники
+BLOCKED_EXT = {'.exe', '.msi', '.bat', '.cmd', '.com', '.scr', '.pif', '.vbs', '.js', '.jse', '.wsf', '.ps1',
+               '.jar', '.apk', '.app', '.dmg', '.sh', '.lnk', '.hta', '.cpl', '.reg'}
 
 
 class MediaError(ValueError):
@@ -47,9 +51,21 @@ def prepare(kind: str, upload, duration) -> tuple[ContentFile, int | None]:
     if kind not in LIMITS:
         raise MediaError(_('Неизвестный тип вложения'))
     max_bytes, max_sec = LIMITS[kind]
+    if max_bytes is None:
+        from .services import allowed_file_mb
+        max_bytes = allowed_file_mb() * 1024 * 1024
     if upload.size > max_bytes:
         raise MediaError(_('Файл больше {v1} МБ').format(v1=max_bytes // (1024 * 1024)))
     name = uuid.uuid4().hex
+
+    if kind == 'file':
+        ext = os.path.splitext(upload.name or '')[1].lower()
+        if ext in BLOCKED_EXT:
+            raise MediaError(_('Такие файлы отправлять нельзя (программы и скрипты) — защита от вирусов.'))
+        if upload.size == 0:
+            raise MediaError(_('Файл пустой'))
+        upload.name = f'{name}.bin'            # на диске — без исходного имени; имя хранится зашифрованным
+        return upload, None
 
     if kind == 'photo':
         from PIL import Image, ImageOps
@@ -77,17 +93,80 @@ def prepare(kind: str, upload, duration) -> tuple[ContentFile, int | None]:
     except (TypeError, ValueError):
         sec = 0
     ext = {'webm': 'webm', 'ogg': 'ogg', 'mp4': 'mp4', 'mp3': 'mp3'}[fmt]
-    return ContentFile(upload.read(), name=f'{name}.{ext}'), sec
+    upload.name = f'{name}.{ext}'              # не читаем в память: шифруется потоком (filecrypt.seal_file)
+    return upload, sec
 
 
 def content_type(path: str) -> str:
+    path = path.removesuffix('.enc')                     # зашифрованный файл: тип — по исходному расширению
     ext = os.path.splitext(path)[1].lower()
     return {'.webm': 'video/webm', '.ogg': 'audio/ogg', '.mp4': 'video/mp4', '.mp3': 'audio/mpeg',
             '.jpg': 'image/jpeg'}.get(ext) or mimetypes.guess_type(path)[0] or 'application/octet-stream'
 
 
-def serve(request, field_file):
+def _range(request, size):
+    """(start, end) из заголовка Range или None; 'bad' — диапазон за пределами файла."""
+    rng = re.match(r'bytes=(\d*)-(\d*)', request.headers.get('Range', ''))
+    if not (rng and (rng.group(1) or rng.group(2))):
+        return None
+    start = int(rng.group(1)) if rng.group(1) else max(0, size - int(rng.group(2)))
+    end = int(rng.group(2)) if rng.group(1) and rng.group(2) else size - 1
+    end = min(end, size - 1)
+    return 'bad' if start > end else (start, end)
+
+
+def clean_name(name: str) -> str:
+    """Имя файла для показа и скачивания: без путей и управляющих символов."""
+    name = os.path.basename((name or '').replace('\\', '/')).strip()
+    name = re.sub(r'[\x00-\x1f\x7f"<>|:*?]', '_', name)[:120]
+    return name or 'file'
+
+
+def serve_sealed(request, field_file, thread_id, download_name=''):
+    """Зашифрованное вложение: расшифровываем только нужные куски (перемотка работает)."""
+    from .filecrypt import FileCryptError, Reader
+    path = field_file.path
+    fh = open(path, 'rb')  # noqa: SIM115 — закрывается стримингом
+    try:
+        reader = Reader(thread_id, fh, os.path.getsize(path))
+    except FileCryptError:
+        fh.close()
+        return HttpResponse(status=410)
+    size = reader.size
+    rng = _range(request, size)
+    if rng == 'bad':
+        fh.close()
+        resp = HttpResponse(status=416)
+        resp['Content-Range'] = f'bytes */{size}'
+        return resp
+    start, end = rng or (0, size - 1)
+
+    def chunks():
+        try:
+            yield from reader.iter_range(start, end)
+        except FileCryptError:
+            return
+        finally:
+            fh.close()
+
+    ctype = 'application/octet-stream' if download_name else content_type(field_file.name)
+    resp = StreamingHttpResponse(chunks(), status=206 if rng else 200, content_type=ctype)
+    if download_name:                               # «файлом»: только скачивание, браузер его не исполняет
+        from urllib.parse import quote
+        resp['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote(download_name)}"
+    if rng:
+        resp['Content-Range'] = f'bytes {start}-{end}/{size}'
+    resp['Content-Length'] = str(max(0, end - start + 1))
+    resp['Accept-Ranges'] = 'bytes'
+    resp['Cache-Control'] = 'private, no-store'      # расшифрованное не оседает в общих кешах
+    resp['X-Content-Type-Options'] = 'nosniff'
+    return resp
+
+
+def serve(request, field_file, thread_id=None, download_name=''):
     """Отдать файл с поддержкой Range (перемотка аудио/видео, Safari)."""
+    if field_file.name.endswith('.enc') and thread_id is not None:
+        return serve_sealed(request, field_file, thread_id, download_name)
     ctype = content_type(field_file.name)
     if getattr(settings, 'CHAT_XACCEL', False):
         resp = HttpResponse(content_type=ctype)

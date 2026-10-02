@@ -105,7 +105,7 @@ def start(msg, param: str) -> None:
         return
     if param.startswith('login_'):                                  # вход в мобильное приложение
         from apps.api import tglogin
-        tglogin.bot_start(chat_id, param[6:])
+        tglogin.bot_start(chat_id, param[6:], tg_id)
         return
     markup = open_button(_('Открыть никях'))
     reply(chat_id, WELCOME if markup else WELCOME + _('\n\n(Администратору: задайте SITE_URL с https, чтобы появилась кнопка.)'),

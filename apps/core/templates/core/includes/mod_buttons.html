@@ -13,5 +13,6 @@
       <button class="btn btn--s modc__no" type="submit">{% translate "Отклонить" %}</button>
     </form>
   </details>
+  {% include 'core/includes/ban_button.html' %}
   {% if url and not hide_open %}<a class="btn btn--s btn--g" href="{{ url }}">{% ico 'eye' %}{% translate "Как на сайте" %}</a>{% endif %}
 </div>

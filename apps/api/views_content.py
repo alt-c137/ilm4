@@ -210,7 +210,7 @@ def topic_reply(request, pk):
 @api(methods=('POST',), auth=True)
 def pub_message(request, key, pk):
     """«Написать автору»: открыть (или найти) диалог — как кнопка на сайте."""
-    from apps.chat.models import Thread
+    from apps.chat import services as chat
     if not module_on('chat'):
         raise ApiError(_('Раздел сейчас выключен'), 404, 'module_off')
     k = _kind(key)
@@ -218,18 +218,10 @@ def pub_message(request, key, pk):
     owner = getattr(o, k.owner, None) if k.owner else None
     if owner is None or owner == request.user:
         raise ApiError(_('Нельзя написать себе'))
-    from apps.accounts.models import UserBlock
-    if UserBlock.between(request.user, owner):
-        raise ApiError(_('Переписка недоступна: блокировка'), 403)
-    subject = k.title(o)[:160]
-    thread = (Thread.objects.filter(kind=Thread.DIRECT, participants=request.user).filter(participants=owner)
-              .exclude(observers__isnull=False).first())
-    if thread is None:
-        thread = Thread.objects.create(subject=subject)
-        thread.participants.add(request.user, owner)
-    elif thread.subject != subject:
-        thread.subject = subject
-        thread.save(update_fields=['subject', 'updated_at'])
+    try:
+        thread = chat.open_direct(request.user, owner, k.title(o), context=(key, o.pk))   # свой чат на объявление
+    except chat.ChatError as exc:
+        raise ApiError(exc.message, exc.status) from exc
     return {'thread_id': thread.pk}
 
 

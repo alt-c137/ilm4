@@ -1,0 +1,99 @@
+{
+  "expo": {
+    "name": "ilm4",
+    "slug": "ilm4",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "ilm4",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "com.ilm4.app",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Чтобы точно считать время намаза, показывать Киблу и халяль-места рядом.",
+        "NSCameraUsageDescription": "Чтобы отправлять фото и видео в чат.",
+        "NSPhotoLibraryUsageDescription": "Чтобы выбрать фото для анкеты или чата.",
+        "NSMicrophoneUsageDescription": "Чтобы записывать голосовые сообщения.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.ilm4.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#6d5efc",
+        "foregroundImage": "./assets/images/adaptive-icon.png"
+      },
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "CAMERA",
+        "RECORD_AUDIO",
+        "POST_NOTIFICATIONS",
+        "SCHEDULE_EXACT_ALARM"
+      ],
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#6d5efc",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200
+        }
+      ],
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Чтобы точно считать время намаза, показывать Киблу и халяль-места рядом."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#6d5efc"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Чтобы выбрать фото для анкеты или чата.",
+          "cameraPermission": "Чтобы отправлять фото и видео в чат."
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Чтобы записывать голосовые сообщения."
+        }
+      ],
+      "expo-video",
+      "expo-sharing",
+      "expo-asset",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Чтобы снимать фото, видео и видеокружки для чата.",
+          "microphonePermission": "Чтобы записывать голосовые сообщения и видеокружки.",
+          "recordAudioAndroid": true
+        }
+      ],
+      "@config-plugins/react-native-webrtc"
+    ],
+    "extra": {
+      "apiUrl": "https://ilm4.com"
+    },
+    "experiments": {
+      "typedRoutes": false,
+      "reactCompiler": true
+    }
+  }
+}

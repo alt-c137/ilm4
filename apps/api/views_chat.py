@@ -5,12 +5,12 @@
 """
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
 from django.utils.translation import gettext as _
 
+from apps.chat import services
 from apps.chat.events import message_payload, preview
 from apps.chat.models import Message, Thread
-from apps.chat.views import UploadRefused, _blocked, _flags, send_text, store_upload
+from apps.chat.services import ChatError
 
 from .base import ApiError, abs_url, api, as_int, file_url
 
@@ -22,6 +22,18 @@ def _thread(request, pk) -> Thread:
     if not thread.participants.filter(pk=request.user.pk).exists():
         raise Http404
     return thread
+
+
+def _info(request, thread) -> dict:
+    """Тип чата: папка, карточка объявления (ссылки — полные), подсказка раздела."""
+    info = services.thread_info(thread, request.user)
+    card = info['card']
+    if card:
+        card['url'] = abs_url(request, card['url']) if card['url'] else ''
+        card['image'] = abs_url(request, card['image']) if card['image'] else ''
+        for a in card['actions']:
+            a['text'] = a['text'].replace('{link}', abs_url(request, a.pop('path')))
+    return info
 
 
 def _msg(request, m) -> dict:
@@ -41,11 +53,12 @@ def threads(request):
 
     user = request.user
     qs = (user.chat_threads.all().prefetch_related('participants')
-          .annotate(unread=Count('messages', filter=Q(messages__read_at__isnull=True) & ~Q(messages__sender=user))))
+          .annotate(unread=Count('messages', filter=Q(messages__read_at__isnull=True)
+                                 & Q(messages__scheduled_at__isnull=True) & ~Q(messages__sender=user))))
     nikah = set(NikahMatch.objects.filter(thread__in=qs).values_list('thread_id', flat=True))
     items = []
     for t in qs[:300]:
-        last = t.messages.order_by('-created_at').select_related('sender').first()
+        last = services.visible_messages(t, user).order_by('-created_at').select_related('sender').first()
         other = t.other_participant(user)
         items.append({
             'id': t.pk, 'title': other.get_display_name() if other else (t.title or t.subject or _('Диалог')),
@@ -54,9 +67,9 @@ def threads(request):
             'preview': str(preview(last)) if last else '', 'kind': last.kind if last else '',
             'mine': bool(last and last.sender_id == user.pk),
             'updated_at': (last.created_at if last else t.updated_at).isoformat(),
-            'unread': t.unread, 'nikah': t.pk in nikah,
+            'unread': t.unread, 'nikah': t.pk in nikah, 'folder': t.folder, 'context': t.context_type,
         })
-    return {'items': items}
+    return {'items': items, 'folders': services.folders_for(user, items), 'support': bool(services.support_user())}
 
 
 @api(auth=True, module='chat')
@@ -65,14 +78,14 @@ def messages(request, pk):
     from apps.nikah.models import NikahMatch
 
     thread = _thread(request, pk)
-    qs = thread.messages.select_related('sender').order_by('-created_at', '-pk')
+    qs = services.visible_messages(thread, request.user).select_related('sender').order_by('-created_at', '-pk')
     before = as_int(request.GET.get('before'))
     if before:
         qs = qs.filter(pk__lt=before)
     chunk = list(qs[:HISTORY_PAGE + 1])
     other = thread.other_participant(request.user)
     if not before:
-        thread.messages.filter(read_at__isnull=True).exclude(sender=request.user).update(read_at=timezone.now())
+        services.mark_read(thread, request.user)
     return {
         'items': [_msg(request, m) for m in reversed(chunk[:HISTORY_PAGE])],
         'more': len(chunk) > HISTORY_PAGE,
@@ -80,10 +93,11 @@ def messages(request, pk):
                    'title': other.get_display_name() if other else (thread.title or _('Диалог')),
                    'other_id': other.pk if other else None,
                    'avatar': file_url(request, other.avatar) if other else '',
-                   'blocked': _blocked(thread, request.user), 'features': {
-                       k: v for k, v in _flags(thread).items() if k != 'turn'},
-                   'turn': _flags(thread).get('turn'),
+                   'blocked': services.blocked(thread, request.user), 'features': {
+                       k: v for k, v in services.flags(thread).items() if k != 'turn'},
+                   'turn': services.flags(thread).get('turn'),
                    'witnesses': [u.get_display_name() for u in thread.observers.exclude(pk=request.user.pk)],
+                   **_info(request, thread),
                    'nikah': NikahMatch.objects.filter(thread=thread).exists()},
     }
 
@@ -92,8 +106,10 @@ def messages(request, pk):
 def send(request, pk):
     thread = _thread(request, pk)
     try:
-        return _msg(request, _saved(send_text(thread, request.user, str(request.data.get('body', '')))))
-    except UploadRefused as exc:
+        return _msg(request, _saved(services.send_text(
+            thread, request.user, str(request.data.get('body', '')), silent=bool(request.data.get('silent')),
+            schedule=request.data.get('schedule') or None)))
+    except ChatError as exc:
         raise ApiError(exc.message, exc.status) from exc
 
 
@@ -101,9 +117,11 @@ def send(request, pk):
 def upload(request, pk):
     thread = _thread(request, pk)
     try:
-        payload = store_upload(thread, request.user, request.POST.get('kind', ''), request.FILES.get('file'),
-                               request.POST.get('duration'), request.POST.get('caption', ''))
-    except UploadRefused as exc:
+        payload = services.store_upload(thread, request.user, request.POST.get('kind', ''), request.FILES.get('file'),
+                                        request.POST.get('duration'), request.POST.get('caption', ''),
+                                        silent=request.POST.get('silent') in ('1', 'true'),
+                                        schedule=request.POST.get('schedule') or None)
+    except ChatError as exc:
         raise ApiError(exc.message, exc.status) from exc
     return _msg(request, _saved(payload))
 
@@ -115,14 +133,38 @@ def _saved(payload) -> Message:
 @api(methods=('POST',), auth=True, module='chat')
 def read(request, pk):
     thread = _thread(request, pk)
-    n = thread.messages.filter(read_at__isnull=True).exclude(sender=request.user).update(read_at=timezone.now())
-    return {'ok': True, 'updated': n}
+    return {'ok': True, 'updated': services.mark_read(thread, request.user)}
+
+
+@api(methods=('POST',), auth=True, module='chat')
+def scheduled(request, msg_id, action):
+    """Своё запланированное: send — отправить сейчас, cancel — удалить."""
+    try:
+        if action == 'send':
+            return _msg(request, _saved(services.send_scheduled_now(request.user, msg_id)))
+        if action == 'cancel':
+            services.cancel_scheduled(request.user, msg_id)
+            return {'ok': True}
+    except ChatError as exc:
+        raise ApiError(exc.message, exc.status) from exc
+    raise Http404
 
 
 @api(auth=True, module='chat')
 def file(request, msg_id):
     from apps.chat.media import serve
     m = get_object_or_404(Message.objects.select_related('thread'), pk=msg_id)
-    if not m.attachment or not m.thread.participants.filter(pk=request.user.pk).exists():
+    if (not m.attachment or not m.thread.participants.filter(pk=request.user.pk).exists()
+            or (m.scheduled_at and m.sender_id != request.user.pk)):
         raise Http404
-    return serve(request, m.attachment)
+    name = m.meta.get('name', 'file') if m.kind == Message.FILE else ''
+    return serve(request, m.attachment, m.thread_id, download_name=name)
+
+
+@api(methods=('POST',), auth=True, module='chat')
+def support(request):
+    """Открыть чат с командой ilm4."""
+    try:
+        return {'thread': services.open_support(request.user).pk}
+    except ChatError as exc:
+        raise ApiError(exc.message, exc.status) from exc

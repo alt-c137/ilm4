@@ -14,6 +14,7 @@ from django.utils.translation import gettext_lazy as _lazy
 from apps.accounts.audit import log_action
 from apps.core.decorators import PUBLISH_PER_DAY
 from apps.core.models import Moderation, SiteSettings
+from apps.core.moderation import is_newbie
 from apps.core.publications import BY_KEY, PUBLICATIONS
 
 from .base import MODULE_OF, ApiError, api, file_url, module_on, require_phone
@@ -126,7 +127,7 @@ def save(request, key):
     st = SiteSettings.get_solo()
     if hasattr(item, 'status'):
         item.status = Moderation.PENDING
-        if key == 'buy' and obj is None and not st.market_moderation:
+        if key == 'buy' and obj is None and not st.market_moderation and not is_newbie(request.user):
             item.status = Moderation.APPROVED          # маркет без модерации (настройка админа)
     if key == 'doctors' and obj is None and st.doctor_publish_price:
         from apps.wallet import services as wallet

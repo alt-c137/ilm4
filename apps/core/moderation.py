@@ -78,6 +78,23 @@ def visible(request, **public) -> dict:
     return {'status': Moderation.APPROVED, **public}
 
 
+def is_newbie(user) -> bool:
+    """Новичок: одобренных публикаций меньше, чем «первые публикации — только вручную».
+    Его публикации не одобряются автоматически (ни настройкой, ни ИИ). Сотрудников не касается."""
+    from .models import SiteSettings
+    need = SiteSettings.get_solo().newbie_manual_count
+    if not need or user is None or user.is_staff:
+        return False
+    n = 0
+    for p in PUBLICATIONS:
+        model = p.get_model()
+        if hasattr(model, 'status'):
+            n += model.objects.filter(**{p.owner: user, 'status': Moderation.APPROVED}).count()
+            if n >= need:
+                return False
+    return True
+
+
 def pending_count(user) -> int:
     if not is_moderator(user):
         return 0
@@ -147,8 +164,10 @@ def _reports(user) -> list:
     groups = {}
     for r in Report.objects.filter(status=Report.NEW).select_related('content_type', 'reporter')[:300]:
         g = groups.setdefault((r.content_type_id, r.object_id), {'ct': r.content_type, 'id': r.object_id,
-                                                                  'reports': [], 'obj': None})
+                                                                  'reports': [], 'obj': None, 'chats': []})
         g['reports'].append(r)
+        if r.thread_id:
+            g['chats'].append(r)              # жалоба из чата — можно открыть эту переписку
     out = []
     for g in groups.values():
         model = g['ct'].model_class()
@@ -159,7 +178,9 @@ def _reports(user) -> list:
         g['src'] = src
         g['title'] = src.title_of(g['obj']) if (src and g['obj']) else str(g['obj'] or _('(удалено)'))
         g['url'] = src.url_of(g['obj']) if (src and g['obj']) else ''
+        g['author'] = getattr(g['obj'], src.owner, None) if (src and g['obj']) else None
         if model._meta.label == 'accounts.User' and g['obj']:
+            g['author'] = g['obj']
             from django.urls import reverse
             g['url'] = reverse('accounts:public', args=[g['obj'].pk])
         out.append(g)
@@ -264,3 +285,49 @@ def report_act(request, ct, pk):
     log_action(request, f'Жалобы разобраны на сайте ({do})', f'{ctype.model}#{pk}')
     _drop_count(request)
     return redirect(_back(request))
+
+
+@require_POST
+def ban_user(request, pk):
+    """«Заблокировать автора»: аккаунт выключен, публикации сняты, номер и Telegram — в чёрный список."""
+    from django.contrib.auth import get_user_model
+
+    from apps.accounts import bans
+    user = get_object_or_404(get_user_model(), pk=pk)
+    if not bans.can_ban(request.user, user):
+        raise PermissionDenied
+    hidden = bans.ban(user, request.user, request.POST.get('reason', '').strip()[:300])
+    messages.success(request, _('{name} заблокирован(а). Снято публикаций: {n}. Номер и Telegram больше не примем.')
+                     .format(name=user.get_display_name(), n=hidden))
+    _drop_count(request)
+    return redirect(_back(request))
+
+
+CHAT_PEEK = 50
+
+
+def report_chat(request, report_id):
+    """Переписка по жалобе: последние сообщения диалога, из которого пожаловались.
+    Только модератору, только по жалобе, каждое открытие — в журнал (docs/MESSENGER.md §2.2)."""
+    from apps.chat.models import Message
+    report = get_object_or_404(Report.objects.select_related('thread', 'reporter'), pk=report_id,
+                               thread__isnull=False)
+    if not can_moderate(request.user, Message):
+        raise Http404
+    msgs = list(report.thread.messages.delivered().select_related('sender').order_by('-created_at')[:CHAT_PEEK])[::-1]
+    log_action(request, 'Модератор открыл переписку по жалобе',
+               f'report#{report.pk} thread#{report.thread_id} ({len(msgs)} сообщ.)')
+    return render(request, 'core/moderation_chat.html', {'report': report, 'msgs': msgs, 'limit': CHAT_PEEK})
+
+
+def report_chat_file(request, report_id, msg_id):
+    from apps.chat.media import serve
+    from apps.chat.models import Message
+    report = get_object_or_404(Report, pk=report_id, thread__isnull=False)
+    if not can_moderate(request.user, Message):
+        raise Http404
+    msg = get_object_or_404(Message, pk=msg_id, thread_id=report.thread_id, scheduled_at__isnull=True)
+    if not msg.attachment:
+        raise Http404
+    log_action(request, 'Модератор открыл вложение по жалобе', f'report#{report.pk} msg#{msg.pk}')
+    return serve(request, msg.attachment, msg.thread_id)

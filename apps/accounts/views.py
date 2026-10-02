@@ -35,7 +35,8 @@ def register(request):
         if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
             return redirect(next_url)
         return redirect('core:home')
-    return render(request, 'accounts/register.html', {'form': form, 'next': request.GET.get('next', '')})
+    return render(request, 'accounts/register.html', {'form': form, 'next': request.GET.get('next', ''),
+                                                      'tg_link': _tg_link()})
 
 
 # Защита от подбора пароля: не больше N неудачных попыток за окно — по логину и по IP
@@ -86,7 +87,7 @@ def login_view(request):
         return redirect('core:home')
     need_captcha = captcha.enabled() and cache.get(f'login_fail:ip:{client_ip(request)}', 0) >= 3
     return render(request, 'accounts/login.html', {'form': form, 'next': request.GET.get('next', ''),
-                                                   'need_captcha': need_captcha})
+                                                   'need_captcha': need_captcha, 'tg_link': _tg_link()})
 
 
 # Выход — только POST (Django 5), кнопка-форма в шапке
@@ -268,6 +269,7 @@ def _wipe_user(user) -> None:
     user.username = f'deleted-{user.pk}'
     user.first_name = user.last_name = user.nickname = user.city = user.phone = ''
     user.findable_by_phone = False
+    user.phone_verified_at = None
     user.telegram_id = None
     user.telegram_username = ''
     user.is_active = False
@@ -304,3 +306,29 @@ def phone_status(request):
     from . import phone_verify
     return JsonResponse(phone_verify.status(request.user, request.GET.get('nonce', '')[:40]))
 
+
+
+# ---------- вход через Telegram-бота на сайте (тот же механизм, что в приложении: apps/api/tglogin.py) ----------
+
+def _tg_link():
+    from apps.api import tglogin
+
+    from . import phone_verify
+    return tglogin.create() if phone_verify.available() else None
+
+
+def tg_poll(request):
+    """Страница входа спрашивает раз в 2 секунды: вход в боте подтверждён? — входим."""
+    from django.http import JsonResponse
+
+    from apps.api import tglogin
+    nonce = (request.POST.get('nonce') or '')[:40]
+    if request.method != 'POST' or not tglogin.valid_nonce(nonce):
+        return JsonResponse({'status': 'expired'}, status=410)
+    user = tglogin.poll(nonce)
+    if user is None:
+        return JsonResponse({'status': 'pending'})
+    auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+    log_action(request, 'Вход через Telegram-бота (сайт)', f'user#{user.pk}')
+    messages.success(request, _('С возвращением, {v1}!').format(v1=user.get_display_name()))
+    return JsonResponse({'status': 'ok', 'next': _safe(request, request.POST.get('next', ''), '/')})

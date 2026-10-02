@@ -160,3 +160,32 @@ class UserBlock(models.Model):
         pairs = UserBlock.objects.filter(models.Q(blocker=user) | models.Q(blocked=user)).values_list('blocker_id',
                                                                                                         'blocked_id')
         return {x for pair in pairs for x in pair} - {user.pk}
+
+
+class BannedIdentity(models.Model):
+    """Чёрный список: номер телефона или Telegram-аккаунт заблокированного человека.
+
+    Хранится не сам номер, а его отпечаток (SHA-256), поэтому по таблице номер не узнать.
+    Запись остаётся, даже если аккаунт удалят: заново подтвердить этот номер
+    или войти этим Telegram нельзя. Разблокировать — удалить запись (или действие в «Пользователях»).
+    """
+
+    PHONE, TELEGRAM = 'phone', 'telegram'
+    KINDS = [(PHONE, 'номер телефона'), (TELEGRAM, 'Telegram-аккаунт')]
+
+    kind = models.CharField('что', max_length=10, choices=KINDS)
+    key = models.CharField('отпечаток', max_length=64, db_index=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='аккаунт', null=True, blank=True,
+                             on_delete=models.SET_NULL, related_name='bans')
+    reason = models.CharField('причина', max_length=300, blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='кто заблокировал', null=True, blank=True,
+                                   on_delete=models.SET_NULL, related_name='+')
+    created_at = models.DateTimeField('когда', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'чёрный список'
+        verbose_name_plural = 'чёрный список (номера и Telegram)'
+        constraints = [models.UniqueConstraint(fields=['kind', 'key'], name='one_ban_per_identity')]
+
+    def __str__(self):
+        return f'{self.get_kind_display()} — {self.user or "удалённый аккаунт"}'

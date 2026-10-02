@@ -295,7 +295,7 @@ def test_push_register_and_notification(client, pair, monkeypatch, django_captur
     assert PushDevice.objects.filter(user=b).count() == 1
     assert call(client, 'post', '/api/v1/push/', {'token': 'evil'}, token=token_for(b)).status_code == 400
     sent = []
-    monkeypatch.setattr(push, 'send_to_user', lambda uid, body, url='', title='ilm4': sent.append((uid, body, url)))
+    monkeypatch.setattr(push, 'send_to_user', lambda uid, body, url='', title='ilm4', silent=False: sent.append((uid, body, url)))
     with django_capture_on_commit_callbacks(execute=True):
         call(client, 'post', f'/api/v1/chat/{t.pk}/send/', {'body': 'Салам'}, token=token_for(a))
     assert sent and sent[0][0] == b.pk and 'Салам' in sent[0][1] and sent[0][2] == f'/chat/{t.pk}/'

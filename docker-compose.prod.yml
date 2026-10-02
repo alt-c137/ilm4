@@ -51,7 +51,7 @@ services:
       DJANGO_SETTINGS_MODULE: config.settings.prod
       DATABASE_URL: postgis://${POSTGRES_USER:-ilm4}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-ilm4}
       REDIS_URL: redis://redis:6379/0
-    entrypoint: ["sh", "-c", "sleep 60; i=0; while true; do python manage.py nikah_cleanup; python manage.py ai_moderate; [ $$((i % 60)) -eq 0 ] && python manage.py release_due_deals; [ $$((i % 360)) -eq 0 ] && python manage.py pull_rates; i=$$((i + 1)); sleep 60; done"]
+    entrypoint: ["sh", "-c", "sleep 60; i=0; while true; do python manage.py nikah_cleanup; python manage.py chat_send_due; python manage.py ai_moderate; [ $$((i % 60)) -eq 0 ] && python manage.py release_due_deals; [ $$((i % 360)) -eq 0 ] && python manage.py pull_rates; i=$$((i + 1)); sleep 60; done"]
     volumes:
       - ilm4_media_prod:/app/media
     depends_on:

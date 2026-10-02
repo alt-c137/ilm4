@@ -11,7 +11,7 @@ from django.views.decorators.http import require_POST
 
 from apps.core.decorators import module_required, pledge_required
 from apps.core.models import Moderation, SiteSettings
-from apps.core.moderation import visible
+from apps.core.moderation import is_newbie, visible
 from apps.wallet import services as wallet
 from apps.wallet.models import Transaction
 from apps.wallet.services import InsufficientFunds
@@ -67,8 +67,8 @@ def listing_create(request):
     if request.method == 'POST' and form.is_valid():
         listing = form.save(commit=False)
         listing.owner = request.user
-        # без модерации (настройка админа) публикуем сразу
-        if not SiteSettings.get_solo().market_moderation:
+        # без модерации (настройка админа) публикуем сразу — кроме первых публикаций новичка
+        if not SiteSettings.get_solo().market_moderation and not is_newbie(request.user):
             listing.status = Moderation.APPROVED
         listing.save()
         form.save_m2m()  # теги

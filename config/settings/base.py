@@ -155,7 +155,10 @@ TELEGRAM_WEBHOOK_SECRET = env('TELEGRAM_WEBHOOK_SECRET', default='')
 # Адрес сайта для ссылок в уведомлениях (кнопка «Открыть» в Telegram — только https)
 SITE_URL = env('SITE_URL', default='')
 
-# Шифрование переписки в БД (apps/chat/crypto.py). В проде — свой ключ и его резервная копия!
+# Шифрование переписки (docs/MESSENGER.md §2.1). Главный ключ (KEK): "kid:<base64>", новый — первым.
+# Создать: manage.py chat_keys generate. Резервная копия — manage.py chat_keys split (3 части, любые 2).
+CHAT_MASTER_KEYS = env('CHAT_MASTER_KEYS', default='')
+# Старый ключ (Fernet): нужен, чтобы прочитать записи enc1 и фото анкет никяха
 CHAT_ENCRYPTION_KEY = env('CHAT_ENCRYPTION_KEY', default='')
 
 # Платёжные провайдеры (apps/payments/providers.py): способ включается, когда заданы ключи

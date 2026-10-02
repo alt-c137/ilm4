@@ -57,6 +57,8 @@ fi
 
 export SITE_URL="$URL"          # переменная окружения важнее .env — файл не меняем
 $PY manage.py runserver 127.0.0.1:8000 >"$LOG/server.log" 2>&1 &
+# фоновые задачи раз в минуту: запланированные сообщения чата, таймеры фото никяха
+( while true; do $PY manage.py chat_send_due; $PY manage.py nikah_cleanup; sleep 60; done ) >"$LOG/jobs.log" 2>&1 &
 sleep 3
 
 # мобильное приложение (mobile/) на телефоне будет ходить на этот же адрес

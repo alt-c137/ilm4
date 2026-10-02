@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.utils.translation import gettext as _
 
+from apps.accounts import phone_verify
 from apps.core.decorators import module_required
 from apps.core.models import SiteSettings
 
@@ -29,6 +30,7 @@ def index(request):
 
 @login_required
 @module_required('wallet')
+@phone_verify.required('money')
 def payout(request):
     if not SiteSettings.get_solo().wallet_payouts_enabled:
         messages.info(request, _('Вывод средств пока недоступен: баланс можно тратить на услуги платформы.'))

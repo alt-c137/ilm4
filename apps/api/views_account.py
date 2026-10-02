@@ -319,7 +319,7 @@ def report(request):
     from django.core.cache import cache
 
     from apps.core.models import Report
-    from apps.core.my_views import REPORTS_PER_DAY, _after_report
+    from apps.core.my_views import REPORTS_PER_DAY, _after_report, report_thread
 
     target = REPORT_TARGETS.get(str(request.data.get('type', '')))
     reason = str(request.data.get('reason', ''))
@@ -335,9 +335,12 @@ def report(request):
     owner = getattr(obj, 'owner', None) or getattr(obj, 'author', None) or getattr(obj, 'user', None)
     if obj == request.user or owner == request.user:
         raise ApiError(_('На себя жаловаться не нужно.'))
+    thread = report_thread(request.user, request.data.get('thread'))
     _r, created = Report.objects.get_or_create(
         content_type=ct, object_id=obj.pk, reporter=request.user,
-        defaults={'reason': reason, 'text': str(request.data.get('text', '')).strip()[:500]})
+        defaults={'reason': reason, 'text': str(request.data.get('text', '')).strip()[:500], 'thread': thread})
+    if not created and thread and _r.thread_id is None:
+        Report.objects.filter(pk=_r.pk).update(thread=thread)
     if created:
         _after_report(ct, obj, reason)
     return {'ok': True, 'message': _('Спасибо! Жалоба у модератора. Мы не сообщаем автору, кто пожаловался.')}

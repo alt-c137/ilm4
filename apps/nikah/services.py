@@ -296,17 +296,14 @@ def _ensure_chat(match: NikahMatch):
     """Диалог создаётся, когда чат открыт и (если есть цена) брат оплатил."""
     if match.thread_id or (chat_price() and not match.chat_paid):
         return match.thread
-    from apps.chat.models import Message, Thread
+    from apps.chat import services as chat
 
-    thread = Thread.objects.create(subject='Никях · знакомство')
-    thread.participants.add(match.sister.user, match.brother.user)
-    for p in (match.sister, match.brother):          # свидетели (махрам) видят переписку
-        if p.witness_id:
-            thread.participants.add(p.witness_id)
-            thread.observers.add(p.witness_id)
-    Message.objects.create(thread=thread, sender=match.sister.user, kind=Message.SYSTEM,
-                           body='Чат никяха открыт. Помните об адабе: цель — никях, контакты и фото — '
-                                'по взаимному согласию. Бойтесь Аллаха.')
+    witnesses = [p.witness_id for p in (match.sister, match.brother) if p.witness_id]   # махрамы видят переписку
+    thread = chat.open_private_thread([match.sister.user, match.brother.user], witnesses, 'Никях · знакомство',
+                                      context=('nikah', match.pk))
+    chat.system_message(thread, match.sister.user,
+                        'Чат никяха открыт. Помните об адабе: цель — никях, контакты и фото — '
+                        'по взаимному согласию. Бойтесь Аллаха.')
     match.thread = thread
     match.save(update_fields=['thread'])
     return thread

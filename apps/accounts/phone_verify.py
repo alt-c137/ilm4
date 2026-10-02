@@ -32,22 +32,37 @@ def available() -> bool:
     return bool(getattr(settings, 'TELEGRAM_BOT_TOKEN', '') and getattr(settings, 'TELEGRAM_BOT_USERNAME', ''))
 
 
+# где нужен номер → галочка в «Настройках сайта»
+FLAGS = {'publish': 'phone_for_publish', 'nikah': 'phone_for_nikah', 'reviews': 'phone_for_reviews',
+         'money': 'phone_for_money', 'contacts': 'phone_for_contacts'}
+
+
 def needed(user, where: str) -> bool:
-    """Нужно ли подтвердить номер перед действием. where: 'publish' | 'nikah'."""
+    """Нужно ли подтвердить номер перед действием (where — ключ FLAGS)."""
     if not user.is_authenticated or user.is_staff or user.phone_verified or not available():
         return False
     from apps.core.models import SiteSettings
-    st = SiteSettings.get_solo()
-    return bool(st.phone_for_nikah if where == 'nikah' else st.phone_for_publish)
+    return bool(getattr(SiteSettings.get_solo(), FLAGS[where]))
 
 
 def redirect_to_verify(request, where: str):
+    """На страницу подтверждения, потом — обратно. JSON-запросу — ответ с кодом 'phone'."""
     from urllib.parse import urlencode
 
+    from django.http import JsonResponse
     from django.shortcuts import redirect
     from django.urls import reverse
-    back = request.get_full_path() if request.method == 'GET' else request.path
-    return redirect(f"{reverse('accounts:phone')}?{urlencode({'next': back, 'why': where})}")
+    from django.utils.http import url_has_allowed_host_and_scheme
+    if request.method == 'GET':
+        back = request.get_full_path()
+    else:                               # форма (POST) — вернуть на страницу, где она была
+        ref = request.headers.get('Referer', '')
+        back = ref if url_has_allowed_host_and_scheme(ref, allowed_hosts={request.get_host()}) else '/'
+    url = f"{reverse('accounts:phone')}?{urlencode({'next': back, 'why': where})}"
+    if 'application/json' in request.headers.get('Accept', '') or request.content_type == 'application/json':
+        return JsonResponse({'ok': False, 'code': 'phone', 'url': url,
+                             'error': _('Сначала подтвердите номер телефона.')}, status=403)
+    return redirect(url)
 
 
 def required(where: str):
@@ -93,6 +108,11 @@ def _keyboard():
             'resize_keyboard': True, 'one_time_keyboard': True}
 
 
+def login_keyboard():
+    return {'keyboard': [[{'text': _('📱 Войти и отправить мой номер'), 'request_contact': True}]],
+            'resize_keyboard': True, 'one_time_keyboard': True}
+
+
 def bot_start(chat_id, tg_id, nonce: str) -> None:
     """/start phone_<код>: запомнить, чей это код, и показать кнопку «Отправить номер»."""
     from apps.tgbot.dispatch import reply
@@ -101,6 +121,7 @@ def bot_start(chat_id, tg_id, nonce: str) -> None:
         reply(chat_id, _('Ссылка устарела. Нажмите «Подтвердить номер» на сайте или в приложении ещё раз.'))
         return
     cache.set(f'phonev:tg:{tg_id}', nonce, TTL)
+    cache.delete(f'tglogin:tg:{tg_id}')
     reply(chat_id, _('Подтвердите номер для ilm4: нажмите кнопку «📱 Отправить мой номер» внизу.\n\n'
                      'Номер не показывается другим людям. Он нужен, чтобы один человек не создавал '
                      'много аккаунтов — так мы защищаемся от спама и ботов.'), _keyboard())
@@ -114,6 +135,9 @@ def bot_contact(msg: dict) -> None:
     done = {'remove_keyboard': True}
     if contact.get('user_id') != tg['id']:
         reply(chat_id, _('Нужен именно ваш номер — нажмите кнопку «📱 Отправить мой номер» внизу.'), _keyboard())
+        return
+    from apps.api import tglogin
+    if tglogin.contact_login(msg):                  # это вход через Telegram (сайт или приложение)
         return
     User = get_user_model()
     nonce = cache.get(f'phonev:tg:{tg["id"]}')
@@ -140,6 +164,9 @@ def confirm(user, phone: str, tg: dict | None = None) -> None:
     d = digits(phone)
     if len(d) < 9:
         raise ValueError(_('Не получилось прочитать номер. Попробуйте ещё раз.'))
+    from . import bans
+    if bans.phone_banned(phone_key(d)) or (tg and bans.tg_banned(tg['id'])):
+        raise ValueError(bans.banned_text())
     User = get_user_model()
     taken = (User.objects.filter(phone_key=phone_key(d), phone_verified_at__isnull=False)
              .exclude(pk=user.pk).exists())

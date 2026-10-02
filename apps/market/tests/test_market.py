@@ -61,6 +61,7 @@ def test_create_with_moderation(client, user, cat):
 def test_create_without_moderation(client, user, cat):
     settings_obj = SiteSettings.get_solo()
     settings_obj.market_moderation = False
+    settings_obj.newbie_manual_count = 0
     settings_obj.save()
     client.force_login(user)
     client.post('/buy/add/', {'pledge': '1', 

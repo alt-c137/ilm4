@@ -1,8 +1,11 @@
-{% load i18n %}{% load icons %}{% if m.kind == 'system' %}<div class="tg__sys" data-id="{{ m.pk }}"><span>{% ico 'call' %}{{ m.body }} · {{ time }}</span></div>{% else %}<div class="bub bub--{{ m.kind }}{% if mine %} bub--me{% endif %}{% if tail %} bub--tail{% endif %}" data-id="{{ m.pk }}">
+{% load i18n %}{% load icons %}{% if m.kind == 'system' %}<div class="tg__sys" data-id="{{ m.pk }}"><span>{% ico 'call' %}{{ m.body }} · {{ time }}</span></div>{% else %}<div class="bub bub--{{ m.kind }}{% if mine %} bub--me{% endif %}{% if tail %} bub--tail{% endif %}{% if m.scheduled_at %} bub--sched{% endif %}" data-id="{{ m.pk }}">
   {% if m.kind == 'photo' %}<a class="bub__photo" href="{% url 'chat:file' m.pk %}" target="_blank" rel="noopener"><img src="{% url 'chat:file' m.pk %}" alt="{% translate 'Фото' %}" loading="lazy"></a>
   {% elif m.kind == 'voice' %}<div class="voice" data-src="{% url 'chat:file' m.pk %}"><button type="button" class="voice__play" aria-label="{% translate 'Слушать' %}">{% ico 'play' %}</button><span class="voice__bar"><i></i></span><span class="voice__t">{{ dur }}</span></div>
   {% elif m.kind == 'video' %}<div class="bub__video"><video src="{% url 'chat:file' m.pk %}" controls preload="metadata" playsinline></video></div>
-  {% elif m.kind == 'circle' %}<div class="circle" data-src="{% url 'chat:file' m.pk %}"><video src="{% url 'chat:file' m.pk %}" preload="metadata" playsinline></video><span class="circle__t">{{ dur }}</span><span class="circle__play">{% ico 'play' %}</span></div>{% endif %}
+  {% elif m.kind == 'file' %}<a class="bub__file" href="{% url 'chat:file' m.pk %}" download><span class="bub__fileico">{% ico 'clip' %}</span><span class="bub__fileb"><b>{{ meta.name|default:_("Файл") }}</b><small>{{ meta.size|filesizeformat }}</small></span></a>
+  {% elif m.kind == 'circle' %}<div class="circle" data-src="{% url 'chat:file' m.pk %}"><video src="{% url 'chat:file' m.pk %}" preload="metadata" playsinline></video><span class="circle__t">{{ dur }}</span><span class="circle__play">{% ico 'play' %}</span></div>{% if warn %}<div class="tg__warn" data-warn="{{ m.pk }}">{% ico 'shield' %}{{ warn_text }}</div>{% endif %}{% endif %}
   {% if m.body %}<span class="bub__t">{{ m.body|linebreaksbr }}</span>{% endif %}
-  <span class="bub__meta">{{ time }}{% if mine %}<span class="tick{% if m.read_at %} tick--2{% endif %}"></span>{% endif %}</span>
-</div>{% endif %}
+  {% if m.scheduled_at %}<span class="bub__sched"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>{% translate "отправится" %} {{ m.scheduled_at|date:"d.m H:i" }}</span><span class="bub__schedact"><button type="button" data-sched-act="send">{% translate "Отправить сейчас" %}</button><button type="button" data-sched-act="cancel">{% translate "Удалить" %}</button></span>
+  <span class="bub__meta"></span>{% else %}
+  <span class="bub__meta">{{ time }}{% if mine %}<span class="tick{% if m.read_at %} tick--2{% endif %}"></span>{% endif %}</span>{% endif %}
+</div>{% if warn %}<div class="tg__warn" data-warn="{{ m.pk }}">{% ico 'shield' %}{{ warn_text }}</div>{% endif %}{% endif %}

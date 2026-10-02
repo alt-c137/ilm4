@@ -1,0 +1,202 @@
+/** Общее состояние приложения: язык, тема, вход, настройки сервера, намаз, сеть. */
+import NetInfo from '@react-native-community/netinfo';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useColorScheme } from 'react-native';
+
+import { api, cachedGet, onAuthLost, onReachability, setApiLang, setApiToken } from '@/lib/api';
+import { deviceLang, setLang as setI18nLang, t as translate, type Lang } from '@/lib/i18n';
+import { registerPush, schedulePrayers, type PrayerAlerts } from '@/lib/notify';
+import type { Asr, Method, Place } from '@/lib/prayer';
+import { clearCache, getToken, load, save, setToken } from '@/lib/storage';
+import { palettes, type Colors } from '@/lib/theme';
+
+export type Module = { key: string; name: string; status: 'on' | 'soon'; emoji: string; icon: string; descr: string; group: string; native: boolean };
+export type Config = {
+  site_name: string; site_url: string; min_version: string; notice: string; bot: string; map?: { maptiler: string };
+  modules: Module[]; groups: { key: string; name: string }[];
+  features: {
+    chat: Record<'photo' | 'video' | 'voice' | 'circle' | 'calls' | 'video_calls', boolean>;
+    nikah: { premium: boolean; daily_limit: number; premium_price: number; premium_days: number; restore_price: number; chat_price: number; photo_minutes: number };
+    telegram_login: boolean; hadith: boolean;
+  };
+  prayer: { cities: { key: string; name: string; lat: number; lon: number; tz: number }[]; methods: { key: Method; name: string }[] };
+  links: Record<string, string>;
+};
+export type User = {
+  id: number; name: string; nickname: string; first_name: string; email: string; city: string; phone: string;
+  language: string; avatar: string; telegram: boolean; verified: boolean; balance: number | null;
+  phone_verified?: boolean; needs_phone?: { publish: boolean; nikah: boolean };
+  nikah: { id: number; status: string; active: boolean; gender: 'M' | 'F' } | null;
+};
+export type PrayerSettings = {
+  place: (Place & { key: string; gps?: boolean }) | null; method: Method; asr: Asr; alerts: PrayerAlerts;
+};
+type ThemeMode = 'system' | 'light' | 'dark';
+
+const DEFAULT_PRAYER: PrayerSettings = {
+  place: { key: 'tashkent', name: 'Ташкент', lat: 41.3111, lon: 69.2797, tz: 5 },
+  method: 'Karachi', asr: 'standard',
+  alerts: { enabled: { fajr: true, dhuhr: true, asr: true, maghrib: true, isha: true }, before: 0 },
+};
+
+type Ctx = {
+  ready: boolean; lang: Lang; setLang: (l: Lang) => void; t: typeof translate;
+  themeMode: ThemeMode; setThemeMode: (m: ThemeMode) => void; dark: boolean; c: Colors;
+  config: Config | null; refreshConfig: () => Promise<void>; moduleOn: (key: string) => boolean;
+  user: User | null; signIn: (token: string, user: User) => Promise<void>; signOut: () => Promise<void>;
+  refreshMe: () => Promise<void>; setUser: (u: User) => void;
+  prayer: PrayerSettings; setPrayer: (p: Partial<PrayerSettings>) => void;
+  online: boolean; langTick: number;
+};
+
+const AppContext = createContext<Ctx | null>(null);
+
+export function AppProvider({ children }: { children: ReactNode }) {
+  const system = useColorScheme();
+  const [ready, setReady] = useState(false);
+  const [lang, setLangState] = useState<Lang>('ru');
+  const [langTick, setLangTick] = useState(0);
+  const [themeMode, setThemeModeState] = useState<ThemeMode>('system');
+  const [config, setConfig] = useState<Config | null>(null);
+  const [user, setUserState] = useState<User | null>(null);
+  const [prayer, setPrayerState] = useState<PrayerSettings>(DEFAULT_PRAYER);
+  const [online, setOnline] = useState(true);
+  const prayerRef = useRef(prayer);
+
+  const applyLang = (l: Lang) => {
+    setI18nLang(l);
+    setApiLang(l);
+    setLangState(l);
+    setLangTick((x) => x + 1);
+  };
+
+  const refreshConfig = useCallback(async () => {
+    try {
+      const { data } = await cachedGet<Config>('/config/');
+      setConfig(data);
+      // название города — на языке приложения (в настройках могло остаться на прежнем)
+      const place = prayerRef.current.place;
+      const city = place && !place.gps ? data.prayer.cities.find((x) => x.key === place.key) : null;
+      if (city && city.name !== place!.name) {
+        const next = { ...prayerRef.current, place: { ...place!, name: city.name } };
+        prayerRef.current = next;
+        setPrayerState(next);
+        save('prayer', next);
+      }
+    } catch {
+      /* офлайн без кеша — работаем с тем, что есть (намаз считается без сервера) */
+    }
+  }, []);
+
+  const refreshMe = useCallback(async () => {
+    try {
+      const { data } = await cachedGet<User>('/me/');
+      setUserState(data);
+      save('user', data);
+    } catch {
+      /* 401 обработает onAuthLost */
+    }
+  }, []);
+
+  const signOut = useCallback(async () => {
+    try {
+      await api('/auth/logout/', { body: {} });
+    } catch {
+      /* офлайн — токен всё равно забываем */
+    }
+    await setToken(null);
+    setApiToken(null);
+    await clearCache();
+    save('user', null);
+    setUserState(null);
+  }, []);
+
+  useEffect(() => {
+    onAuthLost(() => {
+      setToken(null);
+      setApiToken(null);
+      setUserState(null);
+      save('user', null);
+    });
+    (async () => {
+      const savedLang = await load<Lang | null>('lang', null);
+      applyLang(savedLang ?? deviceLang());
+      setThemeModeState(await load<ThemeMode>('theme', 'system'));
+      const p = await load<PrayerSettings | null>('prayer', null);
+      if (p) {
+        setPrayerState(p);
+        prayerRef.current = p;
+      }
+      const token = await getToken();
+      setApiToken(token);
+      if (token) setUserState(await load<User | null>('user', null));
+      setReady(true);
+      await refreshConfig();
+      if (token) {
+        await refreshMe();
+        registerPush();
+      }
+      const cur = p ?? DEFAULT_PRAYER;
+      schedulePrayers(cur.place, cur.method, cur.asr, cur.alerts); // напоминания всегда на 7 дней вперёд
+    })();
+    onReachability(setOnline);
+    const unsub = NetInfo.addEventListener((s) => {
+      if (s.isConnected === false) setOnline(false);
+      else if (s.isConnected) refreshConfig(); // сеть вернулась — проверим сервер (и снимем плашку)
+    });
+    return unsub;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const setLang = useCallback((l: Lang) => {
+    applyLang(l);
+    save('lang', l);
+    refreshConfig();
+    if (user) api('/me/', { method: 'PATCH', body: { language: l } }).catch(() => {});
+  }, [refreshConfig, user]);
+
+  const setThemeMode = useCallback((m: ThemeMode) => {
+    setThemeModeState(m);
+    save('theme', m);
+  }, []);
+
+  const setPrayer = useCallback((part: Partial<PrayerSettings>) => {
+    const next = { ...prayerRef.current, ...part };
+    prayerRef.current = next;
+    setPrayerState(next);
+    save('prayer', next);
+    schedulePrayers(next.place, next.method, next.asr, next.alerts);
+  }, []);
+
+  const signIn = useCallback(async (token: string, u: User) => {
+    await setToken(token);
+    setApiToken(token);
+    setUserState(u);
+    save('user', u);
+    if (u.language && ['ru', 'uz', 'en'].includes(u.language)) {
+      applyLang(u.language as Lang);
+      save('lang', u.language);
+    } else {
+      api('/me/', { method: 'PATCH', body: { language: lang } }).catch(() => {});
+    }
+    registerPush();
+  }, [lang]);
+
+  const dark = themeMode === 'dark' || (themeMode === 'system' && system === 'dark');
+  const moduleOn = useCallback((key: string) => !!config?.modules.some((m) => m.key === key && m.status === 'on'), [config]);
+
+  const value = useMemo<Ctx>(() => ({
+    ready, lang, setLang, t: translate, themeMode, setThemeMode, dark, c: dark ? palettes.dark : palettes.light,
+    config, refreshConfig, moduleOn, user, signIn, signOut, refreshMe, setUser: (u: User) => { setUserState(u); save('user', u); },
+    prayer, setPrayer, online, langTick,
+  }), [ready, lang, setLang, themeMode, setThemeMode, dark, config, refreshConfig, moduleOn, user, signIn, signOut,
+    refreshMe, prayer, setPrayer, online, langTick]);
+
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+}
+
+export function useApp(): Ctx {
+  const ctx = useContext(AppContext);
+  if (!ctx) throw new Error('useApp вне AppProvider');
+  return ctx;
+}

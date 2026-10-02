@@ -114,6 +114,9 @@ def webapp_login(request):
             user.telegram_username = (tg.get('username') or '')[:64]
             user.save(update_fields=['telegram_id', 'telegram_username'])
         return JsonResponse({'ok': True, 'reload': False})
+    from .bans import banned_text, tg_banned
+    if tg_banned(tg['id']):
+        return JsonResponse({'ok': False, 'error': banned_text()}, status=403)
     user = _user_for(tg)
     if not user.is_active:
         return JsonResponse({'ok': False, 'error': _('Аккаунт заблокирован')}, status=403)

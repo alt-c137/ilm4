@@ -63,8 +63,10 @@ urlpatterns = [
 
     path('chat/', c.threads),
     path('chat/file/<int:msg_id>/', c.file),
+    path('chat/support/', c.support),
     path('chat/<int:pk>/', c.messages),
     path('chat/<int:pk>/send/', c.send),
     path('chat/<int:pk>/upload/', c.upload),
     path('chat/<int:pk>/read/', c.read),
+    path('chat/msg/<int:msg_id>/<str:action>/', c.scheduled),
 ]

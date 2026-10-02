@@ -59,7 +59,7 @@
         <div class="ride__meta">
           {% if r.ride_date %}{% ico 'calendar' 'mmeta' %}{{ r.ride_date|date:"d.m.Y" }} · {% endif %}
           {% ico 'phone' 'mmeta' %}<b>{{ r.contact }}</b> · {{ r.created_at|date:"d.m" }}
-          {% if user.is_authenticated and user != r.owner %}<a class="ride__chat" href="{% url 'chat:start' %}?user={{ r.owner.pk }}&amp;subject={{ r.from_city|urlencode }}%20%E2%86%92%20{{ r.to_city|urlencode }}">{% ico 'chat' %}{% translate "Написать" %}</a>{% endif %}
+          {% if user.is_authenticated and user != r.owner %}<a class="ride__chat" href="{% url 'chat:start' %}?user={{ r.owner.pk }}&amp;ctx=transport&amp;ctx_id={{ r.pk }}">{% ico 'chat' %}{% translate "Написать" %}</a>{% endif %}
         </div>
       </div>
       {% endfor %}

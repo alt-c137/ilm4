@@ -123,6 +123,31 @@ class SiteSettings(SingletonModel):
         'подтверждённый номер — для никяха', default=True,
         help_text='Войти в никях (анкета, лента) — только с подтверждённым номером: новый аккаунт '
                   'ради обхода дневного лимита не создать')
+    phone_for_reviews = models.BooleanField(
+        'подтверждённый номер — для отзывов', default=True,
+        help_text='Отзывы и оценки — только с номером (иначе накрутка отзывов с новых почт)')
+    phone_for_money = models.BooleanField(
+        'подтверждённый номер — для сделок и вывода денег', default=True,
+        help_text='Безопасная сделка и вывод на карту — только с номером (защита от «отмывания» краденых карт)')
+    phone_for_contacts = models.BooleanField(
+        'подтверждённый номер — для «найти знакомых»', default=True,
+        help_text='Поиск знакомых по контактам телефона — только тем, чей номер подтверждён')
+    chat_files_enabled = models.BooleanField(
+        'чат: файлы без сжатия', default=True,
+        help_text='«Отправить файлом»: документы, а также фото и видео в исходном качестве')
+    chat_file_max_mb = models.PositiveSmallIntegerField('чат: файл не больше, МБ', default=100)
+    chat_video_height = models.PositiveSmallIntegerField(
+        'чат: качество видео после сжатия', default=720, choices=[(480, '480p — экономно'), (720, '720p — как в Telegram'),
+                                                                 (1080, '1080p — высокое')],
+        help_text='Видео, отправленное как видео, пережимается на сервере до этого качества (исходник больше не '
+                  'хранится). Чтобы отправить без сжатия — «Отправить файлом»')
+    support_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, verbose_name='аккаунт поддержки', null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='+', help_text='С ним открывается чат «Поддержка ilm4». Пусто — кнопки поддержки в чатах нет')
+    newbie_manual_count = models.PositiveSmallIntegerField(
+        'первые публикации новичка — только вручную', default=3,
+        help_text='Сколько первых публикаций нового автора всегда проверяет модератор — даже если '
+                  'ИИ их пропустил или купля-продажа без модерации. 0 — правило выключено')
     nikah_chat_media = models.BooleanField(
         'никях-чат: фото, видео и кружки', default=False,
         help_text='Выключено — в переписке пары никяха только текст и голос: фото показываются '
@@ -253,6 +278,8 @@ class Notification(models.Model):
     text = models.TextField('текст')
     url = models.CharField('ссылка', max_length=500, blank=True)
     read = models.BooleanField('прочитано', default=False)
+    silent = models.BooleanField('без звука', default=False,
+                                 help_text='Пуш придёт без звука (сообщение «отправить без звука»)')
     created_at = models.DateTimeField('создано', auto_now_add=True)
 
     class Meta:
@@ -316,6 +343,9 @@ class Report(models.Model):
     reason = models.CharField('причина', max_length=10, choices=REASONS)
     text = models.CharField('подробности', max_length=500, blank=True)
     status = models.CharField('статус', max_length=10, choices=STATUSES, default=NEW, db_index=True)
+    # жалоба из чата: модератор может открыть ЭТУ переписку (и только по жалобе, с записью в журнал)
+    thread = models.ForeignKey('chat.Thread', verbose_name='переписка (жалоба из чата)', null=True, blank=True,
+                               on_delete=models.SET_NULL, related_name='+')
     created_at = models.DateTimeField('когда', auto_now_add=True)
 
     class Meta:

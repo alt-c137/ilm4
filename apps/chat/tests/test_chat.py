@@ -110,7 +110,7 @@ def test_message_body_encrypted_at_rest():
     with connection.cursor() as c:
         c.execute('select body from chat_message where id = %s', [m.pk])
         raw = c.fetchone()[0]
-    assert raw.startswith('enc1:') and 'Секретный' not in raw
+    assert raw.startswith('enc2:') and 'Секретный' not in raw      # AES-256-GCM ключом этого чата
     assert Message.objects.get(pk=m.pk).body == 'Секретный текст'
 
 
@@ -149,8 +149,12 @@ def test_photo_upload_and_private_access(client, pair, settings, tmp_path):
     r = client.post(f'/chat/{t.pk}/upload/', {'kind': 'photo', 'file': _jpeg()})
     assert r.status_code == 200, r.content
     m = Message.objects.get(pk=r.json()['id'])
-    assert m.kind == 'photo' and m.attachment.name.endswith('.jpg')
-    assert client.get(f'/chat/file/{m.pk}/').status_code == 200          # участник
+    assert m.kind == 'photo' and m.attachment.name.endswith('.jpg.enc')
+    with m.attachment.open('rb') as f:
+        assert f.read(6) == b'ILM4F1'                                   # на диске — только шифр
+    r = client.get(f'/chat/file/{m.pk}/')
+    assert r.status_code == 200 and r['Content-Type'] == 'image/jpeg'    # участник получает расшифрованное
+    assert b''.join(r.streaming_content)[:2] == b'\xff\xd8'
     stranger = get_user_model().objects.create_user('st', 'st@x.com', 'pass12345')
     client.force_login(stranger)
     assert client.get(f'/chat/file/{m.pk}/').status_code == 404          # посторонний — нет
@@ -218,7 +222,7 @@ def test_video_upload_and_toggle(client, pair, settings, tmp_path):
                                              'file': SimpleUploadedFile('v.mp4', mp4, content_type='video/mp4')})
     assert r.status_code == 200, r.content
     m = Message.objects.get(pk=r.json()['id'])
-    assert m.kind == 'video' and m.duration == 12 and m.attachment.name.endswith('.mp4')
+    assert m.kind == 'video' and m.duration == 12 and m.attachment.name.endswith('.mp4.enc')
     fake = SimpleUploadedFile('v.mp4', b'<html>', content_type='video/mp4')
     assert client.post(f'/chat/{t.pk}/upload/', {'kind': 'video', 'file': fake}).status_code == 400
     s = SiteSettings.get_solo()

@@ -33,18 +33,20 @@ def _send(messages: list) -> None:
         PushDevice.objects.filter(token__in=dead).delete()
 
 
-def send_to_user(user_id: int, body: str, url: str = '', title: str = 'ilm4') -> None:
+def send_to_user(user_id: int, body: str, url: str = '', title: str = 'ilm4', silent: bool = False) -> None:
     from django.conf import settings
 
     from .models import PushDevice
     tokens = list(PushDevice.objects.filter(user_id=user_id).values_list('token', flat=True))
     if not tokens or getattr(settings, 'PUSH_DISABLED', False):
         return
-    msgs = [{'to': t, 'title': title, 'body': body[:180], 'sound': 'default', 'data': {'url': url}} for t in tokens]
+    msgs = [{'to': t, 'title': title, 'body': body[:180], 'data': {'url': url},
+             **({} if silent else {'sound': 'default'})} for t in tokens]   # без «sound» — тихий пуш
     threading.Thread(target=_send, args=(msgs,), daemon=True).start()
 
 
 @receiver(post_save, sender='core.Notification')
 def notification_push(sender, instance, created, **kwargs):
     if created:
-        transaction.on_commit(lambda: send_to_user(instance.user_id, instance.text, instance.url))
+        transaction.on_commit(lambda: send_to_user(instance.user_id, instance.text, instance.url,
+                                                   silent=instance.silent))

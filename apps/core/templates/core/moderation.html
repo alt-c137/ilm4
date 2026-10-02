@@ -50,7 +50,7 @@
     {% if it.has_photo %}<p><a class="link" href="{% url 'nikah:admin_photo' it.obj.pk %}" target="_blank" rel="noopener">{% translate "Посмотреть фото (запишется в журнал)" %}</a></p>{% endif %}
     {% endif %}
 
-    {% include 'core/includes/mod_buttons.html' with key=sec.src.key pk=it.obj.pk url=it.url %}
+    {% include 'core/includes/mod_buttons.html' with key=sec.src.key pk=it.obj.pk url=it.url author=it.author %}
   </article>
   {% endfor %}
   {% endfor %}
@@ -66,7 +66,8 @@
       </div>
     </header>
     <ul class="modc__reports">
-      {% for r in g.reports %}<li><b>{{ r.get_reason_display }}</b>{% if r.text %} — {{ r.text }}{% endif %} <span class="modc__meta">{{ r.created_at|date:"j E" }}</span></li>{% endfor %}
+      {% for r in g.reports %}<li><b>{{ r.get_reason_display }}</b>{% if r.text %} — {{ r.text }}{% endif %} <span class="modc__meta">{{ r.created_at|date:"j E" }}</span>
+        {% if r.thread_id %} · <a class="link" href="{% url 'core:moderation_chat' r.pk %}">🔒 {% translate "открыть переписку по этой жалобе" %}</a>{% endif %}</li>{% endfor %}
     </ul>
     <div class="modc__act">
       <form method="post" action="{% url 'core:moderation_report' g.ct.pk g.id %}">{% csrf_token %}
@@ -75,6 +76,7 @@
       <form method="post" action="{% url 'core:moderation_report' g.ct.pk g.id %}">{% csrf_token %}
         <input type="hidden" name="do" value="dismiss"><input type="hidden" name="next" value="{{ request.get_full_path }}">
         <button class="btn btn--s btn--g" type="submit">{% translate "Жалобы необоснованны" %}</button></form>
+      {% include 'core/includes/ban_button.html' with author=g.author %}
     </div>
   </article>
   {% endfor %}

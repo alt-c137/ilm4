@@ -17,8 +17,12 @@ urlpatterns = [
     path('my/<slug:key>/<int:pk>/toggle/', my_views.my_toggle, name='my_toggle'),
     path('report/', my_views.report, name='report'),
     path('moderation/', moderation.queue, name='moderation'),
-    path('moderation/<slug:key>/<int:pk>/', moderation.act, name='moderation_act'),
     path('moderation/report/<int:ct>/<int:pk>/', moderation.report_act, name='moderation_report'),
+    path('moderation/user/<int:pk>/ban/', moderation.ban_user, name='moderation_ban'),
+    path('moderation/chat/<int:report_id>/', moderation.report_chat, name='moderation_chat'),
+    path('moderation/chat/<int:report_id>/file/<int:msg_id>/', moderation.report_chat_file, name='moderation_chat_file'),
+    # общий маршрут «одобрить/отклонить» — последним, чтобы не перехватывал chat/, user/, report/
+    path('moderation/<slug:key>/<int:pk>/', moderation.act, name='moderation_act'),
     path('lang/', views.set_language, name='set_lang'),
     path('catalog/', views.catalog, name='catalog'),
     path('settings/', views.settings_view, name='settings'),

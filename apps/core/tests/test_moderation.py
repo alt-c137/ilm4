@@ -165,3 +165,68 @@ def test_staff_and_no_bot_skip_phone(client, settings):
     u = User.objects.create_user('q', 'q@x.com', 'x')
     client.force_login(u)
     assert client.get('/jobs/add/').status_code == 200          # бот не подключён — не мешаем
+
+
+# ---------- блокировка, чёрный список, новички, вход через Telegram ----------
+
+def test_ban_blacklists_phone_and_telegram(client, mod, bot):
+    from apps.accounts.bans import tg_banned
+    _on('jobs')
+    bad = User.objects.create_user('bad', 'bad@x.com', 'x')
+    phone_verify.confirm(bad, '+998901112233', {'id': 4242})
+    v = Vacancy.objects.create(title='Лохотрон', description='-', contact='-', owner=bad, status=Moderation.APPROVED)
+    client.post(f'/moderation/user/{bad.pk}/ban/', {'reason': 'мошенник'})
+    bad.refresh_from_db()
+    v.refresh_from_db()
+    assert not bad.is_active and v.status == Moderation.REJECTED and tg_banned(4242)
+    # новая почта — тот же номер уже не подтвердить, даже если старый аккаунт удалят
+    bad.delete()
+    fresh = User.objects.create_user('fresh', 'fresh@x.com', 'x')
+    with pytest.raises(ValueError):
+        phone_verify.confirm(fresh, '8 90 111-22-33')
+
+
+def test_staff_cannot_be_banned_from_site(client, mod):
+    other = User.objects.create_user('st', 'st@x.com', 'x', is_staff=True)
+    assert client.post(f'/moderation/user/{other.pk}/ban/').status_code == 403
+
+
+def test_newbie_listing_needs_manual_review(client, bot):
+    from apps.core.models import SiteSettings
+    from apps.core.moderation import is_newbie
+    SiteSettings.objects.update(market_moderation=False, newbie_manual_count=2)
+    u = User.objects.create_user('nb', 'nb@x.com', 'x')
+    assert is_newbie(u)
+    for i in range(2):
+        Vacancy.objects.create(title=f'v{i}', description='-', contact='-', owner=u, status=Moderation.APPROVED)
+    assert not is_newbie(u)
+
+
+def test_reviews_and_payout_need_phone(client, bot):
+    _on('wallet')
+    u = User.objects.create_user('rv', 'rv@x.com', 'x')
+    client.force_login(u)
+    r = client.get('/wallet/payout/')
+    assert r.status_code == 302 and 'why=money' in r.url
+    r = client.post('/reviews/1/1/', {'rating': 5}, HTTP_REFERER='http://testserver/map/')
+    assert r.status_code == 302 and 'why=reviews' in r.url
+
+
+def test_telegram_login_confirms_phone(client, bot):
+    from apps.api import tglogin
+    from apps.tgbot.dispatch import start
+    link = tglogin.create()
+    start({'chat': {'id': 31}, 'from': {'id': 31, 'first_name': 'Али'}}, f'login_{link["nonce"]}')
+    assert bot[-1][1]['keyboard'][0][0]['request_contact'] is True
+    phone_verify.bot_contact(_contact(31, '+998935556677'))
+    r = client.post('/accounts/telegram/poll/', {'nonce': link['nonce'], 'next': '/nikah/'})
+    assert r.json() == {'status': 'ok', 'next': '/nikah/'}
+    u = User.objects.get(telegram_id=31)
+    assert u.phone_verified and u.phone == '+998935556677'
+    assert client.get('/accounts/profile/').status_code == 200          # вошёл на сайте
+
+
+def test_login_page_shows_telegram_first(client, bot):
+    html = client.get('/accounts/login/').content.decode()
+    assert 'tgbtn' in html and 'start=login_' in html
+    assert 'class="gbtn"' not in html    # Google без ключей не показываем

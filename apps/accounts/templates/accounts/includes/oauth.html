@@ -1,9 +1,42 @@
-{% load i18n %}{% if google_login %}
+{% load i18n %}{% if tg_link or google_login %}
 <div class="oauth">
+  {% if tg_link %}
+  <a class="tgbtn" id="tg-login" href="{{ tg_link.url }}" target="_blank" rel="noopener nofollow">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.5 4.3 18.4 19c-.2 1-.9 1.3-1.8.8l-4.7-3.5-2.3 2.2c-.3.3-.5.5-1 .5l.3-4.8 8.8-7.9c.4-.3-.1-.5-.6-.2L6.2 13 1.5 11.6c-1-.3-1-1 .2-1.5L20.1 3c.9-.3 1.6.2 1.4 1.3z"/></svg>
+    {% translate "Войти через Telegram" %}
+  </a>
+  <p class="tgbtn__hint" id="tg-login-hint">{% translate "Без пароля: откроется наш бот, нажмите в нём «📱 Войти и отправить мой номер». Номер никто не увидит." %}</p>
+  <p class="phonev__wait" id="tg-login-wait" hidden><span class="phonev__dot"></span>{% translate "Ждём подтверждения из Telegram…" %}</p>
+  {% endif %}
+  {% if google_login %}
   <a class="gbtn" href="{% url 'accounts:google' %}{% if next %}?next={{ next|urlencode }}{% endif %}" rel="nofollow">
     <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
     {{ label|default:_("Войти через Google") }}
   </a>
+  {% endif %}
 </div>
 <div class="orline">{% translate "или по email" %}</div>
+{% if tg_link %}
+<script>
+(function () {
+  var btn = document.getElementById('tg-login'), wait = document.getElementById('tg-login-wait'), timer = null;
+  var csrf = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
+  function poll() {
+    var body = new URLSearchParams({nonce: '{{ tg_link.nonce|escapejs }}', next: '{{ next|escapejs }}'});
+    fetch('{% url "accounts:tg_poll" %}', {method: 'POST', body: body, credentials: 'same-origin',
+      headers: {'X-CSRFToken': csrf}})
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.status === 'ok') { clearInterval(timer); location.href = d.next || '/'; }
+        else if (d.status === 'expired') { clearInterval(timer); location.reload(); }
+      }).catch(function () {});
+  }
+  btn.addEventListener('click', function () {
+    wait.hidden = false;
+    if (!timer) timer = setInterval(poll, 2000);
+  });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && timer) poll(); });
+})();
+</script>
+{% endif %}
 {% endif %}
