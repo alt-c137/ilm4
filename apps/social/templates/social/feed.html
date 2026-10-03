@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% load i18n static icons %}
+{% block title %}{% translate "Лента —" %} {{ block.super }}{% endblock %}
+{% block body_class %}page-feed{% endblock %}
+
+{% block content %}
+<div class="feedwrap2">
+<div class="feed" id="feed" data-tab="{{ tab }}" data-next="{{ next }}">
+  <header class="tp__bar feed__bar"><h1>{% translate "Лента" %}</h1></header>
+  <form id="feed-csrf" hidden>{% csrf_token %}</form>
+
+  {% if stories_on and user.is_authenticated %}
+  {# сторис — как в Telegram и ВКонтакте: кружки сверху; непросмотренные — с цветным ободком #}
+  <section class="stories" aria-label="{% translate 'Сторис' %}">
+    <label class="story story--add" title="{% translate 'Добавить сторис' %}">
+      <span class="story__ring">{% if user.avatar %}<img src="{{ user.avatar.url }}" alt="">{% else %}<span class="tava tava--h{{ me_hue }}">{{ user.get_display_name|slice:":1"|upper }}</span>{% endif %}<i>{% ico 'plus' %}</i></span>
+      <small>{% translate "Моя история" %}</small>
+      <input type="file" id="story-file" accept="image/*" data-skip="1" hidden>
+    </label>
+    {% for g in stories %}
+    <button type="button" class="story{% if not g.seen %} is-new{% endif %}" data-story="{{ forloop.counter0 }}">
+      <span class="story__ring">{% if g.author.avatar %}<img src="{{ g.author.avatar }}" alt="">{% else %}<span class="tava tava--h{{ g.author.hue }}">{{ g.author.name|slice:":1"|upper }}</span>{% endif %}</span>
+      <small>{% if g.mine %}{% translate "Вы" %}{% else %}{{ g.author.name|truncatechars:10 }}{% endif %}</small>
+    </button>
+    {% endfor %}
+  </section>
+  {{ stories|json_script:"stories-data" }}
+  {% endif %}
+
+  {% if user.is_authenticated %}
+  <form class="fnew" id="fnew" method="post" action="{% url 'social:post_new' %}" enctype="multipart/form-data">{% csrf_token %}
+    <div class="fnew__row">
+      {% if user.avatar %}<img class="tava tava--sm" src="{{ user.avatar.url }}" alt="">{% else %}<span class="tava tava--sm tava--h{{ me_hue }}">{{ user.get_display_name|slice:":1"|upper }}</span>{% endif %}
+      <textarea name="text" rows="1" maxlength="4000" placeholder="{% translate 'Что у вас нового?' %}"></textarea></div>
+    <div class="fnew__pics" id="fnew-pics"></div>
+    <div class="fnew__bar">
+      <label class="fnew__btn" title="{% translate 'Фото' %}">{% ico 'image' %}<input type="file" name="photos" id="fnew-photos" accept="image/*" multiple data-skip="1" hidden></label>
+      <select name="privacy" aria-label="{% translate 'Кто видит' %}"><option value="all">{% translate "Видят все" %}</option><option value="close">{% translate "Только близкие друзья" %}</option></select>
+      <button type="submit" class="btn btn--p btn--s">{% translate "Опубликовать" %}</button>
+    </div>
+  </form>
+  {% endif %}
+
+  <div class="feed__list" id="feed-list">
+    {% include 'social/_items.html' %}
+    {% if not items %}<div class="tg__empty"><div class="empty__plug">{% ico 'news' %}</div><b>{% translate "Лента пока пустая" %}</b>
+      <span>{% translate "Напишите первую запись — её увидят все." %}</span></div>{% endif %}
+  </div>
+  <div class="feed__more" id="feed-more"{% if not next %} hidden{% endif %}>{% translate "Загрузка…" %}</div>
+</div>
+{# боковая колонка — только на ПК (как во ВКонтакте): я, сохранённое, мои сообщества #}
+<aside class="feedside">
+  {% if user.is_authenticated %}
+  <a class="feedside__me" href="{% url 'accounts:profile' %}">
+    {% if user.avatar %}<img class="tava" src="{{ user.avatar.url }}" alt="">{% else %}<span class="tava tava--h2">{{ user.get_display_name|slice:":1"|upper }}</span>{% endif %}
+    <span><b>{{ user.get_display_name }}</b><small>{{ side.counts.posts }} {% translate "записей" %} · {{ side.counts.followers }} {% translate "подписчиков" %}</small></span></a>
+  <nav class="feedside__nav">
+    <a href="{% url 'social:saved' %}">{% ico 'bookmark' %}{% translate "Сохранённое" %}</a>
+    <a href="{% url 'accounts:public' user.pk %}">{% ico 'user' %}{% translate "Моя стена" %}</a>
+    <a href="{% url 'chat:channels' %}">{% ico 'megaphone' %}{% translate "Каналы и группы" %}</a>
+  </nav>
+  {% if side.spaces %}<h3>{% translate "Мои сообщества" %}</h3>
+  <nav class="feedside__nav">{% for s in side.spaces %}<a href="{% url 'spaces:space' s.pk %}">{% ico 'community' %}{{ s.title }}</a>{% endfor %}</nav>{% endif %}
+  {% else %}<a class="btn btn--p" href="{% url 'accounts:login' %}?next=/feed/">{% translate "Войти" %}</a>{% endif %}
+</aside>
+</div>
+{% endblock %}
+
+{% block extra_js %}{% include 'social/_js.html' %}{% endblock %}

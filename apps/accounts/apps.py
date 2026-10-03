@@ -8,4 +8,7 @@ class AccountsConfig(AppConfig):
 
     def ready(self):
         # Сигналы журнала действий (вход/выход админов)
-        from . import audit  # noqa: F401
+        from . import (
+            audit,  # noqa: F401
+            photo_signals,  # noqa: F401 — история фото профиля
+        )

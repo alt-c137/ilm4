@@ -1,77 +1,55 @@
 {% extends 'base.html' %}
-{% load i18n %}
-{% load icons %}
-{% block title %}{% translate "Найти знакомых —" %} {{ block.super }}{% endblock %}
-{% block body_class %}s-chat page-chat{% endblock %}
+{% load i18n icons %}
+{% block title %}{% translate "Контакты —" %} {{ block.super }}{% endblock %}
+{% block body_class %}s-chat page-chat page-people{% endblock %}
 
 {% block content %}
-<div class="fpage">
-  <a class="crumb" href="{% url 'chat:inbox' %}">{% ico 'back' %}{% translate "Чаты" %}</a>
-  <div class="dcard">
-    <div class="fpage__h">
-      <span class="fpage__ic">{% ico 'user' %}</span>
-      <div><h1>{% translate "Найти знакомых" %}</h1><div class="fpage__sub">{% translate "Кто из ваших контактов уже в ilm4 — как в Telegram." %}</div></div>
-    </div>
+<div class="ppl">
+  <header class="ppl__head">
+    <a class="tg__back ppl__back" href="{% url 'chat:inbox' %}" aria-label="{% translate 'Все чаты' %}">{% ico 'back' %}</a>
+    <h1 class="ppl__title">{% translate "Контакты" %}</h1>
+  </header>
+  <label class="tg__search ppl__search">{% ico 'search' %}<input type="search" id="ct-q" placeholder="{% translate 'Поиск' %}" autocomplete="off" aria-label="{% translate 'Поиск по контактам' %}"></label>
 
-    <div class="cfind">
-      <button type="button" class="btn btn--p btn--lg" id="pick-contacts" hidden>{% ico 'user' %}{% translate "Выбрать из контактов телефона" %}</button>
-      <p class="cfind__or" id="pick-or" hidden>{% translate "или вставьте номера вручную" %}</p>
-      <textarea id="phones" rows="4" placeholder="{% translate '+998 90 123 45 67&#10;8 900 123 45 67&#10;(по одному в строке)' %}"></textarea>
-      <button type="button" class="btn btn--g" id="find-btn">{% ico 'search' %}{% translate "Найти" %}</button>
-      <div class="dnote">{% ico 'lock' %}<span>{% translate "Номера не отправляются на сервер: браузер отправляет только их зашифрованные отпечатки (SHA-256). Найдутся лишь те, кто сам разрешил поиск по номеру." %}</span></div>
-      {% if not has_phone %}<p class="cfind__me">{% translate "Чтобы друзья нашли и вас —" %} <a class="link" href="{% url 'accounts:profile' %}">{% translate "укажите номер в профиле" %}</a> {% translate "и отметьте «можно найти по номеру»." %}</p>{% endif %}
-    </div>
+  <nav class="ppl__acts">
+    <button type="button" class="tgrow prow ct__add" id="ct-open"><span class="tava ppl__ic">{% ico 'userplus' %}</span><span class="tgrow__b"><span class="tgrow__top"><b>{% translate "Добавить контакт" %}</b></span><span class="tgrow__msg">{% translate "По номеру телефона" %}</span></span></button>
+    <button type="button" class="tgrow prow ct__add" data-share="ilm4 — платформа для уммы: намаз, маркет, чаты"><span class="tava ppl__ic">{% ico 'send' %}</span><span class="tgrow__b"><span class="tgrow__top"><b>{% translate "Пригласить друзей" %}</b></span><span class="tgrow__msg">{% translate "Отправить ссылку на ilm4" %}</span></span></button>
+  </nav>
 
-    <div id="found" class="cfound"></div>
+  <form method="post" class="ct__form" id="ct-form" hidden>{% csrf_token %}
+    <h2>{% translate "Новый контакт" %}</h2>
+    <div class="ct__row"><input type="text" name="first_name" maxlength="60" placeholder="{% translate 'Имя' %}" autocomplete="off" required>
+      <input type="text" name="last_name" maxlength="60" placeholder="{% translate 'Фамилия (необязательно)' %}" autocomplete="off"></div>
+    <input type="tel" name="phone" inputmode="tel" placeholder="+998 90 123 45 67" autocomplete="off" required>
+    <p class="ct__note">{% ico 'lock' %}{% translate "Найдётся только тот, кто подтвердил номер и разрешил находить себя по нему. Сам номер нигде не показывается." %}</p>
+    <div class="ct__btns"><button type="button" class="btn btn--g btn--s" id="ct-cancel">{% translate "Отмена" %}</button><button type="submit" class="btn btn--p btn--s">{% translate "Добавить" %}</button></div>
+  </form>
 
-    <div class="cinvite">
-      <b>{% translate "Нет друзей в ilm4?" %}</b><span>{% translate "Пригласите — им пригодятся намаз, маркет и чаты." %}</span>
-      <button type="button" class="btn btn--s" data-share="ilm4 — платформа для уммы: намаз, маркет, чаты">{% ico 'send' %}{% translate "Пригласить" %}</button>
+  <div class="ppl__list" id="ct-list">
+    {% for p in contacts %}<div class="ct__item" data-q="{{ p.name|lower }} {{ p.handle }}">
+      <a class="tgrow prow" href="{{ p.chat }}">
+        {% if p.online %}<span class="tavawrap">{% endif %}{% if p.avatar %}<img class="tava" src="{{ p.avatar }}" alt="" loading="lazy">{% else %}<span class="tava tava--h{{ p.hue }}">{{ p.letter }}</span>{% endif %}{% if p.online %}<i class="tavadot"></i></span>{% endif %}
+        <span class="tgrow__b"><span class="tgrow__top"><b>{{ p.name }}{% if p.verified %}<i class="tgver">{% ico 'check' %}</i>{% endif %}</b></span>
+          <span class="tgrow__bot"><span class="tgrow__msg">{% if p.online %}<i>{% translate "в сети" %}</i>{% else %}{{ p.status }}{% endif %}</span></span></span>
+      </a>
+      <form method="post" onsubmit="return confirm('{% translate "Удалить контакт?" %}')">{% csrf_token %}<input type="hidden" name="remove" value="{{ p.id }}"><button type="submit" class="ct__rm" aria-label="{% translate 'Удалить контакт' %}">{% ico 'close' %}</button></form>
     </div>
+    {% empty %}<div class="tg__empty"><div class="empty__plug">{% ico 'users' %}</div><b>{% translate "Контактов пока нет" %}</b>
+      <span>{% translate "Добавьте человека по номеру — или нажмите «Добавить в контакты» в его профиле." %}</span></div>{% endfor %}
   </div>
+  {% if not has_phone %}<p class="ppl__hint">{% translate "Чтобы друзья нашли и вас —" %} <a class="link" href="{% url 'accounts:profile' %}">{% translate "укажите и подтвердите свой номер" %}</a>.</p>{% endif %}
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 (function () {
-  var csrf = '{{ csrf_token }}';
-  var box = document.getElementById('found'), ta = document.getElementById('phones');
-  var pick = document.getElementById('pick-contacts');
-  if ('contacts' in navigator && 'ContactsManager' in window) { pick.hidden = false; document.getElementById('pick-or').hidden = false; }
-  function hash(num) {
-    var d = String(num).replace(/\D/g, '');
-    if (d.length < 9) return Promise.resolve(null);
-    return crypto.subtle.digest('SHA-256', new TextEncoder().encode(d.slice(-9))).then(function (buf) {
-      return Array.from(new Uint8Array(buf)).map(function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
-    });
-  }
-  function esc(s) { var x = document.createElement('div'); x.textContent = s || ''; return x.innerHTML; }
-  function search(numbers) {
-    box.innerHTML = '<p class="cfind__wait">{{ _("Ищем…")|escapejs }}</p>';
-    Promise.all(numbers.map(hash)).then(function (keys) {
-      keys = keys.filter(Boolean);
-      return fetch('{% url "chat:contacts_match" %}', { method: 'POST', credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf }, body: JSON.stringify({ keys: keys }) });
-    }).then(function (r) { return r.json(); }).then(function (j) {
-      if (j.error) { box.innerHTML = '<p class="cfind__wait">' + esc(j.error) + '</p>'; return; }
-      if (!j.users.length) { box.innerHTML = '<p class="cfind__wait">{{ _("Пока никого из ваших контактов нет в ilm4 — пригласите их.")|escapejs }}</p>'; return; }
-      box.innerHTML = '<h2 class="dcard__h">{{ _("В ilm4")|escapejs }} <small>' + j.users.length + '</small></h2>' + j.users.map(function (u) {
-        var ava = u.avatar ? '<img class="tava" src="' + esc(u.avatar) + '" alt="">' : '<span class="tava tava--h' + u.hue + '">' + esc(u.name.charAt(0).toUpperCase()) + '</span>';
-        return '<div class="cfound__row">' + ava + '<a class="cfound__b" href="' + u.profile + '"><b>' + esc(u.name) + '</b><span>' + esc(u.city || '{{ _("в ilm4")|escapejs }}') + '</span></a>' +
-          '<a class="btn btn--p" href="' + u.chat + '">{{ _("Написать")|escapejs }}</a></div>';
-      }).join('');
-    }).catch(function () { box.innerHTML = '<p class="cfind__wait">{{ _("Нет соединения. Попробуйте ещё раз.")|escapejs }}</p>'; });
-  }
-  document.getElementById('find-btn').addEventListener('click', function () {
-    var nums = ta.value.split(/[\n,;]+/).map(function (s) { return s.trim(); }).filter(Boolean);
-    if (nums.length) search(nums);
-  });
-  pick.addEventListener('click', function () {
-    navigator.contacts.select(['tel'], { multiple: true }).then(function (list) {
-      var nums = []; list.forEach(function (c) { (c.tel || []).forEach(function (t) { nums.push(t); }); });
-      if (nums.length) search(nums);
-    }).catch(function () {});
+  var form = document.getElementById('ct-form'), q = document.getElementById('ct-q');
+  document.getElementById('ct-open').addEventListener('click', function () { form.hidden = false; form.querySelector('input[name=first_name]').focus(); });
+  document.getElementById('ct-cancel').addEventListener('click', function () { form.hidden = true; });
+  q.addEventListener('input', function () {
+    var s = q.value.trim().toLowerCase();
+    document.querySelectorAll('#ct-list .ct__item').forEach(function (el) { el.hidden = !!s && el.dataset.q.indexOf(s) < 0; });
   });
 })();
 </script>

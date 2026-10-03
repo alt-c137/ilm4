@@ -1,9 +1,8 @@
 from django.shortcuts import render
-from django.utils.translation import gettext as _
 
 from .blocks import get_blocks
 from .catalog import build_catalog
-from .models import Banner, ModuleConfig, Rate, SiteSettings
+from .models import Banner, ModuleConfig, Rate
 
 # на главной — первые работающие разделы (порядок из админки) + плитка «Все сервисы»
 POPULAR_COUNT = 11
@@ -15,6 +14,12 @@ def home(request):
     from django.shortcuts import redirect
     if settings.SITE_MODE == 'nikah':
         return redirect('nikah:home')
+    if request.user.is_authenticated and 'home' not in request.GET:
+        # свой стартовый экран (Настройки → «С чего начинать»): платформа целиком — или сразу чаты, лента, сообщества
+        from . import tabs
+        go = tabs.start_url(request.user, set(ModuleConfig.objects.filter(status=ModuleConfig.ON).values_list('key', flat=True)))
+        if go:
+            return redirect(go)
     rates = Rate.objects.all()
     db_banners = list(Banner.objects.filter(is_active=True).order_by('order', 'id'))
     modules = list(ModuleConfig.objects.filter(in_grid=True).exclude(status=ModuleConfig.OFF))
@@ -34,10 +39,6 @@ def catalog(request):
     """«Все сервисы»: каталог разделов по группам с поиском."""
     modules = list(ModuleConfig.objects.exclude(status=ModuleConfig.OFF))
     groups = build_catalog(modules)
-    if not SiteSettings.get_solo().feed_enabled:   # выключенная лента — не показываем в каталоге
-        for g in groups:
-            g.items = [m for m in g.items if getattr(m, 'key', '') != 'feed']
-        groups = [g for g in groups if g.items]
     return render(request, 'core/catalog.html', {
         'groups': groups,
         'services_total': len(modules),
@@ -64,17 +65,18 @@ def settings_view(request):
     from .models import ModuleConfig, Theme
     modules_on = set(ModuleConfig.objects.filter(status=ModuleConfig.ON).values_list('key', flat=True))
     if request.method == 'POST' and request.POST.get('what') == 'tabs' and request.user.is_authenticated:
-        # нижние кнопки сайта: до четырёх своих + «Профиль»
-        picked = tabs.clean_ui({'tabs_site': [k for k in request.POST.getlist('tab') if k]})
+        # нижние кнопки сайта (сколько угодно, свой порядок) и стартовый экран
+        picked = tabs.clean_ui({'tabs_site': [k for k in request.POST.getlist('tab') if k], 'start': request.POST.get('start', '')})
         user = request.user
         ui = dict(user.ui or {})
-        if request.POST.get('reset') or not picked:
+        ui.pop('start', None)
+        if request.POST.get('reset') or 'tabs_site' not in picked:
             ui.pop('tabs_site', None)
-        else:
+        if not request.POST.get('reset'):
             ui.update(picked)
         user.ui = ui
         user.save(update_fields=['ui'])
-        return redirect('/settings/#tabs')
+        return redirect('/settings/?s=tabs')
     if request.method == 'POST':
         response = redirect('core:settings')
         mode = request.POST.get('mode')
@@ -89,47 +91,17 @@ def settings_view(request):
                 request.user.save(update_fields=['theme'])
         return response
     mine = ((request.user.ui or {}).get('tabs_site') if request.user.is_authenticated else None) or tabs.DEFAULT_SITE
-    mine = (mine + [''] * tabs.SLOTS)[:tabs.SLOTS]
+    choices = tabs.choices(modules_on)
+    label = {c['key']: c['label'] for c in choices}
+    mine = [k for k in mine if k in label]
+    section = request.GET.get('s', '')
     return render(request, 'core/settings.html', {
-        'all_themes': Theme.objects.all(), 'tab_choices': tabs.choices(modules_on), 'tab_slots': mine})
-
-
-def feed(request):
-    """Лента (прототип): вертикальные карточки из реального контента платформы —
-    новости, объявления, вопросы, места, вакансии. Позже сюда придут посты
-    каналов/блогов и короткие видео (docs/ROADMAP.md §3)."""
-    from django.http import Http404
-    if not SiteSettings.get_solo().feed_enabled:
-        raise Http404
-    from itertools import zip_longest
-
-    from apps.core import money
-    from apps.core.models import Moderation
-    from apps.forum.models import Topic
-    from apps.jobs.models import Vacancy
-    from apps.maps.models import HalalPlace
-    from apps.market.models import Listing
-    from apps.news.models import NewsPost
-
-    news = [{'kind': _('Новости'), 'title': p.title, 'text': p.summary, 'img': p.cover.url if p.cover else '',
-             'url': f'/news/{p.slug}/', 'meta': p.created_at} for p in NewsPost.objects.all()[:10]]
-    buy = [{'kind': _('Маркет'), 'title': x.title, 'text': x.description[:160], 'img': x.photo.url if x.photo else '',
-            'url': f'/buy/{x.pk}/', 'meta': x.created_at, 'price': money.price_text(x.price, x.currency, request, _('Даром'))}
-           for x in Listing.objects.filter(status=Moderation.APPROVED, is_active=True)[:10]]
-    qa = [{'kind': _('Вопрос'), 'title': t.title, 'text': t.body[:200], 'img': '', 'url': f'/forum/{t.pk}/',
-           'meta': t.created_at, 'author': t.author.get_display_name()}
-          for t in Topic.objects.filter(status=Moderation.APPROVED).select_related('author')[:10]]
-    places = [{'kind': p.get_category_display(), 'title': p.name, 'text': p.description[:160] or p.city,
-               'img': p.photo.url if p.photo else '', 'url': f'/map/{p.pk}/', 'meta': p.created_at}
-              for p in HalalPlace.objects.filter(status=Moderation.APPROVED)[:10]]
-    jobs = [{'kind': _('Вакансия'), 'title': v.title, 'text': f'{v.company} · {v.city}', 'img': '',
-             'url': f'/jobs/{v.pk}/', 'meta': v.created_at, 'price': v.salary}
-            for v in Vacancy.objects.filter(status=Moderation.APPROVED)[:10]]
-    items = [x for group in zip_longest(news, buy, qa, places, jobs) for x in group if x][:40]
-    for i, it in enumerate(items):
-        it['id'] = i
-        it['tone'] = i % 5
-    return render(request, 'core/feed.html', {'items': items})
+        's': section if section in ('chats', 'tabs', 'language', 'currency') else '', 'chat_on': 'chat' in modules_on,
+        'all_themes': Theme.objects.all(),
+        'tab_mine': [{'key': k, 'label': label[k]} for k in mine],
+        'tab_rest': [c for c in choices if c['key'] not in mine],
+        'start': (request.user.ui or {}).get('start', '') if request.user.is_authenticated else '',
+        'start_choices': [c for c in choices if c['key'] in tabs.START]})
 
 
 def set_currency(request):

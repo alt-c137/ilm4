@@ -1,0 +1,8 @@
+{% load i18n %}{# участники сообщества справа от чата — как в Discord: по ролям, сначала те, кто в сети #}
+<aside class="sp__roster" aria-label="{% translate 'Участники' %}">
+  {% for g in space_side.roster %}<h3 class="sp__cat">{{ g.title }} — {{ g.people|length }}</h3>
+    {% for p in g.people %}<a class="sp__mem{% if not p.online %} is-off{% endif %}" href="{% url 'accounts:public' p.id %}">
+      <span class="sp__memava">{% if p.avatar %}<img src="{{ p.avatar }}" alt="" loading="lazy">{% else %}<em class="tava--h{{ p.hue }}">{{ p.letter }}</em>{% endif %}{% if p.online %}<i></i>{% endif %}</span>
+      <b{% if p.color %} style="color:{{ p.color }}"{% endif %}>{{ p.name }}</b></a>{% endfor %}
+  {% endfor %}
+</aside>

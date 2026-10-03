@@ -211,3 +211,106 @@ def test_reminders(pair):
     assert Notification.objects.filter(user=ali, text__contains='Таблетки').count() in (0, 1)   # минута могла смениться
     HabitLog.objects.create(habit=h, user=ali, day=local.date(), value=1)
     assert tr.due_reminders(now) == []                                 # уже сделал — не напоминаем
+
+
+# ---------- v49: шаблоны, «N раз в неделю», время дня, пропуски, заметки, напоминания, календарь, чат трекера ----------
+
+def _u(name):
+    from django.contrib.auth import get_user_model
+    return get_user_model().objects.create_user(name, f'{name}@x.com', 'x', first_name=name.title())
+
+
+@pytest.mark.django_db
+def test_templates_and_parts():
+    from django.utils import timezone
+
+    from apps.tracker import services as s
+    u = _u('tpl')
+    keys = {t['key'] for t in s.templates()}
+    assert {'salah5', 'quran', 'pills', 'water', 'arabic'} <= keys
+    pills = s.add_template(u, 'pills')
+    assert pills.times() == ['08:00', '14:00', '20:00'] and pills.target == 3 and pills.note
+    s.add_template(u, 'azkar_m')
+    s.add_template(u, 'azkar_e')
+    day = s.day_view(u, timezone.localdate())
+    parts = [x['part'] for x in day['items']]
+    assert parts.index('morning') < parts.index('evening')
+    with pytest.raises(s.TrackerError):
+        s.add_template(u, 'nope')
+    with pytest.raises(s.TrackerError):
+        s.update_habit(u, pills, {'reminders': '25:00'})
+    with pytest.raises(s.TrackerError):
+        s.update_habit(u, pills, {'reminders': ','.join(f'{h:02d}:00' for h in range(8))})
+
+
+@pytest.mark.django_db
+def test_skip_keeps_streak_and_notes():
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from apps.tracker import services as s
+    from apps.tracker.models import Habit
+    u = _u('skipper')
+    today = timezone.localdate()
+    h = s.create_habit(u, {'title': 'Коран', 'day': (today - timedelta(days=5)).isoformat()})
+    Habit.objects.filter(pk=h.pk).update(created_at=timezone.now() - timedelta(days=6))
+    h.refresh_from_db()
+    for back in (3, 2):
+        s.set_value(u, h, today - timedelta(days=back))
+    s.set_value(u, h, today - timedelta(days=1), skip=True, note='болел')
+    s.set_value(u, h, today, note='после фаджра')
+    card = s.day_view(u, today)['items'][0]
+    assert card['streak'] == 3 and card['log_note'] == 'после фаджра'
+    detail = s.habit_detail(u, h, days=30)
+    assert any(c['skipped'] and c['note'] == 'болел' for c in detail['cells'])
+    assert detail['streak'] == 3 and detail['notes'][0]['note'] == 'после фаджра'
+
+
+@pytest.mark.django_db
+def test_per_week_goal():
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from apps.tracker import services as s
+    u = _u('weekly')
+    today = timezone.localdate()
+    monday = today - timedelta(days=today.isoweekday() - 1)
+    h = s.create_habit(u, {'title': 'Спорт', 'per_week': 2, 'day': (monday - timedelta(days=14)).isoformat()})
+    for d in (monday - timedelta(days=14), monday - timedelta(days=12), monday - timedelta(days=7), monday - timedelta(days=5)):
+        from apps.tracker.models import HabitLog
+        HabitLog.objects.create(habit=h, user=u, day=d, value=1)
+    from apps.tracker.models import Habit
+    Habit.objects.filter(pk=h.pk).update(created_at=timezone.now() - timedelta(days=20))
+    h.refresh_from_db()
+    card = s.day_view(u, today)['items'][0]
+    assert card['per_week'] == 2 and card['streak'] == 2          # две недели подряд цель выполнена
+
+
+@pytest.mark.django_db
+def test_board_end_activity_and_chat(settings):
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from apps.core.models import SiteSettings
+    from apps.tracker import services as s
+    st = SiteSettings.get_solo()
+    st.chat_groups_enabled = True
+    st.save()
+    a, b = _u('owner'), _u('friend')
+    board = s.create_board(a, 'Арабский вместе', compete=True)
+    s.update_board(a, board, {'ends_on': (timezone.localdate() + timedelta(days=10)).isoformat()})
+    h = s.create_habit(a, {'title': '10 слов'}, board)
+    s.join(b, board.invite_code)
+    s.set_value(b, h, timezone.localdate())
+    view = s.board_view(a, board, timezone.localdate())
+    assert view['days_left'] == 10 and not view['finished'] and view['activity'][0]['name'] == 'Friend'
+    chat = s.board_chat(b, board)
+    assert set(chat.participants.values_list('pk', flat=True)) == {a.pk, b.pk} and chat.kind == 'group'
+    c = _u('late')
+    s.join(c, board.invite_code)
+    assert chat.participants.filter(pk=c.pk).exists()             # новичок сразу в чате
+    s.leave(c, board)
+    assert not chat.participants.filter(pk=c.pk).exists()

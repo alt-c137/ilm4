@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { DEFAULT_TABS, useApp, type TabKey } from '@/state/app';
+import { DEFAULT_TABS, TAB_SLOTS, useApp, type TabKey } from '@/state/app';
 import { Button, Card, Icon, Screen, Section, Txt } from '@/ui/kit';
 
 import { TAB_INFO } from './(tabs)/_layout';
@@ -24,7 +24,7 @@ export default function TabsSetup() {
 
   return (
     <Screen title={t('Нижние кнопки')} back>
-      <Txt kind="muted">{t('Выберите до четырёх разделов, которые будут внизу экрана. Остальные всегда есть в «Сервисах».')}</Txt>
+      <Txt kind="muted">{t('Выберите до пяти разделов, которые будут внизу экрана, и их порядок. Остальные всегда есть в «Сервисах».')}</Txt>
       <Section title={t('Внизу экрана')}>
         <Card style={{ paddingVertical: 4 }}>
           {picked.map((k, i) => (
@@ -49,15 +49,15 @@ export default function TabsSetup() {
         <Section title={t('Можно добавить')}>
           <Card style={{ paddingVertical: 4 }}>
             {rest.map((k, i) => (
-              <Pressable key={k} onPress={() => picked.length < 4 && apply([...picked, k])} disabled={picked.length >= 4}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 11, borderTopWidth: i ? 0.5 : 0, borderTopColor: c.line, opacity: picked.length >= 4 ? 0.45 : 1 }}>
+              <Pressable key={k} onPress={() => picked.length < TAB_SLOTS && apply([...picked, k])} disabled={picked.length >= TAB_SLOTS}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 11, borderTopWidth: i ? 0.5 : 0, borderTopColor: c.line, opacity: picked.length >= TAB_SLOTS ? 0.45 : 1 }}>
                 <Icon name={`${TAB_INFO[k].icon}-outline` as any} size={22} color={c.inkSoft} />
                 <Txt style={{ flex: 1, fontWeight: '600' }}>{t(TAB_INFO[k].title)}</Txt>
                 <Icon name="add-circle" size={24} color={c.accent} />
               </Pressable>
             ))}
           </Card>
-          {picked.length >= 4 ? <Txt kind="small">{t('Четыре кнопки уже выбраны — уберите одну, чтобы добавить другую.')}</Txt> : null}
+          {picked.length > 4 ? <Txt kind="small">{t('Кнопок больше пяти — нижняя панель листается пальцем. Первая кнопка — экран, с которого открывается приложение.')}</Txt> : null}
         </Section>
       ) : null}
       <Button kind="ghost" title={t('Как было')} onPress={() => apply(DEFAULT_TABS)} />

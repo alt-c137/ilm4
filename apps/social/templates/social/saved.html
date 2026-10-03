@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% load i18n static icons %}
+{% block title %}{% translate "Сохранённое —" %} {{ block.super }}{% endblock %}
+{% block body_class %}page-feed{% endblock %}
+{% block content %}
+<div class="feed" id="feed" data-next="">
+  <a class="crumb" href="{% url 'social:feed' %}">{% ico 'back' %}{% translate "Лента" %}</a>
+  <header class="tp__bar feed__bar"><h1>{% translate "Сохранённое" %}</h1></header>
+  <form id="feed-csrf" hidden>{% csrf_token %}</form>
+  <div class="feed__list" id="feed-list">
+    {% for x in items %}{% if x.brief %}<a class="fcard fsaved" href="{{ x.web }}">{% ico 'bookmark' %}<span><b>{{ x.title }}</b>{% if x.text %}<small>{{ x.text|truncatechars:140 }}</small>{% endif %}</span></a>
+    {% else %}{% include 'social/_item.html' %}{% endif %}
+    {% empty %}<div class="tg__empty"><div class="empty__plug">{% ico 'bookmark' %}</div><b>{% translate "Пока ничего не сохранено" %}</b>
+      <span>{% translate "Нажмите на закладку под записью — она появится здесь. Это видите только вы." %}</span></div>{% endfor %}
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}{% include 'social/_js.html' %}{% endblock %}

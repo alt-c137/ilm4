@@ -42,7 +42,7 @@ def extract() -> dict:
         for m in T_BLOCK.finditer(text):
             add(re.sub(r'{{\s*(\w+)\s*}}', r'%(\1)s', m.group(1)), rel)
     for p in (ROOT / 'static' / 'js').glob('*.js'):          # _t('…') в JavaScript
-        for m in re.finditer(r"_t\('((?:[^'\\]|\\.)*)'\)", p.read_text()):
+        for m in re.finditer(r"(?<![\w.])(?:_t|T)\('((?:[^'\\]|\\.)*)'\)", p.read_text()):
             add(m.group(1), str(p.relative_to(ROOT)))
     for p in (ROOT / 'apps').glob('**/*.py'):
         if {'migrations', 'tests', '__pycache__'} & set(p.parts):

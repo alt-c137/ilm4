@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% load i18n icons %}
+{% block title %}{{ obj.title }} — {{ block.super }}{% endblock %}
+{% block extra_js %}<script>(function () { var h = document.querySelector('.trk__heat-card'); if (h) h.scrollLeft = h.scrollWidth; })();</script>{% endblock %}
+{% block body_class %}page-trk{% endblock %}
+{% block content %}
+<div class="trk" style="--hc:{{ obj.color }}">
+  <header class="trk__head"><a class="tg__back ppl__back" href="{% url 'tracker:index' %}" aria-label="{% translate 'Назад' %}">{% ico 'back' %}</a>
+    <div><h1>{% hicon obj.emoji %} {{ obj.title }}</h1><span>{% if obj.per_week %}{{ obj.per_week }} {% translate "раз в неделю" %}{% elif obj.kind == 'count' %}{{ obj.target }} {{ obj.unit }} {% translate "в день" %}{% else %}{% translate "каждый запланированный день" %}{% endif %}</span></div>
+    {% if habit.can_edit %}<span class="trk__tools"><a class="tg__new" href="{% url 'tracker:edit' obj.pk %}" aria-label="{% translate 'Изменить' %}">{% ico 'edit' %}</a></span>{% endif %}</header>
+  <section class="trk__tiles">
+    <div><b>{% ico 'flame' 'i-inl i-flame' %} {{ streak }}</b><small>{% if obj.per_week %}{% translate "недель подряд" %}{% else %}{% translate "дней подряд" %}{% endif %}</small></div>
+    <div><b>{% ico 'trophy' 'i-inl i-gold' %} {{ best }}</b><small>{% translate "лучшая серия" %}</small></div>
+    <div><b>{{ done_days }}</b><small>{% translate "дней выполнено" %}</small></div>
+    {% if obj.kind == 'count' %}<div><b>{{ total }}</b><small>{{ obj.unit|default:_("всего") }}</small></div>{% endif %}
+  </section>
+  <h2 class="trk__h">{% translate "Год" %}</h2>
+  <section class="tp__card trk__heat-card">
+    <div class="trk__heat">{% for _ in pad %}<i class="pad"></i>{% endfor %}{% for c in cells %}<i class="l{{ c.level }}{% if c.skipped %} sk{% endif %}{% if not c.due %} off{% endif %}" title="{{ c.day }}{% if c.value %} · {{ c.value }}{% endif %}{% if c.skipped %} · {% translate 'пропуск' %}{% endif %}{% if c.note %} · {{ c.note }}{% endif %}"></i>{% endfor %}</div>
+    <div class="trk__legend"><span>{% translate "меньше" %}</span><i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i><span>{% translate "больше" %}</span><i class="l0 sk"></i><span>{% translate "пропуск" %}</span></div>
+  </section>
+  <h2 class="trk__h">{% translate "По месяцам" %}</h2>
+  <section class="tp__card trk__months">{% for m in months %}<div><span>{{ m.month|slice:"5:" }}.{{ m.month|slice:":4" }}</span><i><b style="width:{{ m.rate }}%"></b></i><em>{{ m.rate }}%</em></div>{% endfor %}</section>
+  {% if notes %}<h2 class="trk__h">{% translate "Заметки" %}</h2>
+  <section class="tp__card">{% for n in notes %}<div class="tp__row"><span><b>{{ n.note }}</b><small>{{ n.day }}</small></span></div>{% endfor %}</section>{% endif %}
+</div>
+{% endblock %}

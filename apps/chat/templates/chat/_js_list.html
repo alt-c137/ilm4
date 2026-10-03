@@ -1,17 +1,6 @@
-{% load static %}<script src="{% static 'js/wallpaper.js' %}?v={{ asset_v }}"></script>
-<script>
-/* поиск по списку диалогов */
-(function () {
-  var q = document.getElementById('tg-q');
-  if (!q) return;
-  q.addEventListener('input', function () {
-    var v = q.value.trim().toLowerCase();
-    document.querySelectorAll('#tg-list .tgrow').forEach(function (r) {
-      r.hidden = v && r.dataset.q.indexOf(v) === -1;
-    });
-  });
-})();
-</script>
+{% load static icons %}{% ui_icons 'tack' 'untack' 'archive' 'unarchive' 'folder' 'folderplus' 'bell' 'belloff' 'unread' 'checks' 'broom' 'trash' 'exit' 'edit' 'sliders' 'check' 'plus' 'reply' 'forward' 'copy' 'bookmark' 'smile' 'close' 'down' 'up' 'search' 'comment' 'download' 'eye' 'call' 'info' 'clock' 'shield' 'clip' 'play' 'pause' %}
+<script src="{% static 'js/wallpaper.js' %}?v={{ asset_v }}"></script>
+<script src="{% static 'js/chatlist.js' %}?v={{ asset_v }}"></script>
 <script>
 document.addEventListener('click', function (e) {
   document.querySelectorAll('details.tp__menu[open]').forEach(function (d) { if (!d.contains(e.target)) d.open = false; });

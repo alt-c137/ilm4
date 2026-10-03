@@ -20,12 +20,15 @@ TABS = {
     'jobs': (_lazy('Работа'), '/jobs/', 'jobs', '<rect x="3.5" y="7.5" width="17" height="12" rx="2"/><path d="M9 7.5V5.5h6v2M3.5 12.5h17"/>'),
     'news': (_lazy('Новости'), '/news/', 'news', '<path d="M4 5h13v14H5a1 1 0 0 1-1-1zM17 9h3v9a1 1 0 0 1-3 0M7.5 9h6M7.5 12.5h6M7.5 16h4"/>'),
     'forum': (_lazy('Форум'), '/forum/', 'forum', '<path d="M4 5h11v8H9l-3 3v-3H4zM15 9h5v8h-2v3l-3-3h-4v-2"/>'),
+    'feed': (_lazy('Лента'), '/feed/', 'feed', '<path d="M4 5.5h16M4 12h16M4 18.5h10"/>'),
+    'communities': (_lazy('Сообщества'), '/communities/', 'communities', '<circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 20c.9-3.3 3.4-5 6.5-5s5.6 1.7 6.5 5M16 5.2a3.5 3.5 0 0 1 0 6.6M18 15.3c1.7.7 2.9 2.2 3.5 4.7"/>'),
+    'library': (_lazy('Книги'), '/library/', 'library', '<path d="M5 4.5h4v15H5zM10 4.5h4v15h-4zM15.5 5l3.6-.9 3 14.6-3.6.9z"/>'),
     'transport': (_lazy('Попутчики'), '/transport/', 'transport', '<path d="M5 16V11l1.8-4.5h10.4L19 11v5M5 16h14M5 16v2.5M19 16v2.5M5 11h14"/><circle cx="8" cy="13.6" r=".6"/><circle cx="16" cy="13.6" r=".6"/>'),
 }
-SLOTS = 4
+SLOTS = 20                         # сколько угодно: больше пяти — панель листается пальцем (как человеку удобно)
 DEFAULT_SITE = ['home', 'services', 'add', 'chats']
 DEFAULT_APP = ['home', 'prayer', 'services', 'chats']
-APP_KEYS = [k for k in TABS if k not in ('add', 'jobs', 'forum', 'transport')]      # экраны-вкладки, которые есть в приложении
+APP_KEYS = [k for k in TABS if k != 'add']      # экраны-вкладки, которые есть в приложении («Подать» — только на сайте)
 
 
 def _clean_list(value, allowed) -> list | None:
@@ -47,7 +50,20 @@ def clean_ui(data: dict) -> dict:
         out['tabs_site'] = site
     if app:
         out['tabs_app'] = app
+    if data.get('start') in START:                  # с какого раздела открывается ilm4: платформа целиком или, например, только чаты
+        out['start'] = data['start']
     return out
+
+
+START = [k for k in TABS if k not in ('home', 'add', 'services')]
+
+
+def start_url(user, modules_on: set) -> str:
+    """Куда вести с «/», если человек выбрал другой стартовый экран. Пусто — обычная главная."""
+    key = (getattr(user, 'ui', None) or {}).get('start') if getattr(user, 'is_authenticated', False) else None
+    if key in START and (not TABS[key][2] or TABS[key][2] in modules_on):
+        return TABS[key][1]
+    return ''
 
 
 def site_tabs(user, modules_on: set, path: str, is_home: bool) -> list:

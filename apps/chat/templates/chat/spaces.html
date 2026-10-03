@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load i18n icons %}
+{% block title %}{% translate "Сообщества —" %} {{ block.super }}{% endblock %}
+{% block body_class %}page-tp page-spaces{% endblock %}
+{% block content %}
+<div class="tp sp">
+  <header class="tp__bar"><h1>{% translate "Сообщества" %}</h1>
+    {% if user.is_authenticated %}<a class="btn btn--p btn--s" href="{% url 'spaces:new' %}">{% ico 'plus' %}{% translate "Создать" %}</a>{% endif %}</header>
+  <p class="tp__note">{% translate "Клубы по интересам: в каждом — свои каналы для разговоров и объявлений, роли и свой ник." %}</p>
+
+  {% if mine %}<h2 class="ppl__h">{% translate "Мои сообщества" %}</h2>
+  <section class="tp__card">{% for x in mine %}<a class="tp__row sp__row" href="{% url 'spaces:space' x.space.pk %}">
+    {% include 'chat/_pic.html' with p=x.pic size='sm' %}<span><b>{{ x.space.title }}{% if x.space.platform_verified %}<i class="tgver">{% ico 'check' %}</i>{% endif %}</b><small>{% translate "участников:" %} {{ x.space.members_count }}</small></span></a>{% endfor %}</section>{% endif %}
+
+  <h2 class="ppl__h">{% translate "Каталог" %}</h2>
+  <form method="get" class="tg__search sp__search">{% ico 'search' %}<input type="search" name="q" value="{{ q }}" placeholder="{% translate 'Найти сообщество' %}" autocomplete="off"></form>
+  <section class="tp__card">
+    {% for x in catalog %}<a class="tp__row sp__row" href="{% url 'spaces:space' x.space.pk %}">
+      {% include 'chat/_pic.html' with p=x.pic size='sm' %}<span><b>{{ x.space.title }}{% if x.space.platform_verified %}<i class="tgver">{% ico 'check' %}</i>{% endif %}</b>
+        <small>{% if x.space.about %}{{ x.space.about|truncatechars:70 }} · {% endif %}{% translate "участников:" %} {{ x.space.members_count }}</small></span>
+      {% if x.member %}<em class="sp__in">{% translate "вы участник" %}</em>{% endif %}</a>
+    {% empty %}<div class="tg__empty"><div class="empty__plug">{% ico 'community' %}</div><b>{% if q %}{% translate "Ничего не найдено" %}{% else %}{% translate "Открытых сообществ пока нет" %}{% endif %}</b>
+      <span>{% translate "Создайте первое — для своей мечети, города, профессии или увлечения." %}</span></div>{% endfor %}
+  </section>
+</div>
+{% endblock %}

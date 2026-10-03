@@ -82,16 +82,86 @@ def login_view(request):
         auth_login(request, user, backend='apps.accounts.backends.EmailBackend')
         messages.success(request, _('С возвращением, {v1}!').format(v1=user.get_display_name()))
         next_url = request.POST.get('next') or request.GET.get('next')
-        if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
-            return redirect(next_url)
-        return redirect('core:home')
+        response = redirect(next_url if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()})
+                            else 'core:home')
+        from . import multi
+        pairs = multi.read(request)
+        if pairs:                                             # «Добавить аккаунт»: новый вход встаёт рядом с запомненными
+            multi.write(response, multi.remember(user, pairs), request.is_secure())
+        return response
     need_captcha = captcha.enabled() and cache.get(f'login_fail:ip:{client_ip(request)}', 0) >= 3
+    from . import multi
     return render(request, 'accounts/login.html', {'form': form, 'next': request.GET.get('next', ''),
-                                                   'need_captcha': need_captcha, 'tg_link': _tg_link()})
+                                                   'need_captcha': need_captcha, 'tg_link': _tg_link(),
+                                                   'remembered': [r for r in multi.accounts(request) if r['ok']]})
 
 
-# Выход — только POST (Django 5), кнопка-форма в шапке
-logout_view = LogoutView.as_view()
+# Выход — только POST (Django 5), кнопка-форма в шапке. Если на устройстве есть другие аккаунты — открывается следующий.
+_logout = LogoutView.as_view()
+
+
+def logout_view(request):
+    from . import multi
+    if request.method != 'POST' or not request.user.is_authenticated:
+        return _logout(request)
+    pairs = multi.forget(request.user.pk, multi.read(request))
+    nxt = next((multi.resolve(pairs, u) for u, _t in pairs), None)
+    response = _logout(request)
+    if nxt is not None:
+        auth_login(request, nxt, backend='django.contrib.auth.backends.ModelBackend')
+        response = redirect('core:home')
+    multi.write(response, pairs, request.is_secure())
+    return response
+
+
+def accounts_switch(request):
+    """Переключиться на запомненный аккаунт (и со страницы входа — «вернуться в аккаунт»). Доказательство — ключ в куке."""
+    from . import multi
+    if request.method != 'POST':
+        return redirect('accounts:accounts')
+    pairs = multi.read(request)
+    uid = int(request.POST.get('user') or 0)
+    user = multi.resolve(pairs, uid)
+    if user is None:
+        messages.error(request, _('Этот вход устарел — войдите в аккаунт заново.'))
+        pairs = multi.forget(uid, pairs)
+        response = redirect('accounts:login')
+    else:
+        if request.user.is_authenticated:
+            pairs = multi.remember(request.user, pairs)       # текущий тоже остаётся на устройстве
+        auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+        response = redirect('core:home')
+    multi.write(response, pairs, request.is_secure())
+    return response
+
+
+@login_required
+def accounts_view(request):
+    """«Аккаунты» — как в Telegram: кто вошёл на этом устройстве, переключиться, добавить ещё один (до трёх), убрать."""
+    from django.contrib.auth import logout
+
+    from . import multi
+    pairs = multi.read(request)
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'add':
+            if len({u for u, _t in pairs} | {request.user.pk}) >= multi.MAX:
+                messages.error(request, _('На одном устройстве — не больше трёх аккаунтов.'))
+                return redirect('accounts:accounts')
+            pairs = multi.remember(request.user, pairs)
+            logout(request)                                   # сессию освобождаем: дальше — вход во второй аккаунт
+            response = redirect(reverse('accounts:login') + '?add=1')
+            multi.write(response, pairs, request.is_secure())
+            return response
+        if action == 'forget':
+            pairs = multi.forget(int(request.POST.get('user') or 0), pairs)
+            response = redirect('accounts:accounts')
+            multi.write(response, pairs, request.is_secure())
+            return response
+    rows = multi.accounts(request)
+    if not any(r['current'] for r in rows):
+        rows.insert(0, {'user': request.user, 'current': True, 'ok': True})
+    return render(request, 'accounts/accounts.html', {'rows': rows, 'can_add': len(rows) < multi.MAX, 'max': multi.MAX})
 
 
 # --- Восстановление пароля по email (стандартные токены Django: одноразовые, 3 дня) ---
@@ -145,16 +215,54 @@ def profile(request):
             link_error = exc.message
         form.save()
         if not link_error:
-            messages.success(request, _('Профиль обновлён.'))
-            return redirect('accounts:profile')
+            messages.success(request, _('Сохранено.'))
+            sec = request.POST.get('s', '')
+            return redirect(reverse('accounts:profile') + (f'?s={sec}' if sec in ('edit', 'privacy', 'links') else ''))
     from django.contrib.auth import get_user_model
     User = get_user_model()
     me = User.objects.get(pk=user.pk)                 # без несохранённых правок формы
     return render(request, 'accounts/profile.html', {
+        'photos': _photo_rows(me),
         'form': form, 'me': me, 'links': people.links_for(me, me), 'link_error': link_error,
         'link_kinds': SocialLink.KINDS, 'privacy_levels': User.PRIVACY,
         'close_friends': people.close_friends(user)[:50],
-        'edit_open': request.method == 'POST' or request.GET.get('edit') == '1'})
+        'section': _profile_section(request)})
+
+
+def _profile_section(request) -> str:
+    """Какой раздел настроек показать: Мой аккаунт (edit) / Конфиденциальность / Ссылки. Пусто — сам профиль."""
+    sec = request.POST.get('s') or request.GET.get('s') or ('edit' if request.GET.get('edit') == '1' else '')
+    if request.method == 'POST' and not sec:
+        sec = 'edit'                                           # форма не прошла проверку — показываем её с ошибками
+    return sec if sec in ('edit', 'privacy', 'links') else ''
+
+
+def _photo_rows(person) -> list:
+    """Фото профиля для просмотра на весь экран (главное — первым)."""
+    from django.utils.formats import date_format
+
+    from . import people
+    return [{'id': ph.pk, 'url': ph.image.url, 'date': date_format(ph.created_at, 'j E Y'),
+             'name': person.get_display_name()} for ph in people.photos(person)]
+
+
+@login_required
+def photos(request):
+    """Мои фото профиля: сделать главным / удалить (кнопки в просмотре фото)."""
+    from django.http import JsonResponse
+
+    from . import people
+    if request.method != 'POST':
+        return JsonResponse({'items': _photo_rows(request.user)})
+    try:
+        if request.POST.get('main'):
+            people.set_main_photo(request.user, request.POST.get('main'))
+        elif request.POST.get('delete'):
+            people.delete_photo(request.user, request.POST.get('delete'))
+    except (people.PeopleError, ValueError) as exc:
+        return JsonResponse({'error': getattr(exc, 'message', str(exc))}, status=400)
+    request.user.refresh_from_db()
+    return JsonResponse({'items': _photo_rows(request.user)})
 
 
 @login_required
@@ -229,11 +337,21 @@ def public_profile(request, pk):
             shared = {'media': chat.shared_media(thread, viewer, 'media', limit=30),
                       'files': chat.shared_media(thread, viewer, 'files', limit=30),
                       'muted': chat.is_muted(thread, viewer)}
+    from apps.social import services as social
+    wall, follow = [], {}
+    if social.module_on('feed'):
+        wall = [social.post_item(p, viewer) for p in social.wall(person, viewer, limit=20)]
+        social.decorate(wall, viewer)
+        follow = {'on': social.is_following(viewer, person), **social.counts(person, viewer)}
     return render(request, 'accounts/public.html', {
+        'wall': wall, 'follow': follow,
+        'gifts': social.gifts_of(person) if social.module_on('gifts') else [],
+        'photos': _photo_rows(person),
         'person': person, 'mine': mine,
         'status': people.status_text(presence), 'online': presence['online'],
         'phone': people.phone_for(person, viewer, close), 'links': people.links_for(person, viewer, close),
         'is_close': viewer is not None and not mine and people.is_close(viewer, person),
+        'is_contact': viewer is not None and not mine and people.is_contact(viewer, person),
         'thread': thread, 'shared': shared,
         'calls': _call_flags(thread) if viewer is not None and not mine else {},
         'listings': person.listings.filter(is_active=True, **approved)[:8],
@@ -334,6 +452,9 @@ def _wipe_user(user) -> None:
         qs = model.objects.filter(**{pub.owner: user})
         if hasattr(model, 'status'):
             qs.update(status=Moderation.REJECTED)
+    for photo in user.photos.all():           # вся история фото профиля
+        photo.image.delete(save=False)
+        photo.delete()
     if user.avatar:
         user.avatar.delete(save=False)
     user.email = f'deleted-{user.pk}@deleted.ilm4.local'

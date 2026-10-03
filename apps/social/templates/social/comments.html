@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% translate "Обсуждение —" %} {{ block.super }}{% endblock %}
+{% block body_class %}page-feed{% endblock %}
+{% block content %}
+<div class="feed" id="feed">
+  <a class="crumb" href="{% url 'social:feed' %}">← {% translate "Лента" %}</a>
+  <form id="feed-csrf" hidden>{% csrf_token %}</form>
+  <h1 class="feed__h">{% translate "Обсуждение" %}</h1>
+  <section class="fcom fcom--page">{% include 'social/_comments.html' %}</section>
+</div>
+{% endblock %}
+{% block extra_js %}{% include 'social/_js.html' %}{% endblock %}

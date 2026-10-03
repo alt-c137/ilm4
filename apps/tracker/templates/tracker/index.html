@@ -25,23 +25,25 @@
     <div class="trk__ring" id="trk-ring" style="--p:{{ percent }}"><b>{{ percent }}%</b></div>
     <div><b id="trk-count">{{ done }} / {{ total }}</b><span>{% if percent == 100 %}{% translate "Всё сделано, ма шаа Аллах!" %}{% else %}{% translate "выполнено за день" %}{% endif %}</span></div>
   </section>
-  <div class="trk__list">{% for h in items %}{% include 'tracker/_habit.html' %}{% endfor %}</div>
+  <div class="trk__list">{% for h in items %}{% ifchanged h.part %}{% if h.part %}<h3 class="trk__part">{% if h.part == 'morning' %}{% ico 'sunrise' 'i-inl' %} {% translate "Утро" %}{% elif h.part == 'day' %}{% ico 'sun' 'i-inl' %} {% translate "День" %}{% else %}{% ico 'moon' 'i-inl' %} {% translate "Вечер" %}{% endif %}</h3>{% elif not forloop.first %}<h3 class="trk__part">{% translate "В любое время" %}</h3>{% endif %}{% endifchanged %}{% include 'tracker/_habit.html' %}{% endfor %}</div>
   {% else %}
   <div class="trk__empty">
-    <span class="trk__empty-ic">🎯</span>
+    <span class="trk__empty-ic">{% ico 'target' %}</span>
     <b>{% if habits_total %}{% translate "На этот день ничего не запланировано" %}{% else %}{% translate "Начните с одной привычки" %}{% endif %}</b>
     <span>{% translate "Таблетки, вода, чтение, зарядка, слова на арабском — что угодно. Отмечайте каждый день и смотрите, как растёт серия." %}</span>
-    <a class="btn btn--p" href="{% url 'tracker:new' %}">{% ico 'plus' %}{% translate "Добавить привычку" %}</a>
+    <a class="btn btn--p" href="{% url 'tracker:templates' %}">{% ico 'star' %}{% translate "Готовые привычки" %}</a>
+    <a class="btn btn--g" href="{% url 'tracker:new' %}">{% ico 'plus' %}{% translate "Своя привычка" %}</a>
   </div>
   {% endif %}
   <div class="trk__adds">
     <a class="btn btn--g btn--s" href="{% url 'tracker:new' %}">{% ico 'plus' %}{% translate "Привычка" %}</a>
     <a class="btn btn--g btn--s" href="{% url 'tracker:new' %}?once=1">{% ico 'plus' %}{% translate "Дело на день" %}</a>
+    <a class="btn btn--g btn--s" href="{% url 'tracker:templates' %}">{% ico 'star' %}{% translate "Готовые" %}</a>
   </div>
 
   <h2 class="trk__h">{% translate "Вместе" %}</h2>
   <div class="trk__boards">
-    {% for b in boards %}<a class="trk__board" href="{% url 'tracker:board' b.id %}"><span>{{ b.emoji }}</span><b>{{ b.title }}</b><small>{% translate "участников:" %} {{ b.members }}{% if b.compete %} · 🏆{% endif %}</small></a>{% endfor %}
+    {% for b in boards %}<a class="trk__board" href="{% url 'tracker:board' b.id %}"><span>{% hicon b.emoji %}</span><b>{{ b.title }}</b><small>{% translate "участников:" %} {{ b.members }}{% if b.compete %} · {% ico 'trophy' 'i-inl i-gold' %}{% endif %}</small></a>{% endfor %}
     <a class="trk__board trk__board--new" href="{% url 'tracker:board_new' %}"><span>＋</span><b>{% translate "Общий трекер" %}</b><small>{% translate "с семьёй, друзьями, напарниками" %}</small></a>
   </div>
   <p class="trk__note">{% ico 'lock' %}{% translate "Свои привычки видите только вы. В общем трекере участники видят отметки друг друга." %}</p>

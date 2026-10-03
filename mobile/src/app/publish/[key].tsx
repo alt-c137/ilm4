@@ -182,7 +182,7 @@ export default function Publish() {
         })}
         {!s.editing ? (
           <Card style={{ gap: 8 }}>
-            <Txt kind="h3">🤝 {t('Договор перед Аллахом')}</Txt>
+            <Txt kind="h3">{t('Договор перед Аллахом')}</Txt>
             <Txt kind="small" style={{ fontStyle: 'italic' }}>{t('«…И будьте верны договору, ибо за договор спросят»')} — {t('Коран, сура «аль-Исра», 17:34')}</Txt>
             {s.pledge.map((p) => <Txt key={p} kind="small" style={{ color: c.ink }}>• {p}</Txt>)}
             <Row title={t('Боюсь Аллаха, обязуюсь соблюдать договор и отвечаю за свою публикацию')} onPress={() => setPledge(!pledge)}

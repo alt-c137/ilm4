@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load i18n icons %}
+{% block title %}{% translate "Новое сообщество —" %} {{ block.super }}{% endblock %}
+{% block body_class %}s-chat{% endblock %}
+{% block content %}
+<div class="fpage">
+  <a class="crumb" href="{% url 'spaces:index' %}">{% ico 'back' %}{% translate "Сообщества" %}</a>
+  <div class="dcard">
+    <div class="fpage__h"><span class="fpage__ic">{% ico 'community' %}</span>
+      <div><h1>{% translate "Новое сообщество" %}</h1>
+        <div class="fpage__sub">{% translate "Сообщество — это место для своих: несколько каналов по темам, объявления, роли. Сразу появятся каналы «объявления» и «общий» — остальные добавите сами." %}</div></div></div>
+    <form method="post" enctype="multipart/form-data" class="form fgrid">{% csrf_token %}
+      <div class="field field--wide"><label for="s-title">{% translate "Название" %} <span class="req">*</span></label>
+        <input type="text" id="s-title" name="title" maxlength="80" required value="{{ data.title }}" placeholder="{% translate 'Например: Айтишники Ташкента' %}" autofocus></div>
+      <div class="field field--wide"><label for="s-about">{% translate "Описание" %}</label>
+        <textarea id="s-about" name="about" rows="3" maxlength="500" placeholder="{% translate 'О чём сообщество, для кого оно' %}">{{ data.about }}</textarea></div>
+      <div class="field field--wide"><label for="s-icon">{% translate "Значок (необязательно)" %}</label>
+        <input type="file" id="s-icon" name="icon" accept="image/*" data-crop="1"></div>
+      <div class="field field--wide field--check">
+        <label class="check"><input type="checkbox" name="is_public"{% if data.is_public %} checked{% endif %}><span>{% translate "Открытое: видно в каталоге, вступить может любой" %}</span></label>
+        <span class="hint">{% translate "Без галочки попасть можно только по вашей ссылке-приглашению." %}</span></div>
+      <div class="field field--wide"><button type="submit" class="btn btn--p">{% translate "Создать сообщество" %}</button></div>
+    </form>
+  </div>
+</div>
+{% endblock %}

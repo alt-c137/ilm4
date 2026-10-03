@@ -3,16 +3,81 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _lazy
 
+from . import persona
+
+
+def reply_brief(m) -> dict | None:
+    """Коротко о сообщении, на которое отвечают (полоска с именем и началом текста, как в Telegram)."""
+    if m is None:
+        return None
+    return {'id': m.pk, 'name': persona.name_by_thread_id(m.thread_id, m.sender), 'kind': m.kind, 'text': str(preview(m))[:120],
+            'hue': m.sender_id % 7}
+
+
+def reactions_of(m) -> list:
+    """[{'e': '👍', 'n': 3}] — сначала самые частые."""
+    from django.db.models import Count
+    rows = m.reactions.values('emoji').annotate(n=Count('id')).order_by('-n', 'emoji')
+    return [{'e': r['emoji'], 'n': r['n']} for r in rows]
+
+
+def decorate(msgs, user=None) -> None:
+    """Разом подгрузить реакции (и свою) для пачки сообщений — без запроса на каждое."""
+    from collections import defaultdict
+
+    from django.db.models import Count
+
+    from .models import Reaction
+    ids = [m.pk for m in msgs]
+    if not ids:
+        return
+    table = defaultdict(list)
+    for r in (Reaction.objects.filter(message__in=ids).values('message_id', 'emoji').annotate(n=Count('id'))
+              .order_by('-n', 'emoji')):
+        table[r['message_id']].append({'e': r['emoji'], 'n': r['n']})
+    mine = {}
+    if user is not None and getattr(user, 'pk', None):
+        mine = dict(Reaction.objects.filter(message__in=ids, user=user).values_list('message_id', 'emoji'))
+    # галочки в группе — как в Telegram: ✓ отправлено, ✓✓ — прочитал хотя бы один участник (кроме автора)
+    until = {}
+    if user is not None and getattr(user, 'pk', None):
+        from django.db.models import Max
+
+        from .models import Member, Thread
+        groups = {m.thread_id for m in msgs if m.sender_id == user.pk and getattr(m, 'thread', None) is not None and m.thread.kind == Thread.GROUP}
+        if groups:
+            until = dict(Member.objects.filter(thread__in=groups).exclude(user=user).exclude(role=Member.BANNED)
+                         .values('thread_id').annotate(u=Max('last_read_at')).values_list('thread_id', 'u'))
+    for m in msgs:
+        m._rx, m._my = table.get(m.pk, []), mine.get(m.pk, '')
+        u = until.get(m.thread_id)
+        m._room_read = bool(u and m.created_at <= u)
+
 
 def message_payload(m) -> dict:
     from . import contexts
     from .media import is_risky_name
     local = timezone.localtime(m.created_at)   # время в зоне проекта, не UTC
-    meta = m.meta if m.kind == 'file' else {}
+    meta = m.meta if m.kind in ('file', 'photo') and m.meta_enc else {}
+    rx = m.__dict__.get('_rx')
+    if rx is None:
+        rx = reactions_of(m) if m.pk else []
+    fwd = m.fwd if m.fwd_enc else None
     return {
+        'reply': reply_brief(m.reply_to) if m.reply_to_id else None,
+        'fwd': fwd,
+        'edited': bool(m.edited_at),
+        'pinned': bool(m.pinned_at),
+        'reactions': rx,
+        'my_reaction': m.__dict__.get('_my', ''),
+        'comment_of': m.comment_of_id,
+        'comments': m.comments_count,
+        'read': bool(m.read_at) or bool(m.__dict__.get('_room_read')),
+        'iso': m.created_at.isoformat(),
         'id': m.pk,
+        'thread': m.thread_id,
         'sender_id': m.sender_id,
-        'sender_name': m.sender.get_display_name(),
+        'sender_name': persona.name_by_thread_id(m.thread_id, m.sender),
         'kind': m.kind,
         'body': m.body,
         'url': reverse('chat:file', args=[m.pk]) if m.attachment else '',
@@ -22,6 +87,7 @@ def message_payload(m) -> dict:
         'day': local.date().isoformat(),
         'file_name': meta.get('name', ''),
         'file_size': meta.get('size', 0),
+        'w': meta.get('w', 0), 'h': meta.get('h', 0),          # размеры фото: клиент показывает его в своих пропорциях
         'file_risky': bool(meta) and is_risky_name(meta.get('name', '')),
         # признаки мошенничества (предоплата, перевод на карту) — получателю покажем предупреждение
         'warn': m.kind != 'system' and contexts.risky(m.thread) and contexts.is_scam(m.body),
@@ -36,7 +102,7 @@ def message_payload(m) -> dict:
 
 
 PREVIEW = {'photo': _lazy('Фото'), 'video': _lazy('Видео'), 'voice': _lazy('Голосовое сообщение'),
-           'circle': _lazy('Видеосообщение'), 'file': _lazy('Файл')}
+           'circle': _lazy('Видеосообщение'), 'file': _lazy('Файл'), 'poll': _lazy('Опрос')}
 
 
 def preview(m) -> str:
@@ -44,6 +110,8 @@ def preview(m) -> str:
     if m.kind == 'file':
         return m.meta.get('name') or str(PREVIEW['file'])
     from .richtext import plain
+    if m.kind in ('photo', 'video') and m.body:              # фото с подписью — показываем подпись
+        return plain(m.body)
     return PREVIEW.get(m.kind, '') or plain(m.body)
 
 
@@ -53,7 +121,7 @@ def notify_recipients(thread, sender, text, silent: bool = False):
 
     from .models import Member
 
-    msg = f'{sender.get_display_name()}: {text[:80]}'
+    msg = f'{persona.name_in(thread, sender)}: {text[:80]}'
     # «без звука» у этого диалога (кнопка «Звук» в профиле собеседника) — уведомление придёт тихо
     muted = set(Member.objects.filter(thread=thread, muted=True).values_list('user_id', flat=True))
     for participant in thread.participants.exclude(pk=sender.pk):

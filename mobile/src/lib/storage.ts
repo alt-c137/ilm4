@@ -21,6 +21,27 @@ export async function setToken(value: string | null) {
   else await SecureStore.deleteItemAsync(TOKEN);
 }
 
+/** Несколько аккаунтов на устройстве (как в Telegram): токены лежат там же, где основной, — в защищённом хранилище. */
+export type SavedAccount = { token: string; id: number; name: string; avatar: string };
+const ACCOUNTS = 'ilm4.accounts';
+export const MAX_ACCOUNTS = 3;
+
+export async function getAccounts(): Promise<SavedAccount[]> {
+  try {
+    const raw = Platform.OS === 'web' ? await AsyncStorage.getItem(ACCOUNTS) : await SecureStore.getItemAsync(ACCOUNTS);
+    const list = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) ? list.slice(0, MAX_ACCOUNTS) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function setAccounts(list: SavedAccount[]) {
+  const raw = JSON.stringify(list.slice(0, MAX_ACCOUNTS));
+  if (Platform.OS === 'web') await AsyncStorage.setItem(ACCOUNTS, raw);
+  else await SecureStore.setItemAsync(ACCOUNTS, raw);
+}
+
 export async function load<T>(key: string, fallback: T): Promise<T> {
   try {
     const raw = await AsyncStorage.getItem(key);

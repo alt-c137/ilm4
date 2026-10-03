@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load i18n icons %}
+{% block title %}{% translate "Готовые привычки —" %} {{ block.super }}{% endblock %}
+{% block body_class %}page-trk{% endblock %}
+{% block content %}
+<div class="trk">
+  <header class="trk__head"><a class="tg__back ppl__back" href="{% if board %}{% url 'tracker:board' board.pk %}{% else %}{% url 'tracker:index' %}{% endif %}" aria-label="{% translate 'Назад' %}">{% ico 'back' %}</a>
+    <div><h1>{% translate "Готовые привычки" %}</h1><span>{% if board %}{% hicon board.emoji %} {{ board.title }}{% else %}{% translate "Одно нажатие — и привычка в списке. Потом её можно поменять." %}{% endif %}</span></div></header>
+  {% for g in groups %}
+  <h2 class="trk__h">{{ g.name }}</h2>
+  <section class="tp__card">
+    {% for x in g.items %}
+    <form method="post" class="tp__row trk__tpl">{% csrf_token %}<input type="hidden" name="key" value="{{ x.key }}"><input type="hidden" name="tz_offset" class="trk-tz">
+      <span class="trk__tplem" style="--hc:{{ x.color }}">{% hicon x.emoji %}</span>
+      <span><b>{{ x.title }}</b><small>{% if x.kind == 'count' %}{{ x.target }} {{ x.unit }} {% translate "в день" %}{% elif x.per_week %}{{ x.per_week }} {% translate "раз в неделю" %}{% elif x.days == '14' %}{% translate "пн и чт" %}{% else %}{% translate "каждый день" %}{% endif %}{% if x.reminders %} · {% ico 'alarm' 'i-inl' %} {{ x.reminders }}{% endif %}{% if x.note %} · {{ x.note }}{% endif %}</small></span>
+      {% if x.title in have %}<span class="trk__have">{% ico 'check' %}</span>{% else %}<button type="submit" class="btn btn--s btn--p">{% translate "Добавить" %}</button>{% endif %}
+    </form>
+    {% endfor %}
+  </section>
+  {% endfor %}
+  <a class="btn btn--g" href="{% url 'tracker:new' %}{% if board %}?board={{ board.pk }}{% endif %}">{% ico 'plus' %}{% translate "Своя привычка" %}</a>
+</div>
+{% endblock %}
+{% block extra_js %}<script>document.querySelectorAll('.trk-tz').forEach(function (i) { i.value = -new Date().getTimezoneOffset(); });</script>{% endblock %}

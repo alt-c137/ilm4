@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% load i18n icons static %}
+{% block title %}{% translate "ИИ-помощник —" %} {{ block.super }}{% endblock %}
+{% block body_class %}page-tp page-ai{% endblock %}
+{% block content %}
+<div class="ai">
+  <header class="tp__bar"><h1>{% translate "ИИ-помощник" %}</h1>
+    {% if chat %}<a class="btn btn--g btn--s" href="{% url 'assistant:index' %}">{% ico 'plus' %}{% translate "Новый разговор" %}</a>{% endif %}</header>
+
+  {% if not items %}
+  {# сводка дня — собирается без ИИ: мгновенно и бесплатно #}
+  <section class="jv jv--dash">
+    <div class="jv__top">
+      <div class="jv__orb" id="ai-orb" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div class="jv__hi"><b>{{ brief.hello }}, {{ brief.name }}</b><span>{% translate "Вот что важно сейчас" %}</span></div>
+    </div>
+    <div class="jv__grid">
+      {% if brief.prayer %}<a class="jv__card" href="/prayer/">{% ico 'mosque' %}<span><small>{% translate "Ближайший намаз" %}{% if brief.prayer.tomorrow %} · {% translate "завтра" %}{% endif %}</small>
+        <b>{{ brief.prayer.name }} · {{ brief.prayer.time }}</b><em>{% translate "через" %} {{ brief.prayer.in }} · {{ brief.prayer.city }}</em></span></a>{% endif %}
+      {% if brief.tracker %}<a class="jv__card" href="/tracker/">{% ico 'target' %}<span><small>{% translate "Трекер сегодня" %}</small>
+        <b>{{ brief.tracker.done }} {% translate "из" %} {{ brief.tracker.total }}</b>
+        <em>{% if brief.tracker.left %}{% translate "Осталось:" %} {% for x in brief.tracker.left|slice:":3" %}{{ x.title }}{% if not forloop.last %}, {% endif %}{% endfor %}{% elif brief.tracker.total %}{% translate "Всё выполнено" %}{% else %}{% translate "Привычек пока нет" %}{% endif %}</em></span></a>{% endif %}
+      <a class="jv__card" href="/chat/">{% ico 'chat' %}<span><small>{% translate "Сообщения" %}</small>
+        <b>{% if brief.unread %}{% translate "Новых:" %} {{ brief.unread }}{% else %}{% translate "Новых нет" %}{% endif %}</b>
+        <em>{% for c in brief.chats|slice:":3" %}{{ c.name }} ({{ c.unread }}){% if not forloop.last %}, {% endif %}{% empty %}{% translate "Никто не писал" %}{% endfor %}</em></span></a>
+      <a class="jv__card" href="/notifications/">{% ico 'bell' %}<span><small>{% translate "Уведомления" %}</small>
+        <b>{% if brief.notifications %}{% translate "Новых:" %} {{ brief.notifications }}{% else %}{% translate "Новых нет" %}{% endif %}</b><em>{% translate "Ответы, одобрения, заявки" %}</em></span></a>
+    </div>
+    <div class="jv__panels">
+      {% if brief.week %}<div class="jv__panel"><h3>{% translate "Неделя в трекере" %}</h3>
+        <div class="jv__week">{% for d in brief.week %}<div title="{{ d.day }}: {{ d.pct }}%"><i style="height:{{ d.pct }}%"></i><span>{{ d.day|slice:":2" }}</span></div>{% endfor %}</div></div>{% endif %}
+      <div class="jv__panel"><h3>{% translate "Встречи и дела" %}</h3>
+        {% for p in brief.plans|slice:":5" %}<div class="jv__li">{% ico 'calendar' %}<b>{{ p.title }}</b><em>{% if p.today %}{% translate "сегодня" %}{% else %}{{ p.date|slice:"8:10" }}.{{ p.date|slice:"5:7" }}{% endif %}{% if p.time %} {{ p.time }}{% endif %}</em></div>
+        {% empty %}<p>{% translate "Ничего не запланировано. Скажите помощнику — он поставит." %}</p>{% endfor %}</div>
+      <div class="jv__panel"><h3>{% translate "Осталось сегодня" %}</h3>
+        {% for x in brief.tracker.left %}<div class="jv__li">{% hicon x.icon %}<b>{{ x.title }}</b></div>
+        {% empty %}<p>{% if brief.tracker.total %}{% translate "Всё выполнено" %}{% else %}{% translate "Привычек пока нет" %}{% endif %}</p>{% endfor %}</div>
+    </div>
+    {% if st.ready %}<div class="ai__chips">
+      <button type="button" data-say="{% translate 'Сделай сводку моего дня: намаз, планы, трекер, кто мне написал' %}">{% ico 'clipboard' %}{% translate "Отчёт за день" %}</button>
+      <button type="button" data-say="{% translate 'Кто мне написал и что у меня не прочитано?' %}">{% translate "Кто мне написал?" %}</button>
+      <button type="button" data-say="{% translate 'Найди халяль-кафе в Ташкенте' %}">{% translate "Халяль-кафе рядом" %}</button>
+      <button type="button" data-say="{% translate 'Добавь привычку: читать Коран 5 страниц каждый день, напоминание в 06:00' %}">{% translate "Привычка: Коран" %}</button>
+      <button type="button" data-say="{% translate 'Поставь встречу на завтра в 15:00: забрать справку' %}">{% translate "Встреча на завтра" %}</button>
+    </div>{% endif %}
+  </section>
+  {% endif %}
+
+  <div class="ai__log" id="ai-log">{% for m in items %}<div class="ai__m ai__m--{{ m.role }}">{{ m.text|linebreaksbr }}</div>{% endfor %}</div>
+
+  {% if st.ready %}
+  <form class="ai__form" id="ai-form">{% csrf_token %}<input type="hidden" name="chat" value="{{ chat.pk|default:'' }}">
+    <textarea name="text" rows="1" maxlength="4000" required placeholder="{% translate 'Спросите или попросите что-нибудь сделать…' %}"></textarea>
+    <button type="submit" class="tg__send" aria-label="{% translate 'Отправить' %}">{% ico 'send' %}</button>
+  </form>
+  <p class="ai__quota">{% if st.own_key %}{% translate "Работает на вашем ключе" %} · {{ st.provider_name }} · {{ st.model }}{% elif st.unlimited %}{% translate "Подписка: без лимита" %}{% else %}{% blocktranslate with n=st.left %}Осталось бесплатных сообщений сегодня: {{ n }}{% endblocktranslate %}{% endif %}</p>
+  {% else %}
+  <div class="tp__card ai__locked">{% if st.site %}{% translate "На сегодня бесплатные сообщения закончились. Завтра будут новые — или подключите свой ИИ ниже." %}{% else %}{% translate "Сводка дня работает и так. Чтобы помощник отвечал и делал дела за вас, подключите свой ИИ ниже — подойдёт Claude, OpenAI, Z.AI." %}{% endif %}</div>
+  {% endif %}
+
+  <details class="tp__card tp__fold" id="key"{% if not st.ready %} open{% endif %}>
+    <summary>{% ico 'key' %}<b>{% translate "Свой ИИ" %}{% if st.own_key %} · {{ st.provider_name }} {{ st.own_key }}{% endif %}</b></summary>
+    <form method="post" action="{% url 'assistant:key' %}" class="tp__form">{% csrf_token %}
+      <span class="hint">{% translate "Со своим ключом лимита нет — за ответы вы платите поставщику напрямую. Ключ хранится зашифрованным и используется только для ваших запросов. Подписки Claude Pro и ChatGPT Plus подключить нельзя: они не выдают ключ для чужих программ. Подойдут API Anthropic и OpenAI, Z.AI (в том числе подписка Coding Plan — у неё ключ есть), OpenRouter." %}</span>
+      <label for="ai-prov">{% translate "Поставщик" %}</label>
+      <select name="provider" id="ai-prov">{% for p in st.providers %}<option value="{{ p.key }}" data-model="{{ p.model }}" data-where="{{ p.where }}"{% if p.custom %} data-custom="1"{% endif %}{% if p.key == st.provider or not st.provider and forloop.first %} selected{% endif %}>{{ p.name }}</option>{% endfor %}</select>
+      <label for="ai-key">{% translate "Ключ API" %} <small id="ai-where"></small></label>
+      <input type="password" name="key" id="ai-key" placeholder="sk-…" autocomplete="off">
+      <label for="ai-model">{% translate "Модель (можно не трогать)" %}</label>
+      <input type="text" name="model" id="ai-model" value="{% if st.own_key %}{{ st.model }}{% endif %}" autocomplete="off" autocapitalize="none" spellcheck="false">
+      <div id="ai-base" hidden><label for="ai-url">{% translate "Адрес сервера" %}</label><input type="url" name="base_url" id="ai-url" placeholder="https://…"></div>
+      <div class="trk__adds"><button type="submit" class="btn btn--p btn--s">{% translate "Сохранить" %}</button>
+        {% if st.own_key %}<button type="submit" name="key" value="" class="btn btn--g btn--s">{% translate "Удалить ключ" %}</button>{% endif %}</div>
+    </form>
+  </details>
+
+  <form method="post" action="{% url 'assistant:prefs' %}" class="tp__card ai__perm">{% csrf_token %}
+    {% ico 'lock' %}
+    <span><b>{% translate "Помощник может читать мои новые сообщения" %}</b>
+      <small>{% translate "Нужно для отчёта «кто написал и о чём». Тексты непрочитанных сообщений уйдут поставщику ИИ. Чаты никяха не передаются никогда. Выключено — помощник видит только названия чатов и число новых." %}</small></span>
+    <label class="tgl"><input type="checkbox" name="read_chats" value="1"{% if st.read_chats %} checked{% endif %} onchange="this.form.submit()"><i></i></label>
+  </form>
+
+  {% if chats %}<h2 class="ppl__h">{% translate "Прошлые разговоры" %}</h2>
+  <section class="tp__card">{% for c in chats %}<a class="tp__row" href="{% url 'assistant:chat' c.id %}">{% ico 'chat' %}<span><b>{{ c.title }}</b></span></a>{% endfor %}</section>{% endif %}
+  <p class="tp__note">{% translate "Помощник действует от вашего имени: видит только то, что видите вы, и меняет только ваш трекер." %}</p>
+</div>
+{% endblock %}
+{% block extra_js %}<script>
+(function () {
+  var prov = document.getElementById('ai-prov'), model = document.getElementById('ai-model');
+  function sync(first) {
+    var o = prov.options[prov.selectedIndex]; if (!o) return;
+    if (!first || !model.value) model.value = o.dataset.model || '';
+    model.placeholder = o.dataset.model || '';
+    document.getElementById('ai-where').textContent = o.dataset.where ? '— ' + o.dataset.where : '';
+    document.getElementById('ai-base').hidden = !o.dataset.custom;
+  }
+  if (prov) { prov.addEventListener('change', function () { sync(false); }); sync(true); }
+
+  var form = document.getElementById('ai-form'), log = document.getElementById('ai-log'), orb = document.getElementById('ai-orb');
+  if (!form) return;
+  var ta = form.querySelector('textarea'), csrf = form.querySelector('[name=csrfmiddlewaretoken]').value;
+  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML.replace(/\n/g, '<br>'); }
+  function add(role, text) { var el = document.createElement('div'); el.className = 'ai__m ai__m--' + role; el.innerHTML = esc(text); log.appendChild(el); el.scrollIntoView({ block: 'end' }); return el; }
+  document.querySelectorAll('[data-say]').forEach(function (b) { b.addEventListener('click', function () { ta.value = b.dataset.say; form.requestSubmit(); }); });
+  ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey && !('ontouchstart' in window)) { e.preventDefault(); form.requestSubmit(); } });
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var text = ta.value.trim(); if (!text) return;
+    document.querySelectorAll('.jv__grid, .jv__panels, .jv .ai__chips').forEach(function (x) { x.remove(); });
+    if (orb) orb.classList.add('is-busy');
+    add('user', text); ta.value = '';
+    var wait = add('wait', '…');
+    var fd = new FormData(form); fd.set('text', text);
+    fetch('/assistant/send/', { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-CSRFToken': csrf } })
+      .then(function (r) { return r.json(); }).then(function (j) {
+        wait.remove(); if (orb) orb.classList.remove('is-busy');
+        if (j.error) { add('error', j.error); return; }
+        form.chat.value = j.chat;
+        if (history.replaceState) history.replaceState(null, '', '/assistant/c/' + j.chat + '/');
+        log.innerHTML = '';
+        j.messages.forEach(function (m) { add(m.role, m.text); });
+        var q = document.querySelector('.ai__quota'); if (q && !j.own_key && !j.unlimited) q.textContent = _t('Осталось бесплатных сообщений сегодня:') + ' ' + j.left;
+      }).catch(function () { wait.remove(); if (orb) orb.classList.remove('is-busy'); add('error', _t('Нет соединения — попробуйте ещё раз')); });
+  });
+})();
+</script>{% endblock %}

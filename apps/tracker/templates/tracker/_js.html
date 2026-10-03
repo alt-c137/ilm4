@@ -2,24 +2,54 @@
 /* отметка без перезагрузки: кнопка → сервер → обновляем строку, кольцо и счётчик */
 (function () {
   document.addEventListener('submit', function (e) {
-    var f = e.target.closest('.hb__f'); if (!f) return;
+    var f = e.target.closest('.hbt__f'); if (!f) return;
     e.preventDefault();
-    var row = f.closest('.hb'), btn = e.submitter, body = new FormData(f);
+    var row = f.closest('.hbt'), btn = e.submitter, body = new FormData(f);
     if (btn && btn.dataset.step) {
-      var cur = parseInt((row.querySelector('.hb__val') || {}).textContent || '0', 10);
+      var cur = parseInt((row.querySelector('.hbt__val') || {}).textContent || '0', 10);
       body.set('value', Math.max(0, cur + parseInt(btn.dataset.step, 10)));
     }
     fetch(f.action, { method: 'POST', body: body, credentials: 'same-origin', headers: { 'X-Requested-With': 'fetch' } })
       .then(function (r) { return r.json(); }).then(function (d) {
         if (d.error) { alert(d.error); return; }
         row.classList.toggle('is-done', d.done);
-        var v = row.querySelector('.hb__val'); if (v) v.textContent = d.value;
-        var all = document.querySelectorAll('.hb[data-habit]').length, done = document.querySelectorAll('.hb.is-done').length;
+        var v = row.querySelector('.hbt__val'); if (v) v.textContent = d.value;
+        var all = document.querySelectorAll('.hbt[data-habit]').length, done = document.querySelectorAll('.hbt.is-done').length;
         var ring = document.getElementById('trk-ring');
         if (ring) { var p = all ? Math.round(100 * done / all) : 0; ring.style.setProperty('--p', p); ring.querySelector('b').textContent = p + '%'; }
         var cnt = document.getElementById('trk-count'); if (cnt) cnt.textContent = done + ' / ' + all;
         if (navigator.vibrate && d.done) navigator.vibrate(12);
       }).catch(function () { f.submit(); });
+  });
+  /* меню «⋯» у привычки: пропуск по уважительной причине, заметка к дню */
+  var menu = null;
+  function closeMenu() { if (menu) { menu.remove(); menu = null; } }
+  function send(row, data) {
+    var f = row.querySelector('.hbt__f'), fd = new FormData();
+    fd.append('csrfmiddlewaretoken', f.querySelector('[name=csrfmiddlewaretoken]').value); fd.append('day', row.dataset.day);
+    Object.keys(data).forEach(function (k) { fd.append(k, data[k]); });
+    return fetch(f.action, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'fetch' } })
+      .then(function (r) { return r.json(); }).then(function (d) { if (d.error) alert(d.error); else location.reload(); });
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-hmenu]');
+    if (!b) { if (menu && !e.target.closest('.ctxmenu')) closeMenu(); return; }
+    closeMenu();
+    var row = b.closest('.hbt'), skip = row.classList.contains('is-skip');
+    menu = document.createElement('div'); menu.className = 'ctxmenu pop';
+    menu.innerHTML = '<button type="button" data-a="skip">' + (skip ? _t('Отменить пропуск') : _t('Пропуск по уважительной причине')) + '</button>' +
+      '<button type="button" data-a="note">' + _t('Заметка к этому дню…') + '</button>' +
+      '<a href="/tracker/h/' + row.dataset.habit + '/calendar/">' + _t('Календарь и история') + '</a>';
+    document.body.appendChild(menu);
+    var r = b.getBoundingClientRect();
+    menu.style.left = Math.max(8, Math.min(r.right - menu.offsetWidth, innerWidth - menu.offsetWidth - 8)) + 'px';
+    menu.style.top = Math.min(r.bottom + 4, innerHeight - menu.offsetHeight - 8) + 'px';
+    menu.addEventListener('click', function (ev) {
+      var a = ev.target.closest('[data-a]'); if (!a) return;
+      closeMenu();
+      if (a.dataset.a === 'skip') send(row, { skip: skip ? '0' : '1' });
+      else { var t = prompt(_t('Заметка к этому дню'), row.dataset.note || ''); if (t !== null) send(row, { note: t }); }
+    });
   });
   document.querySelectorAll('[data-copy-link]').forEach(function (b) {
     b.addEventListener('click', function () { navigator.clipboard && navigator.clipboard.writeText(b.dataset.copyLink).then(function () { b.classList.add('ok'); }); });

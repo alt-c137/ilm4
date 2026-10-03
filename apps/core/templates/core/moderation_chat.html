@@ -5,7 +5,7 @@
 <div class="dpage modq">
   <a class="crumb" href="{% url 'core:moderation' %}?tab=reports">← {% translate "Жалобы" %}</a>
   <h1 class="mypubs__h">{% translate "Переписка по жалобе" %}</h1>
-  <p class="modchat__warn">🔒 {% translate "Вы видите личную переписку только потому, что на неё пожаловались. Это открытие записано в журнал: кто, когда и по какой жалобе. Используйте только для решения по жалобе." %}</p>
+  <p class="modchat__warn">{% translate "Вы видите личную переписку только потому, что на неё пожаловались. Это открытие записано в журнал: кто, когда и по какой жалобе. Используйте только для решения по жалобе." %}</p>
   <p class="mypubs__sub">{% translate "Жалоба:" %} <b>{{ report.get_reason_display }}</b>{% if report.text %} — «{{ report.text }}»{% endif %} · {% translate "от" %} {{ report.reporter.get_display_name }} · {{ report.created_at|date:"j E, H:i" }}</p>
   <p class="modc__meta">{% blocktranslate %}Последние {{ limit }} сообщений.{% endblocktranslate %}</p>
   <div class="dcard modchat">

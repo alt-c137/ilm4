@@ -42,7 +42,9 @@ class BannerAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Rate)
-admin.site.register(SiteSettings, SingletonModelAdmin)
+@admin.register(SiteSettings)
+class SiteSettingsAdmin(SingletonModelAdmin):
+    exclude = ('feed_enabled',)      # ленту теперь включают в «Разделах» (модуль «Лента»), старая галочка ничего не делает
 
 
 @admin.register(SocialLink)

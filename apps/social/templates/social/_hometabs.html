@@ -1,0 +1,5 @@
+{% load i18n %}{# переключатель на главной, как во ВКонтакте: привычная главная — и лента; выбор запоминается #}
+<nav class="hometabs" aria-label="{% translate 'Главная или лента' %}">
+  <a class="hometabs__i{% if on == 'home' %} on{% endif %}" href="/?home=1" data-hometab="home">{% translate "Главная" %}</a>
+  <a class="hometabs__i{% if on == 'feed' %} on{% endif %}" href="/feed/" data-hometab="feed">{% translate "Лента" %}</a>
+</nav>

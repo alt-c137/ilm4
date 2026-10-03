@@ -10,19 +10,23 @@
 <div class="tp">
   <header class="tp__head">
     <a class="tp__back" href="{% if thread %}{% url 'chat:thread' thread.pk %}{% else %}javascript:history.back(){% endif %}" aria-label="{% translate 'Назад' %}">{% ico 'back' %}</a>
-    <div class="tp__ava">{% if person.avatar %}<img src="{{ person.avatar.url }}" alt="">{% else %}<span>{{ person.get_display_name|slice:":1"|upper }}</span>{% endif %}</div>
+    {% if photos %}<button type="button" class="tp__ava tp__ava--view" data-photos="profile-photos" aria-label="{% translate 'Смотреть фото' %}"><img src="{{ person.avatar.url }}" alt="">{% if photos|length > 1 %}<i class="tp__avan">{{ photos|length }}</i>{% endif %}</button>{{ photos|json_script:"profile-photos" }}
+    {% else %}<div class="tp__ava"><span>{{ person.get_display_name|slice:":1"|upper }}</span></div>{% endif %}
     <h1 class="tp__name">{{ person.get_display_name }}{% if person.platform_verified %}<i class="tgver" title="{% translate 'Проверен ilm4' %}">{% ico 'check' %}</i>{% endif %}</h1>
     <div class="tp__status{% if online %} is-on{% endif %}">{{ status }}</div>
+    {% if follow and not follow.counts_hidden %}<div class="tp__counts"><span><b>{{ follow.posts }}</b> {% translate "записей" %}</span><span><b data-followers>{{ follow.followers }}</b> {% translate "подписчиков" %}</span><span><b>{{ follow.follows }}</b> {% translate "подписок" %}</span></div>{% endif %}
   </header>
 
   {% if mine %}
   <div class="tp__acts">
-    <a class="tp__act" href="{% url 'accounts:profile' %}?edit=1">{% ico 'edit' %}<span>{% translate "Изменить" %}</span></a>
+    <a class="tp__act" href="{% url 'accounts:profile' %}?s=edit">{% ico 'edit' %}<span>{% translate "Изменить" %}</span></a>
     <a class="tp__act" href="{% url 'core:my' %}">{% ico 'tag' %}<span>{% translate "Публикации" %}</span></a>
-    <a class="tp__act" href="{% url 'accounts:profile' %}#privacy">{% ico 'lock' %}<span>{% translate "Приватность" %}</span></a>
+    <a class="tp__act" href="{% url 'accounts:profile' %}?s=privacy">{% ico 'lock' %}<span>{% translate "Приватность" %}</span></a>
   </div>
   {% elif user.is_authenticated %}
   <div class="tp__acts">
+    {% if follow %}<form method="post" action="{% url 'social:follow' person.pk %}" id="follow-form">{% csrf_token %}<input type="hidden" name="on" value="{{ follow.on|yesno:'0,1' }}">
+      <button class="tp__act{% if not follow.on %} tp__act--main{% endif %}" type="submit">{% if follow.on %}{% ico 'check' %}<span>{% translate "Вы подписаны" %}</span>{% else %}{% ico 'plus' %}<span>{% translate "Подписаться" %}</span>{% endif %}</button></form>{% endif %}
     <a class="tp__act" href="{% url 'chat:start' %}?user={{ person.pk }}">{% ico 'chat' %}<span>{% translate "Чат" %}</span></a>
     {% if thread %}<form method="post" action="{% url 'chat:mute' thread.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}">
       <button class="tp__act" type="submit">{% if shared.muted %}{% ico 'belloff' %}{% else %}{% ico 'bell' %}{% endif %}<span>{% if shared.muted %}{% translate "Без звука" %}{% else %}{% translate "Звук" %}{% endif %}</span></button></form>{% endif %}
@@ -38,13 +42,20 @@
   <div class="tp__rep">{% rating_badge person %}{% verified_badge person %}</div>
 
   <nav class="tp__tabs" role="tablist">
-    <button type="button" class="tp__tab on" data-tab="pubs" role="tab">{% translate "Публикации" %}</button>
+    {% if follow %}<button type="button" class="tp__tab on" data-tab="wall" role="tab">{% translate "Записи" %}</button>{% endif %}
+    <button type="button" class="tp__tab{% if not follow %} on{% endif %}" data-tab="pubs" role="tab">{% translate "Публикации" %}</button>
+    {% if gifts %}<button type="button" class="tp__tab" data-tab="gifts" role="tab">{% translate "Подарки" %}</button>{% endif %}
     {% if thread %}<button type="button" class="tp__tab" data-tab="media" role="tab">{% translate "Медиа" %}</button>
     <button type="button" class="tp__tab" data-tab="files" role="tab">{% translate "Файлы" %}</button>{% endif %}
     <button type="button" class="tp__tab" data-tab="reviews" role="tab">{% translate "Отзывы" %}</button>
   </nav>
 
-  <div class="tp__pane" data-pane="pubs">
+  {% if follow %}<div class="tp__pane feed" id="feed" data-pane="wall">
+    {% if mine %}<a class="btn btn--p btn--s tp__wallnew" href="{% url 'social:feed' %}">{% ico 'edit' %}{% translate "Новая запись" %}</a>{% endif %}
+    {% for x in wall %}{% include 'social/_item.html' %}{% empty %}<p class="tp__none">{% translate "Записей пока нет." %}</p>{% endfor %}
+  </div>{% endif %}
+  {% if gifts %}<div class="tp__pane" data-pane="gifts" hidden><div class="tp__gifts">{% for g in gifts %}<div class="tp__gift"><span>{{ g.emoji }}</span><b>{{ g.title }}</b>{% if g.from %}<small>{{ g.from.name }}</small>{% endif %}</div>{% endfor %}</div></div>{% endif %}
+  <div class="tp__pane" data-pane="pubs"{% if follow %} hidden{% endif %}>
     {% if listings %}<section class="tp__card tp__sec"><h2>{% translate "Объявления" %} <small>{{ listings|length }}</small></h2>
       <div class="plist">{% for l in listings %}<a class="plist__i" href="{% url 'market:detail' l.pk %}"><b>{{ l.title }}</b><span>{% if l.price == 0 %}{% translate "Даром" %}{% else %}{% money l.price l.currency %}{% endif %} · {{ l.city }}</span></a>{% endfor %}</div></section>{% endif %}
     {% if rides %}<section class="tp__card tp__sec"><h2>{% translate "Перевозки" %} <small>{{ rides|length }}</small></h2>
@@ -69,6 +80,9 @@
 
   {% if user.is_authenticated and not mine %}
   <section class="tp__card tp__more">
+    <form method="post" action="{% url 'chat:contacts' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}">
+      {% if is_contact %}<input type="hidden" name="remove" value="{{ person.pk }}">{% else %}<input type="hidden" name="user" value="{{ person.pk }}">{% endif %}
+      <button class="tp__row" type="submit">{% ico 'userplus' %}<span><b>{% if is_contact %}{% translate "Удалить из контактов" %}{% else %}{% translate "Добавить в контакты" %}{% endif %}</b></span></button></form>
     <form method="post" action="{% url 'accounts:close' person.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}">
       <button class="tp__row" type="submit">{% ico 'heart' %}<span><b>{% if is_close %}{% translate "Убрать из близких друзей" %}{% else %}{% translate "Добавить в близкие друзья" %}{% endif %}</b><small>{% translate "Близким видно то, что вы скрыли от остальных: номер, соцсети, время в сети" %}</small></span></button></form>
     <form method="post" action="{% url 'accounts:block' person.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}">
@@ -79,4 +93,4 @@
 </div>
 {% endblock %}
 
-{% block extra_js %}<script src="{% static 'js/people.js' %}?v={{ asset_v }}" defer></script>{% endblock %}
+{% block extra_js %}<script src="{% static 'js/people.js' %}?v={{ asset_v }}" defer></script>{% if follow %}<form id="feed-csrf" hidden>{% csrf_token %}</form>{% include 'social/_js.html' %}{% else %}<script src="{% static 'js/photoview.js' %}?v={{ asset_v }}" defer></script>{% endif %}{% endblock %}

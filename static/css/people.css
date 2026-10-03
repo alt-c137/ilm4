@@ -201,3 +201,38 @@ a.tp__row:hover,button.tp__row:hover{background:var(--card-2)}
 .pcrop canvas{width:100%;height:100%;border-radius:0;cursor:grab}
 .pcrop::after{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 2000px rgba(11,13,22,.72);border:2px solid rgba(255,255,255,.8);pointer-events:none}
 @media(max-width:760px){.page-trk .nav,.page-tp .nav{display:none}}
+/* редактор фото v2 (как в Telegram): кадр · цвет · рисунок · текст */
+.pedit--v2{gap:8px;padding:calc(8px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom));user-select:none;-webkit-user-select:none}
+.pedit--v2 button svg{width:21px;height:21px;display:block;margin:auto}
+.pedit--v2 .pedit__top button{display:grid;place-items:center}
+.pedit__title{font-weight:700;color:#fff!important;font-size:15px!important}
+.pedit .pedit__ok{width:auto;height:40px;border-radius:20px;padding:0 18px;background:var(--accent);font-size:15px;font-weight:800}
+.pedit--v2 .pedit__stage{min-height:120px}
+.pedit--v2 .pedit__stage canvas{border-radius:4px}
+.pedit__panel{display:flex;flex-direction:column;gap:8px;min-height:96px;justify-content:center}
+.pedit__row{display:flex;align-items:center;gap:10px}
+.pedit__row--c{justify-content:center}
+.pedit__row input[type=range]{flex:1;accent-color:var(--accent);height:28px}
+.pedit__row output{width:36px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:rgba(255,255,255,.8)}
+.pedit__hint{font-size:12.5px;color:rgba(255,255,255,.6)}
+.pedit__chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex:1}
+.pedit__chips::-webkit-scrollbar{display:none}
+.pedit .pedit__chips button{flex:none;width:auto;height:34px;border-radius:17px;padding:0 13px;font-size:13.5px;font-weight:700;display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.1)}
+.pedit .pedit__chips button svg{width:16px;height:16px;margin:0}
+.pedit .pedit__chips button.on{background:#fff;color:#111}
+.pedit .pedit__chips button[data-set]:not(.on){box-shadow:inset 0 0 0 1.5px var(--accent)}
+.pedit .pedit__ib{width:44px;height:44px;border-radius:14px;display:grid;place-items:center}
+.pedit .pedit__ib.on{background:#fff;color:#111}
+.pedit__tools2{display:flex;gap:6px}
+.pedit .pedit__tb{width:auto;height:40px;border-radius:14px;padding:0 14px;font-size:14px;font-weight:700;display:inline-flex;align-items:center;gap:6px}
+.pedit .pedit__tb svg{width:17px;height:17px;margin:0}
+.pedit .pedit__tb--p{background:var(--accent)}
+.pedit__input{flex:1;min-width:0;height:42px;border-radius:14px;border:0;padding:0 14px;font:inherit;font-size:16px;background:rgba(255,255,255,.12);color:#fff;outline:none}
+.pedit__input::placeholder{color:rgba(255,255,255,.5)}
+.pedit__modes{display:flex;justify-content:space-around;gap:4px;border-top:1px solid rgba(255,255,255,.1);padding-top:8px}
+.pedit .pedit__modes button{width:auto;height:auto;flex:1;border-radius:12px;background:transparent;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:700;color:rgba(255,255,255,.6)}
+.pedit .pedit__modes button.on{color:#fff;background:rgba(255,255,255,.1)}
+.pedit .pedit__modes button svg{margin:0}
+.pedit--v2 .pedit__colors button{width:28px;height:28px;border-radius:50%}
+@media(min-width:900px){.pedit--v2{padding-left:max(10px,calc(50vw - 420px));padding-right:max(10px,calc(50vw - 420px))}}
+.pedit--avatar [data-a=undo]{visibility:hidden}

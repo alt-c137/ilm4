@@ -1,40 +1,56 @@
-{% load i18n %}{% load icons %}<aside class="tg__side">
+{% load i18n %}{% load icons %}<aside class="tg__side" id="tg-side" data-folder="{{ folder }}">
+  <form id="tg-csrf" hidden>{% csrf_token %}</form>
   <div class="tg__sidehead">
     <h1 class="tg__title">{% translate "Чаты" %}</h1>
     <span class="tg__heads">
       <a class="tg__new tg__new--main" href="{% url 'chat:people' %}" title="{% translate 'Новое сообщение: найти человека, создать группу или канал' %}" aria-label="{% translate 'Новое сообщение' %}">{% ico 'edit' %}</a>
-      {# меню «⋮», как в Telegram: создать группу или канал, каталог, поддержка #}
+      {# меню «⋮», как в Telegram: создать группу или канал, избранное, папки, каталог, поддержка #}
       <details class="tp__menu tp__menu--row tg__more">
         <summary aria-label="{% translate 'Ещё' %}">{% ico 'dots' %}</summary>
         <div class="tp__pop">
           {% if rooms_on %}<a href="{% url 'chat:room_new' %}?kind=group">{% ico 'users' %}{% translate "Создать группу" %}</a>
           <a href="{% url 'chat:room_new' %}?kind=channel">{% ico 'megaphone' %}{% translate "Создать канал" %}</a>{% endif %}
+          <a href="{% url 'chat:saved' %}">{% ico 'bookmark' %}{% translate "Избранное" %}</a>
+          <a href="{% url 'chat:folders' %}">{% ico 'folder' %}{% translate "Папки с чатами" %}</a>
           {% if channels_on %}<a href="{% url 'chat:channels' %}">{% ico 'search' %}{% translate "Каналы и группы" %}</a>{% endif %}
-          {% if contacts_on %}<a href="{% url 'chat:contacts' %}">{% ico 'user' %}{% translate "Найти знакомых" %}</a>{% endif %}
+          {% if contacts_on %}<a href="{% url 'chat:contacts' %}">{% ico 'user' %}{% translate "Контакты" %}</a>{% endif %}
           {% if support_on %}<a href="{% url 'chat:support' %}">{% ico 'shield' %}{% translate "Поддержка ilm4" %}</a>{% endif %}
-          <a href="{% url 'core:settings' %}#chat-look">{% ico 'image' %}{% translate "Фон чата" %}</a>
+          <a href="{% url 'core:settings' %}?s=chats#chat-look">{% ico 'image' %}{% translate "Фон чата" %}</a>
         </div>
       </details>
     </span>
   </div>
   <label class="tg__search">{% ico 'search' %}<input type="search" id="tg-q" placeholder="{% translate 'Поиск' %}" autocomplete="off" aria-label="{% translate 'Поиск по чатам' %}"></label>
-  {% if folders|length > 1 %}
-  <nav class="tg__folders" aria-label="{% translate 'Папки чатов' %}">
-    <a class="tg__folder{% if not folder %} on{% endif %}" href="{% url 'chat:inbox' %}">{% translate "Все" %}{% if all_unread %} <b>{{ all_unread }}</b>{% endif %}</a>
-    {% for f in folders %}<a class="tg__folder{% if folder == f.key %} on{% endif %}" href="{% url 'chat:inbox' %}?f={{ f.key }}">{{ f.name }}{% if f.unread %} <b>{{ f.unread }}</b>{% endif %}</a>{% endfor %}
+  {# вкладки-папки — как в Telegram: их нет, пока человек не создал папку (⋮ → «Папки с чатами»); долгое нажатие или правая кнопка на вкладке — изменить #}
+  {% if tabs.folders %}
+  <nav class="tgtabs" id="tg-tabs" aria-label="{% translate 'Папки чатов' %}">
+    <a class="tgtab{% if not folder %} on{% endif %}" data-f="" data-ids="{{ tabs.all.ids|join:',' }}" href="{% url 'chat:inbox' %}">{% translate "Все" %}{% if tabs.all.unread %}<b>{{ tabs.all.unread }}</b>{% elif tabs.all.unread_muted %}<b class="q">{{ tabs.all.unread_muted }}</b>{% endif %}</a>
+    {% for f in tabs.folders %}<a class="tgtab{% if folder == f.id|stringformat:'s' %} on{% endif %}" data-f="{{ f.id }}" data-ids="{{ f.ids|join:',' }}" data-pins="{{ f.pins|join:',' }}" data-title="{{ f.title }}" href="{% url 'chat:inbox' %}?f={{ f.id }}">{{ f.title }}{% if f.unread %}<b>{{ f.unread }}</b>{% elif f.unread_muted %}<b class="q">{{ f.unread_muted }}</b>{% endif %}</a>{% endfor %}
   </nav>
   {% endif %}
   <nav class="tg__list" id="tg-list">
+    {% if tabs.archive.n %}
+    <a class="tgrow tgrow--archive" id="tg-archive" data-f="archive" data-ids="{{ tabs.archive.ids|join:',' }}" href="{% url 'chat:inbox' %}?f=archive"{% if folder %} hidden{% endif %}>
+      <span class="tava tava--arch">{% ico 'archive' %}</span>
+      <span class="tgrow__b">
+        <span class="tgrow__top"><b>{% translate "Архив" %}</b></span>
+        <span class="tgrow__bot"><span class="tgrow__msg">{{ tabs.archive.names|join:", " }}</span>{% if tabs.archive.unread %}<span class="tgrow__badge">{{ tabs.archive.unread }}</span>{% elif tabs.archive.unread_muted %}<span class="tgrow__badge tgrow__badge--muted">{{ tabs.archive.unread_muted }}</span>{% endif %}</span>
+      </span>
+    </a>
+    {% endif %}
+    <a class="tgrow tgrow--back" id="tg-archive-back" href="{% url 'chat:inbox' %}" hidden><span class="tava tava--arch">{% ico 'back' %}</span><span class="tgrow__b"><span class="tgrow__top"><b>{% translate "Архив" %}</b></span><span class="tgrow__bot"><span class="tgrow__msg">{% translate "Назад ко всем чатам" %}</span></span></span></a>
     {% for r in rows %}
-    <a class="tgrow{% if thread and r.thread.pk == thread.pk %} on{% endif %}" href="{% url 'chat:thread' r.thread.pk %}"
-       data-q="{{ r.name|lower }} {{ r.thread.subject|lower }}">
+    <a class="tgrow{% if thread and r.thread.pk == thread.pk %} on{% endif %}{% if r.pinned %} is-pinned{% endif %}" href="{% url 'chat:thread' r.thread.pk %}"
+       data-id="{{ r.thread.pk }}" data-q="{{ r.name|lower }} {{ r.thread.subject|lower }}"
+       data-arch="{{ r.archived|yesno:'1,' }}" data-pin="{{ r.pinned|yesno:'1,' }}" data-muted="{{ r.muted|yesno:'1,' }}"
+       data-unread="{% if r.unread or r.unread_mark %}1{% endif %}" data-room="{{ r.pic.room }}" data-saved="{{ r.thread.is_saved|yesno:'1,' }}">
       {% include 'chat/_pic.html' with p=r.pic %}
       <span class="tgrow__b">
-        <span class="tgrow__top"><b>{% if r.pic.room == 'channel' %}<i class="tgk tgk--room">{% ico 'megaphone' %}</i>{% elif r.pic.room == 'group' %}<i class="tgk tgk--room">{% ico 'users' %}</i>{% endif %}{{ r.name }}{% if r.pic.verified %}<i class="tgver" title="{% translate 'Официальный' %}">{% ico 'check' %}</i>{% endif %}{% if r.muted %}<i class="tgmute" title="{% translate 'Без звука' %}">{% ico 'belloff' %}</i>{% endif %}</b><time>{{ r.when }}</time></span>
-        {% if r.thread.context_type and r.thread.subject %}<span class="tgrow__ctx">{{ r.thread.subject }}</span>{% endif %}
+        <span class="tgrow__top"><b>{% if r.pic.room == 'channel' %}<i class="tgk tgk--room">{% ico 'megaphone' %}</i>{% elif r.pic.room == 'group' %}<i class="tgk tgk--room">{% ico 'users' %}</i>{% endif %}{{ r.name }}{% if r.pic.verified %}<i class="tgver" title="{% translate 'Официальный' %}">{% ico 'check' %}</i>{% endif %}{% if r.muted %}<i class="tgmute" title="{% translate 'Без звука' %}">{% ico 'belloff' %}</i>{% endif %}</b><time>{% if not r.unread and not r.pic.room and r.mine and r.last %}<span class="tick{% if r.last.read_at %} tick--2{% endif %}"></span>{% endif %}{{ r.when }}</time></span>
+        {% if r.thread.context_type and r.thread.subject and not r.thread.is_saved %}<span class="tgrow__ctx">{{ r.thread.subject }}</span>{% endif %}
         <span class="tgrow__bot">
-          <span class="tgrow__msg">{% if r.last %}{% if r.mine %}<i>{% translate "Вы:" %}</i> {% elif r.author %}<i>{{ r.author }}:</i> {% endif %}{% if r.kind == 'photo' %}<i class="tgk">{% ico 'image' %}</i>{% elif r.kind == 'voice' %}<i class="tgk">{% ico 'mic' %}</i>{% elif r.kind == 'circle' %}<i class="tgk">{% ico 'circlecam' %}</i>{% elif r.kind == 'file' %}<i class="tgk">{% ico 'clip' %}</i>{% elif r.kind == 'system' %}<i class="tgk">{% ico 'call' %}</i>{% endif %}{{ r.preview|truncatechars:60 }}{% elif r.thread.subject %}{{ r.thread.subject }}{% else %}{% translate "Нет сообщений — напишите первым" %}{% endif %}</span>
-          {% if r.unread %}<span class="tgrow__badge{% if r.muted %} tgrow__badge--muted{% endif %}">{{ r.unread }}</span>{% elif r.pic.room %}{% elif r.mine and r.last.read_at %}<span class="tick tick--2" title="{% translate 'Прочитано' %}"></span>{% elif r.mine %}<span class="tick" title="{% translate 'Отправлено' %}"></span>{% endif %}
+          <span class="tgrow__msg">{% if r.draft %}<i class="tgdraft">{% translate "Черновик:" %}</i> {{ r.draft|truncatechars:60 }}{% elif r.last %}{% if r.mine and not r.thread.is_saved %}<i>{% translate "Вы:" %}</i> {% elif r.author %}<i>{{ r.author }}:</i> {% endif %}{% if r.kind == 'photo' %}<i class="tgk">{% ico 'image' %}</i>{% elif r.kind == 'video' %}<i class="tgk">{% ico 'video' %}</i>{% elif r.kind == 'voice' %}<i class="tgk">{% ico 'mic' %}</i>{% elif r.kind == 'circle' %}<i class="tgk">{% ico 'circlecam' %}</i>{% elif r.kind == 'file' %}<i class="tgk">{% ico 'clip' %}</i>{% elif r.kind == 'poll' %}<i class="tgk">{% ico 'poll' %}</i>{% elif r.kind == 'system' %}<i class="tgk">{% ico 'info' %}</i>{% endif %}{{ r.preview|truncatechars:60 }}{% elif r.thread.is_saved %}{% translate "Заметки, ссылки и пересланное — только для вас" %}{% elif r.thread.subject %}{{ r.thread.subject }}{% else %}{% translate "Нет сообщений — напишите первым" %}{% endif %}</span>
+          {% if r.unread %}<span class="tgrow__badge{% if r.muted %} tgrow__badge--muted{% endif %}">{{ r.unread }}</span>{% elif r.unread_mark %}<span class="tgrow__badge tgrow__badge--dot{% if r.muted %} tgrow__badge--muted{% endif %}"></span>{% elif r.pinned %}<span class="tgrow__pin">{% ico 'tack' %}</span>{% endif %}
         </span>
       </span>
     </a>
@@ -47,6 +63,11 @@
       {% if channels_on %}<a class="btn btn--g" href="{% url 'chat:channels' %}">{% translate "Найти каналы и группы" %}</a>{% endif %}
     </div>
     {% endfor %}
+    <div class="tg__empty tg__empty--folder" id="tg-folder-empty" hidden>
+      <div class="empty__plug">{% ico 'folder' %}</div>
+      <b>{% translate "В этой папке пока пусто" %}</b>
+      <span>{% translate "Чаты попадают сюда по правилам папки. Изменить правила — «Настроить папки»." %}</span>
+    </div>
   </nav>
   {# круглая кнопка «написать» — как в Telegram (на телефоне) #}
   <a class="tg__fab" href="{% url 'chat:people' %}" aria-label="{% translate 'Новое сообщение' %}">{% ico 'edit' %}</a>

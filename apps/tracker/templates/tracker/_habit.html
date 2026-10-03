@@ -1,12 +1,15 @@
-{% load i18n icons %}<div class="hb{% if h.done %} is-done{% endif %}" data-habit="{{ h.id }}" data-target="{{ h.target }}" data-kind="{{ h.kind }}" style="--hc:{{ h.color }}">
-  <span class="hb__em">{{ h.emoji }}</span>
-  <span class="hb__b">
-    <b>{{ h.title }}</b>
-    <small>{% if h.kind == 'count' %}<span class="hb__val">{{ h.value }}</span> / {{ h.target }} {{ h.unit }}{% if h.streak %} · {% endif %}{% endif %}{% if h.streak %}🔥 {{ h.streak }} {% translate "дн. подряд" %}{% endif %}{% if h.board_title and not hide_board %}{% if h.streak or h.kind == 'count' %} · {% endif %}{{ h.board_title }}{% endif %}{% if h.once_on %}{% translate "разовое дело" %}{% endif %}</small>
-    {% if h.who %}<span class="hb__who">{% for p in h.who %}<i class="{% if p.done %}on{% endif %}" title="{{ p.name }}">{{ p.name|slice:":1"|upper }}</i>{% endfor %}</span>{% endif %}
+{% load i18n icons %}<div class="hbt{% if h.done %} is-done{% endif %}{% if h.skipped %} is-skip{% endif %}" data-habit="{{ h.id }}" data-day="{{ day }}" data-note="{{ h.log_note }}" data-target="{{ h.target }}" data-kind="{{ h.kind }}" style="--hc:{{ h.color }}">
+  <span class="hbt__em">{% hicon h.emoji %}</span>
+  <span class="hbt__b">
+    <a class="hbt__t" href="{% url 'tracker:habit' h.id %}"><b>{{ h.title }}</b></a>
+    <small class="hbt__m">{% if h.kind == 'count' %}<span><span class="hbt__val">{{ h.value }}</span> / {{ h.target }} {{ h.unit }}</span>{% endif %}{% if h.streak %}<span>{% ico 'flame' 'i-inl i-flame' %} {{ h.streak }} {% if h.per_week %}{% translate "нед. подряд" %}{% else %}{% translate "дн. подряд" %}{% endif %}</span>{% endif %}{% if h.per_week %}<span>{{ h.week_done }}/{{ h.per_week }} {% translate "на неделе" %}</span>{% endif %}{% if h.board_title and not hide_board %}<span>{{ h.board_title }}</span>{% endif %}{% if h.once_on %}<span>{% translate "разовое дело" %}</span>{% endif %}{% if h.skipped %}<span>{% translate "пропуск" %}</span>{% endif %}{% if h.reminders %}<span>{% ico 'alarm' 'i-inl' %} {{ h.reminders|join:", " }}</span>{% endif %}</small>
+    {% if h.note %}<small class="hbt__note">{{ h.note }}</small>{% endif %}
+    {% if h.log_note %}<small class="hbt__lnote">{% ico 'note' 'i-inl' %} {{ h.log_note }}</small>{% endif %}
+    {% if h.who %}<span class="hbt__who">{% for p in h.who %}<i class="{% if p.done %}on{% endif %}" title="{{ p.name }}">{{ p.name|slice:":1"|upper }}</i>{% endfor %}</span>{% endif %}
   </span>
-  {% if h.can_edit %}<a class="hb__edit" href="{% url 'tracker:edit' h.id %}" aria-label="{% translate 'Изменить' %}">{% ico 'edit' %}</a>{% endif %}
-  {% if can_mark %}<form method="post" action="{% url 'tracker:log' h.id %}" class="hb__f">{% csrf_token %}<input type="hidden" name="day" value="{{ day }}">
-    {% if h.kind == 'count' %}<button type="submit" name="value" value="{% if h.value > 0 %}{{ h.value|add:'-1' }}{% else %}0{% endif %}" class="hb__minus" data-step="-1" aria-label="−">−</button>{% endif %}
-    <button type="submit" class="hb__chk" {% if h.kind == 'count' %}data-step="1"{% endif %} aria-label="{% translate 'Отметить' %}">{% if h.kind == 'count' %}+{% else %}{% ico 'check' %}{% endif %}</button></form>{% endif %}
+  {% if can_mark %}<button type="button" class="hbt__more" data-hmenu aria-label="{% translate 'Ещё' %}">{% ico 'dots' %}</button>{% endif %}
+  {% if h.can_edit %}<a class="hbt__edit" href="{% url 'tracker:edit' h.id %}" aria-label="{% translate 'Изменить' %}">{% ico 'edit' %}</a>{% endif %}
+  {% if can_mark %}<form method="post" action="{% url 'tracker:log' h.id %}" class="hbt__f">{% csrf_token %}<input type="hidden" name="day" value="{{ day }}">
+    {% if h.kind == 'count' %}<button type="submit" name="value" value="{% if h.value > 0 %}{{ h.value|add:'-1' }}{% else %}0{% endif %}" class="hbt__minus" data-step="-1" aria-label="−">−</button>{% endif %}
+    <button type="submit" class="hbt__chk" {% if h.kind == 'count' %}data-step="1"{% endif %} aria-label="{% translate 'Отметить' %}">{% if h.kind == 'count' %}+{% else %}{% ico 'check' %}{% endif %}</button></form>{% endif %}
 </div>

@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load i18n icons %}
+{% block title %}{% translate "Аккаунты —" %} {{ block.super }}{% endblock %}
+{% block body_class %}page-tp{% endblock %}
+{% block content %}
+<div class="tp">
+  <a class="crumb" href="{% url 'core:settings' %}">{% ico 'back' %}{% translate "Настройки" %}</a>
+  <header class="tp__bar"><h1>{% translate "Аккаунты" %}</h1></header>
+  <p class="tp__note">{% blocktranslate %}На этом устройстве можно держать до {{ max }} аккаунтов и переключаться между ними без пароля — как в Telegram.{% endblocktranslate %}</p>
+  <section class="tp__card">
+    {% for r in rows %}<div class="tp__row acc__row">
+      {% if r.user.avatar %}<img class="tava tava--sm" src="{{ r.user.avatar.url }}" alt="">{% else %}<span class="tava tava--sm tava--h2">{{ r.user.get_display_name|slice:":1"|upper }}</span>{% endif %}
+      <span><b>{{ r.user.get_display_name }}</b><small>{% if r.current %}{% translate "сейчас открыт" %}{% elif not r.ok %}{% translate "нужно войти заново" %}{% elif r.user.handle %}@{{ r.user.handle }}{% else %}{{ r.user.email }}{% endif %}</small></span>
+      {% if not r.current %}
+      {% if r.ok %}<form method="post" action="{% url 'accounts:accounts_switch' %}">{% csrf_token %}<input type="hidden" name="user" value="{{ r.user.pk }}"><button type="submit" class="btn btn--s btn--p">{% translate "Открыть" %}</button></form>{% endif %}
+      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="forget"><input type="hidden" name="user" value="{{ r.user.pk }}"><button type="submit" class="btn btn--s btn--g" aria-label="{% translate 'Убрать с устройства' %}">{% ico 'close' %}</button></form>
+      {% endif %}
+    </div>{% endfor %}
+    {% if can_add %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="add">
+      <button type="submit" class="tp__row tp__row--todo acc__add">{% ico 'userplus' %}<span><b>{% translate "Добавить аккаунт" %}</b><small>{% translate "Войти во второй аккаунт — этот останется на устройстве" %}</small></span></button></form>{% endif %}
+  </section>
+  <p class="tp__note">{% translate "Сменили пароль — запомненные входы этого аккаунта на всех устройствах перестают работать. «Выйти» убирает аккаунт с этого устройства." %}</p>
+</div>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load icons static %}
+{% block title %}{% if folder %}{{ folder.title }}{% else %}{% translate "Новая папка" %}{% endif %} — {{ block.super }}{% endblock %}
+{% block body_class %}s-chat page-tp{% endblock %}
+
+{% block content %}
+<form method="post" class="tp tp--plain" id="folder-form">{% csrf_token %}
+  <header class="tp__bar">
+    <a class="tp__back tp__back--in" href="{% url 'chat:folders' %}" aria-label="{% translate 'Назад' %}">{% ico 'back' %}</a>
+    <h1>{% if folder %}{% translate "Папка" %}{% else %}{% translate "Новая папка" %}{% endif %}</h1>
+    <button type="submit" class="tp__ok">{% translate "Готово" %}</button>
+  </header>
+
+  <h2 class="ppl__h">{% translate "Название" %}</h2>
+  <section class="tp__card tp__pad">
+    <div class="fold__name">
+      <input type="text" name="title" maxlength="24" required value="{{ folder.title|default:'' }}" placeholder="{% translate 'Название папки' %}" autofocus>
+    </div>
+  </section>
+
+  <h2 class="ppl__h">{% translate "Что входит в папку" %}</h2>
+  <section class="tp__card">
+    {% for t in types %}
+    <label class="tp__row tp__check"><input type="checkbox" name="types" value="{{ t.key }}"{% if folder and t.key in folder.types %} checked{% endif %}><span><b>{{ t.name }}</b><small>{% if t.key == 'personal' %}{% translate "Переписка с людьми, поддержка, «Избранное»" %}{% elif t.key == 'ads' %}{% translate "Чаты по объявлениям, вакансиям, услугам, поездкам" %}{% elif t.key == 'nikah' %}{% translate "Знакомства для никяха" %}{% elif t.key == 'groups' %}{% translate "Все группы, где вы состоите" %}{% else %}{% translate "Все каналы, на которые вы подписаны" %}{% endif %}</small></span></label>
+    {% endfor %}
+  </section>
+  <details class="tp__card tp__fold"{% if inc %} open{% endif %}>
+    <summary>{% ico 'plus' %}<b>{% translate "Добавить чаты поимённо" %}</b><i class="fold__n" data-count="include">{% if inc %}{{ inc|length }}{% endif %}</i></summary>
+    <div class="fold__chats">
+      <input type="search" class="fold__q" placeholder="{% translate 'Поиск' %}" data-filter="include">
+      {% for c in chats %}<label class="fold__chat" data-q="{{ c.name|lower }}"><input type="checkbox" name="include" value="{{ c.id }}"{% if c.id in inc %} checked{% endif %}>{% include 'chat/_pic.html' with p=c.pic size='sm' %}<span>{{ c.name }}</span></label>{% empty %}<span class="hint">{% translate "Чатов пока нет." %}</span>{% endfor %}
+    </div>
+  </details>
+
+  <h2 class="ppl__h">{% translate "Что не показывать" %}</h2>
+  <section class="tp__card">
+    <label class="tp__row tp__check"><input type="checkbox" name="no_muted" value="1"{% if folder.no_muted %} checked{% endif %}><span><b>{% translate "Без звука" %}</b><small>{% translate "Чаты, у которых выключен звук" %}</small></span></label>
+    <label class="tp__row tp__check"><input type="checkbox" name="no_read" value="1"{% if folder.no_read %} checked{% endif %}><span><b>{% translate "Прочитанные" %}</b><small>{% translate "Останутся только чаты с новыми сообщениями" %}</small></span></label>
+    <label class="tp__row tp__check"><input type="checkbox" name="no_archived" value="1"{% if not folder or folder.no_archived %} checked{% endif %}><span><b>{% translate "Из архива" %}</b><small>{% translate "Чаты, убранные в архив" %}</small></span></label>
+  </section>
+  <details class="tp__card tp__fold"{% if exc %} open{% endif %}>
+    <summary>{% ico 'close' %}<b>{% translate "Исключить чаты поимённо" %}</b><i class="fold__n" data-count="exclude">{% if exc %}{{ exc|length }}{% endif %}</i></summary>
+    <div class="fold__chats">
+      <input type="search" class="fold__q" placeholder="{% translate 'Поиск' %}" data-filter="exclude">
+      {% for c in chats %}<label class="fold__chat" data-q="{{ c.name|lower }}"><input type="checkbox" name="exclude" value="{{ c.id }}"{% if c.id in exc %} checked{% endif %}>{% include 'chat/_pic.html' with p=c.pic size='sm' %}<span>{{ c.name }}</span></label>{% endfor %}
+    </div>
+  </details>
+  <button type="submit" class="btn btn--p tp__bigsave">{% if folder %}{% translate "Сохранить" %}{% else %}{% translate "Создать папку" %}{% endif %}</button>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  document.querySelectorAll('.fold__q').forEach(function (q) {
+    q.addEventListener('input', function () {
+      var v = q.value.trim().toLowerCase();
+      q.parentNode.querySelectorAll('.fold__chat').forEach(function (l) { l.hidden = v && l.dataset.q.indexOf(v) === -1; });
+    });
+  });
+  function count(name) {
+    var n = document.querySelectorAll('input[name=' + name + ']:checked').length;
+    var el = document.querySelector('[data-count=' + name + ']'); if (el) el.textContent = n || '';
+  }
+  document.getElementById('folder-form').addEventListener('change', function (e) {
+    if (e.target.name === 'include' || e.target.name === 'exclude') count(e.target.name);
+  });
+})();
+</script>
+{% endblock %}

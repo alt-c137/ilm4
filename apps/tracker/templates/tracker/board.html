@@ -5,20 +5,23 @@
 {% block content %}
 <div class="trk">
   <header class="trk__head"><a class="tg__back ppl__back" href="{% url 'tracker:index' %}" aria-label="{% translate 'Назад' %}">{% ico 'back' %}</a>
-    <div><h1>{{ board.emoji }} {{ board.title }}</h1><span>{% translate "участников:" %} {{ members }}{% if compete %} · 🏆 {% translate "соревнование" %}{% endif %}</span></div>
+    <div><h1>{% hicon board.emoji %} {{ board.title }}</h1><span>{% translate "участников:" %} {{ members }}{% if compete %} · {% ico 'trophy' 'i-inl i-gold' %} {% translate "соревнование" %}{% endif %}{% if ends_on %} · {% if finished %}{% translate "завершено" %}{% else %}{% translate "осталось дней:" %} {{ days_left }}{% endif %}{% endif %}</span></div>
     <span class="trk__tools"><a class="tg__new tg__new--main" href="{% url 'tracker:new' %}?board={{ board.pk }}" aria-label="{% translate 'Добавить привычку' %}">{% ico 'plus' %}</a></span></header>
 
+  {% if chat_on %}<form method="post" class="trk__chatbtn">{% csrf_token %}<button class="btn btn--g btn--s" name="action" value="chat">{% ico 'chat' %}{% translate "Чат трекера" %}</button>
+    <a class="btn btn--g btn--s" href="{% url 'tracker:templates' %}?board={{ board.pk }}">{% ico 'star' %}{% translate "Готовые привычки" %}</a></form>{% endif %}
+  {% if finished and compete and people %}<div class="trk__win">{% ico 'trophy' 'i-inl i-gold' %} {% translate "Победитель:" %} <b>{{ people.0.name }}</b> — {{ people.0.points }} {% translate "отметок" %}</div>{% endif %}
   {% if items %}<div class="trk__list">{% for h in items %}{% include 'tracker/_habit.html' with hide_board=1 %}{% endfor %}</div>
-  {% else %}<div class="trk__empty"><span class="trk__empty-ic">{{ board.emoji }}</span><b>{% translate "Пока пусто" %}</b>
+  {% else %}<div class="trk__empty"><span class="trk__empty-ic">{% hicon board.emoji %}</span><b>{% translate "Пока пусто" %}</b>
     <span>{% translate "Добавьте первую общую привычку — её увидят все участники, а отмечать каждый будет сам." %}</span>
     <a class="btn btn--p" href="{% url 'tracker:new' %}?board={{ board.pk }}">{% ico 'plus' %}{% translate "Добавить привычку" %}</a></div>{% endif %}
 
-  <h2 class="trk__h">{% if compete %}🏆 {% translate "Таблица" %}{% else %}{% translate "Участники" %}{% endif %}
+  <h2 class="trk__h">{% if compete %}{% ico 'trophy' 'i-inl i-gold' %} {% translate "Таблица" %}{% else %}{% translate "Участники" %}{% endif %}
     <span class="trk__per">{% for p in periods %}<a class="{% if p == period %}on{% endif %}" href="?days={{ p }}">{{ p }} {% translate "дн." %}</a>{% endfor %}</span></h2>
   <section class="tp__card">
     {% for p in people %}
     <div class="trk__man{% if p.me %} is-me{% endif %}">
-      {% if compete %}<span class="trk__place">{% if p.place == 1 %}🥇{% elif p.place == 2 %}🥈{% elif p.place == 3 %}🥉{% else %}{{ p.place }}{% endif %}</span>{% endif %}
+      {% if compete %}<span class="trk__place trk__place--{{ p.place }}">{% if p.place <= 3 %}{% ico 'medal' 'i-medal' %}{% else %}{{ p.place }}{% endif %}</span>{% endif %}
       <a class="trk__man-b" href="{% url 'accounts:public' p.id %}"><b>{{ p.name }}{% if p.owner %} <small>· {% translate "владелец" %}</small>{% endif %}</b>
         <span class="trk__line"><i style="width:{{ p.rate }}%"></i></span></a>
       <em>{{ p.points }}<small>/{{ p.total }}</small></em>
@@ -26,6 +29,9 @@
     </div>
     {% endfor %}
   </section>
+
+  {% if activity %}<h2 class="trk__h">{% translate "Что нового" %}</h2>
+  <section class="tp__card trk__act">{% for a in activity|slice:":12" %}<div class="tp__row"><span>{% hicon a.emoji %}</span><span><b>{% if a.me %}{% translate "Вы" %}{% else %}{{ a.name }}{% endif %} · {{ a.habit }}{% if a.unit %} — {{ a.value }} {{ a.unit }}{% endif %}{% if a.done %} ✓{% endif %}</b><small>{{ a.day }}</small></span></div>{% endfor %}</section>{% endif %}
 
   <h2 class="trk__h">{% translate "Позвать людей" %}</h2>
   <section class="tp__card trk__form">
@@ -35,7 +41,9 @@
 
   <section class="tp__card tp__more">
     {% if owner %}
-    <form method="post">{% csrf_token %}<button class="tp__row" name="action" value="compete">🏆<span><b>{% if compete %}{% translate "Выключить соревнование" %}{% else %}{% translate "Включить соревнование" %}{% endif %}</b><small>{% translate "Таблица: кто сколько выполнил за период" %}</small></span></button></form>
+    <form method="post">{% csrf_token %}<button class="tp__row" name="action" value="compete">{% ico 'trophy' %}<span><b>{% if compete %}{% translate "Выключить соревнование" %}{% else %}{% translate "Включить соревнование" %}{% endif %}</b><small>{% translate "Таблица: кто сколько выполнил за период" %}</small></span></button></form>
+    <form method="post" class="tp__row trk__ends">{% csrf_token %}<input type="hidden" name="action" value="ends_on">{% ico 'calendar' %}<span><b>{% translate "Соревнование до" %}</b><small>{% translate "После этой даты будет виден победитель. Пусто — без срока" %}</small></span>
+      <input type="date" name="ends_on" value="{{ ends_on }}" onchange="this.form.submit()"></form>
     <form method="post">{% csrf_token %}<button class="tp__row" name="action" value="link" onclick="return confirm('{% translate 'Старая ссылка перестанет работать. Продолжить?' %}')">{% ico 'link' %}<span><b>{% translate "Сделать новую ссылку" %}</b><small>{% translate "Старая перестанет работать" %}</small></span></button></form>
     <form method="post">{% csrf_token %}<button class="tp__row tp__row--bad" name="action" value="delete" onclick="return confirm('{% translate 'Удалить трекер у всех участников?' %}')">{% ico 'trash' %}<span><b>{% translate "Удалить трекер" %}</b><small>{% translate "У всех участников, вместе с отметками" %}</small></span></button></form>
     {% else %}

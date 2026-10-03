@@ -1,4 +1,3 @@
-import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -7,6 +6,7 @@ import { KeyboardAvoidingView, Platform, Pressable, Switch, View } from 'react-n
 import { api, ApiError } from '@/lib/api';
 import { useApp } from '@/state/app';
 import { Button, Card, Field, Icon, Screen, Segmented, Txt } from '@/ui/kit';
+import { useAvatarPick } from '@/ui/photo-editor';
 
 /** Новая группа или канал. Те же правила, что на сайте (apps/chat/rooms.py). */
 export default function NewRoom() {
@@ -17,14 +17,12 @@ export default function NewRoom() {
   const [about, setAbout] = useState('');
   const [isPublic, setPublic] = useState(false);
   const [handle, setHandle] = useState('');
-  const [avatar, setAvatar] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const [avatar, setAvatar] = useState<{ uri: string } | null>(null);
+  const avatarPick = useAvatarPick((uri) => setAvatar({ uri }));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  const pick = async () => {
-    const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.85, allowsEditing: true, aspect: [1, 1] });
-    if (!r.canceled && r.assets[0]) setAvatar(r.assets[0]);
-  };
+  const pick = avatarPick.pick;
   const create = async () => {
     setBusy(true);
     setError('');
@@ -35,7 +33,7 @@ export default function NewRoom() {
       form.append('about', about);
       if (isPublic) form.append('is_public', '1');
       form.append('handle', isPublic ? handle : '');
-      if (avatar) form.append('avatar', { uri: avatar.uri, name: avatar.fileName || 'avatar.jpg', type: avatar.mimeType || 'image/jpeg' } as any);
+      if (avatar) form.append('avatar', { uri: avatar.uri, name: 'avatar.jpg', type: 'image/jpeg' } as any);
       const r = await api<{ thread: number }>('/chat/rooms/new/', { form, timeout: 60000 });
       router.replace(`/chat/${r.thread}`);
     } catch (e) {
@@ -74,6 +72,7 @@ export default function NewRoom() {
         {error ? <Txt color={c.bad}>{error}</Txt> : null}
         <Button title={t('Создать')} icon="add" onPress={create} loading={busy} disabled={title.trim().length < 2} />
       </Screen>
+      {avatarPick.editor}
     </KeyboardAvoidingView>
   );
 }

@@ -5,26 +5,51 @@
 {% block body_class %}s-chat page-chat page-thread{% endblock %}
 
 {% block content %}
-<div class="tg tg--open">
-  {% include 'chat/_threads.html' %}
+<div class="tg tg--open{% if space_side %} tg--space{% endif %}">
+  {% if space_side %}{% include 'chat/_space_side.html' %}{% else %}{% include 'chat/_threads.html' %}{% endif %}
   <section class="tg__main" id="chat-main">
     <header class="tg__head">
-      <a class="tg__back" href="{% url 'chat:inbox' %}" aria-label="{% translate 'Все чаты' %}">{% ico 'back' %}</a>
-      {% if room %}<a class="tg__roomlink" href="{% url 'chat:room_info' thread.pk %}">{% elif other %}<a class="tg__roomlink" href="{% url 'accounts:public' other.pk %}" title="{% translate 'Открыть профиль' %}">{% endif %}
+      <a class="tg__back" href="{% if space_side %}{% url 'spaces:space' space_side.space.pk %}{% else %}{% url 'chat:inbox' %}{% endif %}" aria-label="{% translate 'Назад' %}">{% ico 'back' %}</a>
+      {% if saved %}<span class="tg__roomlink">{% elif room %}<a class="tg__roomlink" href="{% if space_side %}{% url 'spaces:space' space_side.space.pk %}{% else %}{% url 'chat:room_info' thread.pk %}{% endif %}">{% elif pic.masked %}{% if pic.link %}<a class="tg__roomlink" href="{{ pic.link }}" title="{% translate 'Открыть анкету' %}">{% else %}<span class="tg__roomlink">{% endif %}{% elif other %}<a class="tg__roomlink" href="{% url 'accounts:public' other.pk %}" title="{% translate 'Открыть профиль' %}">{% endif %}
       {% include 'chat/_pic.html' with p=pic size='sm' %}
       <div class="tg__who">
         <b>{{ pic.name }}{% if pic.verified %}<i class="tgver" title="{% translate 'Официальный' %}">{% ico 'check' %}</i>{% endif %}</b>
-        <span>{% if room %}{% if room.kind == 'channel' %}{% translate "канал" %}{% else %}{% translate "группа" %}{% endif %} · {{ room.members }} {% if room.kind == 'channel' %}{% translate "подписчиков" %}{% else %}{% translate "участников" %}{% endif %}{% elif thread.subject %}{{ thread.subject }}{% elif presence %}<em class="tg__status{% if presence.online %} is-on{% endif %}">{{ presence.text }}</em>{% else %}{% ico 'lock' 'tg__lock' %}{% translate "переписка защищена" %}{% endif %}{% if witnesses %} {% translate "· 👁 свидетель:" %} {{ witnesses|join:", " }}{% endif %}</span>
+        <span id="tg-sub">{% if saved %}{% translate "заметки и пересланное — видите только вы" %}{% elif room %}{% if space_side %}{{ space_side.space.title }}{% elif room.kind == 'channel' %}{% translate "канал" %}{% else %}{% translate "группа" %}{% endif %} · {{ room.members }} {% if room.kind == 'channel' %}{% translate "подписчиков" %}{% else %}{% translate "участников" %}{% endif %}{% elif thread.subject %}{{ thread.subject }}{% elif presence %}<em class="tg__status{% if presence.online %} is-on{% endif %}">{{ presence.text }}</em>{% else %}{% ico 'lock' 'tg__lock' %}{% translate "переписка защищена" %}{% endif %}{% if witnesses %} {% translate "· 👁 свидетель:" %} {{ witnesses|join:", " }}{% endif %}</span>
       </div>
-      {% if room or other %}</a>{% endif %}
+      {% if saved %}</span>{% elif pic.masked and not pic.link %}</span>{% elif room or other %}</a>{% endif %}
       <div class="tg__tools">
         {% if chat_cfg.features.calls %}<button type="button" class="tg__tool" data-call="audio" aria-label="{% translate 'Аудиозвонок' %}" title="{% translate 'Аудиозвонок' %}">{% ico 'call' %}</button>{% endif %}
-        {% if escrow_on and other %}<a class="tg__tool" href="{% url 'deals:new' %}?to={{ other.pk }}&amp;thread={{ thread.pk }}&amp;title={{ thread.subject|urlencode }}" aria-label="{% translate 'Безопасная сделка' %}" title="{% translate 'Безопасная сделка' %}">{% ico 'shield' %}</a>{% endif %}
-        {% if chat_cfg.features.video_calls %}<button type="button" class="tg__tool" data-call="video" aria-label="{% translate 'Видеозвонок' %}" title="{% translate 'Видеозвонок' %}">{% ico 'video' %}</button>{% endif %}
-        {% if other %}<div class="tg__report">{% report_button other _('Пожаловаться') thread.pk %}</div>{% endif %}
-        {% if room %}<a class="tg__tool" href="{% url 'chat:room_info' thread.pk %}" aria-label="{% translate 'Сведения и участники' %}" title="{% translate 'Сведения и участники' %}">{% ico 'info' %}</a>{% endif %}
+        {% if chat_cfg.features.video_calls %}<button type="button" class="tg__tool tg__tool--wide" data-call="video" aria-label="{% translate 'Видеозвонок' %}" title="{% translate 'Видеозвонок' %}">{% ico 'video' %}</button>{% endif %}
+        <button type="button" class="tg__tool tg__tool--wide" id="srch-open" aria-label="{% translate 'Поиск по чату' %}" title="{% translate 'Поиск по чату' %}">{% ico 'search' %}</button>
+        {# меню «⋮» — как в Telegram: всё редкое здесь #}
+        <details class="tp__menu tp__menu--row tg__chatmenu">
+          <summary aria-label="{% translate 'Ещё' %}">{% ico 'dots' %}</summary>
+          <div class="tp__pop">
+            <button type="button" id="srch-open2">{% ico 'search' %}{% translate "Поиск" %}</button>
+            {% if chat_cfg.features.video_calls %}<button type="button" data-call="video" class="tg__only-m">{% ico 'video' %}{% translate "Видеозвонок" %}</button>{% endif %}
+            {% if room %}<a href="{% url 'chat:room_info' thread.pk %}">{% ico 'info' %}{% translate "Сведения и участники" %}</a>
+            {% elif pic.masked %}{% if pic.link %}<a href="{{ pic.link }}">{% ico 'user' %}{% translate "Анкета" %}</a>{% endif %}{% elif other %}<a href="{% url 'accounts:public' other.pk %}">{% ico 'user' %}{% translate "Профиль" %}</a>{% endif %}
+            {% if not saved %}<form method="post" action="{% url 'chat:state' thread.pk muted|yesno:'unmute,mute' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button type="submit">{% if muted %}{% ico 'bell' %}{% translate "Включить звук" %}{% else %}{% ico 'belloff' %}{% translate "Без звука" %}{% endif %}</button></form>{% endif %}
+            {% if escrow_on and other %}<a href="{% url 'deals:new' %}?to={{ other.pk }}&amp;thread={{ thread.pk }}&amp;title={{ thread.subject|urlencode }}">{% ico 'shield' %}{% translate "Безопасная сделка" %}</a>{% endif %}
+            <a href="{% url 'core:settings' %}?s=chats#chat-look">{% ico 'image' %}{% translate "Фон чата" %}</a>
+            {% if not room or room.member %}<form method="post" action="{% url 'chat:state' thread.pk 'clear' %}" onsubmit="return confirm('{% translate 'Очистить историю? Сообщения пропадут только у вас.' %}')">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button type="submit">{% ico 'broom' %}{% translate "Очистить историю" %}</button></form>{% endif %}
+            {% if other %}<div class="tp__pop-report">{% report_button other _('Пожаловаться') thread.pk %}</div>{% endif %}
+            {% if not room and not saved %}<form method="post" action="{% url 'chat:state' thread.pk 'hide' %}" onsubmit="return confirm('{% translate 'Удалить чат? Он пропадёт из вашего списка; у собеседника переписка останется.' %}')">{% csrf_token %}<button type="submit" class="bad">{% ico 'trash' %}{% translate "Удалить чат" %}</button></form>{% endif %}
+          </div>
+        </details>
       </div>
     </header>
+    <div class="srchbar" id="srch-bar" hidden>
+      {% ico 'search' %}<input type="search" id="srch-q" placeholder="{% translate 'Поиск по этому чату' %}" autocomplete="off" enterkeyhint="search">
+      <span class="srchbar__n" id="srch-n"></span>
+      <button type="button" id="srch-up" aria-label="{% translate 'Раньше' %}">{% ico 'up' %}</button>
+      <button type="button" id="srch-down" aria-label="{% translate 'Позже' %}">{% ico 'down' %}</button>
+      <button type="button" id="srch-x" aria-label="{% translate 'Закрыть' %}">{% ico 'close' %}</button>
+    </div>
+    <div class="pinbar" id="pin-bar" hidden>
+      <button type="button" class="pinbar__b" id="pin-go"><i class="pinbar__line"></i><span><b id="pin-h">{% translate "Закреплённое сообщение" %}</b><em id="pin-t"></em></span></button>
+      <button type="button" class="pinbar__x" id="pin-x" aria-label="{% translate 'Открепить' %}">{% ico 'close' %}</button>
+    </div>
     {% if info.card %}
     <div class="ctxcard{% if info.card.closed %} is-closed{% endif %}">
       {% if info.card.image %}<img class="ctxcard__img" src="{{ info.card.image }}" alt="">{% endif %}
@@ -44,7 +69,7 @@
     <div class="tg__log" id="chat-log">
       {% for it in items %}
         {% if it.day %}<div class="tg__day" data-day="{{ it.m.created_at|date:'Y-m-d' }}"><span>{{ it.day }}</span></div>{% endif %}
-        {% include 'chat/_msg.html' with m=it.m mine=it.mine tail=it.tail time=it.time dur=it.dur warn=it.warn meta=it.meta warn_text=info.warn_text who=it.who whue=it.hue channel=thread.is_channel %}
+        {% include 'chat/_msg.html' with m=it.m mine=it.mine read=it.read tail=it.tail time=it.time dur=it.dur warn=it.warn meta=it.meta warn_text=info.warn_text who=it.who whue=it.hue channel=thread.is_channel reply=it.reply fwd=it.fwd rx=it.rx my=it.my comments=chat_cfg.comments %}
       {% empty %}
         <div class="tg__first" id="chat-empty">
           {% include 'chat/_pic.html' with p=pic size='lg' %}
@@ -63,6 +88,15 @@
       {% endfor %}
     </div>
 
+    <div class="tg__float">
+      {% if at %}<a class="tg__latest" href="{% url 'chat:thread' thread.pk %}">{% translate "К последним сообщениям" %}{% ico 'down' %}</a>{% endif %}
+      <button type="button" class="tg__down" id="to-bottom" hidden aria-label="{% translate 'Вниз' %}">{% ico 'down' %}<b id="to-bottom-n" hidden></b></button>
+    </div>
+    <div class="replybar" id="reply-bar" hidden>
+      <span class="replybar__ic" id="reply-ic">{% ico 'reply' %}</span>
+      <div class="replybar__b"><b id="reply-name"></b><span id="reply-text"></span></div>
+      <button type="button" class="replybar__x" id="reply-x" aria-label="{% translate 'Отменить' %}">{% ico 'close' %}</button>
+    </div>
     {% if blocked %}<div class="tg__compose tg__blocked">{% translate "Переписка недоступна: один из вас заблокировал другого. Разблокировать — Профиль → Заблокированные." %}</div><form id="chat-form" hidden>{% csrf_token %}<textarea id="chat-body"></textarea><button type="submit" id="send-btn"></button></form>
     {% elif room and not can_post %}
     {# канал для подписчика, закрытый чат, предпросмотр публичного: вместо поля ввода — одна кнопка #}
@@ -99,7 +133,7 @@
         <button type="button" data-fmt="`" title="{% translate 'Моноширинный' %}"><code>M</code></button>
         <button type="button" data-fmt="||" title="{% translate 'Скрытый текст' %}">▒ {% translate "Скрытый" %}</button>
       </div>
-      <textarea name="body" id="chat-body" rows="1" maxlength="2000" placeholder="{% translate 'Сообщение' %}" autocomplete="off" enterkeyhint="send" required aria-label="{% translate 'Сообщение' %}"></textarea>
+      <textarea name="body" id="chat-body" rows="1" maxlength="2000" placeholder="{% translate 'Сообщение' %}" autocomplete="off" enterkeyhint="send" required aria-label="{% translate 'Сообщение' %}">{{ draft }}</textarea>
       {% if chat_cfg.features.voice or chat_cfg.features.circle %}
       <div class="recwrap">
         <div class="reclock" id="rec-lock" aria-hidden="true"><span class="reclock__ico">{% ico 'lock' %}</span><span class="reclock__arrow">⌃</span></div>
@@ -123,6 +157,7 @@
       </div>
     </form>{% endif %}
   </section>
+  {% if space_side %}{% include 'chat/_space_roster.html' %}{% endif %}
 </div>
 
 {# выбор времени для запланированного сообщения #}
@@ -142,6 +177,20 @@
       <button type="submit" class="btn btn--p">{% translate "Запланировать" %}</button>
     </div>
   </form>
+</div>
+
+{# переслать: выбрать чаты #}
+<div class="schedbox" id="fwd-box" role="dialog" aria-modal="true" aria-labelledby="fwd-h" hidden>
+  <div class="schedbox__card fwdbox">
+    <h3 id="fwd-h">{% translate "Переслать" %}</h3>
+    <label class="tg__search">{% ico 'search' %}<input type="search" id="fwd-q" placeholder="{% translate 'Поиск' %}" autocomplete="off"></label>
+    <div class="fwdbox__list" id="fwd-list"></div>
+    <label class="schedbox__silent"><input type="checkbox" id="fwd-hide"> {% translate "скрыть имя автора" %}</label>
+    <div class="schedbox__act">
+      <button type="button" class="btn btn--g" id="fwd-cancel">{% translate "Отмена" %}</button>
+      <button type="button" class="btn btn--p" id="fwd-send" disabled>{% translate "Переслать" %}</button>
+    </div>
+  </div>
 </div>
 
 {# запись видеокружка #}
@@ -172,10 +221,12 @@
 </div>
 <audio id="call-audio" autoplay></audio>
 {{ chat_cfg|json_script:"chat-cfg" }}
+{{ pins|json_script:"chat-pins" }}
 {% endblock %}
 
 {% block extra_js %}
 {% include 'chat/_js_list.html' %}
 <script src="{% static 'js/call_emoji.js' %}?v={{ asset_v }}"></script>
+<script src="{% static 'js/photoview.js' %}?v={{ asset_v }}"></script>
 <script src="{% static 'js/chat.js' %}?v={{ asset_v }}"></script>
 {% endblock %}

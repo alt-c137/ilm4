@@ -2,15 +2,55 @@
 {% load i18n %}
 {% load icons money static %}
 {% block title %}{% translate "Настройки —" %} {{ block.super }}{% endblock %}
+{% block body_class %}page-tp{% endblock %}
 
 {% block content %}
-<div class="fpage">
-  <div class="dcard">
-    <div class="fpage__h">
-      <span class="fpage__ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></span>
-      <div><h1>{% translate "Настройки" %}</h1><div class="fpage__sub">{% translate "Оформление применяется сразу и запоминается" %}{% if user.is_authenticated %} {% translate "в вашем профиле" %}{% endif %}.</div></div>
-    </div>
-
+<div class="fpage stg">
+  {% if s %}<a class="crumb" href="{% url 'core:settings' %}">{% ico 'back' %}{% translate "Настройки" %}</a>{% endif %}
+  {% if not s %}
+  {# экран «Настройки» — как в Telegram: кто я, затем разделы списком #}
+  <div class="dcard stg__hub">
+    {% if user.is_authenticated %}
+    <a class="stg__me" href="{% url 'accounts:profile' %}">
+      {% if user.avatar %}<img class="tava tava--lg" src="{{ user.avatar.url }}" alt="">{% else %}<span class="tava tava--lg tava--h2">{{ user.get_display_name|slice:":1"|upper }}</span>{% endif %}
+      <span><b>{{ user.get_display_name }}</b>{% if user.phone %}<small>{{ user.phone }}</small>{% endif %}{% if user.handle %}<small class="stg__at">@{{ user.handle }}</small>{% endif %}</span>
+    </a>
+    <nav class="stg__list">
+      <a href="{% url 'accounts:profile' %}?s=edit">{% ico 'user' %}<b>{% translate "Мой аккаунт" %}</b><small>{% translate "Имя, фото, имя пользователя, номер" %}</small></a>
+      <a href="{% url 'notifications:list' %}">{% ico 'bell' %}<b>{% translate "Уведомления и звуки" %}</b><small>{% translate "Что пришло и что вас ждёт" %}</small></a>
+      <a href="{% url 'accounts:profile' %}?s=privacy">{% ico 'lock' %}<b>{% translate "Конфиденциальность" %}</b><small>{% translate "Как вас видят: номер, время в сети, счётчики, группы" %}</small></a>
+      <a href="?s=chats">{% ico 'chat' %}<b>{% translate "Настройки чатов" %}</b><small>{% translate "Тема, цвет, фон чата" %}</small></a>
+      {% if chat_on %}<a href="{% url 'chat:folders' %}">{% ico 'folder' %}<b>{% translate "Папки с чатами" %}</b><small>{% translate "Свои вкладки над списком чатов" %}</small></a>
+      <a href="{% url 'chat:contacts' %}">{% ico 'users' %}<b>{% translate "Контакты" %}</b><small>{% translate "Сохранённые люди" %}</small></a>{% endif %}
+      <a href="?s=tabs">{% ico 'grid' %}<b>{% translate "Нижние кнопки и стартовый экран" %}</b><small>{% translate "Вся платформа — или только чаты, лента, сообщества" %}</small></a>
+      <a href="{% url 'accounts:profile' %}?s=links">{% ico 'link' %}<b>{% translate "Ссылки и соцсети" %}</b><small>{% translate "Что показать в профиле и кому" %}</small></a>
+      <a href="?s=language">{% ico 'globe' %}<b>{% translate "Язык" %}</b><small>{{ LANGUAGE_CODE|upper }}</small></a>
+      <a href="?s=currency">{% ico 'wallet' %}<b>{% translate "Валюта" %}</b></a>
+    </nav>
+    <nav class="stg__list">
+      <a href="{% url 'accounts:accounts' %}">{% ico 'userplus' %}<b>{% translate "Аккаунты" %}</b><small>{% translate "Добавить ещё один и переключаться без выхода" %}</small></a>
+      <a href="{% url 'accounts:blocked' %}">{% ico 'ban' %}<b>{% translate "Заблокированные" %}</b></a>
+      {% if user.is_staff %}<a href="{% url 'accounts:two_factor_setup' %}">{% ico 'shieldcheck' %}<b>{% translate "Двухшаговая защита" %}</b></a>{% endif %}
+      <a href="{% url 'core:my' %}">{% ico 'tag' %}<b>{% translate "Мои публикации" %}</b></a>
+      <a href="{% url 'wallet:index' %}">{% ico 'coins' %}<b>{% translate "Кошелёк" %}</b></a>
+    </nav>
+    <nav class="stg__list">
+      <a class="is-bad" href="{% url 'accounts:delete' %}">{% ico 'trash' %}<b>{% translate "Удалить аккаунт" %}</b></a>
+      <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit" class="is-bad">{% ico 'exit' %}<b>{% translate "Выйти" %}</b></button></form>
+    </nav>
+    {% else %}
+    <nav class="stg__list">
+      <a href="?s=chats">{% ico 'chat' %}<b>{% translate "Оформление" %}</b><small>{% translate "Тема, цвет, фон чата" %}</small></a>
+      <a href="?s=language">{% ico 'globe' %}<b>{% translate "Язык" %}</b></a>
+      <a href="?s=currency">{% ico 'wallet' %}<b>{% translate "Валюта" %}</b></a>
+      <a href="{% url 'accounts:login' %}">{% ico 'login' %}<b>{% translate "Войти" %}</b></a>
+    </nav>
+    {% endif %}
+  </div>
+  {% endif %}
+  <div class="dcard"{% if not s %} hidden{% endif %}>
+    <div class="setsec"{% if s != 'chats' %} hidden{% endif %}>
+    <h1 class="stg__h1">{% translate "Настройки чатов" %}</h1>
     <form method="post" id="settings-form">{% csrf_token %}
       <h2 class="set__h">{% translate "Тема" %}</h2>
       <div class="set__modes">
@@ -32,10 +72,14 @@
       <noscript><button type="submit" class="btn btn--p">{% translate "Сохранить" %}</button></noscript>
     </form>
 
-    <h2 class="set__h">{% translate "Язык" %}</h2>
+    </div>
+    <div class="setsec"{% if s != 'language' %} hidden{% endif %}>
+    <h1 class="stg__h1">{% translate "Язык" %}</h1>
     {% include 'includes/lang_switch.html' %}
+    </div>
+    <div class="setsec"{% if s != 'currency' %} hidden{% endif %}>
 
-    <h2 class="set__h">{% translate "Валюта" %}</h2>
+    <h1 class="stg__h1">{% translate "Валюта" %}</h1>
     <p class="tnote" style="margin:0 0 10px">{% translate "Цены остаются в валюте автора, а рядом показываем «≈» в вашей. По умолчанию определяем по стране." %}</p>
     {% my_currency as cur %}{% currencies as cur_list %}
     <form method="post" action="{% url 'core:set_currency' %}" class="set__cur">{% csrf_token %}
@@ -47,18 +91,48 @@
       <noscript><button type="submit" class="btn btn--p">{% translate "Сохранить" %}</button></noscript>
     </form>
 
+    </div>
     {% if user.is_authenticated %}
-    <h2 class="set__h" id="tabs">{% translate "Нижние кнопки" %}</h2>
-    <p class="tnote" style="margin:0 0 4px;text-align:left">{% translate "Какие разделы держать под рукой внизу экрана на телефоне. Последняя кнопка — «Профиль» — всегда на месте." %}</p>
+    <div class="setsec"{% if s != 'tabs' %} hidden{% endif %}>
+    <h1 class="stg__h1" id="tabs">{% translate "Нижние кнопки и стартовый экран" %}</h1>
+    <p class="tnote" style="margin:0 0 4px;text-align:left">{% translate "Какие разделы держать под рукой внизу экрана на телефоне и в каком порядке. Сколько угодно: если кнопок больше пяти, панель листается. «Профиль» всегда на месте." %}</p>
     <form method="post" id="tabs-form">{% csrf_token %}<input type="hidden" name="what" value="tabs">
-      <div class="tabpick">{% for cur in tab_slots %}<select name="tab" aria-label="{% translate 'Кнопка' %} {{ forloop.counter }}">
-        <option value="">— {% translate "пусто" %} —</option>
-        {% for t in tab_choices %}<option value="{{ t.key }}"{% if t.key == cur %} selected{% endif %}>{{ t.label }}</option>{% endfor %}</select>{% endfor %}</div>
-      <div class="trk__adds"><button type="submit" class="btn btn--p btn--s">{% translate "Сохранить кнопки" %}</button>
+      <div class="tabsel" id="tabsel">
+        <div class="tabsel__list" id="tabsel-on">{% for t in tab_mine %}<div class="tabsel__i" data-key="{{ t.key }}"><input type="hidden" name="tab" value="{{ t.key }}"><b>{{ t.label }}</b>
+          <button type="button" data-mv="-1" aria-label="{% translate 'Выше' %}">{% ico 'up' %}</button><button type="button" data-mv="1" aria-label="{% translate 'Ниже' %}">{% ico 'down' %}</button><button type="button" data-rm aria-label="{% translate 'Убрать' %}">{% ico 'close' %}</button></div>{% endfor %}</div>
+        <div class="tabsel__h">{% translate "Можно добавить" %}</div>
+        <div class="tabsel__rest" id="tabsel-off">{% for t in tab_rest %}<button type="button" data-add="{{ t.key }}">{% ico 'plus' %}{{ t.label }}</button>{% endfor %}</div>
+      </div>
+      <label class="tabsel__start" for="start-sel">{% translate "С чего начинать" %}</label>
+      <select name="start" id="start-sel"><option value="">{% translate "С главной — вся платформа" %}</option>{% for t in start_choices %}<option value="{{ t.key }}"{% if t.key == start %} selected{% endif %}>{{ t.label }}</option>{% endfor %}</select>
+      <p class="tnote" style="margin:0;text-align:left">{% translate "Например, «Чаты» — и ilm4 открывается сразу как мессенджер. Главная останется в «Сервисах» и по логотипу." %}</p>
+      <div class="trk__adds"><button type="submit" class="btn btn--p btn--s">{% translate "Сохранить" %}</button>
         <button type="submit" name="reset" value="1" class="btn btn--g btn--s">{% translate "Как было" %}</button></div>
     </form>
+    <script>
+    (function () {
+      var on = document.getElementById('tabsel-on'), off = document.getElementById('tabsel-off');
+      function row(key, label) {
+        var d = document.createElement('div'); d.className = 'tabsel__i'; d.dataset.key = key;
+        d.innerHTML = '<input type="hidden" name="tab" value="' + key + '"><b></b>' + on.dataset.tools; d.querySelector('b').textContent = label; return d;
+      }
+      var first = on.querySelector('.tabsel__i');
+      on.dataset.tools = first ? Array.prototype.map.call(first.querySelectorAll('button'), function (b) { return b.outerHTML; }).join('') : '';
+      document.getElementById('tabsel').addEventListener('click', function (e) {
+        var b = e.target.closest('button'); if (!b) return;
+        var item = b.closest('.tabsel__i');
+        if (b.dataset.add) { on.appendChild(row(b.dataset.add, b.textContent.trim())); b.remove(); }
+        else if (b.dataset.mv && item) { var sib = b.dataset.mv === '-1' ? item.previousElementSibling : item.nextElementSibling; if (sib) on.insertBefore(b.dataset.mv === '-1' ? item : sib, b.dataset.mv === '-1' ? sib : item); }
+        else if ('rm' in b.dataset && item && on.children.length > 2) {
+          var add = document.createElement('button'); add.type = 'button'; add.dataset.add = item.dataset.key; add.textContent = item.querySelector('b').textContent; off.appendChild(add); item.remove();
+        }
+      });
+    })();
+    </script>
+    </div>
     {% endif %}
 
+    <div class="setsec"{% if s != 'chats' %} hidden{% endif %}>
     <h2 class="set__h" id="chat-look">{% translate "Фон чата" %}</h2>
     <p class="tnote" style="margin:0 0 10px;text-align:left">{% translate "Узор, свой цвет или своё фото. Сохраняется на этом устройстве." %}</p>
     <div class="wallpv" id="wall-pv"><div class="bub">{% translate "Ассаляму алейкум!" %}</div><div class="bub bub--me">{% translate "Ва алейкум ассалям" %}</div></div>
@@ -83,6 +157,7 @@
     <div id="wall-photo-opts" hidden>
       <label class="wallrow">{% translate "Размытие" %} <input type="range" id="wall-blur" min="0" max="24" value="0"></label>
       <label class="wallrow">{% translate "Затемнение" %} <input type="range" id="wall-dim" min="0" max="70" value="15"></label>
+    </div>
     </div>
   </div>
 </div>

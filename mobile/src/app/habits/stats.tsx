@@ -4,7 +4,7 @@ import { View } from 'react-native';
 
 import { useApp } from '@/state/app';
 import { Card, ErrorBox, Loading, Press, Screen, Section, Segmented, Txt } from '@/ui/kit';
-import { type Habit } from '@/ui/tracker';
+import { HabitIcon, type Habit } from '@/ui/tracker';
 import { useFetch } from '@/ui/useFetch';
 
 type Stats = { days: { day: string; done: number; total: number }[]; rate: number; done: number; total: number; perfect_days: number; period: number;
@@ -54,7 +54,7 @@ export default function HabitStats() {
               {data.habits.map((h, i) => (
                 <View key={h.id} style={{ gap: 6, paddingVertical: 10, borderTopWidth: i ? 0.5 : 0, borderTopColor: c.line }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10 }}>
-                    <Txt style={{ flex: 1, fontWeight: '700' }} numberOfLines={1}>{h.emoji} {h.title}</Txt>
+                    <Txt style={{ flex: 1, fontWeight: '700' }} numberOfLines={1}><HabitIcon value={h.emoji} size={15} color={h.color} /> {h.title}</Txt>
                     <Txt style={{ fontWeight: '800' }} color={h.color}>{h.rate}%</Txt>
                   </View>
                   <View style={{ height: 7, borderRadius: 4, backgroundColor: c.line, overflow: 'hidden' }}><View style={{ width: `${h.rate}%`, height: 7, borderRadius: 4, backgroundColor: h.color }} /></View>
@@ -62,7 +62,7 @@ export default function HabitStats() {
                     {h.cells.map((on, n) => <View key={n} style={{ width: 11, height: 11, borderRadius: 3, backgroundColor: on ? h.color : c.line }} />)}
                   </View>
                   <Txt kind="small" style={{ fontSize: 12 }}>
-                    {t('{a} из {b}', { a: h.done, b: h.total })}{h.sum ? ` · ${t('всего')} ${h.sum} ${h.unit}` : ''} · 🔥 {t('серия')} {h.streak} · {t('лучшая')} {h.best}</Txt>
+                    {t('{a} из {b}', { a: h.done, b: h.total })}{h.sum ? ` · ${t('всего')} ${h.sum} ${h.unit}` : ''} · {t('серия')} {h.streak} · {t('лучшая')} {h.best}</Txt>
                 </View>
               ))}
             </Card>
@@ -75,7 +75,7 @@ export default function HabitStats() {
             {archived.map((h, i) => (
               <Press key={h.id} onPress={() => router.push({ pathname: '/habits/edit', params: { id: String(h.id) } })}
                 style={{ paddingVertical: 11, borderTopWidth: i ? 0.5 : 0, borderTopColor: c.line }}>
-                <Txt style={{ fontWeight: '600' }}>{h.emoji} {h.title}</Txt>
+                <Txt style={{ fontWeight: '600' }}><HabitIcon value={h.emoji} size={15} /> {h.title}</Txt>
               </Press>
             ))}
           </Card>

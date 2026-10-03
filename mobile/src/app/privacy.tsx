@@ -14,7 +14,7 @@ type Person = { id: number; name: string; handle: string; avatar: string };
 export default function PrivacyScreen() {
   const { c, t, user, setUser } = useApp();
   const friends = useFetch<{ items: Person[] }>(user ? '/me/close/' : null);
-  const [pick, setPick] = useState<'phone_privacy' | 'seen_privacy' | null>(null);
+  const [pick, setPick] = useState<'phone_privacy' | 'seen_privacy' | 'forward_privacy' | 'invite_privacy' | 'counts_privacy' | null>(null);
   const reloadFriends = friends.reload;
   useFocusEffect(useCallback(() => { reloadFriends(true); }, [reloadFriends]));
   if (!user) return null;
@@ -27,7 +27,10 @@ export default function PrivacyScreen() {
       Alert.alert((e as ApiError).message);
     }
   };
-  const current = pick === 'phone_privacy' ? pr.phone : pr.seen;
+  const current = pick === 'phone_privacy' ? pr.phone : pick === 'seen_privacy' ? pr.seen : pick === 'forward_privacy' ? pr.forward ?? 'all' : pick === 'counts_privacy' ? pr.counts ?? 'all' : pr.invite ?? 'all';
+  const titles = { phone_privacy: t('Кто видит мой номер'), seen_privacy: t('Кто видит, когда я в сети'),
+    forward_privacy: t('Ссылка на профиль при пересылке'), invite_privacy: t('Кто может добавлять меня в группы'),
+    counts_privacy: t('Кто видит мои счётчики') };
 
   return (
     <Screen title={t('Приватность')} back>
@@ -50,6 +53,17 @@ export default function PrivacyScreen() {
           <Row icon="time-outline" title={t('Кто видит, когда я в сети')} subtitle={privacyName(pr.seen, t)} onPress={() => setPick('seen_privacy')} />
         </Card>
         <Txt kind="small" style={{ paddingHorizontal: 4 }}>{t('Если скрыть своё время, вы тоже не увидите, когда в сети были другие — вместо этого «был(а) недавно».')}</Txt>
+      </Section>
+
+      <Section title={t('Сообщения и группы')}>
+        <Card style={{ paddingVertical: 4 }}>
+          <Row icon="arrow-redo-outline" title={t('Ссылка на профиль при пересылке')} subtitle={privacyName(pr.forward ?? 'all', t)} onPress={() => setPick('forward_privacy')} />
+          <Divider />
+          <Row icon="people-outline" title={t('Кто может добавлять меня в группы')} subtitle={privacyName(pr.invite ?? 'all', t)} onPress={() => setPick('invite_privacy')} />
+          <Divider />
+          <Row icon="stats-chart-outline" title={t('Кто видит мои счётчики')} subtitle={`${t('Записи, подписчики, подписки')} · ${privacyName(pr.counts ?? 'all', t)}`} onPress={() => setPick('counts_privacy')} />
+        </Card>
+        <Txt kind="small" style={{ paddingHorizontal: 4 }}>{t('Когда ваше сообщение пересылают, рядом стоит ваше имя. «Никто» — имя останется, но перейти по нему в ваш профиль будет нельзя.')}</Txt>
       </Section>
 
       <Section title={t('Близкие друзья')}>
@@ -78,7 +92,7 @@ export default function PrivacyScreen() {
         </Card>
       </Section>
 
-      <Sheet open={!!pick} onClose={() => setPick(null)} title={pick === 'phone_privacy' ? t('Кто видит мой номер') : t('Кто видит, когда я в сети')}
+      <Sheet open={!!pick} onClose={() => setPick(null)} title={pick ? titles[pick] : ''}
         items={(['all', 'close', 'nobody'] as Privacy[]).map((p) => ({ title: privacyName(p, t), on: current === p, onPress: () => pick && patch({ [pick]: p }) }))} />
     </Screen>
   );

@@ -55,7 +55,7 @@ export function ProfileHead({ p }: { p: NkProfile }) {
         <Txt kind="small" numberOfLines={1}>{[p.place, p.nationality].filter(Boolean).join(' · ')}</Txt>
         <View style={{ flexDirection: 'row', gap: 10, marginTop: 2 }}>
           {p.online ? <Txt kind="small" color={c.ok}>● {t('в сети')}</Txt> : null}
-          {p.has_photo ? <Txt kind="small">📷 {t('фото при симпатии')}</Txt> : null}
+          {p.has_photo ? <Txt kind="small"><Icon name="camera-outline" size={13} color={c.inkSoft} /> {t('фото при симпатии')}</Txt> : null}
         </View>
       </View>
       {p.compat !== undefined ? <Compat value={p.compat} /> : null}

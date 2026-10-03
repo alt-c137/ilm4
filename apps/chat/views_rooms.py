@@ -23,7 +23,16 @@ def pic(thread, other=None, viewer=None) -> dict:
         return {'url': thread.avatar.url if thread.avatar else '', 'letter': (thread.title[:1] or '#').upper(),
                 'hue': thread.pk % 7, 'name': thread.title, 'room': thread.kind, 'verified': thread.platform_verified,
                 'online': False}
+    if thread.is_saved:                          # «Избранное» — чат с самим собой
+        return {'url': '', 'letter': '', 'hue': 2, 'name': str(_('Избранное')), 'room': '', 'verified': False,
+                'online': False, 'saved': True}
     from apps.accounts import people
+
+    from . import persona
+    masked = persona.mask(thread, other)
+    if masked:                                   # чат никяха: имя из анкеты, без аватара, «в сети» и ссылки на основной профиль
+        return {'url': '', 'letter': masked['name'][:1].upper(), 'hue': thread.pk % 7, 'name': masked['name'], 'room': '',
+                'verified': False, 'online': False, 'masked': True, 'link': masked['link']}
     name = other.get_display_name() if other else str(_('Удалённый аккаунт'))
     return {'url': other.avatar.url if other and other.avatar else '', 'letter': name[:1].upper(),
             'hue': (other.pk if other else 0) % 7, 'name': name, 'room': '',
@@ -112,7 +121,10 @@ def room_info(request, pk):
             rooms.update(thread, request.user, {
                 'title': request.POST.get('title', thread.title), 'about': request.POST.get('about', ''),
                 'is_public': request.POST.get('is_public', ''), 'handle': request.POST.get('handle', ''),
-                'only_admins_post': request.POST.get('only_admins_post', '')}, avatar=request.FILES.get('avatar'))
+                'only_admins_post': request.POST.get('only_admins_post', ''),
+                'protected': request.POST.get('protected', ''), 'reactions_on': request.POST.get('reactions_on', ''),
+                'comments_on': request.POST.get('comments_on', ''),
+                'slow_seconds': request.POST.get('slow_seconds', '0')}, avatar=request.FILES.get('avatar'))
             messages.success(request, _('Сохранено.'))
         except ChatError as exc:
             messages.error(request, exc.message)
@@ -129,6 +141,7 @@ def room_info(request, pk):
     link = request.build_absolute_uri(f'/chat/join/{thread.invite_code}/') if info['invite'] else ''
     public_link = request.build_absolute_uri(f'/c/{thread.handle}/') if thread.is_public and thread.handle else ''
     return render(request, 'chat/room_info.html', {
+        'room_photos': [{'url': thread.avatar.url, 'name': thread.title}] if thread.avatar else [],
         'thread': thread, 'room': thread, 'info': info, 'pic': pic(thread), 'people': people, 'addable': addable,
         'invite_link': link, 'public_link': public_link, 'me_owner': info['role'] == Member.OWNER,
         'can_moderate': request.user.is_staff and request.user.has_perm('chat.change_thread'), **_side(request)})

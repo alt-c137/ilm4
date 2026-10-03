@@ -17,3 +17,4 @@ uvicorn[standard]          # ASGI-сервер прода: несколько п
 requests                   # вход через Google (OAuth-обмен кода на токен)
 cryptography               # шифрование переписки и файлов (AES-256-GCM, Fernet для старых данных)
 imageio-ffmpeg             # встроенный ffmpeg: сжатие видео в чате (apps/chat/transcode.py)
+anthropic>=1.11,<2          # ИИ-помощник (apps/assistant): официальная библиотека Claude

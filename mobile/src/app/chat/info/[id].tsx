@@ -8,19 +8,25 @@ import { api } from '@/lib/api';
 import { useApp } from '@/state/app';
 import { Avatar, Button, Card, ErrorBox, Field, Icon, Loading, OfflineBar, Press, Screen, Section, Sheet, Txt, type SheetItem } from '@/ui/kit';
 import { ProfileActions, ProfileHead, type Action } from '@/ui/profile';
+import { PhotoViewer } from '@/ui/photo-viewer';
 import { useFetch } from '@/ui/useFetch';
 
 type Person = { id: number; name: string; avatar: string; role: 'owner' | 'admin' | 'member'; role_name: string };
 type Info = { id: number; kind: 'group' | 'channel'; title: string; about: string; handle: string; avatar: string; members: number;
   verified: boolean; closed: boolean; member: boolean; admin: boolean; role: string; muted: boolean; public: boolean;
-  only_admins_post: boolean; invite_link: string; public_link: string; people: Person[] };
+  only_admins_post: boolean; invite_link: string; public_link: string; people: Person[];
+  protected?: boolean; reactions_on?: boolean; comments_on?: boolean; slow_seconds?: number };
+type Edit = { title: string; about: string; is_public: boolean; handle: string; only_admins_post: boolean;
+  protected: boolean; reactions_on: boolean; comments_on: boolean; slow_seconds: number };
+const SLOW = [0, 10, 30, 60, 300, 900, 3600];
 
 /** Сведения о группе / канале: описание, приглашение, участники, настройки (владелец и админы). */
 export default function RoomInfo() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { c, t, user } = useApp();
   const { data, setData, loading, error, reload } = useFetch<Info>(`/chat/${id}/room/`);
-  const [edit, setEdit] = useState<{ title: string; about: string; is_public: boolean; handle: string; only_admins_post: boolean } | null>(null);
+  const [edit, setEdit] = useState<Edit | null>(null);
+  const [photo, setPhoto] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [menu, setMenu] = useState(false);
   const [who, setWho] = useState<Person | null>(null);
@@ -55,7 +61,9 @@ export default function RoomInfo() {
     if (!edit) return;
     setBusy(true);
     try {
-      setData(await api(`/chat/${id}/room/`, { body: { ...edit, is_public: edit.is_public ? '1' : '', only_admins_post: edit.only_admins_post ? '1' : '' } }));
+      const flag = (v: boolean) => (v ? '1' : '');
+      setData(await api(`/chat/${id}/room/`, { body: { ...edit, is_public: flag(edit.is_public), only_admins_post: flag(edit.only_admins_post),
+        protected: flag(edit.protected), reactions_on: flag(edit.reactions_on), comments_on: flag(edit.comments_on), slow_seconds: String(edit.slow_seconds) } }));
       setEdit(null);
     } catch (e: any) {
       Alert.alert(e.message);
@@ -65,7 +73,9 @@ export default function RoomInfo() {
   };
   const link = data.public_link || data.invite_link;
   const copy = async (text: string) => { await Clipboard.setStringAsync(text); Alert.alert(t('Скопировано'), text); };
-  const startEdit = () => setEdit({ title: data.title, about: data.about, is_public: data.public, handle: data.handle, only_admins_post: data.only_admins_post });
+  const startEdit = () => setEdit({ title: data.title, about: data.about, is_public: data.public, handle: data.handle, only_admins_post: data.only_admins_post,
+    protected: !!data.protected, reactions_on: data.reactions_on !== false, comments_on: !!data.comments_on, slow_seconds: data.slow_seconds ?? 0 });
+  const slowName = (sec: number) => (!sec ? t('Выкл.') : sec < 60 ? t('{n} с', { n: sec }) : sec < 3600 ? t('{n} мин', { n: sec / 60 }) : t('1 час'));
   const actions: Action[] = !data.member ? [] : [
     { icon: 'chatbubble', label: t('Чат'), onPress: () => router.push(`/chat/${id}`) },
     { icon: data.muted ? 'notifications-off' : 'notifications', label: data.muted ? t('Без звука') : t('Звук'), off: data.muted, onPress: () => act(data.muted ? 'unmute' : 'mute') },
@@ -100,7 +110,7 @@ export default function RoomInfo() {
       </View>
       <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 14, paddingBottom: 48 }} keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={loading} onRefresh={reload} tintColor={c.accent} />}>
-        <ProfileHead name={data.title} avatar={data.avatar} hue={data.id} verified={data.verified}
+        <ProfileHead name={data.title} avatar={data.avatar} hue={data.id} verified={data.verified} onAvatar={data.avatar ? () => setPhoto(0) : undefined}
           status={(channel ? t('канал · подписчиков: {n}', { n: data.members }) : t('группа · участников: {n}', { n: data.members })) + (data.closed ? ` · ${t('закрыт модератором')}` : '')} />
         {!data.member ? <Button title={channel ? t('Подписаться') : t('Вступить в группу')} onPress={() => act('join')} loading={busy} /> : <ProfileActions items={actions} />}
 
@@ -131,6 +141,27 @@ export default function RoomInfo() {
                 <Switch value={edit.only_admins_post} onValueChange={(x) => setEdit({ ...edit, only_admins_post: x })} trackColor={{ true: c.accent, false: c.line }} />
               </View>
             ) : null}
+            {!channel ? (
+              <View style={{ gap: 6 }}>
+                <Txt style={{ fontWeight: '600' }}>{t('Медленный режим')}</Txt>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                  {SLOW.map((sec) => (
+                    <Pressable key={sec} onPress={() => setEdit({ ...edit, slow_seconds: sec })}
+                      style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, backgroundColor: edit.slow_seconds === sec ? c.accent : c.card2 }}>
+                      <Txt kind="small" color={edit.slow_seconds === sec ? '#fff' : c.ink} style={{ fontWeight: '700' }}>{slowName(sec)}</Txt>
+                    </Pressable>
+                  ))}
+                </View>
+                <Txt kind="small">{t('Участник пишет не чаще, чем раз в выбранное время. На админов не действует.')}</Txt>
+              </View>
+            ) : null}
+            {([...(channel ? [['comments_on', t('Комментарии под постами')]] : []), ['reactions_on', t('Реакции на сообщения')],
+              ['protected', t('Запретить пересылку и копирование')]] as [keyof Edit, string][]).map(([key, label]) => (
+              <View key={key} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Txt style={{ flex: 1 }}>{label}</Txt>
+                <Switch value={!!edit[key]} onValueChange={(x) => setEdit({ ...edit, [key]: x })} trackColor={{ true: c.accent, false: c.line }} />
+              </View>
+            ))}
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Button kind="ghost" style={{ flex: 1 }} title={t('Отмена')} onPress={() => setEdit(null)} />
               <Button style={{ flex: 1 }} title={t('Сохранить')} onPress={save} loading={busy} />
@@ -157,6 +188,7 @@ export default function RoomInfo() {
       </ScrollView>
       <Sheet open={menu} onClose={() => setMenu(false)} title={data.title} items={items} />
       <Sheet open={!!who} onClose={() => setWho(null)} title={who?.name} items={who ? memberMenu(who) : []} />
+      <PhotoViewer photos={data.avatar ? [{ url: data.avatar, name: data.title }] : []} index={photo} onClose={() => setPhoto(null)} />
     </SafeAreaView>
   );
 }

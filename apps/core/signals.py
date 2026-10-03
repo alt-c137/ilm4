@@ -5,8 +5,8 @@ from django.utils.translation import gettext_lazy as _lazy
 from .models import Moderation
 from .publications import PUBLICATIONS
 
-TEXT = {Moderation.APPROVED: _lazy('✅ «{t}» одобрено и опубликовано.'),
-        Moderation.REJECTED: _lazy('❌ «{t}» не прошло проверку. Исправьте и отправьте снова (Мои публикации).')}
+TEXT = {Moderation.APPROVED: _lazy('«{t}» одобрено и опубликовано.'),
+        Moderation.REJECTED: _lazy('«{t}» не прошло проверку. Исправьте и отправьте снова (Мои публикации).')}
 
 
 def _remember(sender, instance, **kwargs):

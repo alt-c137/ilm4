@@ -10,25 +10,32 @@ import { useApp, type SocialLink } from '@/state/app';
 import { ErrorBox, Icon, Loading, OfflineBar, Press, Segmented, Sheet, Txt } from '@/ui/kit';
 import { ChatFile } from '@/ui/media';
 import { ProfileActions, ProfileHead, ProfileInfo, type Action } from '@/ui/profile';
+import { FeedCard, type Item } from '@/ui/feed';
+import { PhotoViewer } from '@/ui/photo-viewer';
 import { useFetch } from '@/ui/useFetch';
 
 type Pub = { id: number; type: string; title: string; subtitle: string; image: string };
 type Profile = { id: number; me: boolean; name: string; handle: string; bio: string; city: string; avatar: string; verified: boolean; joined: string;
-  presence: Presence; phone: string; links: SocialLink[]; close: boolean; blocked: boolean; blocked_any: boolean; thread: number | null; muted: boolean;
-  chat: boolean; features: { calls?: boolean; video_calls?: boolean }; pubs: Pub[] };
+  presence: Presence; phone: string; links: SocialLink[]; close: boolean; contact?: boolean; blocked: boolean; blocked_any: boolean; thread: number | null; muted: boolean;
+  chat: boolean; features: { calls?: boolean; video_calls?: boolean }; pubs: Pub[]; photos?: { id: number; url: string; date: string }[] };
 type Media = { id: number; kind: string; file_name?: string; file_size?: number; mine?: boolean };
-type Tab = 'pubs' | 'media' | 'files';
+type Tab = 'wall' | 'pubs' | 'media' | 'files';
+type Wall = { items: Item[]; following: boolean; followers?: number; follows?: number; posts?: number; counts_hidden?: boolean };
 
 /** Профиль человека — как в Telegram: аватар, «в сети», Чат · Звук · Звонок · Видео, сведения, вкладки. */
 export default function UserProfile() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { c, t, lang } = useApp();
+  const { c, t, lang, moduleOn } = useApp();
+  const feedOn = moduleOn('feed');
   const { width } = useWindowDimensions();
   const { data, setData, loading, error, reload } = useFetch<Profile>(`/users/${id}/`);
-  const [tab, setTab] = useState<Tab>('pubs');
+  const [tab, setTab] = useState<Tab | null>(null);
+  const wall = useFetch<Wall>(feedOn ? `/feed/wall/${id}/` : null);
   const [menu, setMenu] = useState(false);
-  const media = useFetch<{ items: Media[] }>(data?.thread && tab === 'media' ? `/chat/${data.thread}/media/?what=media` : null);
-  const files = useFetch<{ items: Media[] }>(data?.thread && tab === 'files' ? `/chat/${data.thread}/media/?what=files` : null);
+  const [photo, setPhoto] = useState<number | null>(null);
+  const tabNow: Tab = tab ?? (feedOn ? 'wall' : 'pubs');
+  const media = useFetch<{ items: Media[] }>(data?.thread && tabNow === 'media' ? `/chat/${data.thread}/media/?what=media` : null);
+  const files = useFetch<{ items: Media[] }>(data?.thread && tabNow === 'files' ? `/chat/${data.thread}/media/?what=files` : null);
   useFocusEffect(useCallback(() => { reload(true); }, [reload]));
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/chats'));
@@ -87,7 +94,16 @@ export default function UserProfile() {
     ...(data.features.video_calls && Platform.OS !== 'web' ? [{ icon: 'videocam' as const, label: t('Видео'), onPress: () => openChat('video') }] : []),
   ] : [];
   const cell = Math.floor((width - 32 - 6) / 3);
-  const tabs: { key: Tab; label: string }[] = [{ key: 'pubs', label: t('Публикации') },
+  const follow = async () => {
+    if (!wall.data) return;
+    try {
+      const r = await api<{ following: boolean; followers: number }>(`/users/${data.id}/follow/`, { body: { on: !wall.data.following } });
+      wall.setData({ ...wall.data, following: r.following, followers: r.followers });
+    } catch (e) {
+      fail(e);
+    }
+  };
+  const tabs: { key: Tab; label: string }[] = [...(feedOn ? [{ key: 'wall' as const, label: t('Записи') }] : []), { key: 'pubs', label: t('Публикации') },
     ...(data.thread ? [{ key: 'media' as const, label: t('Медиа') }, { key: 'files' as const, label: t('Файлы') }] : [])];
   const joined = new Date(data.joined).toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'uz' ? 'uz-UZ' : 'ru-RU', { month: 'long', year: 'numeric' });
   const none = (text: string) => <Txt kind="muted" style={{ textAlign: 'center', padding: 26 }}>{text}</Txt>;
@@ -101,14 +117,37 @@ export default function UserProfile() {
       </View>
       <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 14, paddingBottom: 48 }}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={reload} tintColor={c.accent} />}>
-        <ProfileHead name={data.name} avatar={data.avatar} hue={data.id} verified={data.verified}
+        <ProfileHead name={data.name} avatar={data.avatar} hue={data.id} verified={data.verified} photos={data.photos?.length}
+          onAvatar={data.photos?.length ? () => setPhoto(0) : undefined}
           status={data.me ? t('в сети') : statusText(data.presence, t, lang)} online={data.me || data.presence.online} />
         {data.blocked_any && !data.me ? <Txt kind="muted" style={{ textAlign: 'center' }}>{data.blocked ? t('Вы заблокировали этого человека.') : t('Переписка недоступна: один из вас заблокировал другого.')}</Txt> : null}
+        {wall.data && !wall.data.counts_hidden ? (
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 18 }}>
+            {([[wall.data.posts ?? 0, t('записей')], [wall.data.followers ?? 0, t('подписчиков')], [wall.data.follows ?? 0, t('подписок')]] as const).map(([n, label]) => (
+              <Txt key={label} kind="small"><Txt style={{ fontWeight: '800' }}>{n}</Txt> {label}</Txt>
+            ))}
+          </View>
+        ) : null}
+        {wall.data && !data.me ? (
+          <Press onPress={follow} haptic style={{ alignSelf: 'stretch', alignItems: 'center', paddingVertical: 11, borderRadius: 14, backgroundColor: wall.data.following ? c.card : c.accent }}>
+            <Txt style={{ fontWeight: '800' }} color={wall.data.following ? c.ink : '#fff'}>{wall.data.following ? t('Вы подписаны') : t('Подписаться')}</Txt>
+          </Press>
+        ) : null}
         {actions.length ? <ProfileActions items={actions} /> : null}
         <ProfileInfo phone={data.phone} handle={data.handle} bio={data.bio} city={data.city} links={data.links} joined={joined} mine={data.me} />
 
-        {tabs.length > 1 ? <Segmented value={tab} onChange={setTab} options={tabs} /> : <Txt kind="label" style={{ paddingHorizontal: 4 }}>{t('Публикации')}</Txt>}
-        {tab === 'pubs' ? (
+        {tabs.length > 1 ? <Segmented value={tabNow} onChange={setTab} options={tabs} /> : <Txt kind="label" style={{ paddingHorizontal: 4 }}>{t('Публикации')}</Txt>}
+        {tabNow === 'wall' ? (
+          wall.data?.items.length ? (
+            <View style={{ marginHorizontal: -16 }}>
+              {wall.data.items.map((x) => (
+                <FeedCard key={x.key} x={x} onChange={(n) => wall.setData({ ...wall.data!, items: wall.data!.items.map((y) => (y.key === n.key ? n : y)) })}
+                  onRemove={(k) => wall.setData({ ...wall.data!, items: wall.data!.items.filter((y) => y.key !== k) })} />
+              ))}
+            </View>
+          ) : wall.loading ? <Loading /> : none(t('Записей пока нет.'))
+        ) : null}
+        {tabNow === 'pubs' ? (
           data.pubs.length ? (
             <View style={{ backgroundColor: c.card, borderRadius: 20, overflow: 'hidden' }}>
               {data.pubs.map((p, i) => (
@@ -126,7 +165,7 @@ export default function UserProfile() {
             </View>
           ) : none(t('Публикаций пока нет.'))
         ) : null}
-        {tab === 'media' ? (
+        {tabNow === 'media' ? (
           media.data?.items.length ? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 3, borderRadius: 16, overflow: 'hidden' }}>
               {media.data.items.map((m) => (
@@ -138,7 +177,7 @@ export default function UserProfile() {
             </View>
           ) : media.loading ? <Loading /> : none(t('В вашей переписке пока нет фото и видео.'))
         ) : null}
-        {tab === 'files' ? (
+        {tabNow === 'files' ? (
           files.data?.items.length ? (
             <View style={{ backgroundColor: c.card, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 4 }}>
               {files.data.items.map((m) => <ChatFile key={m.id} uri={chatFileUrl(m.id)} name={m.file_name ?? ''} size={m.file_size ?? 0} mine={false} />)}
@@ -146,7 +185,17 @@ export default function UserProfile() {
           ) : files.loading ? <Loading /> : none(t('В вашей переписке пока нет файлов.'))
         ) : null}
       </ScrollView>
+      <PhotoViewer photos={(data.photos ?? []).map((p) => ({ ...p, name: data.name }))} index={photo} onClose={() => setPhoto(null)} />
       <Sheet open={menu} onClose={() => setMenu(false)} title={data.name} items={[
+        { icon: data.contact ? 'person-remove-outline' : 'person-add-outline', title: data.contact ? t('Удалить из контактов') : t('Добавить в контакты'),
+          onPress: async () => {
+            try {
+              await api('/contacts/', { body: data.contact ? { remove: data.id } : { user: data.id } });
+              setData({ ...data, contact: !data.contact });
+            } catch (e) {
+              fail(e);
+            }
+          } },
         { icon: data.close ? 'heart-dislike-outline' : 'heart-outline', title: data.close ? t('Убрать из близких друзей') : t('Добавить в близкие друзья'),
           subtitle: t('Близким видно то, что вы скрыли от остальных'), onPress: close },
         { icon: 'flag-outline', title: t('Пожаловаться'), onPress: () => router.push({ pathname: '/report', params: { type: 'user', id: String(data.id), user_id: String(data.id) } }) },

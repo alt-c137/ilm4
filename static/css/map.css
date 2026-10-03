@@ -1,0 +1,77 @@
+/* ilm4 · карта халяль на весь экран (как в навигаторах) */
+.page-mapx .foot{display:none}
+.page-mapx .wrap,.page-mapx main{max-width:none;padding:0}
+.mapx{position:relative;height:calc(100vh - var(--hdr-h,76px));height:calc(100dvh - var(--hdr-h,76px));min-height:480px;overflow:hidden;border-radius:0}
+.mapx__map{position:absolute!important;inset:0;height:auto!important;margin:0!important;border-radius:0!important;box-shadow:none!important;z-index:1}
+.mapx__top{position:absolute;z-index:500;left:12px;right:12px;top:12px;display:flex;flex-direction:column;gap:8px;pointer-events:none;max-width:560px}
+.mapx__top>*{pointer-events:auto}
+.mapx__search{display:flex;align-items:center;gap:10px;height:50px;padding:0 8px 0 16px;border-radius:25px;background:var(--card);box-shadow:0 8px 28px -10px rgba(15,17,30,.45)}
+.mapx__search svg{width:20px;height:20px;color:var(--ink-soft);flex:none}
+.mapx__search input{flex:1;min-width:0;border:0;outline:none;background:transparent;color:var(--ink);font:inherit;font-size:16px}
+.mapx__clear{border:0;background:transparent;color:var(--ink-soft);width:36px;height:36px;border-radius:50%;display:grid;place-items:center;cursor:pointer}
+.mapx__clear svg{width:18px;height:18px}
+.mapx__clear[hidden]{display:none}
+.mapx__cats{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px}
+.mapx__cats::-webkit-scrollbar{display:none}
+.mapx__cat{flex:none;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border:0;border-radius:18px;background:var(--card);color:var(--ink);font:inherit;font-size:14px;font-weight:700;cursor:pointer;
+  box-shadow:0 4px 14px -6px rgba(15,17,30,.35)}
+.mapx__cat svg{width:17px;height:17px;flex:none}
+.mapx__cat svg{width:15px;height:15px}
+.mapx__cat.on{background:var(--accent);color:#fff}
+.mapx__fabs{position:absolute;z-index:500;right:12px;bottom:calc(110px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px}
+.mapx__fab{width:50px;height:50px;border:0;border-radius:50%;background:var(--card);color:var(--accent-d);display:grid;place-items:center;cursor:pointer;box-shadow:0 8px 24px -8px rgba(15,17,30,.5);text-decoration:none}
+.mapx__fab svg{width:22px;height:22px}
+.mapx__fab--me{color:#1e88e5}
+
+/* панель со списком: на компьютере — слева, на телефоне — снизу, разворачивается */
+.mapx__panel{position:absolute;z-index:450;left:12px;top:120px;bottom:12px;width:380px;display:flex;flex-direction:column;background:var(--card);border-radius:22px;box-shadow:0 14px 40px -14px rgba(15,17,30,.5);overflow:hidden}
+.mapx__grip{display:none}
+.mapx__ph{display:flex;align-items:baseline;gap:8px;padding:14px 16px 8px}
+.mapx__ph b{font-size:17px}
+.mapx__ph span{font-size:13px;color:var(--ink-soft)}
+.mapx__list{flex:1;overflow-y:auto;padding:0 8px 10px}
+.mapx__item{display:flex;align-items:center;gap:12px;padding:10px 8px;border-radius:14px;cursor:pointer;color:var(--ink);text-decoration:none}
+.mapx__item:hover{background:var(--card-2)}
+.mapx__item.on{background:var(--accent-soft)}
+.mapx__ic{flex:none;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:21px;background:var(--card-2)}
+.mapx__ic--mosque{background:#e3f6ec}.mapx__ic--cafe{background:#fff1e0}.mapx__ic--shop{background:#e8f1ff}.mapx__ic--butcher{background:#fde8e8}.mapx__ic--hotel{background:#efe9ff}
+.mapx__ib{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.mapx__ib b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mapx__ib small{font-size:12.5px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mapx__ib .mapx__brief{color:#0e8f57;font-weight:600}
+.mapx__ib .vbadge{align-self:flex-start;margin-top:3px;font-size:11px;padding:2px 8px}
+.mapx__ia{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.mapx__ia em{font-style:normal;font-size:12.5px;font-weight:700;color:var(--ink-soft)}
+.mapx__go{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:#fff}
+.mapx__go svg{width:17px;height:17px}
+.mapx__empty{padding:22px 14px;text-align:center;font-size:14px;color:var(--ink-soft)}
+
+/* метки */
+.mpin{position:relative;width:38px;height:38px;border-radius:50% 50% 50% 4px;transform:rotate(-45deg);background:#fff;border:2.5px solid var(--accent);display:grid;place-items:center;
+  box-shadow:0 6px 14px -4px rgba(15,17,30,.5);transition:transform .15s}
+.mpin span{transform:rotate(45deg);font-size:19px;line-height:1}
+.mpin--mosque{border-color:#0e8f57}.mpin--cafe{border-color:#f59e0b}.mpin--shop{border-color:#2a8fdc}.mpin--butcher{border-color:#e5484d}.mpin--hotel{border-color:#8b5cf6}
+.mpin--ok::after{content:"";position:absolute;right:-3px;top:-3px;width:12px;height:12px;border-radius:50%;background:#0e8f57;border:2px solid #fff}
+.mpin.on{transform:rotate(-45deg) scale(1.22);z-index:9}
+.mclu{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:#fff;font-weight:800;font-size:15px;border:4px solid color-mix(in srgb,var(--accent) 35%,#fff);box-shadow:0 6px 16px -6px rgba(15,17,30,.5)}
+.mme{width:20px;height:20px;border-radius:50%;background:#1e88e5;border:3px solid #fff;box-shadow:0 0 0 8px rgba(30,136,229,.22)}
+html[data-theme=dark] .mpin{background:#1c2030}
+
+@media(max-width:760px){
+  .mapx{height:calc(100dvh - var(--hdr-h,64px) - var(--tab-h,64px) - env(safe-area-inset-bottom))}
+  .mapx__top{left:10px;right:10px;top:10px}
+  .mapx__panel{left:0;right:0;top:auto;bottom:0;width:auto;height:96px;border-radius:22px 22px 0 0;transition:height .25s ease}
+  .mapx__panel.is-open{height:62%}
+  .mapx__grip{display:grid;place-items:center;height:20px;border:0;background:transparent;cursor:pointer;flex:none}
+  .mapx__grip i{width:40px;height:4px;border-radius:2px;background:var(--line)}
+  .mapx__ph{padding-top:2px}
+  .mapx__fabs{bottom:112px}
+  .mapx__panel.is-open~.mapx__fabs{display:none}
+}
+/* значки категорий — SVG (v50) */
+.mpin span{display:grid;place-items:center;color:var(--accent)}
+.mpin span svg{width:19px;height:19px}
+.mpin--mosque span{color:#0e8f57}.mpin--cafe span{color:#d97706}.mpin--shop span{color:#2a8fdc}.mpin--butcher span{color:#e5484d}.mpin--hotel span{color:#8b5cf6}
+.mapx__ic svg{width:22px;height:22px;color:var(--accent)}
+.mapx__ic--mosque svg{color:#0e8f57}.mapx__ic--cafe svg{color:#d97706}.mapx__ic--shop svg{color:#2a8fdc}.mapx__ic--butcher svg{color:#e5484d}.mapx__ic--hotel svg{color:#8b5cf6}
+@media(max-width:760px){.page-mapx .nav{display:none}}

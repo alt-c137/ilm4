@@ -41,6 +41,18 @@ class Thread(models.Model):
                                             help_text='Мечеть, учитель, организация — проверено командой ilm4')
     closed = models.BooleanField('закрыт модератором', default=False,
                                  help_text='Нельзя писать и вступать, пропадает из каталога')
+    # канал сообщества (как в Discord): такие чаты не показываются в общем списке — только внутри сообщества (apps/chat/spaces.py)
+    space = models.ForeignKey('Space', null=True, blank=True, on_delete=models.CASCADE, related_name='threads')
+    space_category = models.ForeignKey('SpaceCategory', null=True, blank=True, on_delete=models.SET_NULL, related_name='threads')
+    space_order = models.PositiveSmallIntegerField(default=0)
+    space_private = models.BooleanField('закрытый канал сообщества (только выбранным ролям)', default=False)
+    space_topic = models.CharField('тема канала', max_length=200, blank=True)
+    protected = models.BooleanField('запретить пересылку и копирование', default=False,
+                                    help_text='Как «Запретить копирование» в Telegram: сообщения нельзя переслать')
+    reactions_on = models.BooleanField('реакции включены', default=True)
+    comments_on = models.BooleanField('комментарии к постам (канал)', default=False)
+    slow_seconds = models.PositiveIntegerField('медленный режим, сек (группа)', default=0,
+                                               help_text='0 — выключен. Участник пишет не чаще, чем раз в N секунд')
 
     class Meta:
         ordering = ['-updated_at']
@@ -63,6 +75,24 @@ class Thread(models.Model):
         if self.kind == self.CHANNEL:
             return 'channels'
         return self.FOLDER_OF.get(self.context_type, 'services')
+
+    @property
+    def chat_type(self) -> str:
+        """Тип чата для своих папок (как «Контакты / Группы / Каналы / Боты» в Telegram)."""
+        if self.kind == self.GROUP:
+            return 'groups'
+        if self.kind == self.CHANNEL:
+            return 'channels'
+        if self.context_type == 'nikah':
+            return 'nikah'
+        if self.context_type in ('', 'support', 'saved'):
+            return 'personal'
+        return 'ads'
+
+    @property
+    def is_saved(self) -> bool:
+        """«Избранное» — чат с самим собой."""
+        return self.context_type == 'saved'
 
     @property
     def is_room(self) -> bool:
@@ -159,8 +189,9 @@ class MessageQuerySet(models.QuerySet):
         return self.filter(scheduled_at__isnull=True)
 
     def visible_to(self, user):
-        """Что видит человек: отправленные + свои запланированные."""
-        return self.filter(models.Q(scheduled_at__isnull=True) | models.Q(sender=user))
+        """Что видит человек: отправленные + свои запланированные; без удалённых «у себя» и комментариев к постам."""
+        return (self.filter(models.Q(scheduled_at__isnull=True) | models.Q(sender=user), comment_of__isnull=True)
+                .exclude(hidden_for__user=user))
 
 
 class Message(models.Model):
@@ -174,8 +205,9 @@ class Message(models.Model):
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                                related_name='sent_messages')
     TEXT, PHOTO, VIDEO, VOICE, CIRCLE, FILE, SYSTEM = 'text', 'photo', 'video', 'voice', 'circle', 'file', 'system'
+    POLL = 'poll'
     KINDS = [(TEXT, _lazy('Текст')), (PHOTO, _lazy('Фото')), (VIDEO, _lazy('Видео')), (VOICE, _lazy('Голосовое')),
-             (CIRCLE, _lazy('Видеокружок')), (FILE, _lazy('Файл')), (SYSTEM, _lazy('Служебное'))]
+             (CIRCLE, _lazy('Видеокружок')), (FILE, _lazy('Файл')), (SYSTEM, _lazy('Служебное')), (POLL, _lazy('Опрос'))]
 
     kind = models.CharField('вид', max_length=8, choices=KINDS, default=TEXT)
     body_enc = models.TextField('текст (зашифрован)', blank=True, db_column='body')
@@ -189,6 +221,16 @@ class Message(models.Model):
     silent = models.BooleanField('без звука', default=False)
     scheduled_at = models.DateTimeField('отправить в (запланированное)', null=True, blank=True, db_index=True)
     views = models.PositiveIntegerField('просмотры (посты канала)', default=0)
+    # --- как в Telegram: ответ, пересылка, правка, закреп, комментарии к посту ---
+    reply_to = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='replies',
+                                 verbose_name='ответ на')
+    # комментарий к посту канала: виден не в ленте, а под постом
+    comment_of = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='comments',
+                                   verbose_name='комментарий к посту')
+    comments_count = models.PositiveIntegerField('комментариев', default=0)
+    fwd_enc = models.TextField('переслано от (зашифровано)', blank=True)
+    edited_at = models.DateTimeField('изменено', null=True, blank=True)
+    pinned_at = models.DateTimeField('закреплено', null=True, blank=True, db_index=True)
 
     objects = MessageQuerySet.as_manager()
 
@@ -244,5 +286,245 @@ class Message(models.Model):
     def is_scheduled(self) -> bool:
         return self.scheduled_at is not None
 
+    @property
+    def fwd(self) -> dict:
+        """От кого переслано: {'name', 'user', 'room'} или {}."""
+        if not self.fwd_enc:
+            return {}
+        import json
+
+        from .keyring import decrypt_text
+        try:
+            return json.loads(decrypt_text(self.thread_id, self.fwd_enc))
+        except ValueError:
+            return {}
+
+    def set_fwd(self, **data) -> None:
+        import json
+
+        from .keyring import encrypt_text
+        self.fwd_enc = encrypt_text(self.thread_id, json.dumps(data, ensure_ascii=False))
+
     def __str__(self):
         return f'{self.sender}: {self.kind} #{self.pk}'
+
+
+class Reaction(models.Model):
+    """Реакция на сообщение. Как в Telegram без Premium: одна реакция от человека на сообщение."""
+
+    EMOJI = ['👍', '❤️', '🤲', '🔥', '😂', '😮', '😢', '👏', '💯', '🙏', '👎', '🤔']
+
+    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='reactions')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='chat_reactions')
+    emoji = models.CharField(max_length=16)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['message', 'user'], name='one_reaction')]
+        verbose_name = 'реакция'
+        verbose_name_plural = 'реакции'
+
+
+class HiddenMessage(models.Model):
+    """«Удалить у себя»: сообщение остаётся у собеседника, но этот человек его больше не видит."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='hidden_messages')
+    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='hidden_for')
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['user', 'message'], name='one_hidden')]
+        verbose_name = 'скрытое сообщение'
+        verbose_name_plural = 'скрытые сообщения'
+
+
+class ChatState(models.Model):
+    """Личное состояние чата у человека: закреп, архив, «не прочитано», черновик, очистка истории.
+
+    Это то, что в Telegram у каждого своё: я закрепил чат — у собеседника он не закреплён."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='chat_states')
+    thread = models.ForeignKey(Thread, on_delete=models.CASCADE, related_name='states')
+    pinned_at = models.DateTimeField('закреплён в общем списке', null=True, blank=True)
+    archived = models.BooleanField('в архиве', default=False)
+    unread_mark = models.BooleanField('помечен непрочитанным', default=False)
+    draft_enc = models.TextField('черновик (зашифрован)', blank=True)
+    cleared_at = models.DateTimeField('история очищена до', null=True, blank=True)
+    hidden = models.BooleanField('убран из списка (до нового сообщения)', default=False)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['user', 'thread'], name='one_chat_state')]
+        verbose_name = 'состояние чата'
+        verbose_name_plural = 'состояния чатов'
+
+
+class ChatFolder(models.Model):
+    """Своя папка чатов — как в Telegram: человек сам задаёт название, какие типы чатов в неё входят,
+    какие чаты добавить или убрать поимённо и что исключить (без звука, прочитанные, архив)."""
+
+    TYPES = [('personal', _lazy('Личные')), ('ads', _lazy('По объявлениям')), ('nikah', _lazy('Никях')),
+             ('groups', _lazy('Группы')), ('channels', _lazy('Каналы')), ('bots', _lazy('Боты'))]
+    MAX_FOLDERS = 10          # как в Telegram без Premium
+    MAX_CHATS = 100           # чатов, выбранных поимённо
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='chat_folders')
+    title = models.CharField('название', max_length=24)
+    emoji = models.CharField('значок', max_length=8, blank=True)
+    order = models.PositiveSmallIntegerField('порядок', default=0)
+    types = models.JSONField('типы чатов', default=list, blank=True)
+    no_muted = models.BooleanField('без «без звука»', default=False)
+    no_read = models.BooleanField('без прочитанных', default=False)
+    no_archived = models.BooleanField('без архивных', default=True)
+    include = models.ManyToManyField(Thread, related_name='+', blank=True, verbose_name='всегда включать')
+    exclude = models.ManyToManyField(Thread, related_name='+', blank=True, verbose_name='всегда исключать')
+    pins = models.JSONField('закреплённые в папке (id чатов по порядку)', default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'pk']
+        verbose_name = 'папка чатов'
+        verbose_name_plural = 'папки чатов'
+
+    def __str__(self):
+        return f'{self.title} ({self.user})'
+
+
+class Space(models.Model):
+    """Сообщество (как сервер в Discord): значок, описание, категории и каналы. Каждый текстовый канал — обычный чат
+    (Thread с полем space), поэтому в нём работает всё, что есть в чатах: ответы, реакции, файлы, закрепы, поиск."""
+
+    title = models.CharField('название', max_length=80)
+    about = models.CharField('описание', max_length=500, blank=True)
+    icon = models.ImageField('значок', upload_to='chat/spaces/', blank=True)
+    handle = models.CharField('адрес', max_length=32, unique=True, null=True, blank=True)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='spaces_owned')
+    is_public = models.BooleanField('виден в каталоге, вступить может любой', default=False)
+    invite_code = models.CharField(max_length=24, unique=True)
+    members_count = models.PositiveIntegerField(default=0)
+    platform_verified = models.BooleanField('официальное (галочка ilm4)', default=False)
+    closed = models.BooleanField('закрыто модератором', default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'сообщество'
+        verbose_name_plural = 'сообщества'
+
+    def __str__(self):
+        return self.title
+
+
+class SpaceCategory(models.Model):
+    space = models.ForeignKey(Space, on_delete=models.CASCADE, related_name='categories')
+    title = models.CharField(max_length=60)
+    order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', 'pk']
+
+
+class SpaceVoice(models.Model):
+    """Голосовая комната сообщества. Основа: сама комната заработает с медиасервером LiveKit (нужен сервер)."""
+
+    space = models.ForeignKey(Space, on_delete=models.CASCADE, related_name='voices')
+    category = models.ForeignKey(SpaceCategory, null=True, blank=True, on_delete=models.SET_NULL, related_name='voices')
+    title = models.CharField(max_length=60)
+    order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', 'pk']
+
+
+class SpaceMember(models.Model):
+    """Участник сообщества: роль и свой ник здесь (как в Discord — в каждом сообществе можно зваться по-своему)."""
+
+    OWNER, ADMIN, MOD, MEMBER, BANNED = 'owner', 'admin', 'mod', 'member', 'banned'
+    ROLES = [(OWNER, _lazy('Владелец')), (ADMIN, _lazy('Админ')), (MOD, _lazy('Модератор')), (MEMBER, _lazy('Участник')), (BANNED, _lazy('Удалён'))]
+
+    space = models.ForeignKey(Space, on_delete=models.CASCADE, related_name='members')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='space_memberships')
+    role = models.CharField('роль', max_length=8, choices=ROLES, default=MEMBER)
+    nick = models.CharField('ник в сообществе', max_length=32, blank=True)
+    roles = models.ManyToManyField('SpaceRole', blank=True, related_name='holders')     # свои роли сообщества (цвет, права)
+    muted_until = models.DateTimeField('тайм-аут до', null=True, blank=True)            # не может писать до этого времени
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['space', 'user'], name='one_space_membership')]
+        indexes = [models.Index(fields=['user', 'space'])]
+        verbose_name = 'участник сообщества'
+        verbose_name_plural = 'участники сообществ'
+
+    @property
+    def is_admin(self) -> bool:
+        return self.role in (self.OWNER, self.ADMIN)
+
+    @property
+    def can_moderate(self) -> bool:
+        return self.role in (self.OWNER, self.ADMIN, self.MOD)
+
+
+class SpaceRole(models.Model):
+    """Своя роль сообщества — как в Discord: название, цвет, права; по ролям открываются закрытые каналы."""
+
+    PERMS = [('manage_space', _lazy('Настройки сообщества')), ('manage_roles', _lazy('Роли')), ('manage_channels', _lazy('Каналы и категории')),
+             ('kick', _lazy('Удалять участников')), ('timeout', _lazy('Тайм-аут участникам')), ('delete_messages', _lazy('Удалять и закреплять сообщения')),
+             ('mention_everyone', _lazy('Упоминать @everyone')), ('manage_tasks', _lazy('Доска задач: менять любые задачи'))]
+
+    space = models.ForeignKey(Space, on_delete=models.CASCADE, related_name='roles')
+    name = models.CharField(max_length=32)
+    color = models.CharField(max_length=7, default='#6d5efc')
+    perms = models.JSONField(default=list, blank=True)
+    hoist = models.BooleanField('показывать отдельной группой в списке участников', default=True)
+    order = models.PositiveSmallIntegerField(default=0)
+    private_threads = models.ManyToManyField(Thread, blank=True, related_name='space_roles_allowed')   # закрытые каналы, куда пускает роль
+
+    class Meta:
+        ordering = ['order', 'pk']
+
+
+class SpaceInvite(models.Model):
+    """Приглашение со сроком и числом использований (как в Discord). Постоянная ссылка — Space.invite_code."""
+
+    space = models.ForeignKey(Space, on_delete=models.CASCADE, related_name='invites')
+    code = models.CharField(max_length=24, unique=True)
+    creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='+')
+    expires_at = models.DateTimeField(null=True, blank=True)
+    max_uses = models.PositiveIntegerField(default=0)               # 0 — без ограничения
+    uses = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-pk']
+
+
+class SpaceLog(models.Model):
+    """Журнал действий в сообществе (кто что изменил) — виден тем, кто управляет сообществом."""
+
+    space = models.ForeignKey(Space, on_delete=models.CASCADE, related_name='logs')
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='+')
+    action = models.CharField(max_length=24)
+    text = models.CharField(max_length=200, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-pk']
+
+
+class SpaceTask(models.Model):
+    """Задача на доске сообщества (канбан): идеи → делаем → готово. Для совместных проектов."""
+
+    TODO, DOING, DONE = 'todo', 'doing', 'done'
+    STATUSES = [(TODO, _lazy('Идеи и задачи')), (DOING, _lazy('Делаем')), (DONE, _lazy('Готово'))]
+
+    space = models.ForeignKey(Space, on_delete=models.CASCADE, related_name='tasks')
+    title = models.CharField(max_length=160)
+    note = models.CharField(max_length=1000, blank=True)
+    status = models.CharField(max_length=6, choices=STATUSES, default=TODO)
+    creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='+')
+    assignee = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='space_tasks')
+    due = models.DateField(null=True, blank=True)
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', 'pk']

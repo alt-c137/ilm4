@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { gregText, hijriText } from '@/lib/hijri';
@@ -19,7 +19,12 @@ type Home = {
   unread: number;
 };
 
+/** Главная — всегда главная. Лента — отдельный раздел (нижняя кнопка или «Сервисы»), стартовый экран человек выбирает сам. */
 export default function HomeScreen() {
+  return <HomeMain switcher={null} />;
+}
+
+function HomeMain({ switcher }: { switcher: ReactNode }) {
   const { c, t, config, user, prayer, moduleOn } = useApp();
   const { data, reload, loading } = useFetch<Home>('/home/');
   const p = usePrayerNow();
@@ -29,6 +34,7 @@ export default function HomeScreen() {
 
   return (
     <Screen onRefresh={() => reload()} refreshing={loading && !!data}>
+      {switcher}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <View style={{ flex: 1 }}>
           <Txt kind="h1">ilm<Txt kind="h1" color={c.accent}>4</Txt></Txt>

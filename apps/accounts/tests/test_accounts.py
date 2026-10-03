@@ -147,3 +147,28 @@ def test_profile_page_modern(client):
     assert 'usermenu' in html                    # меню-⋯ в шапке
     assert 'Изменить профиль' in html and 'Приватность' in html and 'Соцсети и ссылки' in html
     assert 'Тема оформления</label>' not in html  # выбор темы ушёл в меню
+
+
+def test_multi_account_switch(client):
+    """Несколько аккаунтов: «Добавить аккаунт» → вход во второй → переключение без пароля; смена пароля гасит запомненный вход."""
+    a = User.objects.create_user('ma', 'ma@x.com', 'pass-A-12345', first_name='Али')
+    b = User.objects.create_user('mb', 'mb@x.com', 'pass-B-12345', first_name='Умар')
+    client.post('/accounts/login/', {'login': 'ma@x.com', 'password': 'pass-A-12345'})
+    assert client.post('/accounts/accounts/', {'action': 'add'}).url.endswith('/accounts/login/?add=1')
+    assert '_auth_user_id' not in client.session and 'Вернуться в аккаунт' in client.get('/accounts/login/').content.decode()
+    client.post('/accounts/login/', {'login': 'mb@x.com', 'password': 'pass-B-12345'})
+    assert int(client.session['_auth_user_id']) == b.pk
+    page = client.get('/accounts/accounts/').content.decode()
+    assert 'Али' in page and 'Умар' in page
+    client.post('/accounts/accounts/switch/', {'user': a.pk})
+    assert int(client.session['_auth_user_id']) == a.pk                      # переключились без пароля
+    client.post('/accounts/logout/')                                         # вышли из одного — открылся другой
+    assert int(client.session['_auth_user_id']) == b.pk
+    client.post('/accounts/accounts/', {'action': 'add'})
+    client.post('/accounts/login/', {'login': 'ma@x.com', 'password': 'pass-A-12345'})
+    b.set_password('new-pass-B-999')
+    b.save()
+    client.post('/accounts/accounts/switch/', {'user': b.pk})
+    assert int(client.session['_auth_user_id']) == a.pk                      # пароль сменили — запомненный вход не работает
+    other = type(client)()
+    assert other.post('/accounts/accounts/switch/', {'user': a.pk}).status_code == 302 and '_auth_user_id' not in other.session

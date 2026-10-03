@@ -322,11 +322,12 @@
   @keyframes ilm4-sheet{from{transform:translateY(100%)}to{transform:none}}
 
   /* --- нижняя панель вкладок --- */
-  .tabbar{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:100;
+  .tabbar{display:flex;overflow-x:auto;scrollbar-width:none;position:fixed;left:0;right:0;bottom:0;z-index:100;
     height:calc(var(--tab-h) + env(safe-area-inset-bottom));padding:0 max(6px,env(safe-area-inset-right)) env(safe-area-inset-bottom) max(6px,env(safe-area-inset-left));
     background:color-mix(in srgb,var(--card) 90%,transparent);backdrop-filter:blur(20px) saturate(1.5);-webkit-backdrop-filter:blur(20px) saturate(1.5);
     border-top:1px solid var(--line);box-shadow:0 -8px 24px -18px rgba(21,23,42,.35)}
-  .tabbar__i{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--ink-soft);font-size:10.5px;font-weight:600;letter-spacing:.01em;position:relative;min-width:0}
+  .tabbar::-webkit-scrollbar{display:none}
+  .tabbar__i{flex:1 0 20%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--ink-soft);font-size:10.5px;font-weight:600;letter-spacing:.01em;position:relative;min-width:0}
   .tabbar__i svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
   .tabbar__i.on{color:var(--accent-d)}
   .tabbar__i.on svg{stroke-width:2.1}

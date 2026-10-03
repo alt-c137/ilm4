@@ -1,11 +1,11 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, View } from 'react-native';
+import { Alert, Modal, Pressable, TextInput, View } from 'react-native';
 
 import { api, ApiError } from '@/lib/api';
 import { useApp } from '@/state/app';
-import { Button, Card, Empty, ErrorBox, Icon, Loading, Press, Screen, Section, Txt } from '@/ui/kit';
-import { HabitRow, isoDay, Ring, type Habit } from '@/ui/tracker';
+import { Button, Card, Empty, ErrorBox, Icon, Loading, Press, Screen, Section, Sheet, Txt } from '@/ui/kit';
+import { HabitIcon, HabitRow, isoDay, PARTS, Ring, type Habit } from '@/ui/tracker';
 import { useFetch } from '@/ui/useFetch';
 
 type Day = { day: string; n: number; done: number; total: number; today: boolean; future: boolean };
@@ -22,6 +22,9 @@ function shift(iso: string, days: number) {
 export default function Tracker() {
   const { c, t, user, tabs } = useApp();
   const [day, setDay] = useState(isoDay());
+  const [more, setMore] = useState<Habit | null>(null);
+  const [noteFor, setNoteFor] = useState<Habit | null>(null);
+  const [note, setNote] = useState('');
   const { data, setData, loading, error, reload } = useFetch<Data>(user ? `/tracker/?day=${day}` : null);
   useFocusEffect(useCallback(() => { if (user) reload(true); }, [user, reload]));
   const asTab = tabs.includes('tracker');
@@ -51,6 +54,14 @@ export default function Tracker() {
     }
   };
   const edit = (h: Habit) => router.push({ pathname: '/habits/edit', params: { id: String(h.id) } });
+  const log = async (h: Habit, body: Record<string, unknown>) => {
+    try {
+      await api(`/tracker/habits/${h.id}/log/`, { body: { day, ...body } });
+      reload(true);
+    } catch (e) {
+      Alert.alert((e as ApiError).message);
+    }
+  };
   const items = data?.items ?? [];
   const done = items.filter((x) => x.done).length;
   const percent = items.length ? Math.round((100 * done) / items.length) : 0;
@@ -91,27 +102,40 @@ export default function Tracker() {
             </View>
           </Card>
           <View style={{ gap: 8 }}>
-            {items.map((h) => <HabitRow key={h.id} h={h} canMark={canMark} onToggle={(x) => mark(x)} onStep={(x, by) => mark(x, Math.max(0, x.value + by))} onEdit={edit} />)}
+            {items.map((h, i) => {
+              const head = i === 0 ? !!h.part : items[i - 1].part !== h.part;
+              const part = PARTS.find((p) => p.key === (h.part ?? ''));
+              return (
+                <View key={h.id} style={{ gap: 8 }}>
+                  {head && part ? <Txt kind="label" style={{ marginTop: i ? 8 : 0, paddingHorizontal: 4 }}><Icon name={part.icon} size={13} color={c.inkSoft} /> {t(part.label)}</Txt> : null}
+                  <HabitRow h={h} canMark={canMark} onToggle={(x) => mark(x)} onStep={(x, by) => mark(x, Math.max(0, x.value + by))} onEdit={edit} onMore={setMore} />
+                </View>
+              );
+            })}
           </View>
         </>
       ) : (
         <Empty icon="checkmark-circle-outline" title={data.habits_total ? t('На этот день ничего не запланировано') : t('Начните с одной привычки')}
           text={t('Таблетки, вода, чтение, зарядка, слова на арабском — что угодно. Отмечайте каждый день и смотрите, как растёт серия.')}
-          action={<Button small title={t('Добавить привычку')} icon="add" onPress={() => router.push('/habits/edit')} />} />
+          action={<View style={{ gap: 8 }}>
+            <Button small title={t('Готовые привычки')} icon="star" onPress={() => router.push('/habits/templates')} />
+            <Button small kind="soft" title={t('Своя привычка')} icon="add" onPress={() => router.push('/habits/edit')} />
+          </View>} />
       )}
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <Button small kind="soft" icon="add" title={t('Привычка')} style={{ flex: 1 }} onPress={() => router.push('/habits/edit')} />
         <Button small kind="soft" icon="add" title={t('Дело на день')} style={{ flex: 1 }} onPress={() => router.push({ pathname: '/habits/edit', params: { once: day } })} />
       </View>
+      <Button small kind="ghost" icon="star-outline" title={t('Готовые привычки: намаз, Коран, вода, таблетки…')} onPress={() => router.push('/habits/templates')} />
 
       <Section title={t('Вместе')}>
         {(data?.boards ?? []).map((b) => (
           <Press key={b.id} onPress={() => router.push(`/habits/board/${b.id}`)} scale={0.985}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: c.card, borderRadius: 18, padding: 14 }}>
-            <Txt style={{ fontSize: 26, lineHeight: 31 }}>{b.emoji}</Txt>
+            <HabitIcon value={b.emoji} size={26} />
             <View style={{ flex: 1 }}>
               <Txt style={{ fontWeight: '700', fontSize: 15.5 }} numberOfLines={1}>{b.title}</Txt>
-              <Txt kind="small">{t('участников: {n}', { n: b.members })}{b.compete ? ' · 🏆' : ''}</Txt>
+              <Txt kind="small">{t('участников: {n}', { n: b.members })}{b.compete ? <>{' · '}<Icon name="trophy" size={12.5} color="#eab308" /></> : null}</Txt>
             </View>
             <Icon name="chevron-forward" size={18} color={c.inkSoft} />
           </Press>
@@ -129,6 +153,24 @@ export default function Tracker() {
           <Txt kind="small" style={{ flex: 1, fontSize: 12.5 }}>{t('Свои привычки видите только вы. В общем трекере участники видят отметки друг друга.')}</Txt>
         </View>
       </Section>
+      <Sheet open={!!more} onClose={() => setMore(null)} title={more ? more.title : ''} items={more ? [
+        ...(canMark ? [{ icon: more.skipped ? 'refresh-outline' as const : 'bed-outline' as const, title: more.skipped ? t('Отменить пропуск') : t('Пропуск по уважительной причине'),
+          subtitle: t('Болезнь, дорога — день не считается, серия не рвётся'), onPress: () => log(more, { skip: !more.skipped }) },
+          { icon: 'create-outline' as const, title: t('Заметка к этому дню'), subtitle: more.log_note || undefined,
+            onPress: () => { setNote(more.log_note ?? ''); setTimeout(() => setNoteFor(more), 300); } }] : []),
+        { icon: 'calendar-outline', title: t('Календарь и история'), onPress: () => router.push(`/habits/${more.id}`) },
+        ...(more.can_edit ? [{ icon: 'settings-outline' as const, title: t('Изменить'), onPress: () => edit(more) }] : []),
+      ] : []} />
+      <Modal visible={!!noteFor} transparent animationType="fade" onRequestClose={() => setNoteFor(null)}>
+        <Pressable style={{ flex: 1, backgroundColor: c.overlay, justifyContent: 'center', padding: 24 }} onPress={() => setNoteFor(null)}>
+          <Pressable style={{ backgroundColor: c.card, borderRadius: 20, padding: 16, gap: 12 }} onPress={() => {}}>
+            <Txt kind="h3">{t('Заметка к этому дню')}</Txt>
+            <TextInput value={note} onChangeText={setNote} autoFocus maxLength={200} multiline placeholder={t('Например: принял после еды')} placeholderTextColor={c.inkSoft}
+              style={{ minHeight: 70, backgroundColor: c.card2, borderRadius: 14, padding: 12, fontSize: 16, color: c.ink, textAlignVertical: 'top' }} />
+            <Button title={t('Сохранить')} onPress={() => { const h = noteFor; setNoteFor(null); if (h) log(h, { note }); }} />
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Screen>
   );
 }

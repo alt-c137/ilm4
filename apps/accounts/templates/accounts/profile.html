@@ -5,12 +5,17 @@
 {% block body_class %}page-tp{% endblock %}
 
 {% block content %}
-<form method="post" enctype="multipart/form-data" class="tp" id="profile-form">{% csrf_token %}
-  <header class="tp__head">
-    <label class="tp__ava tp__ava--edit" for="id_avatar" title="{% translate 'Поменять фото' %}">
-      {% if me.avatar %}<img src="{{ me.avatar.url }}" alt="{% translate 'Аватар' %}">{% else %}<span>{{ me.get_display_name|slice:":1"|upper }}</span>{% endif %}
-      <i class="tp__cam">{% ico 'image' %}</i>
-    </label>
+<form method="post" enctype="multipart/form-data" class="tp{% if section %} tp--sub{% endif %}" id="profile-form">{% csrf_token %}
+  {% if section %}<input type="hidden" name="s" value="{{ section }}">
+  <a class="crumb" href="{% url 'core:settings' %}">{% ico 'back' %}{% translate "Настройки" %}</a>
+  <header class="tp__bar"><h1>{% if section == 'edit' %}{% translate "Мой аккаунт" %}{% elif section == 'privacy' %}{% translate "Конфиденциальность" %}{% else %}{% translate "Ссылки и соцсети" %}{% endif %}</h1></header>{% endif %}
+  <header class="tp__head"{% if section and section != 'edit' %} hidden{% endif %}>
+    {# как в Telegram: нажал на фото — смотришь свои фото (листаются); новое фото — кнопкой с камерой #}
+    <div class="tp__avabox">
+      {% if photos %}<button type="button" class="tp__ava tp__ava--view" data-photos="profile-photos" data-mine="1" data-picker="id_avatar" aria-label="{% translate 'Смотреть фото' %}"><img src="{{ me.avatar.url }}" alt="{% translate 'Аватар' %}"></button>{{ photos|json_script:"profile-photos" }}
+      {% else %}<label class="tp__ava tp__ava--edit" for="id_avatar" title="{% translate 'Поставить фото' %}"><span>{{ me.get_display_name|slice:":1"|upper }}</span></label>{% endif %}
+      <label class="tp__cam" for="id_avatar" title="{% translate 'Новое фото' %}">{% ico 'image' %}</label>
+    </div>
     {{ form.avatar }}
     <h1 class="tp__name">{{ me.get_display_name }}{% if me.platform_verified %}<i class="tgver" title="{% translate 'Проверен ilm4' %}">{% ico 'check' %}</i>{% endif %}</h1>
     <div class="tp__status is-on">{% translate "в сети" %}</div>
@@ -18,24 +23,24 @@
     {% elif me.is_admin_role %}<span class="tp__role">{% translate "Админ" %}</span>{% endif %}
   </header>
 
-  <div class="tp__acts">
-    <a class="tp__act" href="#edit" data-open="edit">{% ico 'edit' %}<span>{% translate "Изменить" %}</span></a>
+  <div class="tp__acts"{% if section %} hidden{% endif %}>
+    <a class="tp__act" href="?s=edit">{% ico 'edit' %}<span>{% translate "Изменить" %}</span></a>
     <a class="tp__act" href="{% url 'accounts:public' me.pk %}">{% ico 'eye' %}<span>{% translate "Как видят" %}</span></a>
     <a class="tp__act" href="{% url 'core:my' %}">{% ico 'tag' %}<span>{% translate "Публикации" %}</span></a>
     {% if me.is_staff %}<a class="tp__act" href="/admin/">{% ico 'shield' %}<span>{% translate "Админка" %}</span></a>{% endif %}
   </div>
 
-  <section class="tp__card">
+  <section class="tp__card"{% if section %} hidden{% endif %}>
     {% if me.phone %}<div class="tp__row">{% ico 'phone' %}<span><b>{{ me.phone }}</b><small>{% translate "Телефон" %} · {% if me.phone_privacy == 'all' %}{% translate "видят все" %}{% elif me.phone_privacy == 'close' %}{% translate "видят близкие друзья" %}{% else %}{% translate "никто не видит" %}{% endif %}{% if not me.phone_verified %} · {% translate "не подтверждён" %}{% endif %}</small></span></div>{% endif %}
     {% if me.handle %}<button type="button" class="tp__row" data-copy="@{{ me.handle }}">{% ico 'at' %}<span><b>@{{ me.handle }}</b><small>{% translate "Имя пользователя — по нему вас находят" %}</small></span></button>
-    {% else %}<a class="tp__row tp__row--todo" href="#edit" data-open="edit" data-focus="id_handle">{% ico 'at' %}<span><b>{% translate "Задать имя пользователя" %}</b><small>{% translate "Чтобы вас находили в поиске и писали вам, не зная номера" %}</small></span></a>{% endif %}
+    {% else %}<a class="tp__row tp__row--todo" href="?s=edit">{% ico 'at' %}<span><b>{% translate "Задать имя пользователя" %}</b><small>{% translate "Чтобы вас находили в поиске и писали вам, не зная номера" %}</small></span></a>{% endif %}
     {% if me.bio %}<div class="tp__row">{% ico 'info' %}<span><b>{{ me.bio }}</b><small>{% translate "О себе" %}</small></span></div>{% endif %}
     {% if me.city %}<div class="tp__row">{% ico 'pin' %}<span><b>{{ me.city }}</b><small>{% translate "Город" %}</small></span></div>{% endif %}
     {% for l in links %}<div class="tp__row">{% ico 'link' %}<span><b>{{ l.value }}</b><small>{{ l.title }} · {% if l.privacy == 'all' %}{% translate "видят все" %}{% elif l.privacy == 'close' %}{% translate "видят близкие друзья" %}{% else %}{% translate "скрыто ото всех" %}{% endif %}</small></span></div>{% endfor %}
     <div class="tp__row">{% ico 'calendar' %}<span><b>{{ me.date_joined|date:"E Y"|lower }}</b><small>{% translate "на ilm4 с" %}</small></span></div>
   </section>
 
-  <details class="tp__card tp__fold" id="edit"{% if edit_open %} open{% endif %}>
+  <details class="tp__card tp__fold" id="edit"{% if section == 'edit' %} open{% else %} hidden{% endif %}>
     <summary>{% ico 'edit' %}<b>{% translate "Изменить профиль" %}</b></summary>
     <div class="tp__form">
       <div class="tp__f2">
@@ -55,7 +60,7 @@
     </div>
   </details>
 
-  <details class="tp__card tp__fold" id="privacy"{% if edit_open %} open{% endif %}>
+  <details class="tp__card tp__fold" id="privacy"{% if section == 'privacy' %} open{% else %} hidden{% endif %}>
     <summary>{% ico 'lock' %}<b>{% translate "Приватность" %}</b></summary>
     <div class="tp__form">
       <div><label for="{{ form.phone_privacy.id_for_label }}">{{ form.phone_privacy.label }}</label>{{ form.phone_privacy }}</div>
@@ -63,6 +68,12 @@
       <span class="hint">{% translate "Кто знает ваш номер, найдёт вас в поиске чатов. Сам номер при этом не показывается." %}</span>
       <div><label for="{{ form.seen_privacy.id_for_label }}">{{ form.seen_privacy.label }}</label>{{ form.seen_privacy }}
         <span class="hint">{% translate "Если скрыть своё время, вы тоже не увидите, когда в сети были другие — вместо этого «был(а) недавно»." %}</span></div>
+      <div><label for="{{ form.forward_privacy.id_for_label }}">{{ form.forward_privacy.label }}</label>{{ form.forward_privacy }}
+        <span class="hint">{% translate "Когда ваше сообщение пересылают, рядом стоит ваше имя. «Никто» — имя останется, но перейти по нему в ваш профиль будет нельзя." %}</span></div>
+      <div><label for="{{ form.invite_privacy.id_for_label }}">{{ form.invite_privacy.label }}</label>{{ form.invite_privacy }}
+        <span class="hint">{% translate "По ссылке-приглашению вы вступаете сами — это ограничение только на добавление вас кем-то другим." %}</span></div>
+      <div><label for="{{ form.counts_privacy.id_for_label }}">{{ form.counts_privacy.label }}</label>{{ form.counts_privacy }}
+        <span class="hint">{% translate "«Никто» — в вашем профиле не будет чисел «записей / подписчиков / подписок». Вы сами их видите всегда." %}</span></div>
       {% if close_friends %}
       <div><label>{% translate "Близкие друзья" %}</label>
         <div class="tp__chips">{% for f in close_friends %}<a class="chip" href="{% url 'accounts:public' f.pk %}">{{ f.get_display_name }}</a>{% endfor %}</div>
@@ -71,7 +82,7 @@
     </div>
   </details>
 
-  <details class="tp__card tp__fold" id="links"{% if edit_open or link_error %} open{% endif %}>
+  <details class="tp__card tp__fold" id="links"{% if section == 'links' or link_error %} open{% else %} hidden{% endif %}>
     <summary>{% ico 'link' %}<b>{% translate "Соцсети и ссылки" %}</b></summary>
     <div class="tp__form">
       <span class="hint">{% translate "Instagram, Telegram, YouTube, GitHub, Discord — что хотите. Для каждой ссылки выберите, кто её видит." %}</span>
@@ -97,18 +108,14 @@
   </details>
 
   {% for err in form.non_field_errors %}<span class="err">{{ err }}</span>{% endfor %}
-  <button type="submit" class="btn btn--p tp__save">{% translate "Сохранить изменения" %}</button>
+  <button type="submit" class="btn btn--p tp__save"{% if not section %} hidden{% endif %}>{% translate "Сохранить изменения" %}</button>
 </form>
 
-<nav class="profnav tp__nav">
+{% if not section %}<nav class="profnav tp__nav">
+  <a class="profnav__i" href="{% url 'core:settings' %}"><b>{% translate "Настройки" %}</b><span>{% translate "Аккаунт, конфиденциальность, чаты, папки, язык" %}</span></a>
   <a class="profnav__i" href="{% url 'core:my' %}"><b>{% translate "Мои публикации" %}</b><span>{% translate "Объявления, вакансии, услуги — изменить или удалить" %}</span></a>
   <a class="profnav__i" href="{% url 'wallet:index' %}"><b>{% translate "Кошелёк" %}</b><span>{% translate "Баланс и история платежей" %}</span></a>
-  <a class="profnav__i" href="{% url 'accounts:blocked' %}"><b>{% translate "Заблокированные" %}</b><span>{% translate "Кого вы заблокировали" %}</span></a>
-  <a class="profnav__i" href="{% url 'core:settings' %}"><b>{% translate "Оформление" %}</b><span>{% translate "Тема и цвет" %}</span></a>
-  {% if contacts_on %}<a class="profnav__i" href="{% url 'chat:contacts' %}"><b>{% translate "Найти знакомых" %}</b><span>{% translate "Кто из контактов уже на ilm4" %}</span></a>{% endif %}
-  {% if me.is_staff %}<a class="profnav__i" href="{% url 'accounts:two_factor_setup' %}"><b>{% translate "Двухшаговая защита" %}</b><span>{% translate "Настройки 2FA для входа в админку" %}</span></a>{% endif %}
-  <a class="profnav__i profnav__i--danger" href="{% url 'accounts:delete' %}"><b>{% translate "Удалить аккаунт" %}</b><span>{% translate "Стереть личные данные навсегда" %}</span></a>
-</nav>
+</nav>{% endif %}
 {% endblock %}
 
-{% block extra_js %}<script src="{% static 'js/people.js' %}?v={{ asset_v }}" defer></script>{% endblock %}
+{% block extra_js %}<script src="{% static 'js/people.js' %}?v={{ asset_v }}" defer></script><script src="{% static 'js/photoview.js' %}?v={{ asset_v }}" defer></script>{% endblock %}

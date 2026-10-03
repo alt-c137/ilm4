@@ -5,7 +5,7 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Pressable, useWindowDimensions, View } from 'react-native';
 
 import { authHeaders } from '@/lib/api';
 import { useApp } from '@/state/app';
@@ -17,13 +17,27 @@ export function mmss(sec: number) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
-export function ChatPhoto({ uri }: { uri: string }) {
+/** Размер фото в сообщении — правило Telegram: свои пропорции, не шире и не выше отведённого места, без обрезки. */
+export function photoBox(w: number, h: number, maxW: number, maxH: number) {
+  if (!w || !h) return { width: Math.min(230, maxW), height: Math.min(230, maxW) };
+  const ratio = h / w;
+  let width = Math.min(w, maxW), height = width * ratio;
+  if (height > maxH) { height = maxH; width = maxH / ratio; }
+  return { width: Math.max(90, Math.round(width)), height: Math.max(60, Math.round(height)) };
+}
+
+export function ChatPhoto({ uri, onPress, w = 0, h = 0 }: { uri: string; onPress?: () => void; w?: number; h?: number }) {
   const [open, setOpen] = useState(false);
+  const win = useWindowDimensions();
+  const [real, setReal] = useState<{ w: number; h: number } | null>(null);       // старые фото без сохранённых размеров
+  const box = photoBox(w || real?.w || 0, h || real?.h || 0, Math.min(300, win.width * 0.72), 360);
   const src = { uri, headers: authHeaders() };
   return (
     <>
-      <Pressable onPress={() => setOpen(true)}>
-        <Image source={src} style={{ width: 230, height: 230, borderRadius: 14, backgroundColor: '#0002' }} contentFit="cover" transition={120} />
+      {/* onPress — экран чата открывает общий просмотр, где листаются все фото переписки */}
+      <Pressable onPress={onPress ?? (() => setOpen(true))}>
+        <Image source={src} style={{ ...box, borderRadius: 14, backgroundColor: '#0002' }} contentFit="cover" transition={120}
+          onLoad={w ? undefined : (e) => setReal({ w: e.source.width, h: e.source.height })} />
       </Pressable>
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={{ flex: 1, backgroundColor: '#000', justifyContent: 'center' }} onPress={() => setOpen(false)}>
@@ -56,6 +70,12 @@ export function ChatVoice({ uri, duration, mine }: { uri: string; duration: numb
   const total = st.duration || duration || 1;
   const pos = st.currentTime || 0;
   const fg = mine ? '#fff' : c.accent;
+  const [rate, setRate] = useState(1);
+  const speed = () => {                       // скорость: 1× → 1,5× → 2× (как в Telegram)
+    const next = rate === 1 ? 1.5 : rate === 1.5 ? 2 : 1;
+    setRate(next);
+    try { player.setPlaybackRate(next); } catch { /* старое устройство без смены скорости */ }
+  };
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minWidth: 190 }}>
       <Pressable onPress={() => {
@@ -71,6 +91,10 @@ export function ChatVoice({ uri, duration, mine }: { uri: string; duration: numb
         <View style={{ width: `${Math.min(100, (pos / total) * 100)}%`, height: 4, borderRadius: 2, backgroundColor: fg }} />
       </View>
       <Txt kind="small" color={mine ? '#fff' : c.inkSoft}>{mmss(st.playing ? pos : total)}</Txt>
+      <Pressable onPress={speed} hitSlop={8} style={{ minWidth: 34, height: 22, paddingHorizontal: 6, borderRadius: 11, alignItems: 'center', justifyContent: 'center',
+        backgroundColor: mine ? 'rgba(255,255,255,0.24)' : c.accentSoft }}>
+        <Txt kind="small" color={mine ? '#fff' : c.accentD} style={{ fontSize: 11.5, fontWeight: '800' }}>{String(rate).replace('.', ',')}×</Txt>
+      </Pressable>
     </View>
   );
 }

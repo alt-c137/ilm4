@@ -607,46 +607,6 @@ html[data-theme=dark] .mbrief{color:#34d399}
 .tpay__soon{font-size:11px;font-weight:800;color:var(--accent-d);background:var(--accent-soft);border-radius:10px;padding:2px 8px}
 @media(max-width:560px){.tamounts{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
-/* ================= лента (прототип) ================= */
-.page-feed .foot,.page-feed .nav{display:none}
-.feedwrap{max-width:440px;margin:10px auto 20px;position:relative}
-.feedtop{display:flex;align-items:baseline;gap:10px;padding:0 4px 8px}
-.feedtop b{font-family:var(--disp);font-size:22px}
-.feedtop span{font-size:12.5px;color:var(--ink-soft)}
-.feedv{height:calc(100vh - 180px);height:calc(100dvh - 180px);min-height:480px;overflow-y:auto;scroll-snap-type:y mandatory;
-  border-radius:26px;background:#0b0d18;scrollbar-width:none;overscroll-behavior:contain;box-shadow:var(--shadow-lg)}
-.feedv::-webkit-scrollbar{display:none}
-.fcard{position:relative;height:100%;scroll-snap-align:start;scroll-snap-stop:always;overflow:hidden;color:#fff;isolation:isolate;
-  display:flex;align-items:flex-end}
-.fcard--t0{background:linear-gradient(160deg,var(--accent),#1a1440)}
-.fcard--t1{background:linear-gradient(160deg,#0f766e,#07201d)}
-.fcard--t2{background:linear-gradient(160deg,#b45309,#2a1405)}
-.fcard--t3{background:linear-gradient(160deg,#be185d,#2a0716)}
-.fcard--t4{background:linear-gradient(160deg,#1d4ed8,#07122e)}
-.fcard::before{content:"";position:absolute;right:-80px;top:10%;width:320px;height:320px;z-index:-1;border:2px solid rgba(255,255,255,.1);border-radius:50px;transform:rotate(45deg)}
-.fcard__img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
-.fcard__shade{position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(0,0,0,0) 35%,rgba(0,0,0,.72))}
-.fcard__body{padding:22px 80px 26px 20px;display:flex;flex-direction:column;gap:8px;max-width:100%}
-.fcard__kind{align-self:flex-start;font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;background:rgba(255,255,255,.18);backdrop-filter:blur(6px);border-radius:10px;padding:4px 10px}
-.fcard__t{font-family:var(--disp);font-size:24px;font-weight:800;line-height:1.15;text-shadow:0 2px 12px rgba(0,0,0,.35)}
-.fcard__price{font-family:var(--disp);font-size:20px;font-weight:800}
-.fcard__x{font-size:14.5px;line-height:1.5;opacity:.92;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
-.fcard__meta{font-size:12.5px;opacity:.75}
-.fcard__open{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;margin-top:6px;background:#fff;color:#111;font-weight:700;font-size:14px;border-radius:var(--pill);padding:10px 16px}
-.fcard__open svg{width:17px;height:17px}
-.fcard__rail{position:absolute;right:10px;bottom:28px;display:flex;flex-direction:column;gap:16px}
-.frail{display:flex;flex-direction:column;align-items:center;gap:3px;border:0;background:none;color:#fff;cursor:pointer;font:inherit}
-.frail svg{width:30px;height:30px;padding:8px;box-sizing:content-box;border-radius:50%;background:rgba(255,255,255,.16);backdrop-filter:blur(6px);transition:transform .15s}
-.frail small{font-size:10.5px;font-weight:700;opacity:.9}
-.frail:active svg{transform:scale(.88)}
-.frail.on svg{background:#e5484d;fill:#fff}
-@media(max-width:760px){
-  .feedwrap{width:100vw;max-width:none;margin:0 0 0 calc(50% - 50vw)}
-  .feedtop{display:none}
-  .feedv{height:calc(100dvh - 76px - var(--tab-h) - env(safe-area-inset-top) - env(safe-area-inset-bottom));border-radius:0;min-height:0;box-shadow:none}
-  .page-feed .wrap{padding-bottom:0}
-}
-
 /* --- v35: карта — ступени проверки, мини-карта, маршрут, выбор точки --- */
 .vbadge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;border-radius:var(--pill);padding:4px 10px;line-height:1.2;text-decoration:none;white-space:nowrap}
 .vbadge::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}

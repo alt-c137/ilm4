@@ -1,0 +1,11 @@
+{% load i18n icons %}{# каналы сообщества по категориям; current — открытый канал; space — сообщество #}
+{% for g in groups %}
+  {% if g.title %}<h3 class="sp__cat">{{ g.title }}</h3>{% endif %}
+  {% for ch in g.channels %}
+    {% if ch.kind == 'voice' %}{% if me %}<a class="sp__ch sp__ch--voice{% if ch.id == voice_on %} on{% endif %}" href="{% url 'spaces:voice' space.pk ch.id %}">{% ico 'voice' %}<b>{{ ch.title }}</b>{% if ch.people %}<i>{{ ch.people|length }}</i>{% endif %}</a>
+      {% for p in ch.people %}<span class="sp__vp">{% if p.avatar %}<img src="{{ p.avatar }}" alt="">{% else %}<em>{{ p.name|slice:":1"|upper }}</em>{% endif %}{{ p.name }}</span>{% endfor %}
+      {% else %}<span class="sp__ch sp__ch--voice">{% ico 'voice' %}<b>{{ ch.title }}</b></span>{% endif %}
+    {% elif me %}<a class="sp__ch{% if ch.id == current %} on{% endif %}{% if ch.unread %} is-unread{% endif %}" href="{% url 'chat:thread' ch.id %}">{% if ch.private %}{% ico 'lock' %}{% elif ch.kind == 'news' %}{% ico 'megaphone' %}{% else %}{% ico 'hash' %}{% endif %}<b>{{ ch.title }}</b>{% if ch.unread %}<i>{{ ch.unread }}</i>{% endif %}</a>
+    {% else %}<span class="sp__ch">{% if ch.kind == 'news' %}{% ico 'megaphone' %}{% else %}{% ico 'hash' %}{% endif %}<b>{{ ch.title }}</b></span>{% endif %}
+  {% endfor %}
+{% endfor %}

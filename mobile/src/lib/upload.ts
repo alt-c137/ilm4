@@ -18,7 +18,7 @@ const RETRIES = 8;
 
 export type Stage = 'compress' | 'upload';
 export type OnProgress = (stage: Stage, done: number, total: number) => void;
-export type UploadOpts = { duration?: number; silent?: boolean; schedule?: string };
+export type UploadOpts = { duration?: number; silent?: boolean; schedule?: string; reply_to?: number | string };
 
 const inExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
@@ -56,7 +56,8 @@ export async function uploadInParts(threadId: string | number, kind: 'file' | 'v
   const size = file.size || 0;
   if (!size) throw new ApiError(t('Файл пустой'));
   const start = await api<{ upload: string; part: number }>(`/chat/${threadId}/upload/begin/`, {
-    body: { kind, name, size, duration: Math.round(opts.duration ?? 0), silent: !!opts.silent, schedule: opts.schedule ?? '' },
+    body: { kind, name, size, duration: Math.round(opts.duration ?? 0), silent: !!opts.silent, schedule: opts.schedule ?? '',
+      reply_to: opts.reply_to ?? '' },
   });
   const id = start.upload;
   const handle = file.open();

@@ -23,6 +23,7 @@ from .models import Member, Thread
 from .services import ChatError
 
 CREATE_PER_DAY = 5                 # групп и каналов в сутки на человека — против спама
+SLOW_CHOICES = (0, 10, 30, 60, 300, 900, 3600)      # медленный режим — те же шаги, что в Telegram
 ADD_AT_ONCE = 50
 
 
@@ -163,6 +164,17 @@ def update(thread, user, data, avatar=None) -> Thread:
     if 'only_admins_post' in data and thread.kind == Thread.GROUP:
         thread.only_admins_post = str(data['only_admins_post']).lower() in ('1', 'true', 'on')
         fields.append('only_admins_post')
+    for flag in ('protected', 'reactions_on') + (('comments_on',) if thread.is_channel else ()):
+        if flag in data:                              # запрет пересылки, реакции, комментарии к постам
+            setattr(thread, flag, str(data[flag]).lower() in ('1', 'true', 'on'))
+            fields.append(flag)
+    if 'slow_seconds' in data and thread.kind == Thread.GROUP:
+        try:
+            sec = int(data['slow_seconds'] or 0)
+        except (TypeError, ValueError):
+            sec = 0
+        thread.slow_seconds = sec if sec in SLOW_CHOICES else 0
+        fields.append('slow_seconds')
     if 'is_public' in data or 'handle' in data:
         public = str(data.get('is_public', thread.is_public)).lower() in ('1', 'true', 'on')
         handle = clean_handle(data.get('handle', thread.handle or ''), thread, user=user) if public else None
@@ -211,7 +223,7 @@ def by_handle(handle: str):
 
 def join(thread, user, code: str = '') -> Member:
     """Вступить: в публичный — свободно, в закрытый — по коду приглашения."""
-    if not thread.is_room or not enabled(thread.kind):
+    if not thread.is_room or not enabled(thread.kind) or thread.space_id:      # в канал сообщества вступают через сообщество
         raise ChatError(_('Не найдено'), 404)
     if thread.closed:
         raise ChatError(_('Чат закрыт модератором.'), 403)
@@ -244,8 +256,11 @@ def add_members(thread, by, users) -> int:
     known = set(get_user_model().objects.filter(chat_threads__in=Thread.objects.filter(kind=Thread.DIRECT, participants=by))
                 .values_list('pk', flat=True))
     added = 0
+    from apps.accounts import people
     for u in list(users)[:ADD_AT_ONCE]:
         if u.pk == by.pk or u.pk not in known or not u.is_active:
+            continue
+        if not people.can_invite(u, by):              # «кто может добавлять меня в группы» — как в Telegram
             continue
         try:
             before = Member.objects.filter(thread=thread, user=u).exists()
@@ -260,6 +275,8 @@ def leave(thread, user) -> None:
     m = membership(thread, user)
     if m is None:
         return
+    if thread.space_id:
+        raise ChatError(_('Это канал сообщества — выйти можно из сообщества целиком.'), 409)
     if m.role == Member.OWNER:
         heir = (thread.members.filter(role=Member.ADMIN).exclude(user=user).order_by('joined_at').first()
                 or thread.members.filter(role=Member.MEMBER).exclude(user=user).order_by('joined_at').first())
@@ -270,7 +287,14 @@ def leave(thread, user) -> None:
         Thread.objects.filter(pk=thread.pk).update(owner=heir.user)
     m.delete()
     thread.participants.remove(user)
+    _forget(thread, user)
     _recount(thread)
+
+
+def _forget(thread, user) -> None:
+    """Человек больше не в чате — его личное состояние (закреп, архив, папки) убираем."""
+    from .folders import unarchive_all_on_leave
+    unarchive_all_on_leave(thread, user)
 
 
 def remove_member(thread, by, user) -> None:
@@ -283,6 +307,7 @@ def remove_member(thread, by, user) -> None:
     target.role = Member.BANNED
     target.save(update_fields=['role'])
     thread.participants.remove(user)
+    _forget(thread, user)
     _recount(thread)
 
 
@@ -317,15 +342,16 @@ def mark_read(thread, user) -> None:
         return
     now = timezone.now()
     if thread.is_channel:
-        fresh = thread.messages.delivered().exclude(sender=user)
+        fresh = thread.messages.delivered().filter(comment_of__isnull=True).exclude(sender=user)
         if m.last_read_at:
             fresh = fresh.filter(created_at__gt=m.last_read_at)
         fresh.update(views=F('views') + 1)
     Member.objects.filter(pk=m.pk).update(last_read_at=now)
 
 
-def notify(thread, sender, text: str, silent: bool = False) -> None:
-    """Пуш участникам, у кого не «без звука». Колокольчик не трогаем: непрочитанное видно в списке чатов."""
+def notify(thread, sender, text: str, silent: bool = False, always=()) -> None:
+    """Пуш участникам, у кого не «без звука». Колокольчик не трогаем: непрочитанное видно в списке чатов.
+    always — кому пуш придёт и при «без звука»: упомянутым (@имя) и тому, на чьё сообщение ответили."""
     import threading
 
     from django.conf import settings as dj
@@ -334,7 +360,7 @@ def notify(thread, sender, text: str, silent: bool = False) -> None:
     title = thread.title
     body = text[:140] if thread.is_channel else f'{sender.get_display_name()}: {text[:120]}'
     url = f'/chat/{thread.pk}/'
-    thread_id, sender_id = thread.pk, sender.pk
+    thread_id, sender_id, always = thread.pk, sender.pk, set(always or ())
 
     def run():
         from django.db import connection
@@ -342,8 +368,8 @@ def notify(thread, sender, text: str, silent: bool = False) -> None:
         from apps.api.models import PushDevice
         from apps.api.push import _send
         try:
-            users = (Member.objects.filter(thread_id=thread_id, muted=False).exclude(role=Member.BANNED)
-                     .exclude(user_id=sender_id).values('user_id'))
+            users = (Member.objects.filter(Q(muted=False) | Q(user_id__in=always), thread_id=thread_id)
+                     .exclude(role=Member.BANNED).exclude(user_id=sender_id).values('user_id'))
             tokens = list(PushDevice.objects.filter(user_id__in=users).values_list('token', flat=True))
             for i in range(0, len(tokens), 100):          # Expo принимает до 100 сообщений за запрос
                 _send([{'to': t, 'title': title, 'body': body, 'data': {'url': url},
@@ -357,12 +383,13 @@ def notify(thread, sender, text: str, silent: bool = False) -> None:
 
 def catalog(q: str = '', kind: str = ''):
     """Публичные каналы и группы: сначала официальные, потом по числу участников."""
-    qs = Thread.objects.filter(is_public=True, closed=False, kind__in=[k for k in visible_kinds() if k != Thread.DIRECT])
+    qs = Thread.objects.filter(is_public=True, closed=False, space__isnull=True, kind__in=[k for k in visible_kinds() if k != Thread.DIRECT])
     if kind in (Thread.GROUP, Thread.CHANNEL):
         qs = qs.filter(kind=kind)
     q = (q or '').strip()[:60]
     if q:
-        qs = qs.filter(Q(title__icontains=q) | Q(about__icontains=q) | Q(handle__icontains=q.lstrip('@').lower()))
+        from apps.core.textsearch import icontains
+        qs = qs.filter(icontains('title', q) | icontains('about', q) | Q(handle__icontains=q.lstrip('@').lower()))
     return qs.order_by('-platform_verified', '-members_count', '-updated_at')
 
 
@@ -374,7 +401,8 @@ def info(thread, user) -> dict:
         'public': thread.is_public, 'verified': thread.platform_verified, 'closed': thread.closed,
         'members': thread.members_count, 'role': m.role if m else '', 'member': m is not None,
         'admin': bool(m and m.is_admin), 'muted': bool(m and m.muted), 'can_post': can_post(thread, user),
-        'only_admins_post': thread.only_admins_post,
+        'only_admins_post': thread.only_admins_post, 'protected': thread.protected,
+        'reactions_on': thread.reactions_on, 'comments_on': thread.comments_on, 'slow_seconds': thread.slow_seconds,
         'invite': thread.invite_code if (m and (m.is_admin or thread.kind == Thread.GROUP)) or thread.is_public else '',
     }
 

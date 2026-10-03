@@ -67,7 +67,7 @@
     </header>
     <ul class="modc__reports">
       {% for r in g.reports %}<li><b>{{ r.get_reason_display }}</b>{% if r.text %} — {{ r.text }}{% endif %} <span class="modc__meta">{{ r.created_at|date:"j E" }}</span>
-        {% if r.thread_id %} · <a class="link" href="{% url 'core:moderation_chat' r.pk %}">🔒 {% translate "открыть переписку по этой жалобе" %}</a>{% endif %}</li>{% endfor %}
+        {% if r.thread_id %} · <a class="link" href="{% url 'core:moderation_chat' r.pk %}">{% translate "открыть переписку по этой жалобе" %}</a>{% endif %}</li>{% endfor %}
     </ul>
     <div class="modc__act">
       <form method="post" action="{% url 'core:moderation_report' g.ct.pk g.id %}">{% csrf_token %}

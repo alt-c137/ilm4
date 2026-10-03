@@ -14,7 +14,7 @@ GROUPS = [
     ('shop', _lazy('Покупки и деньги'), ['buy', 'services', 'finance', 'invest', 'digital', 'wallet']),
     ('life', _lazy('Жизнь и семья'), ['tracker', 'map', 'health', 'nikah', 'realestate', 'sport', 'fun']),
     ('move', _lazy('Работа, переезд и право'), ['jobs', 'migration', 'transport', 'refugee', 'lawyers']),
-    ('talk', _lazy('Общение'), ['chat']),
+    ('talk', _lazy('Общение'), ['assistant', 'chat', 'communities', 'feed', 'stories', 'shorts', 'gifts']),
 ]
 OTHER = ('more', _lazy('Ещё'))
 
@@ -39,7 +39,13 @@ DESCR = {
     'migration': _lazy('Реальные истории переезда'),
     'transport': _lazy('Грузы, пассажиры, попутчики'),
     'refugee': _lazy('УВКБ ООН, посольства, организации'),
-    'chat': _lazy('Личные сообщения'),
+    'chat': _lazy('Личные сообщения, группы и каналы'),
+    'feed': _lazy('Записи людей и каналов, новое во всех разделах'),
+    'communities': _lazy('Клубы по интересам: каналы, роли, свой ник — как в Discord'),
+    'assistant': _lazy('Найдёт место, подскажет намаз, заведёт привычку и встречу'),
+    'stories': _lazy('Фото на 24 часа — для всех или близких друзей'),
+    'shorts': _lazy('Короткие вертикальные видео'),
+    'gifts': _lazy('Подарки друзьям и близким'),
     'lawyers': _lazy('Юридическая помощь, адвокаты по странам'),
     'fun': _lazy('Халяль-досуг: события, отдых, игры'),
     'tracker': _lazy('Привычки и дела на день — одному или вместе'),
@@ -65,9 +71,6 @@ EXTRAS = {
         Extra('salah', _lazy('Как совершать намаз'), '/salah/', 'clock', _lazy('Омовение, ракааты и порядок молитвы')),
         Extra('mosque', _lazy('Мечеть рядом'), 'https://www.google.com/maps/search/?api=1&query=mosque', 'pin',
               _lazy('Откроем карту с мечетями поблизости'), external=True),
-    ],
-    'talk': [
-        Extra('feed', _lazy('Лента · бета'), '/feed/', 'play', _lazy('Вертикальная лента: новости, объявления, вопросы')),
     ],
     'more': [
         Extra('settings', _lazy('Настройки и оформление'), '/settings/', 'edit', _lazy('Светлая или тёмная тема, цвет оформления')),

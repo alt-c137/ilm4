@@ -11,7 +11,7 @@ export const MODULE_ICON: Record<string, IconName> = {
   prayer: 'moon', buy: 'bag-handle', jobs: 'briefcase', services: 'construct', transport: 'car', map: 'location',
   health: 'medkit', migration: 'airplane', library: 'library', forum: 'chatbox-ellipses', news: 'newspaper',
   nikah: 'heart', chat: 'chatbubbles', wallet: 'wallet', refugee: 'home', learn: 'school', finance: 'cash',
-  tracker: 'checkmark-circle', digital: 'laptop', realestate: 'business', invest: 'trending-up', sport: 'football', lawyers: 'scale', fun: 'happy',
+  tracker: 'checkmark-circle', feed: 'albums', communities: 'people', assistant: 'sparkles', stories: 'aperture', shorts: 'film', gifts: 'gift', digital: 'laptop', realestate: 'business', invest: 'trending-up', sport: 'football', lawyers: 'scale', fun: 'happy',
 };
 
 // раздел → вид публикаций в API (/pubs/<вид>/)
@@ -38,6 +38,9 @@ export function openModule(key: string, status: string, name: string) {
   if (key === 'map') return router.push('/places');
   if (key === 'wallet') return router.push('/wallet');
   if (key === 'tracker') return router.push('/tracker');
+  if (key === 'feed') return router.push('/tab-feed');
+  if (key === 'assistant') return router.push('/assistant');
+  if (key === 'communities') return router.push('/space');
   if (PUB_OF[key]) return router.push(`/pubs/${PUB_OF[key]}`);
   return openWeb(`/${key}/`, true);
 }

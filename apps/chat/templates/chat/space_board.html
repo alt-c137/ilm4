@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% load i18n icons %}
+{% block title %}{% translate "Доска задач —" %} {{ space.title }} — {{ block.super }}{% endblock %}
+{% block body_class %}page-tp page-spaces page-board{% endblock %}
+{% block content %}
+<div class="kb">
+  <a class="crumb" href="{% url 'spaces:space' space.pk %}">{% ico 'back' %}{{ space.title }}</a>
+  <header class="tp__bar"><h1>{% translate "Доска задач" %}</h1></header>
+  <form method="post" class="kb__new">{% csrf_token %}<input type="hidden" name="action" value="save">
+    <input type="text" name="title" maxlength="160" required placeholder="{% translate 'Новая идея или задача' %}">
+    <select name="assignee" aria-label="{% translate 'Исполнитель' %}"><option value="">{% translate "Без исполнителя" %}</option>{% for m in people %}<option value="{{ m.user_id }}">{{ m.nick|default:m.user.get_display_name }}</option>{% endfor %}</select>
+    <input type="date" name="due" aria-label="{% translate 'Срок' %}">
+    <button type="submit" class="btn btn--p btn--s">{% ico 'plus' %}{% translate "Добавить" %}</button>
+  </form>
+  <div class="kb__cols">
+    {% for col in columns %}<section class="kb__col kb__col--{{ col.key }}"><h2>{{ col.title }} <i>{{ col.tasks|length }}</i></h2>
+      {% for t in col.tasks %}<article class="kb__card">
+        <b>{{ t.title }}</b>
+        {% if t.note %}<p>{{ t.note|linebreaksbr }}</p>{% endif %}
+        <small>{% if t.assignee %}{% ico 'user' %}{{ t.assignee.get_display_name }}{% endif %}{% if t.due %} {% ico 'calendar' %}{{ t.due|date:"d.m" }}{% endif %}</small>
+        <div class="kb__acts">
+          {% if col.key != 'todo' %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="move"><input type="hidden" name="task" value="{{ t.pk }}"><input type="hidden" name="status" value="{% if col.key == 'done' %}doing{% else %}todo{% endif %}"><button type="submit" aria-label="{% translate 'Назад' %}">{% ico 'back' %}</button></form>{% endif %}
+          {% if col.key != 'done' %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="move"><input type="hidden" name="task" value="{{ t.pk }}"><input type="hidden" name="status" value="{% if col.key == 'todo' %}doing{% else %}done{% endif %}"><button type="submit" class="kb__go">{% if col.key == 'todo' %}{% translate "Взять в работу" %}{% else %}{% translate "Готово" %}{% endif %}{% ico 'arrow' %}</button></form>{% endif %}
+          {% if manage or t.creator_id == user.pk or t.assignee_id == user.pk %}<form method="post" onsubmit="return confirm('{% translate "Удалить задачу?" %}')">{% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="task" value="{{ t.pk }}"><button type="submit" aria-label="{% translate 'Удалить' %}">{% ico 'trash' %}</button></form>{% endif %}
+        </div>
+      </article>{% empty %}<p class="kb__empty">{% translate "Пусто" %}</p>{% endfor %}
+    </section>{% endfor %}
+  </div>
+</div>
+{% endblock %}

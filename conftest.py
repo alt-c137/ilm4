@@ -3,7 +3,9 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
-def _isolated_settings(settings):
+def _isolated_settings(settings, tmp_path):
+    # файлы из тестов (фото анкет, вложения чатов) — во временную папку, а не в настоящую media/
+    settings.MEDIA_ROOT = tmp_path / 'media'
     # бот из .env включил бы проверку номера и запросы в Telegram — в тестах его нет,
     # тесты, которым бот нужен, включают его сами (фикстура bot в apps/core/tests/test_moderation.py)
     settings.TELEGRAM_BOT_TOKEN = ''

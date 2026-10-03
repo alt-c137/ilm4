@@ -13,7 +13,7 @@ from .base import ApiError, abs_url, api, as_int, file_url, limit, module_on, pa
 from .models import ApiToken, PushDevice
 
 APP_KEYS = ('prayer', 'buy', 'jobs', 'services', 'transport', 'map', 'health', 'migration', 'library', 'forum',
-            'news', 'nikah', 'chat', 'wallet', 'tracker')
+            'news', 'nikah', 'chat', 'wallet', 'tracker', 'feed', 'assistant', 'communities')
 
 
 def _icon(request, key):
@@ -94,7 +94,8 @@ def me_json(request, user) -> dict:
         'telegram': bool(user.telegram_id), 'verified': user.platform_verified,
         'phone_verified': user.phone_verified,
         'handle': user.handle or '', 'bio': user.bio,
-        'privacy': {'phone': user.phone_privacy, 'seen': user.seen_privacy, 'find_by_phone': user.findable_by_phone},
+        'privacy': {'phone': user.phone_privacy, 'seen': user.seen_privacy, 'find_by_phone': user.findable_by_phone,
+                    'forward': user.forward_privacy, 'invite': user.invite_privacy, 'counts': user.counts_privacy},
         'links': people.links_for(user, user),
         'needs_phone': {w: phone_verify.needed(user, w) for w in ('publish', 'nikah')},
         'balance': int(balance_of(user)) if module_on('wallet') else None,
@@ -238,7 +239,9 @@ def me(request):
                 raise ApiError(exc.message, exc.status) from exc
             fields.append('handle')
         levels = dict(get_user_model().PRIVACY)
-        for key, f in (('phone_privacy', 'phone_privacy'), ('seen_privacy', 'seen_privacy')):
+        for key, f in (('phone_privacy', 'phone_privacy'), ('seen_privacy', 'seen_privacy'),
+                       ('forward_privacy', 'forward_privacy'), ('invite_privacy', 'invite_privacy'),
+                       ('counts_privacy', 'counts_privacy')):
             if d.get(key) in levels:
                 setattr(user, f, d[key])
                 fields.append(f)

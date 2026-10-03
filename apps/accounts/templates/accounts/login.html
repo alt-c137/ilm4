@@ -7,6 +7,8 @@
   <h1>{% translate "С возвращением!" %}</h1>
   <p class="auth__sub">{% translate "Войди — курсы, объявления и чаты ждут." %}</p>
   {% include 'accounts/includes/oauth.html' %}
+  {% if remembered %}<div class="login__acc"><small>{% translate "Вернуться в аккаунт" %}</small>
+    {% for r in remembered %}<form method="post" action="{% url 'accounts:accounts_switch' %}">{% csrf_token %}<input type="hidden" name="user" value="{{ r.user.pk }}"><button type="submit">{% if r.user.avatar %}<img class="tava tava--sm" src="{{ r.user.avatar.url }}" alt="">{% else %}<span class="tava tava--sm tava--h2">{{ r.user.get_display_name|slice:":1"|upper }}</span>{% endif %}<b>{{ r.user.get_display_name }}</b></button></form>{% endfor %}</div>{% endif %}
   <form method="post" class="form">{% csrf_token %}
     <input type="hidden" name="next" value="{{ next }}">
     {% for field in form %}

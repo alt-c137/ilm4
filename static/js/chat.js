@@ -37,13 +37,39 @@
     call: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5h3l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.5 5.7 2 2 0 0 1 6.5 3.5z"/></svg>'
   };
 
+  var IC = {};
+  try { IC = JSON.parse(document.getElementById('ui-icons').textContent); } catch (e) { /* значки меню необязательны */ }
+  var PINS = [];
+  try { PINS = JSON.parse(document.getElementById('chat-pins').textContent) || []; } catch (e) { PINS = []; }
+
   /* ---------- вывод сообщений ---------- */
   function lastDay() { var d = log.querySelectorAll('.tg__day'); return d.length ? d[d.length - 1].dataset.day : ''; }
+  function rxHTML(list, my) {
+    return (list || []).map(function (r) {
+      return '<button type="button" class="rx' + (r.e === my ? ' rx--me' : '') + '" data-e="' + esc(r.e) + '">' + esc(r.e) + '<i>' + r.n + '</i></button>';
+    }).join('');
+  }
+  function fwdHTML(f) {
+    if (!f) return '';
+    var who = f.user ? '<a href="/accounts/u/' + f.user + '/">' + esc(f.name) + '</a>'
+      : f.room ? '<a href="/chat/' + f.room + '/">' + esc(f.name) + '</a>' : '<b>' + esc(f.name) + '</b>';
+    return '<span class="bub__fwd">' + (IC.forward || '') + _t('Переслано от') + ' ' + who + '</span>';
+  }
+  function replyHTML(r) {
+    if (!r) return '';
+    return '<button type="button" class="bub__reply bub__reply--h' + (r.hue || 0) + '" data-goto="' + r.id + '"><b>' + esc(r.name) + '</b><span>' + esc(r.text) + '</span></button>';
+  }
+  function metaHTML(d, mine) {
+    var views = d.room === 'channel' && !d.scheduled ? '<span class="bub__views">' + ICON.eye + (d.views || 0) + '</span>' : '';
+    return (d.pinned ? '<span class="bub__pin">' + (IC.tack || '') + '</span>' : '') + views +
+      (d.edited ? '<span class="bub__ed">' + _t('изменено') + '</span>' : '') +
+      (d.scheduled ? '' : esc(d.time || '')) + (mine && !d.scheduled && d.room !== 'channel' ? '<span class="tick' + (d.read ? ' tick--2' : '') + '"></span>' : '');
+  }
   function msgHTML(d, mine) {
-    if (d.kind === 'system') return '<div class="tg__sys" data-id="' + d.id + '"><span>' + ICON.call + esc(d.body) + ' · ' + esc(d.time) + '</span></div>';
+    if (d.kind === 'system') return '<div class="tg__sys" data-id="' + d.id + '"><span>' + esc(d.body) + ' · ' + esc(d.time) + '</span></div>';
     var media = '';
-    if (d.kind === 'photo') media = '<a class="bub__photo" href="' + d.url + '" target="_blank" rel="noopener"><img src="' + d.url + '" alt="' + _t('Фото') + '"></a>';
-    if (d.kind === 'voice') media = '<div class="voice" data-src="' + d.url + '"><button type="button" class="voice__play" aria-label="' + _t('Слушать') + '">' + ICON.play + '</button><span class="voice__bar"><i></i></span><span class="voice__t">' + mmss(d.duration) + '</span></div>';
+    if (d.kind === 'photo') media = '<a class="bub__photo" href="' + d.url + '" target="_blank" rel="noopener"><img src="' + d.url + '" alt="' + _t('Фото') + '"' + (d.w ? ' width="' + d.w + '" height="' + d.h + '"' : '') + '></a>';
+    if (d.kind === 'voice') media = '<div class="voice" data-src="' + d.url + '"><button type="button" class="voice__play" aria-label="' + _t('Слушать') + '">' + ICON.play + '</button><span class="voice__bar"><i></i></span><span class="voice__t">' + mmss(d.duration) + '</span><button type="button" class="voice__sp" aria-label="' + _t('Скорость') + '">1×</button></div>';
     if (d.kind === 'video') media = '<div class="bub__video"><video src="' + d.url + '" controls preload="metadata" playsinline></video></div>';
     if (d.kind === 'file') media = '<a class="bub__file" href="' + d.url + '" download><span class="bub__fileico">' + ICON.clip + '</span><span class="bub__fileb"><b>' + esc(d.file_name || _t('Файл')) + '</b><small>' + fsize(d.file_size) + '</small></span></a>' +
       (d.file_risky && !mine ? '<span class="bub__risk">' + ICON.shield + _t('Это программа. Открывайте, только если доверяете отправителю.') + '</span>' : '');
@@ -53,11 +79,13 @@
       '<button type="button" data-sched-act="cancel">' + _t('Удалить') + '</button></span>' : '';
     var who = (d.room === 'group' && !mine && lastSender !== d.sender_id)
       ? '<span class="bub__who bub__who--h' + (d.hue || 0) + '">' + esc(d.sender_name) + '</span>' : '';
-    var views = d.room === 'channel' && !d.scheduled ? '<span class="bub__views">' + ICON.eye + (d.views || 0) + '</span>' : '';
-    return '<div class="bub bub--in bub--' + d.kind + (mine ? ' bub--me' : '') + (d.scheduled ? ' bub--sched' : '') +
-      ' bub--tail" data-id="' + d.id + '">' + who + media +
+    var comments = cfg.comments && !d.scheduled ? '<a class="bub__comments" href="/chat/' + cfg.thread + '/post/' + d.id + '/">' + (IC.comment || '') +
+      '<span>' + (d.comments ? _t('Комментарии') + ' · ' + d.comments : _t('Комментировать')) + '</span></a>' : '';
+    return '<div class="bub bub--in bub--' + d.kind + (mine ? ' bub--me' : '') + (d.scheduled ? ' bub--sched' : '') + (d.pinned ? ' is-pinned' : '') +
+      ' bub--tail" data-id="' + d.id + '" data-kind="' + d.kind + '" data-name="' + esc(d.sender_name) + '" data-ts="' + Math.floor(new Date(d.iso || Date.now()).getTime() / 1000) + '"' +
+      (d.my_reaction ? ' data-my="' + esc(d.my_reaction) + '"' : '') + '>' + who + fwdHTML(d.fwd) + replyHTML(d.reply) + media +
       (d.body ? '<span class="bub__t">' + rich(d.body) + '</span>' : '') + sched +
-      '<span class="bub__meta">' + views + (d.scheduled ? '' : esc(d.time || '')) + (mine && !d.scheduled && !d.room ? '<span class="tick"></span>' : '') + '</span></div>';
+      '<span class="bub__meta">' + metaHTML(d, mine) + '</span><span class="bub__rx">' + rxHTML(d.reactions, d.my_reaction) + '</span>' + comments + '</div>';
   }
   /* оформление текста, как в Telegram: **жирный**, __курсив__, ~~зачёркнутый~~, `код`, ||скрытый||, ссылки.
      Тот же разбор — на сервере (apps/chat/richtext.py): сначала экранируем, потом расставляем свои теги. */
@@ -68,6 +96,9 @@
       .replace(/~~(?=\S)([\s\S]+?)~~/g, '<s>$1</s>')
       .replace(/\|\|(?=\S)([\s\S]+?)\|\|/g, '<span class="spoiler" role="button" tabindex="0">$1</span>')
       .replace(/(^|[\s(])(https?:\/\/[^\s<]+[^\s<.,:;!?)\]»"'])/g, '$1<a href="$2" target="_blank" rel="noopener nofollow ugc">$2</a>');
+    out = out.replace(/(<a [^>]*>[\s\S]*?<\/a>)|(^|[^\w@\/.])@([A-Za-z][A-Za-z0-9_]{3,31})(?![\w.])/g, function (m, link, pre, name) {
+      return link || pre + '<a class="mention" href="/@' + name.toLowerCase() + '/">@' + name + '</a>';
+    });
     out = out.replace(/\u0000(\d+)\u0000/g, function (_m, i) { return '<code>' + codes[+i] + '</code>'; });
     return out.replace(/\n/g, '<br>');
   }
@@ -76,6 +107,11 @@
 
   var lastSender = null;      // чьё сообщение было последним — чтобы не повторять имя в группе
   function add(d) {
+    if (d.comment_of) {                       // комментарий к посту канала — в ленту не идёт, только счётчик
+      var cm = log.querySelector('.bub[data-id="' + d.comment_of + '"] .bub__comments span');
+      if (cm) { var n = (parseInt((cm.textContent.match(/\d+/) || ['0'])[0], 10) || 0) + 1; cm.textContent = _t('Комментарии') + ' · ' + n; }
+      return;
+    }
     if (seen[d.id]) {
       // запланированное ушло (или «отправить сейчас») — убираем черновик и показываем как обычное
       var old = log.querySelector('.bub--sched[data-id="' + d.id + '"]');
@@ -96,58 +132,355 @@
     if (d.warn && !mine && cfg.warn_text) {        // просят предоплату — предупреждаем получателя
       log.insertAdjacentHTML('beforeend', '<div class="tg__warn bub--in">' + ICON.shield + esc(cfg.warn_text) + '</div>');
     }
-    toBottom();
+    if (mine || nearBottom()) toBottom(); else bumpFresh();
+    if (!mine) stopTyping(d.sender_id);
   }
 
-  /* ---------- удалить сообщение: правая кнопка мыши или долгое нажатие ---------- */
+  /* ---------- прокрутка: кнопка «вниз» со счётчиком новых ---------- */
+  var downBtn = document.getElementById('to-bottom'), downN = document.getElementById('to-bottom-n'), fresh = 0;
+  function nearBottom() { return log.scrollHeight - log.scrollTop - log.clientHeight < 160; }
+  function bumpFresh() { fresh++; if (downN) { downN.textContent = fresh; downN.hidden = false; } if (downBtn) downBtn.hidden = false; }
+  log.addEventListener('scroll', function () {
+    var far = log.scrollHeight - log.scrollTop - log.clientHeight > 420;
+    if (downBtn) downBtn.hidden = !far && !fresh;
+    if (!far && fresh) { fresh = 0; if (downN) downN.hidden = true; if (downBtn) downBtn.hidden = true; }
+  });
+  if (downBtn) downBtn.addEventListener('click', function () {
+    if (cfg.at) { location.href = location.pathname; return; }
+    log.scrollTo({ top: log.scrollHeight, behavior: 'smooth' }); fresh = 0; downN.hidden = true;
+  });
+
+  /* ---------- запросы ---------- */
+  function post(url, data) {
+    var fd = new FormData();
+    fd.append('csrfmiddlewaretoken', csrf);            // пустая форма без единого поля сервером не принимается
+    Object.keys(data || {}).forEach(function (k) {
+      if (Array.isArray(data[k])) data[k].forEach(function (v) { fd.append(k, v); }); else fd.append(k, data[k]);
+    });
+    return fetch(url, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-CSRFToken': csrf, 'X-Requested-With': 'fetch' } })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) { var err = new Error(j.error || _t('Не удалось')); throw err; } return j; }); });
+  }
+  function fail(e) { toast(e && e.message && e.message !== 'Failed to fetch' ? e.message : _t('Нет соединения — попробуйте ещё раз')); }
+  function bubOf(id) { return log.querySelector('.bub[data-id="' + id + '"]'); }
+  function snippet(bub) {
+    var t = bub.querySelector('.bub__t');
+    if (t) return t.innerText.replace(/\s+/g, ' ').slice(0, 120);
+    return { photo: _t('Фото'), video: _t('Видео'), voice: _t('Голосовое сообщение'), circle: _t('Видеосообщение'), file: _t('Файл') }[bub.dataset.kind] || '';
+  }
+
+  /* ---------- переход к сообщению (ответ, закреп, поиск) ---------- */
+  function jump(id) {
+    var el = log.querySelector('[data-id="' + id + '"]');
+    if (!el) { location.href = location.pathname + '?at=' + id; return; }
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    el.classList.remove('is-flash'); void el.offsetWidth; el.classList.add('is-flash');
+  }
+  log.addEventListener('click', function (e) {
+    var r = e.target.closest('[data-goto]'); if (r) { e.preventDefault(); jump(r.dataset.goto); }
+  });
+
+  /* ---------- фото: просмотр на весь экран, листаются все фото переписки ---------- */
+  log.addEventListener('click', function (e) {
+    var a = e.target.closest('.bub__photo'); if (!a || !window.ilm4Photos || e.metaKey || e.ctrlKey) return;
+    e.preventDefault();
+    var all = Array.prototype.slice.call(log.querySelectorAll('.bub__photo'));
+    window.ilm4Photos(all.map(function (x) {
+      var bub = x.closest('.bub'), meta = bub && bub.querySelector('.bub__meta');
+      return { url: x.getAttribute('href'), name: bub ? bub.dataset.name : '', date: meta ? meta.textContent.trim() : '' };
+    }), all.indexOf(a), {});
+  });
+
+  /* ---------- удалить сообщение из ленты ---------- */
   function removeMsg(id) {
     var el = log.querySelector('[data-id="' + id + '"]'); if (!el) return;
     var w = log.querySelector('[data-warn="' + id + '"]'); if (w) w.remove();
     el.classList.add('bub--gone'); setTimeout(function () { el.remove(); }, 180);
     delete seen[id];
+    PINS = PINS.filter(function (p) { return String(p.id) !== String(id); }); drawPin();
+    if (replyTo && String(replyTo.id) === String(id)) clearReply();
   }
+
+  /* ---------- ответ и правка: полоска над полем ввода ---------- */
+  var replyBar = document.getElementById('reply-bar'), replyName = document.getElementById('reply-name');
+  var replyText = document.getElementById('reply-text'), replyIc = document.getElementById('reply-ic');
+  var replyTo = null, editing = null;
+  function showBar(icon, title, text) {
+    if (!replyBar) return;
+    replyIc.innerHTML = IC[icon] || ''; replyName.textContent = title; replyText.textContent = text; replyBar.hidden = false;
+  }
+  function clearReply() {
+    replyTo = null;
+    if (editing) { editing = null; input.value = ''; grow(); syncButtons(); }
+    if (replyBar) replyBar.hidden = true;
+  }
+  function startReply(bub) {
+    if (!cfg.can_post || bub.classList.contains('bub--sched')) return;
+    if (editing) { editing = null; input.value = ''; }
+    replyTo = { id: bub.dataset.id };
+    showBar('reply', bub.dataset.name || '', snippet(bub));
+    input.focus();
+  }
+  function startEdit(bub) {
+    var t = bub.querySelector('.bub__t');
+    replyTo = null; editing = { id: bub.dataset.id };
+    showBar('edit', _t('Изменение сообщения'), snippet(bub));
+    input.value = t ? t.innerText : ''; grow(); syncButtons(); input.focus();
+    // в ленте текст уже оформлен — исходный (со знаками **жирный**, ||скрытый||) берём с сервера
+    post('/chat/msg/' + bub.dataset.id + '/raw/').then(function (j) {
+      if (editing && editing.id === bub.dataset.id) { input.value = j.body || ''; grow(); syncButtons(); }
+    }).catch(function () {});
+  }
+  if (replyBar) document.getElementById('reply-x').addEventListener('click', clearReply);
+  log.addEventListener('dblclick', function (e) {            // двойной щелчок — ответить (как в Telegram на компьютере)
+    var bub = e.target.closest('.bub[data-id]'); if (!bub || e.target.closest('a,video,button,.voice,.circle')) return;
+    var sel = window.getSelection && window.getSelection(); if (sel) sel.removeAllRanges();
+    startReply(bub);
+  });
+  function applyEdit(d) {
+    var bub = bubOf(d.id); if (!bub) return;
+    var t = bub.querySelector('.bub__t');
+    if (d.body) {
+      if (!t) { t = document.createElement('span'); t.className = 'bub__t'; bub.insertBefore(t, bub.querySelector('.bub__meta')); }
+      t.innerHTML = rich(d.body);
+    } else if (t) t.remove();
+    bub._raw = d.body;
+    var meta = bub.querySelector('.bub__meta');
+    if (meta && !bub.classList.contains('bub--sched')) {
+      var read = !!meta.querySelector('.tick--2');
+      meta.innerHTML = metaHTML({ pinned: bub.classList.contains('is-pinned'), room: cfg.room, views: (meta.querySelector('.bub__views') || {}).textContent, edited: d.edited, time: d.time, read: read }, bub.classList.contains('bub--me'));
+    }
+    PINS.forEach(function (p) { if (p.id === d.id) p.body = d.body; }); drawPin();
+  }
+
+  /* ---------- реакции ---------- */
+  function applyReaction(d) {
+    var bub = bubOf(d.id); if (!bub) return;
+    if (d.user_id === cfg.me) { if (d.emoji) bub.dataset.my = d.emoji; else delete bub.dataset.my; }
+    var box = bub.querySelector('.bub__rx');
+    if (box) box.innerHTML = rxHTML(d.reactions, bub.dataset.my || '');
+  }
+  function react(id, emoji) {
+    post('/chat/msg/' + id + '/react/', { emoji: emoji })
+      .then(function (j) { applyReaction({ id: j.id, reactions: j.reactions, user_id: cfg.me, emoji: j.my_reaction }); }).catch(fail);
+  }
+  log.addEventListener('click', function (e) {
+    var b = e.target.closest('.rx'); if (!b) return;
+    react(b.closest('.bub').dataset.id, b.dataset.e);
+  });
+
+  /* ---------- закреплённые сообщения: полоска под шапкой ---------- */
+  var pinBar = document.getElementById('pin-bar'), pinAt = -1;
+  function pinText(p) {
+    return p.body ? p.body.replace(/\*\*|__|~~|`|\|\|/g, '').slice(0, 90)
+      : ({ photo: _t('Фото'), video: _t('Видео'), voice: _t('Голосовое сообщение'), circle: _t('Видеосообщение'), file: p.file_name || _t('Файл') }[p.kind] || '');
+  }
+  function drawPin() {
+    if (!pinBar) return;
+    if (!PINS.length) { pinBar.hidden = true; return; }
+    if (pinAt < 0 || pinAt >= PINS.length) pinAt = PINS.length - 1;
+    var p = PINS[pinAt];
+    document.getElementById('pin-h').textContent = PINS.length > 1 ? _t('Закреплённое сообщение') + ' · ' + (pinAt + 1) + '/' + PINS.length : _t('Закреплённое сообщение');
+    document.getElementById('pin-t').textContent = pinText(p);
+    document.getElementById('pin-x').hidden = !cfg.can_pin;
+    pinBar.hidden = false;
+  }
+  if (pinBar) {
+    document.getElementById('pin-go').addEventListener('click', function () {
+      if (!PINS.length) return;
+      var id = PINS[pinAt].id;
+      pinAt = pinAt > 0 ? pinAt - 1 : PINS.length - 1;       // следующее нажатие — предыдущий закреп
+      jump(id); drawPin();
+    });
+    document.getElementById('pin-x').addEventListener('click', function () {
+      var p = PINS[pinAt]; if (!p || !confirm(_t('Открепить сообщение?'))) return;
+      post('/chat/msg/' + p.id + '/unpin/').catch(fail);
+    });
+    drawPin();
+  }
+  function applyPin(d) {
+    PINS = PINS.filter(function (p) { return p.id !== d.id; });
+    if (d.on && d.msg) { PINS.push(d.msg); PINS.sort(function (a, b) { return a.id - b.id; }); pinAt = PINS.length - 1; }
+    var bub = bubOf(d.id);
+    if (bub) {
+      bub.classList.toggle('is-pinned', !!d.on);
+      var meta = bub.querySelector('.bub__meta'), mark = meta && meta.querySelector('.bub__pin');
+      if (d.on && meta && !mark) meta.insertAdjacentHTML('afterbegin', '<span class="bub__pin">' + (IC.tack || '') + '</span>');
+      if (!d.on && mark) mark.remove();
+    }
+    drawPin();
+  }
+
+  /* ---------- «печатает…» ---------- */
+  var sub = document.getElementById('tg-sub'), subHTML = sub ? sub.innerHTML : '', typers = {}, typingSent = 0;
+  function drawTyping() {
+    if (!sub) return;
+    var names = Object.keys(typers).map(function (k) { return typers[k].name; });
+    if (!names.length) { sub.innerHTML = subHTML; sub.classList.remove('is-typing'); return; }
+    var what = typers[Object.keys(typers)[0]].what;
+    var verb = what === 'voice' ? _t('записывает голосовое') : what === 'circle' ? _t('записывает кружок') : _t('печатает');
+    sub.textContent = (cfg.room ? names.slice(0, 2).join(', ') + ' ' : '') + verb + '…';
+    sub.classList.add('is-typing');
+  }
+  function stopTyping(uid) { if (typers[uid]) { clearTimeout(typers[uid].t); delete typers[uid]; drawTyping(); } }
+  function onTyping(d) {
+    stopTyping(d.user_id);
+    typers[d.user_id] = { name: d.name, what: d.what, t: setTimeout(function () { stopTyping(d.user_id); }, 5500) };
+    drawTyping();
+  }
+  function sayTyping(what) {
+    if (cfg.room === 'channel' || !cfg.can_post) return;
+    var now = Date.now(); if (now - typingSent < 4000) return;
+    typingSent = now; wsSend({ type: 'typing', what: what || 'text' });
+  }
+
+  /* ---------- меню сообщения: реакции, ответить, изменить, копировать, переслать, закрепить, удалить ---------- */
   var msgMenu = document.createElement('div');
-  msgMenu.className = 'sendmenu msgmenu'; msgMenu.hidden = true; msgMenu.setAttribute('role', 'menu');
+  msgMenu.className = 'ctxmenu msgmenu'; msgMenu.hidden = true; msgMenu.setAttribute('role', 'menu');
   document.body.appendChild(msgMenu);
+  function mi(key, icon, text, cls) {
+    return '<button type="button" role="menuitem" data-m="' + key + '"' + (cls ? ' class="' + cls + '"' : '') + '>' + (IC[icon] || '') + '<span>' + text + '</span></button>';
+  }
   function openMsgMenu(bub, x, y) {
-    var mine = bub.classList.contains('bub--me'), txt = bub.querySelector('.bub__t');
-    var canDel = !bub.classList.contains('bub--sched') && (mine || cfg.admin);
+    var mine = bub.classList.contains('bub--me'), txt = bub.querySelector('.bub__t'), sched = bub.classList.contains('bub--sched');
+    var kind = bub.dataset.kind, age = Date.now() / 1000 - (+bub.dataset.ts || 0);
     var html = '';
-    if (txt) html += '<button type="button" role="menuitem" data-m="copy">' + _t('Копировать текст') + '</button>';
-    if (canDel) html += '<button type="button" role="menuitem" data-m="del" class="msgmenu__del">' + _t('Удалить у всех') + '</button>';
+    if (!sched && cfg.reactions && cfg.reactions.length && cfg.member) {
+      html += '<div class="ctxmenu__rx">' + cfg.reactions.map(function (e) {
+        return '<button type="button" data-rx="' + e + '"' + (bub.dataset.my === e ? ' class="on"' : '') + '>' + e + '</button>';
+      }).join('') + '</div>';
+    }
+    if (!sched && cfg.can_post) html += mi('reply', 'reply', _t('Ответить'));
+    if (mine && kind !== 'voice' && kind !== 'circle' && (sched || !cfg.edit_hours || age < cfg.edit_hours * 3600)) html += mi('edit', 'edit', _t('Изменить'));
+    if (txt && !cfg.protected) html += mi('copy', 'copy', _t('Копировать текст'));
+    if (!sched && !cfg.protected) html += mi('forward', 'forward', _t('Переслать'));
+    if (!sched && !cfg.protected && !cfg.saved) html += mi('save', 'bookmark', _t('В избранное'));
+    if (!sched && cfg.can_pin) html += bub.classList.contains('is-pinned') ? mi('unpin', 'untack', _t('Открепить')) : mi('pin', 'tack', _t('Закрепить'));
+    if (!sched) html += mi('hide', 'trash', _t('Удалить у себя'));
+    if (!sched && (mine || cfg.admin)) html += mi('del', 'trash', _t('Удалить у всех'), 'bad');
     if (!html) return;
     msgMenu.innerHTML = html; msgMenu.hidden = false; msgMenu.dataset.id = bub.dataset.id;
-    msgMenu.style.left = Math.max(8, Math.min(x, innerWidth - 210)) + 'px';
-    msgMenu.style.top = Math.max(8, Math.min(y, innerHeight - 110)) + 'px';
+    var w = msgMenu.offsetWidth, h = msgMenu.offsetHeight;
+    msgMenu.style.left = Math.max(8, Math.min(x, innerWidth - w - 8)) + 'px';
+    msgMenu.style.top = Math.max(8, Math.min(y, innerHeight - h - 8)) + 'px';
     msgMenu.classList.remove('pop'); void msgMenu.offsetWidth; msgMenu.classList.add('pop');
   }
   log.addEventListener('contextmenu', function (e) {
-    var bub = e.target.closest('.bub[data-id]'); if (!bub || e.target.closest('a,video,button')) return;
+    var bub = e.target.closest('.bub[data-id]'); if (!bub || e.target.closest('a,video')) return;
     e.preventDefault(); openMsgMenu(bub, e.clientX, e.clientY);
   });
-  var mlp = null;
+  var mlp = null, mlpAt = null;
   log.addEventListener('pointerdown', function (e) {
     if (e.pointerType === 'mouse') return;
-    var bub = e.target.closest('.bub[data-id]'); if (!bub || e.target.closest('a,video,button,.voice,.circle')) return;
-    var x = e.clientX, y = e.clientY;
-    mlp = setTimeout(function () { openMsgMenu(bub, x, y); }, 520);
+    var bub = e.target.closest('.bub[data-id]'); if (!bub || e.target.closest('a,video,.voice,.circle,.rx')) return;
+    var x = e.clientX, y = e.clientY; mlpAt = { x: x, y: y };
+    mlp = setTimeout(function () { if (navigator.vibrate) navigator.vibrate(12); openMsgMenu(bub, x, y); }, 480);
   });
-  ['pointerup', 'pointermove', 'pointercancel', 'scroll'].forEach(function (ev) { log.addEventListener(ev, function () { clearTimeout(mlp); }); });
+  log.addEventListener('pointermove', function (e) { if (mlpAt && Math.abs(e.clientX - mlpAt.x) + Math.abs(e.clientY - mlpAt.y) > 12) clearTimeout(mlp); });
+  ['pointerup', 'pointercancel', 'scroll'].forEach(function (ev) { log.addEventListener(ev, function () { clearTimeout(mlp); }); });
   document.addEventListener('click', function (e) { if (!msgMenu.hidden && !e.target.closest('.msgmenu')) msgMenu.hidden = true; });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    msgMenu.hidden = true;
+    if (replyBar && !replyBar.hidden) clearReply();
+  });
   msgMenu.addEventListener('click', function (e) {
+    var id = msgMenu.dataset.id, bub = bubOf(id);
+    var rx = e.target.closest('[data-rx]');
+    if (rx) { msgMenu.hidden = true; if (bub) react(id, rx.dataset.rx); return; }
     var b = e.target.closest('[data-m]'); if (!b) return;
-    var id = msgMenu.dataset.id, bub = log.querySelector('.bub[data-id="' + id + '"]');
     msgMenu.hidden = true;
     if (!bub) return;
-    if (b.dataset.m === 'copy') {
+    var m = b.dataset.m;
+    if (m === 'copy') {
       var t = bub.querySelector('.bub__t');
       if (t && navigator.clipboard) navigator.clipboard.writeText(t.innerText).then(function () { toast(_t('Скопировано')); });
-      return;
+    } else if (m === 'reply') startReply(bub);
+    else if (m === 'edit') startEdit(bub);
+    else if (m === 'forward') openForward([id]);
+    else if (m === 'save') post('/chat/forward/', { ids: [id], to: ['saved'] }).then(function () { toast(_t('Сохранено в «Избранное»')); }).catch(fail);
+    else if (m === 'pin' || m === 'unpin') post('/chat/msg/' + id + '/' + m + '/').catch(fail);
+    else if (m === 'hide') post('/chat/msg/' + id + '/hide/').then(function () { removeMsg(id); }).catch(fail);
+    else if (m === 'del') {
+      if (!confirm(_t('Удалить сообщение у всех?'))) return;
+      post('/chat/msg/' + id + '/delete/').then(function () { removeMsg(id); }).catch(fail);
     }
-    fetch('/chat/msg/' + id + '/delete/', { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRFToken': csrf } })
-      .then(function (r) { return r.json().then(function (j) { if (!r.ok) toast(j.error || _t('Не удалось удалить')); else removeMsg(id); }); })
-      .catch(function () { toast(_t('Нет соединения — попробуйте ещё раз')); });
   });
+
+  /* ---------- переслать: выбор чатов ---------- */
+  var fwdBox = document.getElementById('fwd-box'), fwdList = document.getElementById('fwd-list'), fwdIds = [], fwdTo = {};
+  function closeForward() { if (fwdBox) fwdBox.hidden = true; }
+  function openForward(ids) {
+    if (!fwdBox) return;
+    fwdIds = ids; fwdTo = {};
+    document.getElementById('fwd-send').disabled = true; document.getElementById('fwd-hide').checked = false;
+    fwdList.innerHTML = '<div class="fwdbox__load">' + _t('Загрузка…') + '</div>';
+    fwdBox.hidden = false;
+    fetch('/chat/pick/', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (j) {
+      var html = '<button type="button" class="fwdbox__row" data-to="saved" data-q="' + esc(_t('Избранное').toLowerCase()) + '"><span class="tava tava--sm tava--saved">' + (IC.bookmark || '') + '</span><span>' + _t('Избранное') + '</span><i></i></button>';
+      (j.items || []).forEach(function (c) {
+        if (String(c.id) === String(cfg.thread) && cfg.saved) return;
+        var ava = c.url ? '<img class="tava tava--sm" src="' + c.url + '" alt="">' : '<span class="tava tava--sm tava--h' + c.hue + '">' + esc(c.letter) + '</span>';
+        html += '<button type="button" class="fwdbox__row" data-to="' + c.id + '" data-q="' + esc(c.name.toLowerCase()) + '">' + ava + '<span>' + esc(c.name) + '</span><i></i></button>';
+      });
+      fwdList.innerHTML = html;
+    }).catch(function () { fwdList.innerHTML = '<div class="fwdbox__load">' + _t('Нет соединения — попробуйте ещё раз') + '</div>'; });
+  }
+  if (fwdBox) {
+    fwdBox.addEventListener('click', function (e) { if (e.target === fwdBox) closeForward(); });
+    document.getElementById('fwd-cancel').addEventListener('click', closeForward);
+    document.getElementById('fwd-q').addEventListener('input', function () {
+      var v = this.value.trim().toLowerCase();
+      fwdList.querySelectorAll('.fwdbox__row').forEach(function (r) { r.hidden = v && r.dataset.q.indexOf(v) === -1; });
+    });
+    fwdList.addEventListener('click', function (e) {
+      var r = e.target.closest('.fwdbox__row'); if (!r) return;
+      var k = r.dataset.to;
+      if (fwdTo[k]) delete fwdTo[k]; else if (Object.keys(fwdTo).length < 10) fwdTo[k] = 1;
+      r.classList.toggle('on', !!fwdTo[k]);
+      document.getElementById('fwd-send').disabled = !Object.keys(fwdTo).length;
+    });
+    document.getElementById('fwd-send').addEventListener('click', function () {
+      var to = Object.keys(fwdTo); if (!to.length) return;
+      this.disabled = true;
+      post('/chat/forward/', { ids: fwdIds, to: to, hide: document.getElementById('fwd-hide').checked ? '1' : '' })
+        .then(function () { closeForward(); toast(to.length > 1 ? _t('Переслано в несколько чатов') : _t('Переслано')); })
+        .catch(function (e2) { fail(e2); document.getElementById('fwd-send').disabled = false; });
+    });
+  }
+
+  /* ---------- поиск по чату ---------- */
+  var srchBar = document.getElementById('srch-bar'), srchQ = document.getElementById('srch-q'), srchN = document.getElementById('srch-n');
+  var found = [], foundAt = 0, srchT = null;
+  function srchShow() {
+    srchN.textContent = found.length ? (foundAt + 1) + ' / ' + found.length : (srchQ.value.trim().length > 1 ? _t('не найдено') : '');
+    if (found.length) jump(found[foundAt].id);
+  }
+  function srchRun() {
+    var v = srchQ.value.trim();
+    if (v.length < 2) { found = []; srchN.textContent = ''; return; }
+    fetch('/chat/' + cfg.thread + '/search/?q=' + encodeURIComponent(v), { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); }).then(function (j) { found = j.items || []; foundAt = 0; srchShow(); })
+      .catch(function () { srchN.textContent = ''; });
+  }
+  function srchOpen() {
+    document.querySelectorAll('details.tg__chatmenu[open]').forEach(function (d) { d.open = false; });
+    srchBar.hidden = false; srchQ.focus();
+  }
+  if (srchBar) {
+    ['srch-open', 'srch-open2'].forEach(function (id) { var b = document.getElementById(id); if (b) b.addEventListener('click', srchOpen); });
+    document.getElementById('srch-x').addEventListener('click', function () { srchBar.hidden = true; srchQ.value = ''; found = []; srchN.textContent = ''; });
+    srchQ.addEventListener('input', function () { clearTimeout(srchT); srchT = setTimeout(srchRun, 350); });
+    srchQ.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); if (found.length) { foundAt = (foundAt + 1) % found.length; srchShow(); } else srchRun(); } });
+    document.getElementById('srch-up').addEventListener('click', function () { if (found.length) { foundAt = (foundAt + 1) % found.length; srchShow(); } });
+    document.getElementById('srch-down').addEventListener('click', function () { if (found.length) { foundAt = (foundAt - 1 + found.length) % found.length; srchShow(); } });
+    // поиск запомнен при переходе к далёкому сообщению (страница перезагружается)
+    try {
+      var keep = sessionStorage.getItem('ilm4.srch.' + cfg.thread);
+      if (keep && cfg.at) { srchBar.hidden = false; srchQ.value = keep; }
+      srchQ.addEventListener('input', function () { sessionStorage.setItem('ilm4.srch.' + cfg.thread, srchQ.value); });
+      if (!cfg.at) sessionStorage.removeItem('ilm4.srch.' + cfg.thread);
+    } catch (e) { /* приватный режим */ }
+  }
 
   /* ---------- WebSocket с переподключением ---------- */
   var sock = null, queue = [];
@@ -159,8 +492,17 @@
       var d = JSON.parse(e.data);
       if (d.type === 'read') {
         (d.ids || []).forEach(function (id) { var t = log.querySelector('.bub[data-id="' + id + '"] .tick'); if (t) t.classList.add('tick--2'); });
+        if (d.until) log.querySelectorAll('.bub--me').forEach(function (b) { var t = b.querySelector('.tick'); if (t && +b.dataset.ts <= d.until) t.classList.add('tick--2'); });
       } else if (d.type === 'del') {
         (d.ids || []).forEach(removeMsg);
+      } else if (d.type === 'edit') {
+        applyEdit(d);
+      } else if (d.type === 'pin') {
+        applyPin(d);
+      } else if (d.type === 'reaction') {
+        applyReaction(d);
+      } else if (d.type === 'typing') {
+        onTyping(d);
       } else if (d.type === 'signal') {
         Call.onSignal(d);
       } else if (d.type === 'error') {
@@ -194,11 +536,18 @@
   function sendText(opts) {
     var v = input.value.trim();
     if (!v) return false;
+    if (editing) {                                        // правка: сохранить и вернуть поле ввода
+      var eid = editing.id;
+      post('/chat/msg/' + eid + '/edit/', { body: v }).then(function (j) { applyEdit(j); }).catch(fail);
+      editing = null; input.value = ''; grow(); syncButtons(); clearReply(); saveDraft('');
+      return true;
+    }
     if (!(sock && sock.readyState === 1)) return false;   // запасной путь — обычная отправка формы
     var msg = { body: v };
+    if (replyTo) { msg.reply_to = replyTo.id; clearReply(); }
     if (opts && opts.silent) msg.silent = true;
     if (opts && opts.schedule) msg.schedule = opts.schedule;
-    wsSend(msg); input.value = ''; grow(); syncButtons();
+    wsSend(msg); input.value = ''; grow(); syncButtons(); draftLast = ''; clearTimeout(draftT);
     if (opts && opts.schedule) toast(_t('Сообщение запланировано'));
     else if (opts && opts.silent) toast(_t('Отправлено без звука'));
     return true;
@@ -209,7 +558,22 @@
       e.preventDefault(); if (!sendText() && input.value.trim()) form.submit();
     }
   });
-  input.addEventListener('input', function () { grow(); syncButtons(); });
+  input.addEventListener('input', function () { grow(); syncButtons(); if (input.value.trim()) sayTyping('text'); draftSoon(); });
+  // черновик: недописанное сохраняется и ждёт на любом устройстве (как в Telegram)
+  var draftT = null, draftLast = input.value;
+  function saveDraft(text) {
+    if (text === draftLast || editing) return;
+    draftLast = text;
+    post('/chat/' + cfg.thread + '/draft/', { text: text }).catch(function () {});
+  }
+  function draftSoon() { clearTimeout(draftT); draftT = setTimeout(function () { saveDraft(input.value.trim()); }, 1500); }
+  window.addEventListener('pagehide', function () {
+    var text = editing ? '' : input.value.trim();
+    if (text === draftLast || !navigator.sendBeacon) return;
+    var fd = new FormData(); fd.append('text', text); fd.append('csrfmiddlewaretoken', csrf);
+    navigator.sendBeacon('/chat/' + cfg.thread + '/draft/', fd);
+  });
+  if (input.value) { grow(); }
   document.querySelectorAll('[data-say]').forEach(function (b) {
     b.addEventListener('click', function () { input.value = b.dataset.say; grow(); syncButtons(); input.focus(); });
   });
@@ -279,6 +643,7 @@
     var fd = new FormData();
     fd.append('kind', kind); fd.append('file', blob, name || kind);
     if (duration) fd.append('duration', String(Math.round(duration)));
+    if (replyTo) { fd.append('reply_to', replyTo.id); clearReply(); }
     var bar = document.createElement('div'); bar.className = 'tg__uploading'; bar.textContent = _t('Отправка…');
     log.appendChild(bar); toBottom();
     return fetch('/chat/' + cfg.thread + '/upload/', { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-CSRFToken': csrf } })
@@ -338,6 +703,7 @@
     var fd = new FormData();
     fd.append('kind', kind); fd.append('name', name || file.name || kind); fd.append('size', String(file.size));
     if (duration) fd.append('duration', String(Math.round(duration)));
+    if (replyTo) { fd.append('reply_to', replyTo.id); clearReply(); }
     return call('/chat/' + cfg.thread + '/upload/begin/', { method: 'POST', body: fd }).then(function (res) {
       if (!res.ok) return fail(res.j.error);
       id = res.j.upload; part(0, res.j.part, 0);
@@ -463,6 +829,7 @@
           circleBox.hidden = false; circleBox.classList.toggle('is-locked', r.locked);
         }
         r.t0 = Date.now(); r.ready = true; r.mr.start(250);
+        typingSent = 0; sayTyping(voice ? 'voice' : 'circle');
         if (navigator.vibrate) navigator.vibrate(15);
         tickRec(r);
       })
@@ -585,7 +952,15 @@
   /* ---------- проигрывание голосовых и кружков ---------- */
   var playing = null;
   function stopPlaying() { if (playing) { playing.pause(); playing = null; } }
+  var SPEEDS = [1, 1.5, 2];
   log.addEventListener('click', function (e) {
+    var sp = e.target.closest('.voice__sp');
+    if (sp) {                                         // скорость голосового: 1× → 1,5× → 2×
+      var box = sp.closest('.voice'), next = SPEEDS[(SPEEDS.indexOf(+box.dataset.rate || 1) + 1) % SPEEDS.length];
+      box.dataset.rate = next; sp.textContent = String(next).replace('.', ',') + '×';
+      if (box._a) box._a.playbackRate = next;
+      return;
+    }
     var v = e.target.closest('.voice');
     if (v) {
       var btn = v.querySelector('.voice__play'), fill = v.querySelector('.voice__bar i'), tEl = v.querySelector('.voice__t');
@@ -599,6 +974,7 @@
         v._a.addEventListener('pause', function () { btn.innerHTML = ICON.play; });
         v._a.addEventListener('play', function () { btn.innerHTML = ICON.pause; });
       }
+      v._a.playbackRate = +v.dataset.rate || 1;
       if (v._a.paused) { stopPlaying(); v._a.play(); playing = v._a; } else { v._a.pause(); playing = null; }
       return;
     }
@@ -773,5 +1149,8 @@
     return { onSignal: onSignal };
   })();
 
-  toBottom();
+  if (cfg.at) {
+    var target = log.querySelector('[data-id="' + cfg.at + '"]');
+    if (target) { target.scrollIntoView({ block: 'center' }); target.classList.add('is-flash'); if (downBtn) downBtn.hidden = false; } else toBottom();
+  } else toBottom();
 })();

@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load i18n icons static %}
+{% block title %}{{ room.title }} — {{ space.title }} — {{ block.super }}{% endblock %}
+{% block body_class %}page-tp page-spaces page-voice{% endblock %}
+{% block content %}
+<div class="vc" id="vc" data-ws="/ws/voice/{{ room.pk }}/" data-me="{{ me_id }}">
+  <a class="crumb" href="{% url 'spaces:space' space.pk %}">{% ico 'back' %}{{ space.title }}</a>
+  <header class="tp__bar"><h1>{% ico 'voice' %} {{ room.title }}</h1></header>
+  <p class="vc__state" id="vc-state">{% translate "Нажмите «Войти» — понадобится доступ к микрофону." %}</p>
+  <div class="vc__grid" id="vc-grid"></div>
+  <div class="vc__bar">
+    <button type="button" class="btn btn--p" id="vc-join">{% ico 'mic' %}{% translate "Войти в комнату" %}</button>
+    <button type="button" class="vc__btn" id="vc-mute" hidden aria-label="{% translate 'Микрофон' %}">{% ico 'mic' %}</button>
+    <button type="button" class="vc__btn vc__btn--bad" id="vc-leave" hidden aria-label="{% translate 'Выйти' %}">{% ico 'hangup' %}</button>
+  </div>
+  <p class="tp__note">{% blocktranslate %}Звук идёт напрямую между участниками и шифруется. В комнате до {{ max }} человек; большие комнаты, демонстрация экрана и запись появятся после запуска на сервере.{% endblocktranslate %}</p>
+  <div id="vc-audio" hidden></div>
+</div>
+{% endblock %}
+{% block extra_js %}{% ui_icons 'mic' 'micoff' %}<script src="{% static 'js/voice.js' %}?v={{ asset_v }}" defer></script>{% endblock %}

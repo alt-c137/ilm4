@@ -25,7 +25,7 @@ _JS_MSGIDS = None
 
 
 def js_i18n() -> dict:
-    """Переводы строк из static/js (_t('…')) для текущего языка: {русский: перевод}."""
+    """Переводы строк из static/js (_t('…') и T('…')) для текущего языка: {русский: перевод}."""
     global _JS_MSGIDS
     import re
     from pathlib import Path
@@ -37,7 +37,7 @@ def js_i18n() -> dict:
         root = Path(django_settings.BASE_DIR) / 'static' / 'js'
         found = set()
         for f in root.glob('*.js'):
-            found.update(re.findall(r"_t\('((?:[^'\\]|\\.)*)'\)", f.read_text()))
+            found.update(re.findall(r"(?<![\w.])(?:_t|T)\('((?:[^'\\]|\\.)*)'\)", f.read_text()))
         _JS_MSGIDS = sorted(found)
     return {m: gettext(m) for m in _JS_MSGIDS}
 

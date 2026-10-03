@@ -22,7 +22,7 @@
     <a href="{% url 'nikah:detail' p.pk %}">{% nk_icon 'user' %}<span>{% translate "Как видят мою анкету" %}</span>{% nk_icon 'arrow' 'nkmenu__go' %}</a>
     <a href="{% url 'nikah:edit' %}">{% nk_icon 'edit' %}<span>{% translate "Редактировать анкету" %}</span>{% nk_icon 'arrow' 'nkmenu__go' %}</a>
     <a href="{% url 'nikah:edit' %}#step-13">{% nk_icon 'camera' %}<span>{% if p.has_photo %}{% translate "Заменить фото" %}{% else %}{% translate "Добавить фото" %}{% endif %}</span><small>{{ p|nk:'photo_mode' }}</small>{% nk_icon 'arrow' 'nkmenu__go' %}</a>
-    <a href="{% url 'nikah:settings' %}#verify">{% nk_icon 'check' %}<span>{% translate "Верификация кружком" %}</span><small>{% if p.verified %}{% translate "✅ пройдена" %}{% else %}{% translate "не пройдена" %}{% endif %}</small>{% nk_icon 'arrow' 'nkmenu__go' %}</a>
+    <a href="{% url 'nikah:settings' %}#verify">{% nk_icon 'check' %}<span>{% translate "Верификация кружком" %}</span><small>{% if p.verified %}{% translate "пройдена" %}{% else %}{% translate "не пройдена" %}{% endif %}</small>{% nk_icon 'arrow' 'nkmenu__go' %}</a>
     <a href="{% url 'nikah:how' %}">{% nk_icon 'shield' %}<span>{% translate "Защита фото · как это работает" %}</span>{% nk_icon 'arrow' 'nkmenu__go' %}</a>
     <a href="{% url 'nikah:settings' %}#witness">{% nk_icon 'shield' %}<span>{% translate "Добавить свидетеля" %}</span><small>{% if p.witness %}{{ p.witness.get_display_name }}{% else %}{% translate "махрам в чатах" %}{% endif %}</small>{% nk_icon 'arrow' 'nkmenu__go' %}</a>
     <a href="{% url 'nikah:settings' %}">{% nk_icon 'gauge' %}<span>{% translate "Настройки" %}</span><small>{% translate "фото, уведомления, приглашения" %}</small>{% nk_icon 'arrow' 'nkmenu__go' %}</a>

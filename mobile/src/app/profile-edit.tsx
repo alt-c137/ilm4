@@ -1,4 +1,3 @@
-import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, View } from 'react-native';
@@ -6,6 +5,7 @@ import { Alert, KeyboardAvoidingView, Platform, Pressable, View } from 'react-na
 import { api, ApiError } from '@/lib/api';
 import { useApp, type Privacy, type SocialLink, type User } from '@/state/app';
 import { Avatar, Button, Card, Field, Icon, Screen, Section, Sheet, Txt } from '@/ui/kit';
+import { useAvatarPick } from '@/ui/photo-editor';
 import { privacyName, SOCIAL } from '@/ui/profile';
 
 type Link = { kind: string; value: string; privacy: Privacy };
@@ -19,15 +19,13 @@ export default function ProfileEdit() {
   const [bio, setBio] = useState(user?.bio ?? '');
   const [city, setCity] = useState(user?.city ?? '');
   const [links, setLinks] = useState<Link[]>((user?.links ?? []).map((l) => ({ kind: l.kind, value: l.value, privacy: l.privacy ?? 'all' })));
-  const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const [photo, setPhoto] = useState<{ uri: string } | null>(null);
+  const avatarPick = useAvatarPick((uri) => setPhoto({ uri }));
   const [busy, setBusy] = useState(false);
   const [pick, setPick] = useState<{ row: number; what: 'kind' | 'privacy' } | null>(null);
   if (!user) return null;
 
-  const pickPhoto = async () => {
-    const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.85 })   // системная обрезка: двигать и приближать;
-    if (!r.canceled && r.assets[0]) setPhoto(r.assets[0]);
-  };
+  const pickPhoto = avatarPick.pick;               // своя обрезка как в Telegram: рамка-квадрат с кругом
   const setLink = (i: number, part: Partial<Link>) => setLinks((old) => old.map((l, n) => (n === i ? { ...l, ...part } : l)));
   const kindName = (k: string) => (k === 'website' ? t('Сайт') : k === 'other' ? t('Другое') : SOCIAL.find((x) => x.key === k)?.name ?? k);
 
@@ -40,7 +38,7 @@ export default function ProfileEdit() {
       form.append('handle', handle);
       form.append('bio', bio);
       form.append('city', city);
-      if (photo) form.append('avatar', { uri: photo.uri, name: photo.fileName || 'avatar.jpg', type: photo.mimeType || 'image/jpeg' } as any);
+      if (photo) form.append('avatar', { uri: photo.uri, name: 'avatar.jpg', type: 'image/jpeg' } as any);
       const me = await api<User>('/me/', { form });
       const r = await api<{ links: SocialLink[] }>('/me/links/', { body: { links: links.filter((l) => l.value.trim()) } });
       setUser({ ...me, links: r.links });
@@ -104,6 +102,7 @@ export default function ProfileEdit() {
         items={(['all', 'close', 'nobody'] as Privacy[]).map((p) => ({ title: privacyName(p, t), on: row?.privacy === p,
           subtitle: p === 'close' ? t('Только те, кого вы добавили в близкие друзья') : p === 'nobody' ? t('Ссылка сохранена, но никому не показывается') : undefined,
           onPress: () => pick && setLink(pick.row, { privacy: p }) }))} />
+      {avatarPick.editor}
     </KeyboardAvoidingView>
   );
 }

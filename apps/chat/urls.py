@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views, views_rooms
+from . import views, views_rooms, views_tg
 
 app_name = 'chat'
 
@@ -10,6 +10,17 @@ urlpatterns = [
     path('support/', views.support, name='support'),
     path('people/', views.people, name='people'),
     path('new/', views_rooms.room_new, name='room_new'),
+    path('saved/', views_tg.saved, name='saved'),
+    path('find/', views_tg.find, name='find'),
+    path('folders/', views_tg.folder_list, name='folders'),
+    path('folders/new/', views_tg.folder_edit, name='folder_new'),
+    path('folders/<int:pk>/', views_tg.folder_edit, name='folder_edit'),
+    path('pick/', views_tg.pick, name='pick'),
+    path('forward/', views_tg.forward, name='forward'),
+    path('<int:pk>/state/<str:action>/', views_tg.state, name='state'),
+    path('<int:pk>/draft/', views_tg.draft, name='draft'),
+    path('<int:pk>/search/', views_tg.search, name='search'),
+    path('<int:pk>/post/<int:msg_id>/', views_tg.post, name='post'),
     path('channels/', views_rooms.channels, name='channels'),
     path('join/<str:code>/', views_rooms.room_join_link, name='room_join'),
     path('<int:pk>/info/', views_rooms.room_info, name='room_info'),

@@ -7,7 +7,7 @@ import { api, cachedGet, onAuthLost, onReachability, setApiCurrency, setApiLang,
 import { deviceLang, setLang as setI18nLang, t as translate, type Lang } from '@/lib/i18n';
 import { registerPush, schedulePrayers, type PrayerAlerts } from '@/lib/notify';
 import type { Asr, Method, Place } from '@/lib/prayer';
-import { clearCache, getToken, load, save, setToken } from '@/lib/storage';
+import { clearCache, getAccounts, getToken, load, MAX_ACCOUNTS, save, setAccounts, setToken, type SavedAccount } from '@/lib/storage';
 import { palettes, type Colors } from '@/lib/theme';
 
 export type Module = { key: string; name: string; status: 'on' | 'soon'; emoji: string; icon: string; descr: string; group: string; native: boolean };
@@ -30,13 +30,14 @@ export type User = {
   language: string; currency?: string; currency_now?: string; avatar: string; telegram: boolean; verified: boolean; balance: number | null;
   phone_verified?: boolean; needs_phone?: { publish: boolean; nikah: boolean };
   last_name?: string; ui?: { tabs_app?: string[] };
-  handle?: string; bio?: string; privacy?: { phone: Privacy; seen: Privacy; find_by_phone: boolean }; links?: SocialLink[];
+  handle?: string; bio?: string; privacy?: { phone: Privacy; seen: Privacy; find_by_phone: boolean; forward?: Privacy; invite?: Privacy; counts?: Privacy }; links?: SocialLink[];
   nikah: { id: number; status: string; active: boolean; gender: 'M' | 'F' } | null;
 };
 /** Фон переписки: узор, цвет или своё фото (хранится на телефоне, как обои в Telegram). */
 export type Wall = { pattern?: 'shapes' | 'dots' | 'waves' | 'grid' | 'bubbles' | 'none'; color?: string; photo?: string; blur?: number; dim?: number };
 /** Нижние кнопки, которые человек выбрал сам; «Профиль» всегда последний. */
-export const TAB_KEYS = ['home', 'prayer', 'services', 'chats', 'tracker', 'nikah', 'map', 'buy', 'news'] as const;
+export const TAB_KEYS = ['home', 'feed', 'communities', 'prayer', 'services', 'chats', 'tracker', 'nikah', 'map', 'buy', 'news', 'jobs', 'transport', 'forum', 'library'] as const;
+export const TAB_SLOTS = 20;                // сколько угодно: больше пяти — панель листается пальцем
 export type TabKey = typeof TAB_KEYS[number];
 export const DEFAULT_TABS: TabKey[] = ['home', 'prayer', 'services', 'chats'];
 export type PrayerSettings = {
@@ -56,6 +57,8 @@ type Ctx = {
   config: Config | null; refreshConfig: () => Promise<void>; moduleOn: (key: string) => boolean;
   user: User | null; signIn: (token: string, user: User) => Promise<void>; signOut: () => Promise<void>;
   refreshMe: () => Promise<void>; setUser: (u: User) => void;
+  /** несколько аккаунтов, как в Telegram: кто вошёл на этом устройстве и переключение без пароля */
+  accounts: SavedAccount[]; switchAccount: (id: number) => Promise<void>; canAddAccount: boolean;
   prayer: PrayerSettings; setPrayer: (p: Partial<PrayerSettings>) => void;
   online: boolean; langTick: number;
   currency: string; setCurrency: (code: string) => void;
@@ -74,6 +77,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<Config | null>(null);
   const [currency, setCurrencyState] = useState('');     // '' — определять автоматически
   const [user, setUserState] = useState<User | null>(null);
+  const [accounts, setAccountsState] = useState<SavedAccount[]>([]);
   const [prayer, setPrayerState] = useState<PrayerSettings>(DEFAULT_PRAYER);
   const [online, setOnline] = useState(true);
   const [tabs, setTabsState] = useState<TabKey[]>(DEFAULT_TABS);
@@ -120,18 +124,45 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const keepAccounts = useCallback(async (list: SavedAccount[]) => { setAccountsState(list); await setAccounts(list); }, []);
+
+  /** Открыть другой аккаунт, уже вошедший на этом устройстве. */
+  const switchAccount = useCallback(async (id: number) => {
+    const list = await getAccounts();
+    const next = list.find((a) => a.id === id);
+    if (!next) return;
+    await setToken(next.token);
+    setApiToken(next.token);
+    await clearCache();
+    try {
+      const me = await api<User>('/me/');
+      setUserState(me);
+      save('user', me);
+    } catch {
+      await keepAccounts(list.filter((a) => a.id !== id));      // вход устарел — убираем из списка
+      await setToken(null);
+      setApiToken(null);
+      setUserState(null);
+      save('user', null);
+    }
+  }, [keepAccounts]);
+
   const signOut = useCallback(async () => {
+    const token = await getToken();
     try {
       await api('/auth/logout/', { body: {} });
     } catch {
       /* офлайн — токен всё равно забываем */
     }
+    const rest = (await getAccounts()).filter((a) => a.token !== token);
+    await keepAccounts(rest);
     await setToken(null);
     setApiToken(null);
     await clearCache();
     save('user', null);
     setUserState(null);
-  }, []);
+    if (rest[0]) await switchAccount(rest[0].id);               // вышли из одного — открывается следующий
+  }, [keepAccounts, switchAccount]);
 
   useEffect(() => {
     onAuthLost(() => {
@@ -157,6 +188,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       const token = await getToken();
       setApiToken(token);
+      setAccountsState(await getAccounts());
       if (token) setUserState(await load<User | null>('user', null));
       setReady(true);
       await refreshConfig();
@@ -204,7 +236,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [refreshConfig, user]);
 
   const setTabs = useCallback((keys: TabKey[]) => {
-    const clean = keys.filter((k, i) => TAB_KEYS.includes(k) && keys.indexOf(k) === i).slice(0, 4);
+    const clean = keys.filter((k, i) => TAB_KEYS.includes(k) && keys.indexOf(k) === i).slice(0, TAB_SLOTS);
     const next = clean.length >= 2 ? clean : DEFAULT_TABS;
     setTabsState(next);
     save('tabs', next);
@@ -232,8 +264,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback(async (token: string, u: User) => {
     await setToken(token);
     setApiToken(token);
+    await clearCache();
     setUserState(u);
     save('user', u);
+    const others = (await getAccounts()).filter((a) => a.id !== u.id).slice(0, MAX_ACCOUNTS - 1);
+    const list = [{ token, id: u.id, name: u.name, avatar: u.avatar ?? '' }, ...others];
+    setAccountsState(list);
+    setAccounts(list);
     if (u.language && ['ru', 'uz', 'en'].includes(u.language)) {
       applyLang(u.language as Lang);
       save('lang', u.language);
@@ -249,8 +286,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const value = useMemo<Ctx>(() => ({
     ready, lang, setLang, t: translate, themeMode, setThemeMode, dark, c: dark ? palettes.dark : palettes.light,
     config, refreshConfig, moduleOn, user, signIn, signOut, refreshMe, setUser: (u: User) => { setUserState(u); save('user', u); },
+    accounts, switchAccount, canAddAccount: accounts.length < MAX_ACCOUNTS,
     prayer, setPrayer, online, langTick, currency, setCurrency, tabs, setTabs, wall, setWall,
-  }), [tabs, setTabs, wall, setWall, ready, lang, setLang, themeMode, setThemeMode, dark, config, refreshConfig, moduleOn, user, signIn, signOut,
+  }), [tabs, setTabs, wall, setWall, ready, lang, setLang, themeMode, setThemeMode, dark, config, refreshConfig, moduleOn, user, signIn, signOut, accounts, switchAccount,
     refreshMe, prayer, setPrayer, online, langTick, currency, setCurrency]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ilm4 VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-02 22:35+0500\n"
+"POT-Creation-Date: 2026-10-03 22:16+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: uz\n"
@@ -58,10 +58,6 @@ msgstr "(oʻchirilgan)"
 msgid "+ Добавить книгу"
 msgstr "+ Kitob qoʻshish"
 
-#: apps/maps/templates/maps/map.html
-msgid "+ Добавить место"
-msgstr "+ Joy qoʻshish"
-
 #: apps/market/templates/market/my.html
 msgid "+ Подать объявление"
 msgstr "+ Eʼlon berish"
@@ -73,10 +69,6 @@ msgstr "+ Xizmat taklif qilish"
 #: apps/migration/templates/migration/list.html
 msgid "+ Рассказать свою"
 msgstr "+ Oʻz hikoyangizni yozing"
-
-#: apps/chat/templates/chat/contacts.html
-msgid "+998 90 123 45 67&#10;8 900 123 45 67&#10;(по одному в строке)"
-msgstr "+998 90 123 45 67&#10;8 900 123 45 67&#10;(har biri alohida qatorda)"
 
 #: apps/core/templates/core/pages/salah.html
 msgid ", затем второй земной поклон — так завершается ракаат."
@@ -134,9 +126,33 @@ msgstr "/900 · kamida 10"
 msgid "/900 · минимум 20"
 msgstr "/900 · kamida 20"
 
+#: apps/chat/templates/chat/space.html
+msgid "1 день"
+msgstr "1 kun"
+
+#: apps/chat/templates/chat/room_info.html
+msgid "1 минута"
+msgstr "1 daqiqa"
+
+#: apps/chat/templates/chat/room_info.html apps/chat/templates/chat/space.html
+msgid "1 час"
+msgstr "1 soat"
+
+#: apps/chat/templates/chat/space.html
+msgid "1 человек"
+msgstr "1 kishi"
+
 #: apps/accounts/templates/accounts/2fa_setup.html
 msgid "1. Откройте приложение-аутентификатор (Google Authenticator, Aegis, 1Password…)."
 msgstr "1. Autentifikator ilovasini oching (Google Authenticator, Aegis, 1Password…)."
+
+#: apps/chat/templates/chat/room_info.html
+msgid "10 секунд"
+msgstr "10 soniya"
+
+#: apps/chat/templates/chat/room_info.html
+msgid "15 минут"
+msgstr "15 daqiqa"
 
 #: apps/accounts/templates/accounts/2fa_setup.html
 msgid "2. Отсканируйте QR-код:"
@@ -153,6 +169,18 @@ msgstr "2GIS"
 #: apps/accounts/templates/accounts/2fa_setup.html
 msgid "3. Введите шестизначный код из приложения:"
 msgstr "3. Ilovadagi olti xonali kodni kiriting:"
+
+#: apps/chat/templates/chat/room_info.html
+msgid "30 секунд"
+msgstr "30 soniya"
+
+#: apps/chat/templates/chat/room_info.html
+msgid "5 минут"
+msgstr "5 daqiqa"
+
+#: apps/chat/templates/chat/space.html
+msgid "7 дней"
+msgstr "7 kun"
 
 #: apps/wallet/templates/wallet/index.html
 msgid ": его нельзя вывести или перевести другому человеку"
@@ -194,6 +222,10 @@ msgstr "IT va internet"
 msgid "Instagram, Telegram, YouTube, GitHub, Discord — что хотите. Для каждой ссылки выберите, кто её видит."
 msgstr "Instagram, Telegram, YouTube, GitHub, Discord — xohlaganingiz. Har bir havola uchun uni kim ko‘rishini tanlang."
 
+#: apps/tracker/templates/tracker/habit_form.html
+msgid "N раз в неделю"
+msgstr "Haftada N marta"
+
 #: apps/accounts/templates/accounts/2fa_setup.html
 msgid "QR-код 2FA"
 msgstr "2FA QR kodi"
@@ -218,6 +250,10 @@ msgstr "Telegram bu suratni yuborish va saqlashni taqiqlaydi, Androidda esa — 
 msgid "Telegram не создал счёт — проверьте токен бота"
 msgstr "Telegram hisob yaratmadi — bot tokenini tekshiring"
 
+#: apps/nikah/templates/nikah/settings.html
+msgid "Telegram подключён"
+msgstr "Telegram ulangan"
+
 #: apps/payments/providers.py
 msgid "USDT, BTC, ETH — через NOWPayments"
 msgstr "USDT, BTC, ETH — NOWPayments orqali"
@@ -229,6 +265,10 @@ msgstr "Visa, Mastercard, Apple Pay, Google Pay — Stripe orqali"
 #: apps/accounts/people.py
 msgid "WhatsApp: укажите номер с кодом страны."
 msgstr "WhatsApp: raqamni davlat kodi bilan kiriting."
+
+#: apps/assistant/providers.py
+msgid "Z.AI — подписка Coding Plan"
+msgstr "Z.AI — Coding Plan obunasi"
 
 #: apps/chat/crypto.py apps/chat/keyring.py
 msgid "[сообщение не удалось расшифровать]"
@@ -384,6 +424,16 @@ msgstr "{what}: {lo} dan {hi} gacha"
 msgid "«{title}» удалено."
 msgstr "«{title}» oʻchirildi."
 
+#: apps/core/signals.py
+#, python-brace-format
+msgid "«{t}» не прошло проверку. Исправьте и отправьте снова (Мои публикации)."
+msgstr "«{t}» tekshiruvdan oʻtmadi. Tuzating va qayta yuboring (Mening nashrlarim)."
+
+#: apps/core/signals.py
+#, python-brace-format
+msgid "«{t}» одобрено и опубликовано."
+msgstr "«{t}» tasdiqlandi va eʼlon qilindi."
+
 #: apps/library/views.py
 #, python-brace-format
 msgid "«{v1}» — платная книга: нажмите «Купить»."
@@ -392,6 +442,10 @@ msgstr "«{v1}» — pullik kitob: «Sotib olish» tugmasini bosing."
 #: apps/core/templates/core/pages/salah.html
 msgid "«Во имя Аллаха, Милостивого, Милосердного! Хвала Аллаху, Господу миров, Милостивому, Милосердному, Властелину Дня воздаяния! Тебе одному мы поклоняемся и Тебя одного молим о помощи. Веди нас прямым путём, путём тех, кого Ты облагодетельствовал, не тех, на кого пал гнев, и не заблудших» (смысловой перевод Э. Кулиева)."
 msgstr "«Mehribon va rahmli Alloh nomi bilan. Hamd olamlar Robbi Allohgaki, U Mehribon va Rahmlidir, Jazo kunining Egasidir. Faqat Senga ibodat qilamiz va faqat Sendan yordam soʻraymiz. Bizni toʻgʻri yoʻlga hidoyat qil — neʼmat bergan zotlaring yoʻliga, gʻazabga uchraganlar va adashganlarning yoʻliga emas» (maʼnolar tarjimasi)."
+
+#: apps/accounts/templates/accounts/profile.html
+msgid "«Никто» — в вашем профиле не будет чисел «записей / подписчиков / подписок». Вы сами их видите всегда."
+msgstr "«Hech kim» — profilingizda «yozuvlar / obunachilar / obunalar» sonlari ko‘rinmaydi. O‘zingiz ularni doim ko‘rasiz."
 
 #: apps/core/i18n_data.py
 msgid "«Поистине, дела оцениваются по намерениям»."
@@ -504,10 +558,18 @@ msgstr "Admin"
 msgid "Админка"
 msgstr "Admin panel"
 
+#: apps/chat/spaces.py
+msgid "Админы"
+msgstr "Adminlar"
+
 #: apps/api/views_content.py apps/health/templates/health/detail.html
 #: apps/maps/templates/maps/detail.html
 msgid "Адрес"
 msgstr "Manzil"
+
+#: apps/assistant/templates/assistant/index.html
+msgid "Адрес сервера"
+msgstr "Server manzili"
 
 #: apps/refugee/models.py
 msgid "Азербайджан"
@@ -533,6 +595,19 @@ msgstr "Akkaunt bloklangan. Qoʻllab-quvvatlashga yozing."
 msgid "Аккаунт удалён. Да вознаградит вас Аллах благом."
 msgstr "Akkaunt oʻchirildi. Alloh sizni yaxshilik bilan mukofotlasin."
 
+#: apps/accounts/templates/accounts/profile.html
+msgid "Аккаунт, конфиденциальность, чаты, папки, язык"
+msgstr "Akkaunt, maxfiylik, chatlar, jildlar, til"
+
+#: apps/accounts/templates/accounts/accounts.html
+#: apps/core/templates/core/settings.html
+msgid "Аккаунты"
+msgstr "Akkauntlar"
+
+#: apps/accounts/templates/accounts/accounts.html
+msgid "Аккаунты —"
+msgstr "Akkauntlar —"
+
 #: apps/library/models.py
 msgid "Акыда"
 msgstr "Aqida"
@@ -553,7 +628,8 @@ msgstr "Amerika"
 msgid "Андижан"
 msgstr "Andijon"
 
-#: apps/nikah/templates/nikah/mine.html apps/nikah/templates/nikah/wizard.html
+#: apps/chat/templates/chat/thread.html apps/nikah/templates/nikah/mine.html
+#: apps/nikah/templates/nikah/wizard.html
 msgid "Анкета"
 msgstr "Anketa"
 
@@ -584,6 +660,10 @@ msgstr "Anketa tekshiruvdan oʻtmadi. Kontaktlar va ortiqchasini olib tashlang, 
 #: apps/nikah/services.py
 msgid "Анкета недоступна"
 msgstr "Anketa mavjud emas"
+
+#: apps/chat/persona.py
+msgid "Анкета никяха"
+msgstr "Nikoh anketasi"
 
 #: apps/api/views_nikah.py apps/nikah/views.py
 msgid "Анкета отправлена на проверку. Обычно это занимает до суток."
@@ -633,6 +713,10 @@ msgstr "Arab tili"
 msgid "Арабский, английский и другие языки"
 msgstr "Arab, ingliz va boshqa tillar"
 
+#: apps/tracker/services.py
+msgid "Арабский: новые слова"
+msgstr "Arab tili: yangi so‘zlar"
+
 #: apps/nikah/deck.py
 msgid "Арабы"
 msgstr "Arablar"
@@ -645,6 +729,7 @@ msgstr "Uy-joy ijarasi va sotuvi"
 msgid "Армения"
 msgstr "Armaniston"
 
+#: apps/chat/templates/chat/_threads.html
 #: apps/tracker/templates/tracker/stats.html
 msgid "Архив"
 msgstr "Arxiv"
@@ -737,14 +822,14 @@ msgstr "Balans va operatsiyalar tarixi"
 msgid "Баланс и история платежей"
 msgstr "Balans va toʻlovlar tarixi"
 
+#: apps/payments/templates/payments/done.html
+msgid "Баланс пополнен"
+msgstr "Balans toʻldirildi"
+
 #: apps/payments/stars.py
 #, python-brace-format
 msgid "Баланс пополнен на {v1:,} сум. БаракаЛлаху фикум!"
 msgstr "Balans {v1:,} soʻmga toʻldirildi. Barakallohu fikum!"
-
-#: apps/payments/templates/payments/done.html
-msgid "Баланс пополнен ✅"
-msgstr "Balans toʻldirildi ✅"
 
 #: apps/wallet/templates/wallet/payout.html
 msgid "Баланс:"
@@ -755,6 +840,7 @@ msgid "БаракаЛлаху фикум. Общайтесь с адабом —
 msgstr "Barakallohu fikum. Adab bilan muloqot qiling — maqsad nikoh."
 
 #: apps/chat/templates/chat/room_new.html
+#: apps/chat/templates/chat/space_new.html
 msgid "Без галочки попасть можно только по вашей ссылке-приглашению."
 msgstr "Belgilanmasa, faqat sizning taklif havolangiz orqali kirish mumkin."
 
@@ -768,7 +854,7 @@ msgstr "Kunlik limitsiz"
 
 #: apps/accounts/templates/accounts/public.html
 #: apps/chat/templates/chat/_threads.html
-#: apps/chat/templates/chat/room_info.html
+#: apps/chat/templates/chat/folder_form.html
 msgid "Без звука"
 msgstr "Ovozsiz"
 
@@ -776,10 +862,18 @@ msgstr "Ovozsiz"
 msgid "Без изменений"
 msgstr "Oʻzgarish yoʻq"
 
+#: apps/chat/templates/chat/space_board.html
+msgid "Без исполнителя"
+msgstr "Ijrochisiz"
+
 #: apps/nikah/templates/nikah/_card.html
 #: apps/nikah/templates/nikah/_swipecard.html
 msgid "Без мазхаба"
 msgstr "Mazhabsiz"
+
+#: apps/chat/templates/chat/space.html
+msgid "Без ограничения"
+msgstr "Cheklovsiz"
 
 #: apps/accounts/templates/accounts/includes/oauth.html
 msgid "Без пароля: откроется наш бот, нажмите в нём «📱 Войти и отправить мой номер». Номер никто не увидит."
@@ -788,6 +882,14 @@ msgstr "Parolsiz: botimiz ochiladi, unda «📱 Kirish va raqamimni yuborish»ni
 #: apps/nikah/templates/nikah/premium.html
 msgid "Без премиума —"
 msgstr "Premiumsiz —"
+
+#: apps/nikah/templates/nikah/settings.html
+msgid "Без своего фото вы не увидите фото других — обмен работает по принципу взаимности."
+msgstr "Oʻz suratingiz boʻlmasa, boshqalarning suratini koʻrmaysiz — almashish oʻzaro tamoyilda ishlaydi."
+
+#: apps/chat/templates/chat/space.html
+msgid "Без срока"
+msgstr "Muddatsiz"
 
 #: apps/core/templates/core/settings.html
 msgid "Без узора"
@@ -862,6 +964,7 @@ msgstr "Bismillahir rohmanir rohiym. Alhamdu lillahi robbil ʼalamiyn. Arrohmani
 msgid "Бишкек"
 msgstr "Bishkek"
 
+#: apps/assistant/templates/assistant/index.html
 #: apps/core/templates/core/includes/today.html
 #: apps/prayer/templates/prayer/index.html
 msgid "Ближайший намаз"
@@ -880,6 +983,7 @@ msgid "Близкие вероубеждения"
 msgstr "Yaqin eʼtiqodlar"
 
 #: apps/accounts/models.py apps/accounts/templates/accounts/profile.html
+#: apps/social/models.py
 msgid "Близкие друзья"
 msgstr "Yaqin do‘stlar"
 
@@ -904,6 +1008,10 @@ msgstr "Boshqa ogohlantirmaslik"
 msgid "Борода"
 msgstr "Soqol"
 
+#: apps/chat/models.py
+msgid "Боты"
+msgstr "Botlar"
+
 #: templates/includes/pledge.html
 msgid "Боюсь Аллаха, обязуюсь соблюдать договор и отвечаю за свою публикацию"
 msgstr "Allohdan qoʻrqaman, ahdga rioya qilishni zimmamga olaman va eʼlonim uchun javob beraman"
@@ -916,7 +1024,7 @@ msgstr "Aka-uka"
 msgid "Брат проявил"
 msgstr "Aka-uka koʻrsatdi"
 
-#: apps/maps/templates/maps/map.html
+#: static/js/mapx.js
 msgid "Браузер не умеет определять местоположение"
 msgstr "Brauzer joylashuvni aniqlay olmaydi"
 
@@ -940,9 +1048,9 @@ msgstr "Tezkor navigatsiya"
 msgid "Быть не единственной женой"
 msgstr "Yagona xotin boʻlmaslik"
 
-#: apps/chat/templates/chat/contacts.html
-msgid "В ilm4"
-msgstr "ilm4 da"
+#: static/js/chatlist.js
+msgid "В архив"
+msgstr "Arxivga"
 
 #: apps/tracker/templates/tracker/habit_form.html
 msgid "В архив (отметки сохранятся)"
@@ -968,6 +1076,10 @@ msgstr "Yozishmangizda hozircha rasm va video yo‘q."
 msgid "В группе уже максимум участников."
 msgstr "Guruhda a’zolar soni chegaraga yetgan."
 
+#: static/js/chat.js
+msgid "В избранное"
+msgstr "Saqlanganlarga"
+
 #: apps/nikah/templates/nikah/wizard.html
 msgid "В исламе национальность передаётся по отцу. При смешанных корнях можно рассказать об этом в разделе «О себе»."
 msgstr "Islomda millat ota tomondan oʻtadi. Aralash kelib chiqish boʻlsa, bu haqda «Oʻzim haqimda» boʻlimida yozishingiz mumkin."
@@ -979,6 +1091,14 @@ msgstr "Qaysi kuni"
 #: apps/chat/rooms.py
 msgid "В канале пишут только его авторы."
 msgstr "Kanalda faqat uning mualliflari yozadi."
+
+#: static/js/voice.js
+msgid "В комнате уже максимум участников."
+msgstr "Xonada ishtirokchilar soni maksimal."
+
+#: static/js/voice.js
+msgid "В комнате:"
+msgstr "Xonada:"
 
 #: apps/nikah/templates/nikah/wizard.html
 msgid "В ленте анкеты без фото — первое впечатление складывается по убеждениям и описанию. Выберите, что будет с вашим фото при взаимной симпатии:"
@@ -992,6 +1112,23 @@ msgstr "Lentada surat yoʻq"
 msgid "В ленте фото нет"
 msgstr "Lentada suratlar yoʻq"
 
+#: apps/tracker/models.py apps/tracker/templates/tracker/index.html
+msgid "В любое время"
+msgstr "Istalgan vaqtda"
+
+#: apps/tracker/templates/tracker/habit_form.html
+msgid "В любые дни — главное, набрать за неделю. Серия считается в неделях."
+msgstr "Istalgan kunlarda — asosiysi haftalik miqdorni bajarish. Ketma-ketlik haftalarda hisoblanadi."
+
+#: apps/chat/folders.py
+#, python-brace-format
+msgid "В папке не больше {v1} выбранных чатов."
+msgstr "Jildda ko‘pi bilan {v1} ta tanlangan chat bo‘ladi."
+
+#: apps/chat/folders.py
+msgid "В папке пока пусто: выберите типы чатов или добавьте чаты."
+msgstr "Jild hozircha bo‘sh: chat turlarini tanlang yoki chat qo‘shing."
+
 #: apps/nikah/templates/nikah/how.html
 msgid "В приложении скриншоты заблокированы"
 msgstr "Ilovada skrinshotlar bloklangan"
@@ -999,6 +1136,14 @@ msgstr "Ilovada skrinshotlar bloklangan"
 #: apps/nikah/templates/nikah/_swipecard.html
 msgid "В сети"
 msgstr "Onlayn"
+
+#: apps/chat/spaces.py
+msgid "В сообществе должен остаться хотя бы один канал."
+msgstr "Hamjamiyatda kamida bitta kanal qolishi kerak."
+
+#: apps/chat/spaces.py
+msgid "В сообществе уже максимум каналов."
+msgstr "Hamjamiyatda kanallar soni allaqachon maksimal."
 
 #: apps/nikah/choices.py
 msgid "В течение полугода"
@@ -1008,13 +1153,25 @@ msgstr "Yarim yil ichida"
 msgid "В топе"
 msgstr "Yuqorida"
 
-#: apps/chat/services.py
+#: apps/chat/msgops.py apps/chat/services.py
 msgid "В чате никяха нельзя передавать телефоны, ники и ссылки — общение внутри ilm4, при махраме."
 msgstr "Nikoh chatida telefon, taxallus va havolalarni yuborish mumkin emas — muloqot ilm4 ichida, mahram huzurida."
+
+#: apps/chat/templates/chat/_threads.html
+msgid "В этой папке пока пусто"
+msgstr "Bu jild hozircha bo‘sh"
 
 #: apps/tracker/services.py
 msgid "В этом трекере уже максимум участников."
 msgstr "Bu trekerda ishtirokchilar soni chegaraga yetgan."
+
+#: apps/chat/msgops.py
+msgid "В этом чате реакции выключены."
+msgstr "Bu chatda reaksiyalar o‘chirilgan."
+
+#: apps/chat/msgops.py
+msgid "В этом чате такие вложения отключены."
+msgstr "Bu chatda bunday ilovalar o‘chirilgan."
 
 #: apps/tracker/services.py
 msgid "В этот день эта привычка не запланирована."
@@ -1049,7 +1206,7 @@ msgstr "Halol ish beruvchilardan vakansiyalar"
 msgid "Вакансий пока нет"
 msgstr "Hozircha vakansiyalar yoʻq"
 
-#: apps/core/views.py apps/jobs/templates/jobs/detail.html
+#: apps/jobs/templates/jobs/detail.html
 msgid "Вакансия"
 msgstr "Vakansiya"
 
@@ -1069,6 +1226,10 @@ msgstr "Vakansiya — xodim izlayman"
 msgid "Валюта"
 msgstr "Valyuta"
 
+#: apps/chat/spaces.py
+msgid "Вас удалили из этого сообщества."
+msgstr "Siz bu hamjamiyatdan chiqarilgansiz."
+
 #: apps/chat/rooms.py
 msgid "Вас удалили из этого чата."
 msgstr "Siz bu chatdan chiqarilgansiz."
@@ -1081,6 +1242,10 @@ msgstr "Sizning Telegram id: {v1}"
 #: apps/nikah/templates/nikah/match.html
 msgid "Ваш баланс:"
 msgstr "Balansingiz:"
+
+#: apps/accounts/templates/accounts/phone.html
+msgid "Ваш номер никто не увидит: ни продавцы, ни собеседники, ни анкеты. Его знает только ilm4 — чтобы один человек не заводил много аккаунтов."
+msgstr "Raqamingizni hech kim koʻrmaydi: na sotuvchilar, na suhbatdoshlar, na anketalar. Uni faqat ilm4 biladi — bir odam koʻp akkaunt ochmasligi uchun."
 
 #: apps/migration/templates/migration/create.html
 msgid "Ваш опыт поможет тем, кто только собирается: визы, работа, жильё, ошибки и находки."
@@ -1101,6 +1266,10 @@ msgstr "Navbatingiz: suratni koʻring va qaror qiling"
 #: apps/tracker/templates/tracker/board.html
 msgid "Ваши отметки здесь удалятся"
 msgstr "Bu yerdagi belgilaringiz o‘chiriladi"
+
+#: apps/accounts/people.py
+msgid "Введите номер телефона целиком, с кодом страны."
+msgstr "Telefon raqamini to‘liq, davlat kodi bilan kiriting."
 
 #: apps/accounts/templates/accounts/2fa_verify.html
 msgid "Введите шестизначный код из приложения-аутентификатора."
@@ -1125,6 +1294,10 @@ msgstr "Hamma joyda"
 #: apps/refugee/models.py
 msgid "Великобритания"
 msgstr "Buyuk Britaniya"
+
+#: apps/tracker/services.py
+msgid "Вера"
+msgstr "Iymon"
 
 #: apps/core/templates/core/pages/islam.html
 msgid "Вера в Единого Бога, Его ангелов, Писания, пророков, Судный день и предопределение. Принятие ислама — добровольный выбор: «Нет принуждения в религии» (Коран, 2:256)."
@@ -1180,9 +1353,17 @@ msgstr "Bu yerga qayting — sahifa oʻzi ochiladi."
 msgid "Вернули в ленту: {n}."
 msgstr "Lentaga qaytarildi: {n}."
 
+#: apps/chat/templates/chat/space.html
+msgid "Вернуть"
+msgstr "Qaytarish"
+
 #: apps/nikah/templates/nikah/mine.html
 msgid "Вернуть анкету в ленту"
 msgstr "Anketani lentaga qaytarish"
+
+#: static/js/chatlist.js
+msgid "Вернуть из архива"
+msgstr "Arxivdan qaytarish"
 
 #: apps/nikah/templates/nikah/premium.html
 msgid "Вернуть отклонённых"
@@ -1191,6 +1372,10 @@ msgstr "Rad etilganlarni qaytarish"
 #: apps/nikah/templates/nikah/feed.html
 msgid "Вернуть →"
 msgstr "Qaytarish →"
+
+#: apps/accounts/templates/accounts/login.html
+msgid "Вернуться в аккаунт"
+msgstr "Akkauntga qaytish"
 
 #: apps/nikah/templates/nikah/match.html
 msgid "Вернуться в ленту"
@@ -1210,10 +1395,6 @@ msgstr "Eʼtiqod va manhaj"
 #: apps/nikah/templates/nikah/edit.html
 msgid "Вероубеждение и манхадж — своими словами"
 msgstr "Eʼtiqod va manhaj — oʻz soʻzlaringiz bilan"
-
-#: apps/core/catalog.py
-msgid "Вертикальная лента: новости, объявления, вопросы"
-msgstr "Vertikal lenta: yangiliklar, eʼlonlar, savollar"
 
 #: apps/nikah/forms.py apps/nikah/templates/nikah/_swipecard.html
 #: apps/nikah/templates/nikah/detail.html
@@ -1239,6 +1420,14 @@ msgstr "Butun dunyo"
 #: apps/forum/templates/forum/blocks/recent.html
 msgid "Весь форум →"
 msgstr "Butun forum →"
+
+#: apps/tracker/models.py apps/tracker/templates/tracker/index.html
+msgid "Вечер"
+msgstr "Kechqurun"
+
+#: apps/tracker/services.py
+msgid "Вечерние азкары"
+msgstr "Kechki zikrlar"
 
 #: apps/nikah/templates/nikah/detail.html
 msgid "Взаимная симпатия"
@@ -1276,9 +1465,17 @@ msgstr "Hozircha oʻzaro hamdardlik yoʻq"
 msgid "Взять"
 msgstr "Olish"
 
+#: apps/chat/templates/chat/space_board.html
+msgid "Взять в работу"
+msgstr "Ishga olish"
+
 #: apps/api/views_content.py apps/deals/templates/deals/new.html
 msgid "Вид"
 msgstr "Turi"
+
+#: apps/chat/templates/chat/space.html
+msgid "Вид канала"
+msgstr "Kanal turi"
 
 #: apps/services/templates/services/create.html
 msgid "Вид услуги"
@@ -1309,7 +1506,7 @@ msgstr "Video qoʻngʻiroq…"
 msgid "Видеокружок"
 msgstr "Videoxabar"
 
-#: apps/chat/events.py
+#: apps/chat/events.py static/js/chat.js
 msgid "Видеосообщение"
 msgstr "Videoxabar"
 
@@ -1317,7 +1514,15 @@ msgstr "Videoxabar"
 msgid "Видеть, кто в сети"
 msgstr "Kim onlaynligini koʻrish"
 
-#: apps/chat/templates/chat/thread.html
+#: apps/social/templates/social/feed.html
+msgid "Видят все"
+msgstr "Hamma ko‘radi"
+
+#: static/js/photoedit.js
+msgid "Виньетка"
+msgstr "Vinyetka"
+
+#: apps/chat/templates/chat/thread.html static/js/chatlist.js
 msgid "Включить звук"
 msgstr "Ovozni yoqish"
 
@@ -1325,7 +1530,7 @@ msgstr "Ovozni yoqish"
 msgid "Включить соревнование"
 msgstr "Musobaqani yoqish"
 
-#: apps/chat/models.py
+#: apps/chat/models.py apps/chat/spaces.py
 msgid "Владелец"
 msgstr "Egasi"
 
@@ -1344,6 +1549,14 @@ msgstr "Birga"
 #: apps/nikah/templates/nikah/edit.html
 msgid "Внешность"
 msgstr "Tashqi koʻrinish"
+
+#: apps/chat/templates/chat/thread.html
+msgid "Вниз"
+msgstr "Pastga"
+
+#: apps/tracker/services.py
+msgid "Вода"
+msgstr "Suv"
 
 #: apps/nikah/templates/nikah/how.html
 msgid "Водяной знак с ID смотрящего"
@@ -1403,6 +1616,14 @@ msgstr "Akkauntga kiring"
 msgid "Войдите — это займёт минуту."
 msgstr "Kiring — bir daqiqa vaqt oladi."
 
+#: apps/chat/templates/chat/space.html
+msgid "Войдите, чтобы вступить"
+msgstr "Qo‘shilish uchun kiring"
+
+#: apps/social/templates/social/_comments.html
+msgid "Войдите, чтобы комментировать"
+msgstr "Izoh yozish uchun kiring"
+
 #: apps/accounts/templates/accounts/public.html
 #: apps/transport/templates/transport/trip.html
 msgid "Войдите, чтобы написать"
@@ -1426,6 +1647,14 @@ msgstr ""
 "Raqamingizni hech kim koʻrmaydi — u bir odam koʻp akkaunt ochmasligi uchun kerak.\n"
 "Agar hozir ilm4 ga kirmayotgan boʻlsangiz — hech narsani bosmang: kimdir akkauntingizga kirmoqchi."
 
+#: apps/chat/templates/chat/space_voice.html
+msgid "Войти в комнату"
+msgstr "Xonaga kirish"
+
+#: apps/accounts/templates/accounts/accounts.html
+msgid "Войти во второй аккаунт — этот останется на устройстве"
+msgstr "Ikkinchi akkauntga kirish — bunisi qurilmada qoladi"
+
 #: apps/jobs/templates/jobs/detail.html
 msgid "Войти и откликнуться"
 msgstr "Kirib javob berish"
@@ -1446,7 +1675,7 @@ msgstr "Telegram orqali kirish"
 msgid "Волны"
 msgstr "To‘lqinlar"
 
-#: apps/core/views.py
+#: apps/social/services.py
 msgid "Вопрос"
 msgstr "Savol"
 
@@ -1474,8 +1703,12 @@ msgstr "Parolni tiklash —"
 msgid "Восход"
 msgstr "Quyosh chiqishi"
 
+#: apps/assistant/templates/assistant/index.html
+msgid "Вот что важно сейчас"
+msgstr "Hozir muhim narsalar"
+
 #: apps/forum/templates/forum/blocks/recent.html
-#: apps/maps/templates/maps/blocks/recent.html templates/base.html
+#: apps/maps/templates/maps/blocks/recent.html static/js/feed.js
 msgid "Вперёд"
 msgstr "Oldinga"
 
@@ -1502,6 +1735,10 @@ msgstr "Ummat shifokorlari shaharlar boʻyicha"
 #: apps/transport/forms.py
 msgid "Время выезда уже прошло."
 msgstr "Jo‘nash vaqti o‘tib ketgan."
+
+#: apps/tracker/templates/tracker/habit_form.html
+msgid "Время дня"
+msgstr "Kun vaqti"
 
 #: apps/core/i18n_data.py apps/core/templates/core/blocks/banner.html
 #: apps/core/templates/core/includes/today.html
@@ -1547,13 +1784,17 @@ msgstr "Barcha shaharlar"
 msgid "Все города →"
 msgstr "Barcha shaharlar →"
 
+#: apps/chat/templates/chat/folder_form.html
+msgid "Все группы, где вы состоите"
+msgstr "Siz a’zo bo‘lgan barcha guruhlar"
+
 #: apps/migration/templates/migration/detail.html
 msgid "Все истории"
 msgstr "Barcha hikoyalar"
 
-#: apps/maps/templates/maps/map.html
-msgid "Все категории"
-msgstr "Barcha toifalar"
+#: apps/chat/templates/chat/folder_form.html
+msgid "Все каналы, на которые вы подписаны"
+msgstr "Siz obuna bo‘lgan barcha kanallar"
 
 #: apps/news/templates/news/detail.html
 msgid "Все новости"
@@ -1598,6 +1839,10 @@ msgstr "Barcha xizmatlar —"
 msgid "Все сервисы →"
 msgstr "Barcha xizmatlar →"
 
+#: apps/chat/templates/chat/_space_side.html
+msgid "Все сообщества"
+msgstr "Barcha hamjamiyatlar"
+
 #: apps/refugee/templates/refugee/index.html
 msgid "Все страны"
 msgstr "Barcha davlatlar"
@@ -1606,9 +1851,13 @@ msgstr "Barcha davlatlar"
 msgid "Все типы"
 msgstr "Barcha turlar"
 
-#: apps/chat/templates/chat/people.html apps/chat/templates/chat/thread.html
+#: apps/chat/templates/chat/contacts.html apps/chat/templates/chat/people.html
 msgid "Все чаты"
 msgstr "Barcha chatlar"
+
+#: apps/chat/templates/chat/folders.html
+msgid "Все чаты, кроме архива. Эта вкладка есть всегда"
+msgstr "Arxivdan tashqari barcha chatlar. Bu yorliq doim bor"
 
 #: apps/prayer/services.py
 msgid "Всемирная исламская лига — Европа, часть Азии"
@@ -1618,11 +1867,19 @@ msgstr "Musulmon olami ligasi — Yevropa, Osiyoning bir qismi"
 msgid "Встаньте лицом к Кибле, поднимите руки и скажите «Аллаху акбар» — намаз начался."
 msgstr "Qiblaga yuzlaning, qoʻllaringizni koʻtarib «Allohu akbar» deng — namoz boshlandi."
 
+#: apps/assistant/templates/assistant/index.html
+msgid "Встреча на завтра"
+msgstr "Ertangi uchrashuv"
+
 #: apps/market/templates/market/detail.html
 msgid "Встречайтесь в людных местах и проверяйте товар до оплаты. Безопасная сделка через платформу появится позже."
 msgstr "Gavjum joylarda uchrashing va toʻlovdan oldin tovarni tekshiring. Platforma orqali xavfsiz bitim keyinroq paydo boʻladi."
 
-#: apps/chat/templates/chat/room_info.html
+#: apps/assistant/templates/assistant/index.html
+msgid "Встречи и дела"
+msgstr "Uchrashuvlar va ishlar"
+
+#: apps/chat/templates/chat/room_info.html apps/chat/templates/chat/space.html
 msgid "Вступить"
 msgstr "Qo‘shilish"
 
@@ -1631,6 +1888,10 @@ msgstr "Qo‘shilish"
 msgid "Вступить в группу"
 msgstr "Guruhga qo‘shilish"
 
+#: apps/core/templates/core/settings.html
+msgid "Вся платформа — или только чаты, лента, сообщества"
+msgstr "Butun platforma — yoki faqat chatlar, lenta, hamjamiyatlar"
+
 #: apps/core/templates/core/moderation.html
 msgid "Всё"
 msgstr "Hammasi"
@@ -1638,6 +1899,10 @@ msgstr "Hammasi"
 #: apps/nikah/templates/nikah/how.html
 msgid "Всё в анкете — правда. За обман доступ закрывается."
 msgstr "Anketadagi hamma narsa — haqiqat. Aldov uchun kirish yopiladi."
+
+#: apps/assistant/templates/assistant/index.html
+msgid "Всё выполнено"
+msgstr "Hammasi bajarildi"
 
 #: apps/tgbot/dispatch.py
 msgid "Всё общение — внутри никяха. Нажмите «Открыть»."
@@ -1703,9 +1968,22 @@ msgstr "Kiruvchi video qoʻngʻiroq"
 msgid "Вчера"
 msgstr "Kecha"
 
+#: apps/social/templates/social/feed.html
+#: apps/tracker/templates/tracker/board.html static/js/voice.js
+msgid "Вы"
+msgstr "Siz"
+
+#: apps/nikah/templates/nikah/settings.html
+msgid "Вы верифицированы"
+msgstr "Siz tasdiqlangansiz"
+
 #: apps/core/templates/core/moderation_chat.html
 msgid "Вы видите личную переписку только потому, что на неё пожаловались. Это открытие записано в журнал: кто, когда и по какой жалобе. Используйте только для решения по жалобе."
 msgstr "Siz bu shaxsiy yozishmani faqat unga shikoyat qilingani uchun koʻryapsiz. Bu ochilish jurnalga yozildi: kim, qachon va qaysi shikoyat boʻyicha. Faqat shikoyat boʻyicha qaror uchun foydalaning."
+
+#: static/js/voice.js
+msgid "Вы вышли из комнаты."
+msgstr "Siz xonadan chiqdingiz."
 
 #: apps/chat/views_rooms.py
 msgid "Вы вышли."
@@ -1718,6 +1996,10 @@ msgstr "Siz uylangansiz — nechanchi xotin izlayotganingizni koʻrsating (2–4
 #: apps/nikah/templates/nikah/match.html
 msgid "Вы и"
 msgstr "Siz va"
+
+#: apps/chat/spaces.py
+msgid "Вы не в этом сообществе."
+msgstr "Siz bu hamjamiyatda emassiz."
 
 #: apps/deals/services.py
 msgid "Вы не участник сделки"
@@ -1734,6 +2016,10 @@ msgstr "Siz toʻlaysiz — pulni ilm4 ushlab turadi"
 #: static/js/app.js
 msgid "Вы переходите на сторонний сайт"
 msgstr "Siz tashqi saytga oʻtyapsiz"
+
+#: apps/accounts/templates/accounts/public.html
+msgid "Вы подписаны"
+msgstr "Obuna bo‘lgansiz"
 
 #: apps/nikah/templates/nikah/interests.html
 msgid "Вы пока никому не отправили интерес"
@@ -1812,9 +2098,17 @@ msgstr "Shaharni tanlang yoki yozing"
 msgid "Выберите или начните печатать"
 msgstr "Tanlang yoki yozishni boshlang"
 
+#: apps/assistant/services.py
+msgid "Выберите поставщика ИИ из списка."
+msgstr "Ro‘yxatdan SI provayderini tanlang."
+
 #: apps/api/views_account.py apps/core/my_views.py
 msgid "Выберите причину жалобы."
 msgstr "Shikoyat sababini tanlang."
+
+#: apps/chat/msgops.py
+msgid "Выберите сообщения."
+msgstr "Xabarlarni tanlang."
 
 #: apps/payments/templates/payments/topup.html
 msgid "Выберите сумму и способ оплаты. Баланс идёт на услуги ilm4: премиум, поднятие анкет и объявлений."
@@ -1828,9 +2122,9 @@ msgstr "Surat tanlang (JPG, PNG, 10 MB gacha)"
 msgid "Выберите, как на самом деле (что знаете), — модератор применит одной кнопкой."
 msgstr "Aslida qanday ekanini tanlang (bilganingizni) — moderator bir tugma bilan qoʻllaydi."
 
-#: apps/chat/templates/chat/contacts.html
-msgid "Выбрать из контактов телефона"
-msgstr "Telefon kontaktlaridan tanlash"
+#: apps/chat/msgops.py
+msgid "Выберите, куда переслать."
+msgstr "Qayerga yuborishni tanlang."
 
 #: static/js/app.js
 msgid "Выбрать файл"
@@ -1860,13 +2154,26 @@ msgstr "Mablagʻni yechib olish —"
 msgid "Выезд"
 msgstr "Jo‘nash"
 
-#: templates/admin/base_site.html templates/base.html
+#: apps/chat/templates/chat/space_voice.html
+#: apps/core/templates/core/settings.html templates/admin/base_site.html
 msgid "Выйти"
 msgstr "Chiqish"
 
 #: apps/chat/templates/chat/room_info.html
 msgid "Выйти из группы"
 msgstr "Guruhdan chiqish"
+
+#: static/js/chatlist.js
+msgid "Выйти из группы…"
+msgstr "Guruhdan chiqish…"
+
+#: apps/chat/templates/chat/space.html
+msgid "Выйти из сообщества"
+msgstr "Hamjamiyatdan chiqish"
+
+#: apps/chat/templates/chat/space.html
+msgid "Выйти из сообщества?"
+msgstr "Hamjamiyatdan chiqasizmi?"
 
 #: apps/tracker/templates/tracker/board.html
 msgid "Выйти из трекера"
@@ -1879,6 +2186,10 @@ msgstr "Trekerdan chiqasizmi?"
 #: apps/chat/templates/chat/room_info.html
 msgid "Выйти?"
 msgstr "Chiqasizmi?"
+
+#: apps/chat/templates/chat/room_info.html
+msgid "Выключен"
+msgstr "O‘chirilgan"
 
 #: apps/tracker/templates/tracker/board.html
 msgid "Выключить соревнование"
@@ -1916,6 +2227,14 @@ msgstr "Qaddni rostlash."
 msgid "Выставьте вакансию, услугу или объявление — кнопки выше."
 msgstr "Vakansiya, xizmat yoki eʼlon joylang — yuqoridagi tugmalar."
 
+#: static/js/photoedit.js
+msgid "Выцветание"
+msgstr "Xiralashish"
+
+#: apps/chat/templates/chat/folders.html apps/core/templates/core/settings.html
+msgid "Выше"
+msgstr "Yuqoriga"
+
 #: static/js/chat.js
 msgid "ГБ"
 msgstr "GB"
@@ -1937,6 +2256,10 @@ msgstr "Qayerda yuritish"
 msgid "Где живёт"
 msgstr "Qayerda yashaydi"
 
+#: apps/maps/templates/maps/map.html
+msgid "Где я"
+msgstr "Men qayerdaman"
+
 #: apps/prayer/templates/prayer/index.html
 msgid "Геолокация недоступна"
 msgstr "Geolokatsiya mavjud emas"
@@ -1949,9 +2272,14 @@ msgstr "Germaniya"
 msgid "Гинеколог"
 msgstr "Ginekolog"
 
-#: apps/core/tabs.py templates/base.html
+#: apps/core/tabs.py apps/social/templates/social/_hometabs.html
+#: templates/base.html
 msgid "Главная"
 msgstr "Bosh sahifa"
+
+#: apps/social/templates/social/_hometabs.html
+msgid "Главная или лента"
+msgstr "Bosh sahifa yoki lenta"
 
 #: apps/core/catalog.py
 msgid "Главное из исламского мира"
@@ -1965,15 +2293,35 @@ msgstr "Islom olamidagi asosiy voqealar — qisqa va lunda"
 msgid "Главный вопрос убеждения — отвечайте так, как верите."
 msgstr "Eʼtiqodning asosiy savoli — qanday ishonsangiz, shunday javob bering."
 
+#: static/js/chatlist.js
+msgid "Глобальный поиск"
+msgstr "Umumiy qidiruv"
+
+#: apps/tracker/templates/tracker/habit.html
+msgid "Год"
+msgstr "Yil"
+
+#: apps/chat/spaces.py
+msgid "Голосовая"
+msgstr "Ovozli"
+
+#: apps/chat/templates/chat/space.html
+msgid "Голосовая комната"
+msgstr "Ovozli xona"
+
 #: apps/chat/models.py
 msgid "Голосовое"
 msgstr "Ovozli xabar"
+
+#: apps/chat/msgops.py
+msgid "Голосовое и кружок изменить нельзя — удалите и запишите заново."
+msgstr "Ovozli va dumaloq videoni tahrirlab bo‘lmaydi — o‘chirib, qayta yozing."
 
 #: apps/chat/templates/chat/thread.html
 msgid "Голосовое или видеокружок: нажмите — переключить, удерживайте — записать"
 msgstr "Ovozli yoki video doira: bosing — almashtirish, bosib turing — yozish"
 
-#: apps/chat/events.py
+#: apps/chat/events.py static/js/chat.js
 msgid "Голосовое сообщение"
 msgstr "Ovozli xabar"
 
@@ -2014,6 +2362,11 @@ msgstr "Chet elga koʻchishga tayyorman"
 msgid "Готовность к переезду"
 msgstr "Koʻchishga tayyorlik"
 
+#: apps/chat/models.py apps/chat/templates/chat/folder_form.html
+#: apps/chat/templates/chat/space_board.html
+msgid "Готово"
+msgstr "Tayyor"
+
 #: apps/api/tglogin.py
 msgid "Готово! Вернитесь в приложение."
 msgstr "Tayyor! Ilovaga qayting."
@@ -2037,6 +2390,24 @@ msgstr "Juftning farzandlarini qabul qilishga tayyor"
 #: apps/nikah/templates/nikah/wizard.html
 msgid "Готовы принять детей партнёра?"
 msgstr "Juftning farzandlarini qabul qilishga tayyormisiz?"
+
+#: apps/tracker/templates/tracker/index.html
+msgid "Готовые"
+msgstr "Tayyorlari"
+
+#: apps/chat/templates/chat/folders.html
+msgid "Готовые папки"
+msgstr "Tayyor jildlar"
+
+#: apps/tracker/templates/tracker/board.html
+#: apps/tracker/templates/tracker/index.html
+#: apps/tracker/templates/tracker/templates.html
+msgid "Готовые привычки"
+msgstr "Tayyor odatlar"
+
+#: apps/tracker/templates/tracker/templates.html
+msgid "Готовые привычки —"
+msgstr "Tayyor odatlar —"
 
 #: apps/tracker/templates/tracker/index.html
 #: apps/tracker/templates/tracker/stats.html
@@ -2100,6 +2471,14 @@ msgstr "Guruh — umumiy chat: barcha a’zolar yozadi. Oila, jamoa, kursdoshlar
 msgid "Группы"
 msgstr "Guruhlar"
 
+#: apps/tracker/services.py
+msgid "Группы в чатах сейчас выключены."
+msgstr "Guruh chatlari hozir o‘chirilgan."
+
+#: apps/chat/folders.py
+msgid "Группы и каналы"
+msgstr "Guruhlar va kanallar"
+
 #: apps/nikah/choices.py
 msgid "Да"
 msgstr "Ha"
@@ -2129,9 +2508,25 @@ msgstr "Ha, qabul qilaman"
 msgid "Да, хочу детей"
 msgstr "Ha, farzand istayman"
 
-#: apps/chat/rooms.py apps/tracker/services.py
+#: apps/chat/spaces.py
+msgid "Дайте каналу название — хотя бы два знака."
+msgstr "Kanalga nom bering — kamida ikkita belgi."
+
+#: apps/chat/spaces.py
+msgid "Дайте категории название."
+msgstr "Toifaga nom bering."
+
+#: apps/chat/rooms.py apps/chat/spaces.py apps/tracker/services.py
 msgid "Дайте название — хотя бы два знака."
 msgstr "Nom bering — kamida ikki belgi."
+
+#: apps/chat/folders.py
+msgid "Дайте папке название."
+msgstr "Jildga nom bering."
+
+#: apps/chat/spaces.py
+msgid "Дайте роли название."
+msgstr "Rolga nom bering."
 
 #: apps/nikah/templates/nikah/wizard.html
 msgid "Далее"
@@ -2142,7 +2537,7 @@ msgid "Дания"
 msgstr "Daniya"
 
 #: apps/accounts/templates/accounts/public.html apps/api/views_content.py
-#: apps/core/views.py
+#: apps/market/models.py
 msgid "Даром"
 msgstr "Tekinga"
 
@@ -2158,13 +2553,25 @@ msgstr "Sana va vaqt"
 msgid "Дата указана неверно."
 msgstr "Sana noto‘g‘ri ko‘rsatilgan."
 
-#: apps/accounts/templates/accounts/profile.html
+#: static/js/photoedit.js
+msgid "Двигайте рамку и тяните за углы"
+msgstr "Ramkani suring va burchaklaridan torting"
+
+#: apps/core/templates/core/settings.html
 msgid "Двухшаговая защита"
 msgstr "Ikki bosqichli himoya"
+
+#: apps/chat/models.py
+msgid "Делаем"
+msgstr "Bajarilmoqda"
 
 #: apps/tracker/templates/tracker/index.html
 msgid "Дело на день"
 msgstr "Bir kunlik ish"
+
+#: apps/tracker/models.py apps/tracker/templates/tracker/index.html
+msgid "День"
+msgstr "Kunduz"
 
 #: apps/deals/models.py
 msgid "Деньги возвращены"
@@ -2244,18 +2651,39 @@ msgstr "Haqiqatni izlayotganlar uchun"
 msgid "Дневной лимит загрузки исчерпан ({v1} МБ в сутки). Попробуйте завтра."
 msgstr "Kunlik yuklash limiti tugadi (sutkasiga {v1} MB). Ertaga urinib ko‘ring."
 
+#: apps/chat/templates/chat/folders.html
+#, python-format
+msgid "До %(max)s папок"
+msgstr "%(max)s tagacha jild"
+
 #: apps/nikah/templates/nikah/wizard.html
 msgid "До ·"
 msgstr "Gacha ·"
 
+#: apps/chat/templates/chat/contacts.html apps/chat/templates/chat/folders.html
 #: apps/chat/templates/chat/room_info.html
-#: apps/tracker/templates/tracker/index.html
 msgid "Добавить"
 msgstr "Qo‘shish"
+
+#: apps/accounts/templates/accounts/accounts.html
+msgid "Добавить аккаунт"
+msgstr "Akkaunt qo‘shish"
 
 #: apps/accounts/templates/accounts/public.html
 msgid "Добавить в близкие друзья"
 msgstr "Yaqin do‘stlarga qo‘shish"
+
+#: apps/accounts/templates/accounts/public.html
+msgid "Добавить в контакты"
+msgstr "Kontaktlarga qo‘shish"
+
+#: static/js/chatlist.js
+msgid "Добавить в папку"
+msgstr "Jildga qo‘shish"
+
+#: static/js/chatlist.js
+msgid "Добавить в папку…"
+msgstr "Jildga qo‘shish…"
 
 #: apps/jobs/templates/jobs/create.html apps/jobs/templates/jobs/list.html
 msgid "Добавить вакансию"
@@ -2269,9 +2697,17 @@ msgstr "Tanlanganlarni qo‘shish"
 msgid "Добавить ещё"
 msgstr "Yana qo‘shish"
 
+#: apps/core/templates/core/settings.html
+msgid "Добавить ещё один и переключаться без выхода"
+msgstr "Yana bittasini qo‘shib, chiqmasdan almashish"
+
 #: apps/accounts/templates/accounts/profile.html
 msgid "Добавить или убрать — на странице человека."
 msgstr "Qo‘shish yoki olib tashlash — odamning sahifasida."
+
+#: apps/chat/templates/chat/space.html
+msgid "Добавить канал"
+msgstr "Kanal qo‘shish"
 
 #: apps/library/templates/library/add.html
 #: apps/library/templates/library/list.html
@@ -2281,6 +2717,10 @@ msgstr "Kitob qoʻshish"
 #: apps/library/templates/library/add.html
 msgid "Добавить книгу —"
 msgstr "Kitob qoʻshish —"
+
+#: apps/chat/templates/chat/contacts.html
+msgid "Добавить контакт"
+msgstr "Kontakt qo‘shish"
 
 #: apps/chat/templates/chat/room_info.html
 msgid "Добавить людей"
@@ -2308,7 +2748,6 @@ msgid "Добавить перевозку —"
 msgstr "Tashuv qoʻshish —"
 
 #: apps/tracker/templates/tracker/board.html
-#: apps/tracker/templates/tracker/index.html
 msgid "Добавить привычку"
 msgstr "Odat qo‘shish"
 
@@ -2320,6 +2759,10 @@ msgstr "Odat yoki ish qo‘shish"
 msgid "Добавить свидетеля"
 msgstr "Guvoh qoʻshish"
 
+#: apps/social/templates/social/feed.html
+msgid "Добавить сторис"
+msgstr "Stories qo‘shish"
+
 #: apps/nikah/templates/nikah/mine.html
 msgid "Добавить фото"
 msgstr "Surat qoʻshish"
@@ -2328,9 +2771,17 @@ msgstr "Surat qoʻshish"
 msgid "Добавить фото (JPG, PNG, до 10 МБ)"
 msgstr "Surat qoʻshish (JPG, PNG, 10 MB gacha)"
 
+#: apps/chat/templates/chat/folder_form.html
+msgid "Добавить чаты поимённо"
+msgstr "Chatlarni alohida qo‘shish"
+
 #: apps/tracker/views.py
 msgid "Добавлено."
 msgstr "Qo‘shildi."
+
+#: apps/tracker/views.py
+msgid "Добавлено. Время и цель можно поменять — нажмите на карандаш."
+msgstr "Qo‘shildi. Vaqt va maqsadni o‘zgartirish mumkin — qalamchani bosing."
 
 #: apps/chat/views_rooms.py
 #, python-brace-format
@@ -2341,22 +2792,46 @@ msgstr "Qo‘shildi: {n}"
 msgid "Добавлять участников могут владелец и админы."
 msgstr "A’zolarni egasi va adminlar qo‘sha oladi."
 
+#: apps/assistant/templates/assistant/index.html
+msgid "Добавь привычку: читать Коран 5 страниц каждый день, напоминание в 06:00"
+msgstr "Odat qo‘sh: har kuni Qur’ondan 5 sahifa o‘qish, eslatma 06:00 da"
+
+#: apps/social/services.py
+msgid "Добавьте видео."
+msgstr "Video qo‘shing."
+
 #: apps/nikah/templates/nikah/settings.html
 msgid "Добавьте махрама (отца, брата) — он будет видеть переписку в ваших чатах никяха и сможет писать. Так общение остаётся в рамках адаба."
 msgstr "Mahram (ota, aka-uka) qoʻshing — u nikoh chatlaringizdagi yozishmalarni koʻradi va yoza oladi. Shunda muloqot adab doirasida qoladi."
-
-#: apps/maps/templates/maps/map.html
-msgid "Добавьте первое место →"
-msgstr "Birinchi joyni qoʻshing →"
 
 #: apps/tracker/templates/tracker/board.html
 msgid "Добавьте первую общую привычку — её увидят все участники, а отмечать каждый будет сам."
 msgstr "Birinchi umumiy odatni qo‘shing — uni barcha ishtirokchilar ko‘radi, har kim o‘zi belgilaydi."
 
+#: apps/social/services.py
+msgid "Добавьте фото."
+msgstr "Rasm qo‘shing."
+
+#: apps/chat/templates/chat/contacts.html
+msgid "Добавьте человека по номеру — или нажмите «Добавить в контакты» в его профиле."
+msgstr "Odamni raqami bo‘yicha qo‘shing — yoki profilida «Kontaktlarga qo‘shish»ni bosing."
+
 #: apps/accounts/google.py apps/accounts/views.py
 #, python-brace-format
 msgid "Добро пожаловать, {v1}!"
 msgstr "Xush kelibsiz, {v1}!"
+
+#: apps/assistant/services.py
+msgid "Доброе утро"
+msgstr "Xayrli tong"
+
+#: apps/assistant/services.py
+msgid "Добрый вечер"
+msgstr "Xayrli kech"
+
+#: apps/assistant/services.py
+msgid "Добрый день"
+msgstr "Xayrli kun"
 
 #: templates/includes/pledge.html
 msgid "Договор перед Аллахом"
@@ -2381,6 +2856,20 @@ msgstr "Lavozim: dasturchi, haydovchi…"
 #: apps/core/i18n_data.py
 msgid "Дом и сад"
 msgstr "Uy va bogʻ"
+
+#: apps/chat/templates/chat/_space_side.html
+#: apps/chat/templates/chat/space.html
+#: apps/chat/templates/chat/space_board.html
+msgid "Доска задач"
+msgstr "Vazifalar doskasi"
+
+#: apps/chat/templates/chat/space_board.html
+msgid "Доска задач —"
+msgstr "Vazifalar doskasi —"
+
+#: apps/chat/models.py
+msgid "Доска задач: менять любые задачи"
+msgstr "Vazifalar doskasi: istalgan vazifani o‘zgartirish"
 
 #: apps/nikah/choices.py
 msgid "Достоверность"
@@ -2499,7 +2988,7 @@ msgid "Есть уточнение — на проверке у модерато
 msgstr "Aniqlashtirish bor — moderator tekshiruvida."
 
 #: apps/chat/templates/chat/_threads.html
-#: apps/chat/templates/chat/room_info.html apps/core/catalog.py
+#: apps/chat/templates/chat/room_info.html apps/chat/templates/chat/space.html
 msgid "Ещё"
 msgstr "Yana"
 
@@ -2589,12 +3078,12 @@ msgstr "Hayot va oila"
 msgid "Жирный"
 msgstr "Qalin"
 
-#: templates/admin/index.html
+#: apps/chat/templates/chat/space.html templates/admin/index.html
 msgid "Журнал действий"
 msgstr "Harakatlar jurnali"
 
 #: apps/accounts/templates/accounts/blocked.html
-#: apps/accounts/templates/accounts/profile.html
+#: apps/core/templates/core/settings.html
 msgid "Заблокированные"
 msgstr "Bloklanganlar"
 
@@ -2662,6 +3151,10 @@ msgstr "Surat yuklang yoki «Suratsiz»ni tanlang."
 msgid "Загрузка не найдена — начните заново."
 msgstr "Yuklash topilmadi — qaytadan boshlang."
 
+#: apps/social/templates/social/feed.html static/js/chat.js static/js/feed.js
+msgid "Загрузка…"
+msgstr "Yuklanmoqda…"
+
 #: apps/forum/templates/forum/list.html
 msgid "Задай вопрос — получи ответ. Знания с пониманием, сообща"
 msgstr "Savol bering — javob oling. Tushunib bilim, birgalikda"
@@ -2710,6 +3203,23 @@ msgstr "Buyurtmachi"
 msgid "Заказчик:"
 msgstr "Buyurtmachi:"
 
+#: static/js/chat.js static/js/chatlist.js
+msgid "Закрепить"
+msgstr "Qadash"
+
+#: apps/chat/folders.py
+#, python-brace-format
+msgid "Закрепить можно не больше {v1} чатов. Открепите один — или закрепляйте в своих папках, там ограничения нет."
+msgstr "Ko‘pi bilan {v1} ta chatni qadash mumkin. Bittasini olib tashlang — yoki o‘z jildlaringizda qadang, u yerda cheklov yo‘q."
+
+#: apps/chat/msgops.py
+msgid "Закреплять сообщения здесь могут только владелец и админы."
+msgstr "Bu yerda xabarlarni faqat egasi va adminlar qadashi mumkin."
+
+#: apps/chat/templates/chat/thread.html static/js/chat.js
+msgid "Закреплённое сообщение"
+msgstr "Qadalgan xabar"
+
 #: apps/core/templates/core/moderation.html
 msgid "Закрытые ответы (видит только модератор)"
 msgstr "Yopiq javoblar (faqat moderator koʻradi)"
@@ -2718,8 +3228,13 @@ msgstr "Yopiq javoblar (faqat moderator koʻradi)"
 msgid "Закрытый аурат: одежда, скрывающая тело, как положено шариатом"
 msgstr "Yopiq avrat: shariatga koʻra tanani yopadigan kiyim"
 
+#: apps/chat/templates/chat/space.html
+msgid "Закрытый — только этим ролям:"
+msgstr "Yopiq — faqat shu rollarga:"
+
+#: apps/chat/templates/chat/thread.html
 #: apps/core/templates/core/blocks/hero.html
-#: apps/nikah/templates/nikah/feed.html static/js/app.js
+#: apps/nikah/templates/nikah/feed.html
 msgid "Закрыть"
 msgstr "Yopish"
 
@@ -2735,17 +3250,49 @@ msgstr "Zakot"
 msgid "Заменить фото"
 msgstr "Suratni almashtirish"
 
+#: apps/tracker/templates/tracker/habit_form.html
+msgid "Заметка (необязательно)"
+msgstr "Izoh (ixtiyoriy)"
+
+#: apps/tracker/templates/tracker/habit.html
+msgid "Заметки"
+msgstr "Izohlar"
+
+#: apps/chat/templates/chat/_threads.html
+msgid "Заметки, ссылки и пересланное — только для вас"
+msgstr "Eslatmalar, havolalar va yuborilganlar — faqat siz uchun"
+
 #: apps/transport/templates/transport/trip.html
 msgid "Занять место"
 msgstr "Joy band qilish"
+
+#: apps/accounts/templates/accounts/public.html
+msgid "Записей пока нет."
+msgstr "Hozircha yozuvlar yo‘q."
+
+#: apps/accounts/templates/accounts/public.html
+msgid "Записи"
+msgstr "Yozuvlar"
+
+#: apps/core/catalog.py
+msgid "Записи людей и каналов, новое во всех разделах"
+msgstr "Odamlar va kanallar yozuvlari, barcha bo‘limlardagi yangiliklar"
 
 #: static/js/chat.js
 msgid "Запись голоса не поддерживается в этом браузере"
 msgstr "Bu brauzerda ovoz yozish qoʻllab-quvvatlanmaydi"
 
+#: apps/social/services.py
+msgid "Запись не найдена"
+msgstr "Yozuv topilmadi"
+
 #: static/js/chat.js
 msgid "Запись отменена"
 msgstr "Yozuv bekor qilindi"
+
+#: static/js/feed.js
+msgid "Запись появилась на вашей стене"
+msgstr "Yozuv devoringizda paydo bo‘ldi"
 
 #: apps/chat/services.py
 msgid "Запланированное сообщение не найдено"
@@ -2778,6 +3325,10 @@ msgstr "Bilganingizni toʻldiring. Qolganini foydalanuvchilar aniqlashtiradi."
 #: apps/nikah/templates/nikah/intro.html
 msgid "Заполнить анкету"
 msgstr "Anketa toʻldirish"
+
+#: apps/chat/templates/chat/room_info.html
+msgid "Запретить пересылку и копирование"
+msgstr "Yuborish va nusxalashni taqiqlash"
 
 #: apps/accounts/templates/accounts/reset_confirm.html
 msgid "Запросить ссылку"
@@ -2884,6 +3435,11 @@ msgstr "Qoʻngʻiroq rad etildi"
 msgid "Звук"
 msgstr "Ovoz"
 
+#: apps/chat/templates/chat/space_voice.html
+#, python-format
+msgid "Звук идёт напрямую между участниками и шифруется. В комнате до %(max)s человек; большие комнаты, демонстрация экрана и запись появятся после запуска на сервере."
+msgstr "Ovoz ishtirokchilar o‘rtasida to‘g‘ridan-to‘g‘ri uzatiladi va shifrlanadi. Xonada %(max)s kishigacha; katta xonalar, ekran namoyishi va yozib olish server ishga tushgach paydo bo‘ladi."
+
 #: apps/payments/providers.py
 msgid "Звёзды Telegram — из приложения, в 2 касания"
 msgstr "Telegram yulduzlari — ilovadan, 2 ta bosishda"
@@ -2900,6 +3456,10 @@ msgstr "Bu yerda mashina qidirilmoqda — muallifga yozing."
 msgid "Здесь ищут супруга, а не собеседника. Цель у всех одна — халяльная семья."
 msgstr "Bu yerda suhbatdosh emas, turmush oʻrtoq izlashadi. Hammaning maqsadi bitta — halol oila."
 
+#: static/js/mapx.js
+msgid "Здесь пока ничего нет"
+msgstr "Bu yerda hozircha hech narsa yo‘q"
+
 #: apps/market/templates/market/list.html
 msgid "Здесь пока пусто"
 msgstr "Hozircha bu yer boʻsh"
@@ -2912,11 +3472,8 @@ msgstr "Bu yerda ummat savollari paydo boʻladi — musofir fiqhidan madrasa tan
 msgid "Здесь появятся переписки с теми, с кем симпатия взаимна."
 msgstr "Bu yerda hamdardlik oʻzaro boʻlganlar bilan yozishmalar paydo boʻladi."
 
-#: apps/core/templates/core/feed.html
-msgid "Здесь скоро будет лента"
-msgstr "Bu yerda tez orada lenta boʻladi"
-
 #: apps/core/i18n_data.py apps/health/templates/health/index.html
+#: apps/tracker/services.py
 msgid "Здоровье"
 msgstr "Salomatlik"
 
@@ -2936,6 +3493,10 @@ msgstr "Javobni bilasizmi? Ulashing — bu ilm bilan sadaqa."
 msgid "Знакомства для брака — серьёзно"
 msgstr "Nikoh uchun tanishuv — jiddiy"
 
+#: apps/chat/templates/chat/folder_form.html
+msgid "Знакомства для никяха"
+msgstr "Nikoh uchun tanishuv"
+
 #: apps/nikah/templates/nikah/intro.html
 msgid "Знакомство для брака — по Корану и Сунне. Без харама, без случайных переписок, с уважением к сёстрам и братьям."
 msgstr "Nikoh uchun tanishuv — Qurʼon va Sunnatga koʻra. Haromsiz, tasodifiy yozishmalarsiz, opa-singil va aka-ukalarga hurmat bilan."
@@ -2949,6 +3510,10 @@ msgstr "Bilim · Hayot · Ish"
 msgid "Значок"
 msgstr "Belgi"
 
+#: apps/chat/templates/chat/space_new.html
+msgid "Значок (необязательно)"
+msgstr "Belgi (ixtiyoriy)"
+
 #: apps/core/templates/core/pages/salah.html apps/prayer/services.py
 msgid "Зухр"
 msgstr "Peshin"
@@ -2957,9 +3522,50 @@ msgstr "Peshin"
 msgid "ИИ"
 msgstr "SI"
 
+#: apps/assistant/services.py
+msgid "ИИ сейчас не ответил — попробуйте ещё раз."
+msgstr "SI javob bermadi — yana urinib ko‘ring."
+
+#: apps/assistant/services.py
+msgid "ИИ сейчас не ответил — попробуйте ещё раз. Проверьте название модели в настройках помощника."
+msgstr "SI javob bermadi — yana urinib ko‘ring. Yordamchi sozlamalarida model nomini tekshiring."
+
+#: apps/assistant/templates/assistant/index.html
+msgid "ИИ-помощник"
+msgstr "SI-yordamchi"
+
+#: apps/assistant/templates/assistant/index.html
+msgid "ИИ-помощник —"
+msgstr "SI-yordamchi —"
+
+#: apps/chat/models.py
+msgid "Идеи и задачи"
+msgstr "G‘oyalar va vazifalar"
+
+#: apps/chat/templates/chat/folder_form.html
+msgid "Из архива"
+msgstr "Arxivdan chiqarish"
+
 #: apps/chat/templates/chat/people.html
 msgid "Из ваших чатов"
 msgstr "Chatlaringizdan"
+
+#: apps/chat/folders.py
+msgid "Из группы или канала нужно выйти — кнопка «Выйти» в сведениях."
+msgstr "Guruh yoki kanaldan chiqish kerak — ma’lumotlardagi «Chiqish» tugmasi."
+
+#: apps/chat/msgops.py
+msgid "Из этого чата пересылать нельзя."
+msgstr "Bu chatdan yuborib bo‘lmaydi."
+
+#: apps/api/views_chat.py apps/chat/msgops.py
+#: apps/chat/templates/chat/_threads.html
+msgid "Избранное"
+msgstr "Saqlanganlar"
+
+#: static/js/chat.js
+msgid "Изменение сообщения"
+msgstr "Xabarni tahrirlash"
 
 #: apps/nikah/templates/nikah/edit.html
 msgid "Изменения текстов и фото проверит модератор — до проверки анкета скрыта из ленты. Остальное меняется сразу."
@@ -2971,6 +3577,10 @@ msgstr "Matn va surat oʻzgarishlarini moderator tekshiradi — tekshiruvgacha a
 msgid "Изменить"
 msgstr "Tahrirlash"
 
+#: static/js/feed.js
+msgid "Изменить запись"
+msgstr "Yozuvni tahrirlash"
+
 #: apps/transport/templates/transport/trip.html
 msgid "Изменить или скрыть"
 msgstr "O‘zgartirish yoki yashirish"
@@ -2979,9 +3589,26 @@ msgstr "O‘zgartirish yoki yashirish"
 msgid "Изменить может тот, кто добавил, или владелец трекера."
 msgstr "Qo‘shgan kishi yoki treker egasi o‘zgartira oladi."
 
+#: apps/chat/msgops.py
+msgid "Изменить можно только своё сообщение."
+msgstr "Faqat o‘z xabaringizni tahrirlash mumkin."
+
+#: static/js/chatlist.js
+msgid "Изменить папку"
+msgstr "Jildni tahrirlash"
+
 #: apps/accounts/templates/accounts/profile.html
 msgid "Изменить профиль"
 msgstr "Profilni o‘zgartirish"
+
+#: apps/chat/msgops.py
+#, python-brace-format
+msgid "Изменить сообщение можно в течение {v1} часов."
+msgstr "Xabarni {v1} soat ichida tahrirlash mumkin."
+
+#: apps/chat/templates/chat/folders.html
+msgid "Изменить состав и название"
+msgstr "Tarkib va nomni o‘zgartirish"
 
 #: apps/tracker/templates/tracker/habit_form.html
 msgid "Изменить —"
@@ -3008,6 +3635,7 @@ msgid "Имам"
 msgstr "Imom"
 
 #: apps/accounts/forms.py apps/accounts/models.py
+#: apps/chat/templates/chat/contacts.html
 msgid "Имя"
 msgstr "Ism"
 
@@ -3030,6 +3658,10 @@ msgstr "Foydalanuvchi nomi yoki telefon raqami"
 #: apps/accounts/templates/accounts/profile.html
 msgid "Имя пользователя — по нему вас находят"
 msgstr "Foydalanuvchi nomi — sizni shu orqali topishadi"
+
+#: apps/core/templates/core/settings.html
+msgid "Имя, фото, имя пользователя, номер"
+msgstr "Ism, rasm, foydalanuvchi nomi, raqam"
 
 #: apps/accounts/people.py
 msgid "Имя: латинские буквы, цифры и «_», от 4 до 32 знаков, первая — буква. Например: ali_2024"
@@ -3091,6 +3723,10 @@ msgstr "Qiziqishlar"
 msgid "Интересы · Никях"
 msgstr "Qiziqishlar · Nikoh"
 
+#: apps/chat/spaces.py
+msgid "Информация"
+msgstr "Ma’lumot"
+
 #: apps/maps/templates/maps/detail.html
 msgid "Информация верна?"
 msgstr "Maʼlumot toʻgʻrimi?"
@@ -3110,6 +3746,10 @@ msgstr "Eron"
 #: apps/accounts/templates/accounts/phone.html
 msgid "Искать знакомых по контактам можно после подтверждения своего номера."
 msgstr "Kontaktlar boʻyicha tanishlarni oʻz raqamingizni tasdiqlaganingizdan soʻng qidirish mumkin."
+
+#: apps/chat/templates/chat/folder_form.html
+msgid "Исключить чаты поимённо"
+msgstr "Chatlarni alohida chiqarib tashlash"
 
 #: apps/core/templates/core/pages/islam.html
 msgid "Искренне произнесённая шахада делает человека мусульманином. Но лучше сделать это в мечети или при знакомых мусульманах — так проще получить помощь и поддержку."
@@ -3135,6 +3775,7 @@ msgstr "Islomiy huquqshunos / maslahat"
 msgid "Испания"
 msgstr "Ispaniya"
 
+#: apps/chat/templates/chat/space_board.html
 #: apps/deals/templates/deals/detail.html
 msgid "Исполнитель"
 msgstr "Ijrochi"
@@ -3204,10 +3845,6 @@ msgstr "Italiya"
 msgid "Иша"
 msgstr "Xufton"
 
-#: apps/chat/templates/chat/contacts.html
-msgid "Ищем…"
-msgstr "Qidirilmoqda…"
-
 #: apps/nikah/templates/nikah/_swipecard.html
 #: apps/nikah/templates/nikah/detail.html
 msgid "Ищет жену"
@@ -3233,6 +3870,10 @@ msgstr "Mashina qidirmoqda"
 msgid "К никяху"
 msgstr "Nikohga"
 
+#: apps/chat/templates/chat/thread.html
+msgid "К последним сообщениям"
+msgstr "So‘nggi xabarlarga"
+
 #: apps/transport/services.py
 msgid "К сожалению, взять вас не получится."
 msgstr "Afsuski, sizni ola olmayman."
@@ -3248,6 +3889,10 @@ msgstr "Kabinet"
 #: apps/nikah/deck.py
 msgid "Кавказ"
 msgstr "Kavkaz"
+
+#: static/js/photoedit.js
+msgid "Кадр"
+msgstr "Kadr"
 
 #: apps/nikah/templates/nikah/intro.html
 msgid "Каждую анкету проверяет модератор. Телефоны, ссылки и ники в анкетах запрещены."
@@ -3272,6 +3917,10 @@ msgstr "Avvalgidek"
 #: apps/core/templates/core/settings.html
 msgid "Как в теме"
 msgstr "Mavzudagidek"
+
+#: apps/core/templates/core/settings.html
+msgid "Как вас видят: номер, время в сети, счётчики, группы"
+msgstr "Sizni qanday ko‘rishadi: raqam, tarmoqdagi vaqt, hisoblagichlar, guruhlar"
 
 #: apps/accounts/templates/accounts/profile.html
 msgid "Как видят"
@@ -3344,8 +3993,8 @@ msgid "Какие качества важны и чего точно не при
 msgstr "Qaysi fazilatlar muhim va nimani aniq qabul qilmaysiz. Kontakt yozish mumkin emas."
 
 #: apps/core/templates/core/settings.html
-msgid "Какие разделы держать под рукой внизу экрана на телефоне. Последняя кнопка — «Профиль» — всегда на месте."
-msgstr "Telefonda ekran pastida qaysi bo‘limlar qo‘l ostida tursin. Oxirgi tugma — «Profil» — doim joyida."
+msgid "Какие разделы держать под рукой внизу экрана на телефоне и в каком порядке. Сколько угодно: если кнопок больше пяти, панель листается. «Профиль» всегда на месте."
+msgstr "Telefon ekrani pastida qaysi bo‘limlar va qanday tartibda turishi. Istalgancha: tugmalar beshtadan ko‘p bo‘lsa, panel suriladi. «Profil» doim joyida."
 
 #: apps/nikah/templates/nikah/_swipecard.html
 #: apps/nikah/templates/nikah/detail.html
@@ -3382,19 +4031,26 @@ msgid "Канада"
 msgstr "Kanada"
 
 #: apps/chat/models.py apps/chat/templates/chat/room_new.html
+#: apps/social/services.py
 msgid "Канал"
 msgstr "Kanal"
+
+#: apps/chat/spaces.py
+msgid "Канал не найден"
+msgstr "Kanal topilmadi"
 
 #: apps/chat/templates/chat/room_new.html
 msgid "Канал — это лента: пишете вы и ваши админы, подписчики читают. Подходит мечети, учителю, магазину."
 msgstr "Kanal — bu lenta: siz va adminlaringiz yozasiz, obunachilar o‘qiydi. Masjid, ustoz, do‘kon uchun mos."
 
 #: apps/chat/models.py apps/chat/templates/chat/channels.html
+#: apps/chat/templates/chat/space.html
 msgid "Каналы"
 msgstr "Kanallar"
 
 #: apps/chat/templates/chat/_threads.html
 #: apps/chat/templates/chat/channels.html
+#: apps/social/templates/social/feed.html
 msgid "Каналы и группы"
 msgstr "Kanallar va guruhlar"
 
@@ -3402,15 +4058,23 @@ msgstr "Kanallar va guruhlar"
 msgid "Каналы и группы —"
 msgstr "Kanallar va guruhlar —"
 
+#: apps/chat/models.py
+msgid "Каналы и категории"
+msgstr "Kanallar va toifalar"
+
 #: apps/chat/templates/chat/channels.html
 msgid "Каналы мечетей, учителей и общин: объявления, уроки, новости. Подпишитесь и читайте в ilm4."
 msgstr "Masjidlar, ustozlar va jamoalar kanallari: e’lonlar, darslar, yangiliklar. Obuna bo‘ling va ilm4’da o‘qing."
+
+#: static/js/photoedit.js
+msgid "Карандаш"
+msgstr "Qalam"
 
 #: apps/health/models.py
 msgid "Кардиолог"
 msgstr "Kardiolog"
 
-#: apps/core/tabs.py
+#: apps/core/tabs.py apps/maps/templates/maps/map.html
 msgid "Карта"
 msgstr "Xarita"
 
@@ -3423,16 +4087,16 @@ msgid "Карта мира"
 msgstr "Xalqaro karta"
 
 #: apps/maps/templates/maps/map.html
-msgid "Карта халяль"
-msgstr "Halol xarita"
-
-#: apps/maps/templates/maps/map.html
 msgid "Карта халяль —"
 msgstr "Halol xarita —"
 
 #: apps/chat/templates/chat/room_new.html
 msgid "Картинка (необязательно)"
 msgstr "Rasm (ixtiyoriy)"
+
+#: apps/chat/templates/chat/spaces.html
+msgid "Каталог"
+msgstr "Katalog"
 
 #: apps/chat/templates/chat/people.html
 msgid "Каталог открытых каналов и групп"
@@ -3442,7 +4106,7 @@ msgstr "Ochiq kanal va guruhlar katalogi"
 msgid "Категории"
 msgstr "Toifalar"
 
-#: apps/api/views_content.py
+#: apps/api/views_content.py apps/chat/templates/chat/space.html
 msgid "Категория"
 msgstr "Toifa"
 
@@ -3454,10 +4118,6 @@ msgstr "Kafe / restoran"
 msgid "Кафе, магазины и отели рядом"
 msgstr "Yaqin atrofdagi kafe, doʻkon va mehmonxonalar"
 
-#: apps/maps/templates/maps/map.html
-msgid "Кафе, магазины, отели и врачи — на одной карте, рядом с вами"
-msgstr "Kafe, doʻkon, mehmonxona va shifokorlar — bitta xaritada, yoningizda"
-
 #: apps/core/templates/core/settings.html
 msgid "Клетка"
 msgstr "Katak"
@@ -3465,6 +4125,22 @@ msgstr "Katak"
 #: apps/api/views_content.py apps/health/templates/health/detail.html
 msgid "Клиника"
 msgstr "Klinika"
+
+#: apps/chat/templates/chat/spaces.html
+msgid "Клубы по интересам: в каждом — свои каналы для разговоров и объявлений, роли и свой ник."
+msgstr "Qiziqishlar bo‘yicha klublar: har birida suhbat va e’lonlar uchun kanallar, rollar va o‘z nikingiz bor."
+
+#: apps/core/catalog.py
+msgid "Клубы по интересам: каналы, роли, свой ник — как в Discord"
+msgstr "Qiziqishlar bo‘yicha klublar: kanallar, rollar, o‘z nik — Discord kabi"
+
+#: apps/assistant/templates/assistant/index.html
+msgid "Ключ API"
+msgstr "API kaliti"
+
+#: apps/assistant/services.py
+msgid "Ключ API не подошёл — проверьте его в настройках помощника."
+msgstr "API kaliti mos kelmadi — yordamchi sozlamalarida tekshiring."
 
 #: apps/library/templates/library/list.html
 msgid "Книг пока нет"
@@ -3474,7 +4150,7 @@ msgstr "Hozircha kitoblar yoʻq"
 msgid "Книга отправлена на модерацию."
 msgstr "Kitob moderatsiyaga yuborildi."
 
-#: apps/core/i18n_data.py apps/core/publications.py
+#: apps/core/i18n_data.py apps/core/publications.py apps/core/tabs.py
 msgid "Книги"
 msgstr "Kitoblar"
 
@@ -3486,13 +4162,13 @@ msgstr "Rivojlanish uchun kitoblar: bepul va pullik, darhol kirish bilan"
 msgid "Книги по акыде, фикху, истории"
 msgstr "Aqida, fiqh, tarix boʻyicha kitoblar"
 
-#: apps/core/templates/core/settings.html
-msgid "Кнопка"
-msgstr "Tugma"
-
 #: apps/tracker/templates/tracker/habit_form.html
 msgid "Когда"
 msgstr "Qachon"
+
+#: apps/accounts/templates/accounts/profile.html
+msgid "Когда ваше сообщение пересылают, рядом стоит ваше имя. «Никто» — имя останется, но перейти по нему в ваш профиль будет нельзя."
+msgstr "Xabaringiz yuborilganda yonida ismingiz turadi. «Hech kim» — ism qoladi, lekin u orqali profilingizga o‘tib bo‘lmaydi."
 
 #: apps/nikah/templates/nikah/edit.html apps/nikah/templates/nikah/feed.html
 msgid "Когда готовы к никяху"
@@ -3509,10 +4185,6 @@ msgstr "Ikkalasi ham qiziqish bildirganda — juftlik shu yerda paydo boʻladi."
 #: apps/api/views_content.py
 msgid "Кого беру"
 msgstr "Kimlarni olaman"
-
-#: apps/accounts/templates/accounts/profile.html
-msgid "Кого вы заблокировали"
-msgstr "Kimlarni bloklagansiz"
 
 #: apps/nikah/bot.py
 #, python-brace-format
@@ -3543,9 +4215,40 @@ msgstr "ilm4 komissiyasi ("
 msgid "Комиссия платформы —"
 msgstr "Platforma komissiyasi —"
 
+#: apps/chat/templates/chat/post.html
+#: apps/social/templates/social/_comments.html
+msgid "Комментариев пока нет — напишите первым."
+msgstr "Hozircha izohlar yo‘q — birinchi bo‘lib yozing."
+
+#: apps/chat/templates/chat/_msg.html apps/chat/templates/chat/post.html
 #: apps/maps/templates/maps/detail.html
 msgid "Комментарии"
 msgstr "Izohlar"
+
+#: apps/chat/templates/chat/room_info.html
+msgid "Комментарии под постами"
+msgstr "Postlar ostida izohlar"
+
+#: apps/chat/templates/chat/post.html
+msgid "Комментарии —"
+msgstr "Izohlar —"
+
+#: apps/chat/templates/chat/post.html
+#: apps/social/templates/social/_comments.html
+msgid "Комментарий"
+msgstr "Izoh"
+
+#: apps/social/services.py
+msgid "Комментарий пустой."
+msgstr "Izoh bo‘sh."
+
+#: apps/chat/templates/chat/_msg.html static/js/chat.js
+msgid "Комментировать"
+msgstr "Izoh yozish"
+
+#: apps/chat/msgops.py
+msgid "Комментировать могут подписчики канала."
+msgstr "Kanal obunachilari izoh yoza oladi."
 
 #: apps/api/views_content.py
 msgid "Компания"
@@ -3559,6 +4262,11 @@ msgstr "Kimga tegishli"
 msgid "Контакт"
 msgstr "Kontakt"
 
+#: apps/chat/views.py
+#, python-brace-format
+msgid "Контакт добавлен: {name}"
+msgstr "Kontakt qo‘shildi: {name}"
+
 #: apps/market/templates/market/detail.html
 msgid "Контакт продавца"
 msgstr "Sotuvchi kontakti"
@@ -3571,11 +4279,16 @@ msgstr "Ish beruvchi kontakti"
 msgid "Контакт соискателя"
 msgstr "Ish izlovchi kontakti"
 
+#: apps/chat/templates/chat/contacts.html
+msgid "Контактов пока нет"
+msgstr "Hozircha kontaktlar yo‘q"
+
 #: apps/chat/templates/chat/people.html
 msgid "Контактов пока нет: здесь появятся люди, с которыми вы переписывались."
 msgstr "Hozircha kontaktlar yo‘q: bu yerda siz yozishgan odamlar paydo bo‘ladi."
 
-#: apps/chat/templates/chat/people.html apps/maps/templates/maps/detail.html
+#: apps/chat/templates/chat/_threads.html
+#: apps/chat/templates/chat/contacts.html apps/chat/templates/chat/people.html
 msgid "Контакты"
 msgstr "Kontaktlar"
 
@@ -3599,15 +4312,24 @@ msgstr "Bu hudud uchun kontaktlar tez orada paydo boʻladi"
 msgid "Контакты собраны из открытых источников и могут устареть — проверяйте на официальных сайтах. Помощь УВКБ ООН и посольств бесплатна: не платите посредникам."
 msgstr "Kontaktlar ochiq manbalardan olingan va eskirgan boʻlishi mumkin — rasmiy saytlarda tekshiring. BMT QOQK va elchixonalar yordami bepul: vositachilarga pul toʻlamang."
 
+#: apps/chat/templates/chat/contacts.html
+msgid "Контакты —"
+msgstr "Kontaktlar —"
+
 #: apps/nikah/choices.py
 msgid "Контакты — только внутри"
 msgstr "Kontaktlar — faqat ichkarida"
+
+#: static/js/photoedit.js
+msgid "Контраст"
+msgstr "Kontrast"
 
 #: apps/nikah/templates/nikah/wizard.html
 msgid "Конфиденциально: эти ответы видит только модератор, другим участникам они не показываются."
 msgstr "Maxfiy: bu javoblarni faqat moderator koʻradi, boshqa ishtirokchilarga koʻrsatilmaydi."
 
-#: apps/nikah/choices.py
+#: apps/accounts/templates/accounts/profile.html
+#: apps/core/templates/core/settings.html apps/nikah/choices.py
 msgid "Конфиденциальность"
 msgstr "Maxfiylik"
 
@@ -3626,6 +4348,7 @@ msgid "Копировать текст"
 msgstr "Matnni nusxalash"
 
 #: apps/nikah/templates/nikah/detail.html apps/nikah/templates/nikah/edit.html
+#: apps/tracker/services.py
 msgid "Коран"
 msgstr "Qurʼon"
 
@@ -3641,6 +4364,14 @@ msgstr "Qurʼon, «Al-Isro» surasi, 17:34"
 msgid "Коран:"
 msgstr "Qurʼon:"
 
+#: apps/core/catalog.py
+msgid "Короткие вертикальные видео"
+msgstr "Qisqa vertikal videolar"
+
+#: apps/social/services.py
+msgid "Короткие видео скоро появятся."
+msgstr "Qisqa videolar tez orada paydo bo‘ladi."
+
 #: apps/chat/templates/chat/room_info.html
 msgid "Короткий адрес вида ilm4.com/c/имя — чат появится в каталоге"
 msgstr "ilm4.com/c/nom ko‘rinishidagi qisqa manzil — chat katalogda paydo bo‘ladi"
@@ -3648,6 +4379,11 @@ msgstr "ilm4.com/c/nom ko‘rinishidagi qisqa manzil — chat katalogda paydo bo
 #: apps/core/templates/core/pages/rules.html
 msgid "Коротко, пока платформа строится: уважение к людям, никаких мошеннических схем и запрещённого контента; спорные ситуации разбирает администрация."
 msgstr "Qisqasi, platforma qurilayotgan paytda: odamlarga hurmat, firibgarlik sxemalari va taqiqlangan kontent yoʻq; munozarali holatlarni maʼmuriyat koʻrib chiqadi."
+
+#: apps/social/services.py
+#, python-brace-format
+msgid "Короткое видео — до {v1} секунд."
+msgstr "Qisqa video — {v1} soniyagacha."
 
 #: apps/core/templates/core/pages/salah.html
 msgid "Короткое сидение"
@@ -3658,7 +4394,7 @@ msgid "Корректировка"
 msgstr "Tuzatish"
 
 #: apps/accounts/templates/accounts/profile.html apps/core/i18n_data.py
-#: apps/nikah/templates/nikah/mine.html
+#: apps/core/templates/core/settings.html
 msgid "Кошелёк"
 msgstr "Hamyon"
 
@@ -3687,6 +4423,7 @@ msgid "Круги"
 msgstr "Doiralar"
 
 #: apps/accounts/templates/accounts/profile.html
+#: apps/social/templates/social/feed.html
 msgid "Кто видит"
 msgstr "Kim ko‘radi"
 
@@ -3698,17 +4435,21 @@ msgstr "Siz kimsiz?"
 msgid "Кто знает ваш номер, найдёт вас в поиске чатов. Сам номер при этом не показывается."
 msgstr "Raqamingizni bilgan kishi sizni chat qidiruvida topadi. Raqamning o‘zi ko‘rsatilmaydi."
 
-#: apps/chat/templates/chat/contacts.html
-msgid "Кто из ваших контактов уже в ilm4 — как в Telegram."
-msgstr "Kontaktlaringizdan kim allaqachon ilm4 da — xuddi Telegramdagidek."
-
-#: apps/accounts/templates/accounts/profile.html
-msgid "Кто из контактов уже на ilm4"
-msgstr "Kontaktlardan kim allaqachon ilm4 da"
-
 #: apps/chat/templates/chat/people.html
 msgid "Кто из телефонной книги уже на ilm4"
 msgstr "Telefon kitobidan kim allaqachon ilm4 da"
+
+#: apps/assistant/templates/assistant/index.html
+msgid "Кто мне написал и что у меня не прочитано?"
+msgstr "Menga kim yozdi va nimalar o‘qilmagan?"
+
+#: apps/assistant/templates/assistant/index.html
+msgid "Кто мне написал?"
+msgstr "Menga kim yozdi?"
+
+#: static/js/feed.js
+msgid "Кто смотрел"
+msgstr "Kim ko‘rdi"
 
 #: apps/nikah/services.py
 msgid "Кто-то проявил интерес к вашей анкете никяха"
@@ -3772,21 +4513,26 @@ msgstr "Lotin harflari, raqamlar va «_», kamida 4 belgi, birinchisi — harf. 
 msgid "Латинские буквы, цифры и «_», от 4 знаков. По этому адресу канал находят и делятся им."
 msgstr "Lotin harflari, raqamlar va «_», kamida 4 belgi. Kanal shu manzil orqali topiladi va ulashiladi."
 
-#: apps/core/templates/core/feed.html apps/nikah/templates/nikah/_base.html
+#: apps/core/tabs.py apps/nikah/templates/nikah/_base.html
+#: apps/social/templates/social/_hometabs.html
 msgid "Лента"
 msgstr "Lenta"
-
-#: apps/core/catalog.py
-msgid "Лента · бета"
-msgstr "Lenta · beta"
 
 #: apps/chat/templates/chat/people.html
 msgid "Лента для мечети, учителя, магазина"
 msgstr "Masjid, ustoz, do‘kon uchun lenta"
 
-#: apps/core/templates/core/feed.html
+#: apps/social/templates/social/feed.html
+msgid "Лента пока пустая"
+msgstr "Lenta hozircha bo‘sh"
+
+#: apps/social/templates/social/feed.html
 msgid "Лента —"
 msgstr "Lenta —"
+
+#: apps/tracker/services.py
+msgid "Лечь до 23:00"
+msgstr "23:00 gacha yotish"
 
 #: apps/refugee/models.py
 msgid "Ливан"
@@ -3808,7 +4554,7 @@ msgstr "Qiblaga yuzlanib — Makkadagi Kaʼba tomonga"
 msgid "Личное, внешность, семья, религия"
 msgstr "Shaxsiy, tashqi koʻrinish, oila, din"
 
-#: apps/chat/models.py
+#: apps/chat/folders.py apps/chat/models.py
 msgid "Личные"
 msgstr "Shaxsiy"
 
@@ -3817,8 +4563,12 @@ msgid "Личные данные"
 msgstr "Shaxsiy maʼlumotlar"
 
 #: apps/core/catalog.py
-msgid "Личные сообщения"
-msgstr "Shaxsiy xabarlar"
+msgid "Личные сообщения, группы и каналы"
+msgstr "Shaxsiy xabarlar, guruhlar va kanallar"
+
+#: apps/chat/templates/chat/_space_side.html
+msgid "Личные чаты"
+msgstr "Shaxsiy chatlar"
 
 #: apps/chat/models.py
 msgid "Личный"
@@ -3890,11 +4640,16 @@ msgstr "Manhaj / yoʻnalish"
 msgid "Манхадж: {v1}"
 msgstr "Manhaj: {v1}"
 
-#: apps/core/tabs.py apps/core/views.py apps/market/templates/market/form.html
+#: static/js/photoedit.js
+msgid "Маркер"
+msgstr "Marker"
+
+#: apps/core/tabs.py apps/market/templates/market/form.html
+#: apps/social/services.py
 msgid "Маркет"
 msgstr "Bozor"
 
-#: apps/maps/templates/maps/detail.html
+#: apps/maps/templates/maps/detail.html static/js/mapx.js
 msgid "Маршрут"
 msgstr "Yoʻnalish"
 
@@ -3925,6 +4680,15 @@ msgstr "Media"
 #: apps/jobs/models.py
 msgid "Медицина"
 msgstr "Tibbiyot"
+
+#: apps/chat/templates/chat/room_info.html
+msgid "Медленный режим"
+msgstr "Sekin rejim"
+
+#: apps/chat/services.py
+#, python-brace-format
+msgid "Медленный режим: следующее сообщение — через {v1} с."
+msgstr "Sekin rejim: keyingi xabar {v1} s dan keyin."
 
 #: apps/refugee/models.py
 msgid "Международная организация"
@@ -3962,6 +4726,10 @@ msgstr "Chora koʻrildi: eʼlon olib tashlandi."
 msgid "Мест"
 msgstr "Joylar"
 
+#: apps/maps/templates/maps/map.html static/js/mapx.js
+msgid "Мест:"
+msgstr "Joylar:"
+
 #: apps/api/views_content.py
 msgid "Места"
 msgstr "Joylar"
@@ -3991,6 +4759,10 @@ msgstr "Hisoblash usuli"
 msgid "Мечети, учителя, общины: объявления, уроки и новости в одном месте"
 msgstr "Masjidlar, ustozlar, jamoalar: e’lonlar, darslar va yangiliklar bir joyda"
 
+#: apps/maps/templates/maps/map.html
+msgid "Мечети, халяль-кафе, магазины, мясные лавки и отели на карте — рядом с вами."
+msgstr "Masjidlar, halol kafelar, do‘konlar, go‘sht do‘konlari va mehmonxonalar xaritada — yoningizda."
+
 #: apps/maps/models.py
 msgid "Мечеть"
 msgstr "Masjid"
@@ -4004,6 +4776,10 @@ msgstr "Yaqin masjid"
 msgid "Мечеть, имам и братья или сёстры рядом помогут учиться дальше. Вопросы можно задать и у нас на форуме."
 msgstr "Yaqin atrofdagi masjid, imom va aka-uka yoki opa-singillar keyingi oʻqishga yordam beradi. Savollarni forumimizda ham berish mumkin."
 
+#: apps/maps/templates/maps/map.html
+msgid "Мечеть, кафе, адрес…"
+msgstr "Masjid, kafe, manzil…"
+
 #: apps/maps/templates/maps/add.html
 msgid "Мечеть, кафе, магазин, отель, лавка — всё, что поможет братьям и сёстрам. Место проверит модератор."
 msgstr "Masjid, kafe, doʻkon, mehmonxona, doʻkoncha — aka-uka va opa-singillarga yordam beradigan hamma narsa. Joyni moderator tekshiradi."
@@ -4016,6 +4792,7 @@ msgstr "Migratsiya"
 msgid "Миграция —"
 msgstr "Migratsiya —"
 
+#: apps/chat/templates/chat/space_voice.html
 #: apps/chat/templates/chat/thread.html
 msgid "Микрофон"
 msgstr "Mikrofon"
@@ -4034,7 +4811,11 @@ msgstr "Menga"
 msgid "Многожёнство"
 msgstr "Koʻp xotinlilik"
 
-#: apps/core/templates/core/includes/staff_bar.html
+#: apps/assistant/templates/assistant/index.html
+msgid "Модель (можно не трогать)"
+msgstr "Model (tegmasangiz ham bo‘ladi)"
+
+#: apps/chat/models.py apps/core/templates/core/includes/staff_bar.html
 msgid "Модератор"
 msgstr "Moderator"
 
@@ -4049,6 +4830,10 @@ msgstr "Moderator yozishma va shartlarni oʻrganib, qaror qabul qiladi: ijrochig
 #: templates/includes/report.html
 msgid "Модератор сможет прочитать последние сообщения этого чата — только по этой жалобе."
 msgstr "Moderator faqat shu shikoyat boʻyicha bu chatning oxirgi xabarlarini oʻqiy oladi."
+
+#: apps/chat/spaces.py
+msgid "Модераторы"
+msgstr "Moderatorlar"
 
 #: apps/core/templates/core/moderation.html templates/admin/base_site.html
 #: templates/base.html
@@ -4067,9 +4852,18 @@ msgstr "Moderatsiya —"
 msgid "Можно включить или выключить позже. Людей позовёте ссылкой — она появится на странице трекера."
 msgstr "Keyinroq yoqish yoki o‘chirish mumkin. Odamlarni havola orqali chaqirasiz — u treker sahifasida paydo bo‘ladi."
 
+#: apps/core/templates/core/settings.html
+msgid "Можно добавить"
+msgstr "Qo‘shish mumkin"
+
 #: apps/core/templates/core/pages/islam.html
 msgid "Можно ли принять ислам одному, без свидетелей?"
 msgstr "Islomni yolgʻiz, guvohlarsiz qabul qilish mumkinmi?"
+
+#: apps/chat/folders.py
+#, python-brace-format
+msgid "Можно создать не больше {v1} папок."
+msgstr "Ko‘pi bilan {v1} ta jild yaratish mumkin."
 
 #: apps/nikah/templates/nikah/interests.html
 msgid "Мои"
@@ -4084,6 +4878,10 @@ msgstr "Mening eʼlonlarim"
 msgid "Мои объявления —"
 msgstr "Mening eʼlonlarim —"
 
+#: apps/chat/templates/chat/folders.html
+msgid "Мои папки"
+msgstr "Mening jildlarim"
+
 #: apps/accounts/templates/accounts/profile.html
 #: apps/core/templates/core/my_edit.html
 #: apps/core/templates/core/my_publications.html
@@ -4093,6 +4891,20 @@ msgstr "Mening nashrlarim"
 #: apps/core/templates/core/my_publications.html
 msgid "Мои публикации —"
 msgstr "Mening nashrlarim —"
+
+#: apps/chat/templates/chat/_space_side.html
+#: apps/chat/templates/chat/spaces.html apps/social/templates/social/feed.html
+msgid "Мои сообщества"
+msgstr "Mening hamjamiyatlarim"
+
+#: apps/accounts/templates/accounts/profile.html
+#: apps/core/templates/core/settings.html
+msgid "Мой аккаунт"
+msgstr "Mening akkauntim"
+
+#: apps/chat/templates/chat/space.html
+msgid "Мой ник здесь"
+msgstr "Bu yerdagi nikim"
 
 #: apps/chat/templates/chat/thread.html
 msgid "Моноширинный"
@@ -4113,6 +4925,14 @@ msgstr "Firibgarlik, oldindan toʻlov soʻrashadi"
 #: apps/nikah/templates/nikah/mine.html
 msgid "Моя анкета · Никях"
 msgstr "Mening anketam · Nikoh"
+
+#: apps/social/templates/social/feed.html
+msgid "Моя история"
+msgstr "Mening hikoyam"
+
+#: apps/social/templates/social/feed.html
+msgid "Моя стена"
+msgstr "Mening devorim"
 
 #: apps/prayer/templates/prayer/index.html apps/prayer/views.py
 msgid "Моё местоположение"
@@ -4185,6 +5005,10 @@ msgstr "Balansda:"
 msgid "На главную"
 msgstr "Bosh sahifaga"
 
+#: apps/chat/spaces.py
+msgid "На доске слишком много задач — удалите готовые."
+msgstr "Doskada vazifalar juda ko‘p — tayyorlarini o‘chiring."
+
 #: apps/nikah/templates/nikah/how.html
 msgid "На каждом показе — ID и время. Утечка сразу указывает на источник: вечная блокировка."
 msgstr "Har bir koʻrsatishda ID va vaqt bor. Tarqalish darhol manbani koʻrsatadi: abadiy bloklash."
@@ -4192,6 +5016,10 @@ msgstr "Har bir koʻrsatishda ID va vaqt bor. Tarqalish darhol manbani koʻrsata
 #: apps/core/models.py
 msgid "На модерации"
 msgstr "Moderatsiyada"
+
+#: apps/accounts/views.py
+msgid "На одном устройстве — не больше трёх аккаунтов."
+msgstr "Bitta qurilmada ko‘pi bilan uchta akkaunt."
 
 #: apps/api/views_pubs.py apps/core/my_views.py
 msgid "На проверке"
@@ -4205,9 +5033,21 @@ msgstr "Moderator tekshiruvida"
 msgid "На сайт"
 msgstr "Saytga"
 
+#: static/js/feed.js
+msgid "На своей стене"
+msgstr "O‘z devorimda"
+
 #: apps/api/views_account.py apps/core/my_views.py
 msgid "На себя жаловаться не нужно."
 msgstr "Oʻzingiz ustidan shikoyat qilish shart emas."
+
+#: apps/assistant/services.py
+msgid "На сегодня бесплатные сообщения закончились. Завтра будут новые — или добавьте свой ключ."
+msgstr "Bugungi bepul xabarlar tugadi. Ertaga yangilari bo‘ladi — yoki o‘z kalitingizni qo‘shing."
+
+#: apps/assistant/templates/assistant/index.html
+msgid "На сегодня бесплатные сообщения закончились. Завтра будут новые — или подключите свой ИИ ниже."
+msgstr "Bugungi bepul xabarlar tugadi. Ertaga yangilari bo‘ladi — yoki quyida o‘z SI ni ulang."
 
 #: apps/api/views_pubs.py apps/core/decorators.py
 msgid "На сегодня лимит публикаций исчерпан — защита от спама. Завтра можно снова."
@@ -4233,6 +5073,15 @@ msgstr "Nimaga sarflash"
 msgid "На чём держится"
 msgstr "Nima asosida faoliyat yuritadi"
 
+#: apps/chat/spaces.py
+msgid "На это у вас нет прав в сообществе."
+msgstr "Hamjamiyatda bunga huquqingiz yo‘q."
+
+#: apps/accounts/templates/accounts/accounts.html
+#, python-format
+msgid "На этом устройстве можно держать до %(max)s аккаунтов и переключаться между ними без пароля — как в Telegram."
+msgstr "Bu qurilmada %(max)s tagacha akkaunt saqlab, ular o‘rtasida parolsiz almashish mumkin — Telegramdagi kabi."
+
 #: apps/tracker/templates/tracker/index.html
 msgid "На этот день ничего не запланировано"
 msgstr "Bu kunga hech narsa rejalashtirilmagan"
@@ -4241,9 +5090,21 @@ msgstr "Bu kunga hech narsa rejalashtirilmagan"
 msgid "Над Троном, над небесами — как Он описал Себя"
 msgstr "Arsh ustida, osmonlar uzra — Oʻzini qanday vasf etgan boʻlsa"
 
+#: static/js/photoedit.js
+msgid "Надпись можно двигать пальцем"
+msgstr "Yozuvni barmoq bilan surish mumkin"
+
+#: apps/chat/templates/chat/space_voice.html
+msgid "Нажмите «Войти» — понадобится доступ к микрофону."
+msgstr "«Kirish»ni bosing — mikrofonga ruxsat kerak bo‘ladi."
+
 #: apps/accounts/templates/accounts/phone.html
 msgid "Нажмите кнопку ниже — откроется наш бот в Telegram."
 msgstr "Quyidagi tugmani bosing — Telegramda botimiz ochiladi."
+
+#: apps/social/templates/social/saved.html
+msgid "Нажмите на закладку под записью — она появится здесь. Это видите только вы."
+msgstr "Yozuv ostidagi xatcho‘pni bosing — u shu yerda paydo bo‘ladi. Buni faqat siz ko‘rasiz."
 
 #: apps/maps/templates/maps/add.html
 msgid "Нажмите на карту или перетащите метку — координаты заполнятся сами."
@@ -4258,26 +5119,42 @@ msgid "Нажмите ☆ на анкете — она появится здес
 msgstr "Anketada ☆ ni bosing — u shu yerda paydo boʻladi. Faqat siz koʻrasiz."
 
 #: apps/accounts/templates/accounts/public.html
-#: apps/chat/templates/chat/room_info.html
-#: apps/forum/templates/forum/blocks/recent.html
+#: apps/chat/templates/chat/folder_form.html
+#: apps/chat/templates/chat/folders.html
 msgid "Назад"
 msgstr "Orqaga"
 
+#: apps/chat/templates/chat/_threads.html
+msgid "Назад ко всем чатам"
+msgstr "Barcha chatlarga qaytish"
+
+#: apps/chat/templates/chat/folder_form.html
 #: apps/chat/templates/chat/room_info.html
 #: apps/chat/templates/chat/room_new.html
-#: apps/library/templates/library/add.html
 msgid "Название"
 msgstr "Nomi"
+
+#: apps/assistant/services.py
+msgid "Название модели — латинские буквы, цифры, точки и дефисы."
+msgstr "Model nomi — lotin harflari, raqamlar, nuqta va chiziqchalar."
+
+#: apps/chat/templates/chat/folder_form.html
+msgid "Название папки"
+msgstr "Jild nomi"
 
 #: apps/services/views.py
 msgid "Название, описание и контакт обязательны."
 msgstr "Nomi, tavsif va kontakt majburiy."
 
+#: apps/chat/templates/chat/space.html
+msgid "Название, описание, значок"
+msgstr "Nom, tavsif, belgi"
+
 #: apps/chat/templates/chat/channels.html
 msgid "Название, тема или @имя"
 msgstr "Nomi, mavzu yoki @nom"
 
-#: apps/chat/rooms.py
+#: apps/chat/rooms.py apps/chat/spaces.py
 msgid "Назначать админов может только владелец."
 msgstr "Adminlarni faqat egasi tayinlaydi."
 
@@ -4288,6 +5165,10 @@ msgstr "Topildi:"
 #: apps/chat/templates/chat/people.html
 msgid "Найдены"
 msgstr "Topildi"
+
+#: apps/assistant/templates/assistant/index.html
+msgid "Найди халяль-кафе в Ташкенте"
+msgstr "Toshkentda halol kafe top"
 
 #: apps/core/templates/core/pages/islam.html
 msgid "Найдите общину."
@@ -4301,9 +5182,16 @@ msgstr "Odamni @nom yoki raqam orqali toping — yoki e’lon muallifiga yozing.
 msgid "Найдите человека по @имени или по номеру — и сразу пишите. Знакомые из ваших чатов — ниже."
 msgstr "Odamni @nom yoki raqam orqali toping — va darhol yozing. Chatlaringizdagi tanishlar — pastda."
 
-#: apps/chat/templates/chat/channels.html
+#: apps/core/catalog.py
+msgid "Найдёт место, подскажет намаз, заведёт привычку и встречу"
+msgstr "Joy topadi, namoz vaqtini aytadi, odat va uchrashuv qo‘shadi"
+
 #: apps/chat/templates/chat/contacts.html
-#: apps/health/templates/health/index.html
+msgid "Найдётся только тот, кто подтвердил номер и разрешил находить себя по нему. Сам номер нигде не показывается."
+msgstr "Faqat raqamini tasdiqlagan va u orqali topilishga ruxsat bergan odam topiladi. Raqamning o‘zi hech qayerda ko‘rsatilmaydi."
+
+#: apps/chat/templates/chat/channels.html
+#: apps/health/templates/health/index.html apps/jobs/templates/jobs/list.html
 msgid "Найти"
 msgstr "Topish"
 
@@ -4314,20 +5202,6 @@ msgstr "Sizni raqam orqali tasdiqlangandan keyin topish mumkin:"
 #: apps/prayer/templates/prayer/index.html
 msgid "Найти город…"
 msgstr "Shahar topish…"
-
-#: apps/accounts/templates/accounts/profile.html
-#: apps/chat/templates/chat/_threads.html
-#: apps/chat/templates/chat/contacts.html
-msgid "Найти знакомых"
-msgstr "Tanishlarni topish"
-
-#: apps/chat/templates/chat/people.html
-msgid "Найти знакомых из контактов"
-msgstr "Kontaktlardan tanishlarni topish"
-
-#: apps/chat/templates/chat/contacts.html
-msgid "Найти знакомых —"
-msgstr "Tanishlarni topish —"
 
 #: apps/chat/templates/chat/_threads.html apps/chat/templates/chat/people.html
 msgid "Найти каналы и группы"
@@ -4340,6 +5214,10 @@ msgstr "Yaqin masjidni topish"
 #: apps/core/templates/core/catalog.html
 msgid "Найти сервис: намаз, работа, врач…"
 msgstr "Xizmat topish: namoz, ish, shifokor…"
+
+#: apps/chat/templates/chat/spaces.html
+msgid "Найти сообщество"
+msgstr "Hamjamiyat topish"
 
 #: apps/chat/templates/chat/_threads.html
 msgid "Найти человека"
@@ -4371,9 +5249,9 @@ msgstr "Qalbdagi niyat: qaysi namozni ado etayotganingiz"
 msgid "Намерение и слова «Бисмиллях»"
 msgstr "Niyat va «Bismilloh» soʻzlari"
 
-#: apps/chat/templates/chat/contacts.html
 #: apps/market/templates/market/detail.html
 #: apps/transport/templates/transport/list.html
+#: apps/transport/templates/transport/trip.html
 msgid "Написать"
 msgstr "Yozish"
 
@@ -4393,6 +5271,10 @@ msgstr "Ish beruvchiga yozish"
 msgid "Напишите"
 msgstr "Yozing"
 
+#: apps/assistant/services.py
+msgid "Напишите вопрос."
+msgstr "Savolingizni yozing."
+
 #: apps/api/views_content.py
 msgid "Напишите ответ."
 msgstr "Javob yozing."
@@ -4401,6 +5283,10 @@ msgstr "Javob yozing."
 msgid "Напишите первое сообщение —"
 msgstr "Birinchi xabarni yozing —"
 
+#: apps/social/templates/social/feed.html
+msgid "Напишите первую запись — её увидят все."
+msgstr "Birinchi yozuvni yozing — uni hamma ko‘radi."
+
 #: apps/accounts/views.py apps/api/views_account.py
 msgid "Напишите слово «удалить», чтобы подтвердить."
 msgstr "Tasdiqlash uchun «oʻchirish» soʻzini yozing."
@@ -4408,6 +5294,10 @@ msgstr "Tasdiqlash uchun «oʻchirish» soʻzini yozing."
 #: apps/reviews/views.py
 msgid "Напишите сообщение."
 msgstr "Xabar yozing."
+
+#: static/js/photoedit.js
+msgid "Напишите текст"
+msgstr "Matn yozing"
 
 #: apps/nikah/templates/nikah/wizard.html
 msgid "Напишите хотя бы "
@@ -4418,17 +5308,41 @@ msgstr "Kamida "
 msgid "Напишите хотя бы {minimum} символов"
 msgstr "Kamida {minimum} belgi yozing"
 
+#: apps/social/services.py
+msgid "Напишите что-нибудь или добавьте фото."
+msgstr "Biror narsa yozing yoki rasm qo‘shing."
+
 #: apps/tracker/services.py
 msgid "Напишите, что нужно делать, — хотя бы два знака."
 msgstr "Nima qilish kerakligini yozing — kamida ikki belgi."
 
+#: apps/chat/spaces.py
+msgid "Напишите, что нужно сделать."
+msgstr "Nima qilish kerakligini yozing."
+
 #: apps/tracker/templates/tracker/habit_form.html
-msgid "Напомнить в (необязательно)"
-msgstr "Eslatish vaqti (ixtiyoriy)"
+msgid "Напоминания (необязательно)"
+msgstr "Eslatmalar (ixtiyoriy)"
+
+#: apps/core/templates/core/settings.html
+msgid "Например, «Чаты» — и ilm4 открывается сразу как мессенджер. Главная останется в «Сервисах» и по логотипу."
+msgstr "Masalan, «Chatlar» — va ilm4 darhol messenjer sifatida ochiladi. Bosh sahifa «Xizmatlar»da va logotip orqali qoladi."
+
+#: apps/tracker/templates/tracker/habit_form.html
+msgid "Например, таблетки — 08:00, 14:00 и 20:00. До шести напоминаний в день."
+msgstr "Masalan, dorilar — 08:00, 14:00 va 20:00. Kuniga oltitagacha eslatma."
+
+#: apps/tracker/templates/tracker/habit_form.html
+msgid "Например: 1 таблетка после еды"
+msgstr "Masalan: ovqatdan keyin 1 ta dori"
 
 #: apps/market/forms.py
 msgid "Например: iPhone 14 Pro, 128 ГБ"
 msgstr "Masalan: iPhone 14 Pro, 128 GB"
+
+#: apps/chat/templates/chat/space_new.html
+msgid "Например: Айтишники Ташкента"
+msgstr "Masalan: Toshkent IT mutaxassislari"
 
 #: apps/nikah/templates/nikah/wizard.html
 msgid "Например: Ахмад"
@@ -4466,14 +5380,15 @@ msgstr "Masalan: Qurʼon va Sunnatga solih salaflar tushunchasi boʻyicha ergash
 msgid "Например: уберите номер телефона из описания"
 msgstr "Masalan: tavsifdan telefon raqamini olib tashlang"
 
-#: apps/core/templates/core/settings.html apps/nikah/templates/nikah/mine.html
-#: apps/nikah/templates/nikah/settings.html
+#: static/js/chatlist.js
+msgid "Настроить папки"
+msgstr "Jildlarni sozlash"
+
+#: apps/accounts/templates/accounts/accounts.html
+#: apps/accounts/templates/accounts/profile.html
+#: apps/core/templates/core/settings.html
 msgid "Настройки"
 msgstr "Sozlamalar"
-
-#: apps/accounts/templates/accounts/profile.html
-msgid "Настройки 2FA для входа в админку"
-msgstr "Admin panelga kirish uchun 2FA sozlamalari"
 
 #: apps/nikah/templates/nikah/settings.html
 msgid "Настройки · Никях"
@@ -4483,6 +5398,10 @@ msgstr "Sozlamalar · Nikoh"
 msgid "Настройки и оформление"
 msgstr "Sozlamalar va koʻrinish"
 
+#: apps/chat/templates/chat/space.html
+msgid "Настройки каналов"
+msgstr "Kanal sozlamalari"
+
 #: apps/core/models.py
 msgid "Настройки сайта"
 msgstr "Sayt sozlamalari"
@@ -4491,6 +5410,14 @@ msgstr "Sayt sozlamalari"
 msgid "Настройки сайта (выключатели)"
 msgstr "Sayt sozlamalari (kalitlar)"
 
+#: apps/chat/models.py
+msgid "Настройки сообщества"
+msgstr "Hamjamiyat sozlamalari"
+
+#: apps/core/templates/core/settings.html
+msgid "Настройки чатов"
+msgstr "Chat sozlamalari"
+
 #: apps/core/templates/core/settings.html
 msgid "Настройки —"
 msgstr "Sozlamalar —"
@@ -4498,6 +5425,10 @@ msgstr "Sozlamalar —"
 #: apps/core/templates/core/pages/salah.html
 msgid "Наступило время намаза —"
 msgstr "Namoz vaqti kirdi —"
+
+#: static/js/photoedit.js
+msgid "Насыщенность"
+msgstr "To‘yinganlik"
 
 #: apps/nikah/templates/nikah/edit.html apps/nikah/templates/nikah/feed.html
 #: apps/nikah/templates/nikah/wizard.html
@@ -4528,10 +5459,19 @@ msgstr "Namoz oʻqishni boshlang"
 msgid "Наш канал в Telegram"
 msgstr "Telegram kanalimiz"
 
+#: static/js/feed.js
+msgid "Не больше 10 фото в одной записи"
+msgstr "Bitta yozuvda ko‘pi bilan 10 ta rasm"
+
 #: apps/nikah/forms.py
 #, python-brace-format
 msgid "Не больше {TEXT_MAX} символов"
 msgstr "{TEXT_MAX} belgidan oshmasin"
+
+#: apps/tracker/services.py
+#, python-brace-format
+msgid "Не больше {v1} напоминаний в день."
+msgstr "Kuniga ko‘pi bilan {v1} ta eslatma."
 
 #: apps/nikah/choices.py apps/nikah/templates/nikah/feed.html
 msgid "Не был женат"
@@ -4622,7 +5562,7 @@ msgstr "Oʻqimayman"
 msgid "Не тот раздел"
 msgstr "Notoʻgʻri boʻlim"
 
-#: static/js/chat.js
+#: static/js/chat.js static/js/chatlist.js static/js/feed.js
 msgid "Не удалось"
 msgstr "Boʻlmadi"
 
@@ -4646,17 +5586,13 @@ msgstr "Telegramdan kirishni tasdiqlab boʻlmadi"
 msgid "Не удалось получить координаты"
 msgstr "Koordinatalarni olib boʻlmadi"
 
-#: apps/maps/templates/maps/add.html apps/maps/templates/maps/map.html
+#: apps/maps/templates/maps/add.html static/js/mapx.js
 msgid "Не удалось получить координаты — разрешите доступ к геолокации"
 msgstr "Koordinatalarni olib boʻlmadi — geolokatsiyaga ruxsat bering"
 
 #: static/js/chat.js
 msgid "Не удалось соединиться. Возможно, нужна настройка TURN-сервера."
 msgstr "Ulanib boʻlmadi. Ehtimol, TURN serverni sozlash kerak."
-
-#: static/js/chat.js
-msgid "Не удалось удалить"
-msgstr "O‘chirib bo‘lmadi"
 
 #: apps/core/templates/core/pages/support.html
 msgid "Не хотите или не можете сейчас — ничего страшного. Возвращайтесь, делитесь сайтом с близкими: это тоже поддержка."
@@ -4698,6 +5634,10 @@ msgstr "Koʻchmas mulk"
 msgid "Неделя"
 msgstr "Hafta"
 
+#: apps/assistant/templates/assistant/index.html
+msgid "Неделя в трекере"
+msgstr "Trekerdagi hafta"
+
 #: apps/api/views_pubs.py apps/health/views.py
 msgid "Недостаточно средств для платной публикации."
 msgstr "Pullik nashr uchun mablagʻ yetarli emas."
@@ -4715,6 +5655,22 @@ msgstr "Mablagʻ yetarli emas — hamyonni toʻldiring."
 msgid "Недостаточно средств: баланс {v1}, нужно {amount}"
 msgstr "Mablagʻ yetarli emas: balans {v1}, kerak {amount}"
 
+#: apps/accounts/people.py apps/social/services.py
+msgid "Недоступно: один из вас заблокировал другого."
+msgstr "Mavjud emas: biringiz ikkinchisini bloklagan."
+
+#: apps/chat/spaces.py
+msgid "Неизвестная колонка"
+msgstr "Noma’lum ustun"
+
+#: apps/chat/spaces.py
+msgid "Неизвестная роль"
+msgstr "Noma’lum rol"
+
+#: apps/chat/spaces.py
+msgid "Неизвестный вид канала"
+msgstr "Noma’lum kanal turi"
+
 #: apps/chat/rooms.py
 msgid "Неизвестный вид чата"
 msgstr "Noma’lum chat turi"
@@ -4727,6 +5683,14 @@ msgstr "Nomaʼlum ilova turi"
 #, python-brace-format
 msgid "Нельзя в статусе «{v1}»"
 msgstr "«{v1}» holatida mumkin emas"
+
+#: apps/chat/spaces.py
+msgid "Нельзя дать роли права, которых нет у вас."
+msgstr "Rolga o‘zingizda yo‘q huquqlarni berib bo‘lmaydi."
+
+#: apps/chat/spaces.py
+msgid "Нельзя дать роль с правами, которых нет у вас."
+msgstr "O‘zingizda yo‘q huquqli rolni berib bo‘lmaydi."
 
 #: apps/api/views_account.py
 msgid "Нельзя заблокировать себя"
@@ -4744,7 +5708,7 @@ msgstr "Oʻzingizga yoza olmaysiz"
 msgid "Необязательно, но помогает понять друг друга честно."
 msgstr "Majburiy emas, lekin bir-biringizni halol tushunishga yordam beradi."
 
-#: apps/chat/media.py apps/chat/services.py
+#: apps/chat/media.py apps/chat/services.py apps/social/services.py
 msgid "Неподдерживаемый формат файла"
 msgstr "Qoʻllab-quvvatlanmaydigan fayl formati"
 
@@ -4776,7 +5740,7 @@ msgstr "Akkauntingiz yoʻqmi?"
 msgid "Нет в списке — впишите свой город"
 msgstr "Roʻyxatda yoʻq — shahringizni yozing"
 
-#: apps/api/base.py apps/api/views_nikah.py apps/chat/rooms.py
+#: apps/api/base.py apps/api/views_nikah.py apps/chat/folders.py
 msgid "Нет доступа"
 msgstr "Ruxsat yoʻq"
 
@@ -4796,9 +5760,9 @@ msgstr "Mikrofonga ruxsat yoʻq"
 msgid "Нет доступа к микрофону — разрешите его в настройках браузера"
 msgstr "Mikrofonga ruxsat yoʻq — brauzer sozlamalarida ruxsat bering"
 
-#: apps/chat/templates/chat/contacts.html
-msgid "Нет друзей в ilm4?"
-msgstr "ilm4 da doʻstlaringiz yoʻqmi?"
+#: static/js/voice.js
+msgid "Нет доступа к микрофону — разрешите его в настройках браузера."
+msgstr "Mikrofonga ruxsat yo‘q — brauzer sozlamalarida ruxsat bering."
 
 #: templates/offline.html
 msgid "Нет интернета — ilm4"
@@ -4816,21 +5780,21 @@ msgstr "Moderator huquqi yoʻq"
 msgid "Нет своих детей"
 msgstr "Oʻz farzandlari yoʻq"
 
+#: apps/assistant/services.py
+msgid "Нет связи с ИИ — попробуйте ещё раз."
+msgstr "SI bilan aloqa yo‘q — yana urinib ko‘ring."
+
 #: static/js/chat.js
 msgid "Нет связи, пробую ещё раз…"
 msgstr "Aloqa yo‘q, qayta urinyapman…"
 
-#: static/js/chat.js
+#: static/js/chat.js static/js/feed.js
 msgid "Нет соединения — попробуйте ещё раз"
 msgstr "Aloqa yoʻq — qayta urinib koʻring"
 
 #: apps/nikah/templates/nikah/feed.html
 msgid "Нет соединения — решение не сохранилось"
 msgstr "Aloqa yoʻq — qaror saqlanmadi"
-
-#: apps/chat/templates/chat/contacts.html
-msgid "Нет соединения. Попробуйте ещё раз."
-msgstr "Aloqa yoʻq. Qayta urinib koʻring."
 
 #: apps/chat/templates/chat/_threads.html
 msgid "Нет сообщений — напишите первым"
@@ -4856,9 +5820,13 @@ msgstr "Hech bir namoz qolib ketmaydi"
 msgid "Нидерланды"
 msgstr "Niderlandiya"
 
+#: apps/chat/templates/chat/folders.html apps/core/templates/core/settings.html
+msgid "Ниже"
+msgstr "Pastga"
+
 #: apps/core/templates/core/settings.html
-msgid "Нижние кнопки"
-msgstr "Pastki tugmalar"
+msgid "Нижние кнопки и стартовый экран"
+msgstr "Pastki tugmalar va boshlang‘ich ekran"
 
 #: apps/accounts/forms.py apps/accounts/models.py
 msgid "Ник"
@@ -4876,6 +5844,10 @@ msgstr "Hech kim topilmadi. Foydalanuvchi nomi (@nom) yoki to‘liq telefon raqa
 msgid "Никто"
 msgstr "Hech kim"
 
+#: apps/assistant/templates/assistant/index.html
+msgid "Никто не писал"
+msgstr "Hech kim yozmadi"
+
 #: apps/chat/models.py apps/core/tabs.py apps/nikah/templates/nikah/_base.html
 msgid "Никях"
 msgstr "Nikoh"
@@ -4891,6 +5863,14 @@ msgstr "Nikoh faqat raqami tasdiqlangan odamlar uchun ochiq: bitta raqam — bit
 #: apps/api/base.py
 msgid "Никях — только с подтверждённым номером: один номер — одна анкета."
 msgstr "Nikoh — faqat tasdiqlangan raqam bilan: bitta raqam — bitta anketa."
+
+#: apps/assistant/templates/assistant/index.html
+msgid "Ничего не запланировано. Скажите помощнику — он поставит."
+msgstr "Hech narsa rejalashtirilmagan. Yordamchiga ayting — u belgilaydi."
+
+#: apps/chat/templates/chat/spaces.html
+msgid "Ничего не найдено"
+msgstr "Hech narsa topilmadi"
 
 #: apps/core/templates/core/catalog.html
 #: apps/refugee/templates/refugee/index.html
@@ -4913,9 +5893,25 @@ msgstr "Yangi guruh"
 msgid "Новая группа или канал —"
 msgstr "Yangi guruh yoki kanal —"
 
+#: apps/accounts/templates/accounts/public.html
+msgid "Новая запись"
+msgstr "Yangi yozuv"
+
+#: apps/chat/templates/chat/space_board.html
+msgid "Новая идея или задача"
+msgstr "Yangi g‘oya yoki vazifa"
+
 #: apps/chat/templates/chat/room_info.html
 msgid "Новая картинка"
 msgstr "Yangi rasm"
+
+#: apps/chat/templates/chat/space.html
+msgid "Новая категория"
+msgstr "Yangi toifa"
+
+#: apps/chat/templates/chat/folder_form.html static/js/chatlist.js
+msgid "Новая папка"
+msgstr "Yangi jild"
 
 #: apps/tracker/templates/tracker/habit_form.html
 msgid "Новая привычка или дело"
@@ -4924,6 +5920,14 @@ msgstr "Yangi odat yoki ish"
 #: apps/tracker/templates/tracker/habit_form.html
 msgid "Новая привычка —"
 msgstr "Yangi odat —"
+
+#: apps/chat/templates/chat/space.html
+msgid "Новая роль"
+msgstr "Yangi rol"
+
+#: apps/chat/templates/chat/space.html
+msgid "Новая ссылка"
+msgstr "Yangi havola"
 
 #: apps/chat/templates/chat/_threads.html apps/chat/templates/chat/people.html
 msgid "Новое сообщение"
@@ -4937,11 +5941,24 @@ msgstr "Yangi xabar —"
 msgid "Новое сообщение: найти человека, создать группу или канал"
 msgstr "Yangi xabar: odamni topish, guruh yoki kanal yaratish"
 
+#: apps/chat/templates/chat/space_new.html
+msgid "Новое сообщество"
+msgstr "Yangi hamjamiyat"
+
+#: apps/chat/templates/chat/space_new.html
+msgid "Новое сообщество —"
+msgstr "Yangi hamjamiyat —"
+
+#: apps/accounts/templates/accounts/profile.html static/js/photoview.js
+msgid "Новое фото"
+msgstr "Yangi rasm"
+
 #: apps/news/templates/news/list.html
 msgid "Новостей пока нет"
 msgstr "Hozircha yangiliklar yoʻq"
 
-#: apps/core/i18n_data.py apps/core/tabs.py apps/core/views.py
+#: apps/core/i18n_data.py apps/core/tabs.py
+#: apps/news/templates/news/blocks/recent.html
 msgid "Новости"
 msgstr "Yangiliklar"
 
@@ -4953,9 +5970,9 @@ msgstr "Telegramda ilm4 yangiliklari"
 msgid "Новости —"
 msgstr "Yangiliklar —"
 
-#: apps/core/templates/core/feed.html
-msgid "Новости, объявления, вопросы уммы — одним свайпом."
-msgstr "Yangiliklar, eʼlonlar, ummat savollari — bitta svaypda."
+#: apps/chat/folders.py
+msgid "Новые"
+msgstr "Yangilar"
 
 #: apps/nikah/templates/nikah/feed.html
 msgid "Новые анкеты появляются каждый день — загляните позже."
@@ -4974,8 +5991,13 @@ msgid "Новый диалог —"
 msgstr "Yangi suhbat —"
 
 #: apps/chat/templates/chat/people.html apps/chat/templates/chat/room_new.html
+#: apps/chat/templates/chat/space.html
 msgid "Новый канал"
 msgstr "Yangi kanal"
+
+#: apps/chat/templates/chat/contacts.html
+msgid "Новый контакт"
+msgstr "Yangi kontakt"
 
 #: apps/accounts/templates/accounts/reset_confirm.html
 msgid "Новый пароль"
@@ -4985,9 +6007,21 @@ msgstr "Yangi parol"
 msgid "Новый пароль —"
 msgstr "Yangi parol —"
 
+#: apps/assistant/templates/assistant/index.html
+msgid "Новый разговор"
+msgstr "Yangi suhbat"
+
 #: apps/core/templates/core/moderation.html
 msgid "Новых анкет, публикаций и жалоб нет. Альхамдулиллях!"
 msgstr "Yangi anketa, eʼlon va shikoyatlar yoʻq. Alhamdulillah!"
+
+#: apps/assistant/templates/assistant/index.html
+msgid "Новых нет"
+msgstr "Yangilari yo‘q"
+
+#: apps/assistant/templates/assistant/index.html
+msgid "Новых:"
+msgstr "Yangi:"
 
 #: apps/accounts/templates/accounts/phone.html
 #: apps/core/templates/core/moderation.html
@@ -4997,10 +6031,6 @@ msgstr "Raqam tasdiqlandi"
 #: apps/accounts/templates/accounts/profile.html
 msgid "Номер подтверждён. Если изменить его — подтверждать придётся заново."
 msgstr "Raqam tasdiqlangan. O‘zgartirsangiz — qayta tasdiqlash kerak bo‘ladi."
-
-#: apps/chat/templates/chat/contacts.html
-msgid "Номера не отправляются на сервер: браузер отправляет только их зашифрованные отпечатки (SHA-256). Найдутся лишь те, кто сам разрешил поиск по номеру."
-msgstr "Raqamlar serverga yuborilmaydi: brauzer faqat ularning shifrlangan izlarini (SHA-256) yuboradi. Faqat raqam boʻyicha qidirishga ruxsat berganlar topiladi."
 
 #: apps/refugee/models.py
 msgid "Норвегия"
@@ -5022,10 +6052,6 @@ msgstr "Niqob kiyaman"
 msgid "Ношу хиджаб"
 msgstr "Hijob kiyaman"
 
-#: apps/core/templates/core/feed.html
-msgid "Нравится"
-msgstr "Yoqdi"
-
 #: apps/accounts/phone_verify.py
 msgid "Нужен именно ваш номер — нажмите кнопку «📱 Отправить мой номер» внизу."
 msgstr "Aynan oʻz raqamingiz kerak — pastdagi «📱 Raqamimni yuborish» tugmasini bosing."
@@ -5033,6 +6059,10 @@ msgstr "Aynan oʻz raqamingiz kerak — pastdagi «📱 Raqamimni yuborish» tug
 #: apps/nikah/bot.py
 msgid "Нужен именно видео-кружок (не обычное видео). Нажмите 🎤, чтобы он сменился на 📹, и удерживайте."
 msgstr "Aynan videoxabar kerak (oddiy video emas). 🎤 ni bosing, u 📹 ga almashsin va bosib turing."
+
+#: apps/assistant/templates/assistant/index.html
+msgid "Нужно для отчёта «кто написал и о чём». Тексты непрочитанных сообщений уйдут поставщику ИИ. Чаты никяха не передаются никогда. Выключено — помощник видит только названия чатов и число новых."
+msgstr "«Kim va nima haqida yozdi» hisoboti uchun kerak. O‘qilmagan xabarlar matni SI provayderiga yuboriladi. Nikoh chatlari hech qachon uzatilmaydi. O‘chiq — yordamchi faqat chat nomlari va yangilar sonini ko‘radi."
 
 #: apps/core/templates/core/pages/islam.html
 msgid "Нужно ли менять имя?"
@@ -5072,6 +6102,10 @@ msgstr "Oʻzim haqimda"
 #, python-brace-format
 msgid "О себе: {v1}"
 msgstr "Oʻzim haqimda: {v1}"
+
+#: apps/chat/templates/chat/space_new.html
+msgid "О чём сообщество, для кого оно"
+msgstr "Hamjamiyat nima haqida va kim uchun"
 
 #: apps/chat/templates/chat/room_new.html
 msgid "О чём этот чат, для кого он"
@@ -5129,19 +6163,23 @@ msgstr "Taʼlim"
 msgid "Обратитесь в УВКБ ООН"
 msgstr "BMT QOQK ga murojaat qiling"
 
-#: apps/core/templates/core/feed.html
-msgid "Обсудить"
-msgstr "Muhokama qilish"
-
 #: apps/nikah/choices.py
 msgid "Обсуждаемо"
 msgstr "Muhokama qilinadi"
+
+#: apps/social/templates/social/comments.html
+msgid "Обсуждение"
+msgstr "Muhokama"
+
+#: apps/social/templates/social/comments.html
+msgid "Обсуждение —"
+msgstr "Muhokama —"
 
 #: apps/core/i18n_data.py
 msgid "Обучение языкам"
 msgstr "Til oʻrganish"
 
-#: apps/core/catalog.py
+#: apps/chat/spaces.py apps/core/catalog.py
 msgid "Общение"
 msgstr "Muloqot"
 
@@ -5182,9 +6220,14 @@ msgstr "Eʼlon oʻchirilgan"
 msgid "Объявлений пока нет."
 msgstr "Hozircha eʼlonlar yoʻq."
 
-#: apps/accounts/templates/accounts/public.html apps/core/publications.py
+#: apps/accounts/templates/accounts/public.html apps/chat/folders.py
+#: apps/core/publications.py
 msgid "Объявления"
 msgstr "Eʼlonlar"
+
+#: apps/chat/templates/chat/space.html
+msgid "Объявления — пишут админы"
+msgstr "E’lonlar — adminlar yozadi"
 
 #: apps/accounts/templates/accounts/profile.html
 msgid "Объявления, вакансии, услуги — изменить или удалить"
@@ -5233,6 +6276,10 @@ msgstr "Bir davlat"
 #: apps/nikah/services.py
 msgid "Одно вероубеждение"
 msgstr "Bir eʼtiqod"
+
+#: apps/tracker/templates/tracker/templates.html
+msgid "Одно нажатие — и привычка в списке. Потом её можно поменять."
+msgstr "Bir bosish — va odat ro‘yxatda. Keyin uni o‘zgartirish mumkin."
 
 #: apps/nikah/templates/nikah/how.html
 msgid "Одноразовый показ"
@@ -5293,7 +6340,8 @@ msgid "Операций пока нет."
 msgstr "Hozircha operatsiyalar yoʻq."
 
 #: apps/chat/templates/chat/room_info.html
-#: apps/chat/templates/chat/room_new.html apps/jobs/templates/jobs/detail.html
+#: apps/chat/templates/chat/room_new.html
+#: apps/chat/templates/chat/space_new.html
 msgid "Описание"
 msgstr "Tavsif"
 
@@ -5369,6 +6417,10 @@ msgstr "Toʻlandi. Pulni platforma ish topshirilguncha ushlab turadi."
 msgid "Определять автоматически"
 msgstr "Avtomatik aniqlash"
 
+#: apps/chat/events.py apps/chat/models.py
+msgid "Опрос"
+msgstr "So‘rovnoma"
+
 #: apps/core/models.py
 msgid "Опубликован"
 msgstr "Eʼlon qilingan"
@@ -5382,6 +6434,7 @@ msgid "Опубликовано!"
 msgstr "Eʼlon qilindi!"
 
 #: apps/market/templates/market/form.html
+#: apps/social/templates/social/feed.html
 #: apps/transport/templates/transport/trip_form.html
 msgid "Опубликовать"
 msgstr "Eʼlon qilish"
@@ -5397,6 +6450,10 @@ msgstr "Tajriba, yil"
 #: apps/refugee/templates/refugee/index.html
 msgid "Организация, страна или город…"
 msgstr "Tashkilot, davlat yoki shahar…"
+
+#: static/js/photoedit.js
+msgid "Оригинал"
+msgstr "Asl nusxa"
 
 #: apps/core/templates/core/includes/today.html
 msgid "Ориентировочный курс, обновляется ежедневно"
@@ -5414,13 +6471,27 @@ msgstr "Asosiy"
 msgid "Оставить отзыв"
 msgstr "Sharh qoldirish"
 
+#: apps/assistant/templates/assistant/index.html
+#, python-format
+msgid "Осталось бесплатных сообщений сегодня: %(n)s"
+msgstr "Bugun qolgan bepul xabarlar: %(n)s"
+
+#: apps/assistant/templates/assistant/index.html
 #: apps/nikah/templates/nikah/settings.html
 msgid "Осталось сегодня"
 msgstr "Bugun qoldi"
 
+#: apps/assistant/templates/assistant/index.html
+msgid "Осталось:"
+msgstr "Qoldi:"
+
 #: apps/nikah/choices.py
 msgid "Останусь в своём городе"
 msgstr "Oʻz shahrimda qolaman"
+
+#: apps/chat/templates/chat/folder_form.html
+msgid "Останутся только чаты с новыми сообщениями"
+msgstr "Faqat yangi xabarli chatlar qoladi"
 
 #: static/js/app.js
 msgid "Остаться"
@@ -5454,8 +6525,8 @@ msgstr "Mohiyatiga oid javob, manbasi boʻlsa u bilan…"
 msgid "Ответ сохранён."
 msgstr "Javob saqlandi."
 
-#: apps/chat/templates/chat/thread.html apps/forum/templates/forum/detail.html
-#: apps/reviews/templates/reviews/_block.html
+#: apps/chat/templates/chat/post.html apps/chat/templates/chat/thread.html
+#: apps/forum/templates/forum/detail.html
 msgid "Ответить"
 msgstr "Javob berish"
 
@@ -5476,6 +6547,10 @@ msgstr "Javoblar: {n}"
 msgid "Ответы"
 msgstr "Javoblar"
 
+#: apps/assistant/templates/assistant/index.html
+msgid "Ответы, одобрения, заявки"
+msgstr "Javoblar, tasdiqlar, so‘rovlar"
+
 #: apps/nikah/templates/nikah/detail.html
 msgid "Ответьте взаимностью — откроется следующий шаг."
 msgstr "Oʻzaro qiziqish bildiring — keyingi qadam ochiladi."
@@ -5487,6 +6562,10 @@ msgstr "Barcha savollarga javob bering."
 #: apps/nikah/templates/nikah/wizard.html
 msgid "Отвечайте, как есть сейчас. За недостоверные ответы доступ может быть закрыт."
 msgstr "Hozir qanday boʻlsa, shunday javob bering. Notoʻgʻri javoblar uchun kirish yopilishi mumkin."
+
+#: static/js/mapx.js
+msgid "Отдалите карту или выберите другую категорию. Знаете место? Добавьте его — кнопка «+»."
+msgstr "Xaritani uzoqlashtiring yoki boshqa toifani tanlang. Joy bilasizmi? «+» tugmasi bilan qo‘shing."
 
 #: apps/maps/models.py
 msgid "Отель"
@@ -5579,6 +6658,14 @@ msgstr "Rad etildi"
 msgid "Отклонённых анкет нет."
 msgstr "Rad etilgan anketalar yoʻq."
 
+#: apps/chat/templates/chat/thread.html static/js/chat.js static/js/chatlist.js
+msgid "Открепить"
+msgstr "Qadashni olish"
+
+#: static/js/chat.js
+msgid "Открепить сообщение?"
+msgstr "Xabar qadalishini olib tashlaysizmi?"
+
 #: apps/core/catalog.py
 msgid "Откроем карту с мечетями поблизости"
 msgstr "Yaqin atrofdagi masjidlar xaritasini ochamiz"
@@ -5611,10 +6698,22 @@ msgstr "Nizo ochildi"
 msgid "Открытие чата для брата —"
 msgstr "Aka-uka uchun chatni ochish —"
 
-#: apps/accounts/telegram.py apps/chat/templates/chat/channels.html
-#: apps/chat/templates/chat/thread.html
+#: apps/chat/templates/chat/space.html apps/chat/templates/chat/space_new.html
+msgid "Открытое: видно в каталоге, вступить может любой"
+msgstr "Ochiq: katalogda ko‘rinadi, istagan kishi qo‘shila oladi"
+
+#: apps/chat/templates/chat/spaces.html
+msgid "Открытых сообществ пока нет"
+msgstr "Hozircha ochiq hamjamiyatlar yo‘q"
+
+#: apps/accounts/telegram.py apps/accounts/templates/accounts/accounts.html
+#: apps/chat/templates/chat/channels.html
 msgid "Открыть"
 msgstr "Ochish"
+
+#: apps/chat/templates/chat/thread.html
+msgid "Открыть анкету"
+msgstr "Anketani ochish"
 
 #: apps/nikah/templates/nikah/_swipecard.html
 msgid "Открыть анкету отдельно →"
@@ -5635,6 +6734,10 @@ msgstr "Telegramda ochish"
 #: apps/nikah/templates/nikah/match.html
 msgid "Открыть в Telegram — защищённо"
 msgstr "Telegramda ochish — himoyalangan"
+
+#: apps/chat/templates/chat/post.html
+msgid "Открыть вложение"
+msgstr "Ilovani ochish"
 
 #: apps/nikah/templates/nikah/match.html
 msgid "Открыть здесь"
@@ -5697,7 +6800,8 @@ msgstr "Qayerdansiz"
 msgid "Откуда и куда совпадают."
 msgstr "Qayerdan va qayerga bir xil."
 
-#: apps/chat/templates/chat/thread.html
+#: apps/chat/templates/chat/contacts.html apps/chat/templates/chat/thread.html
+#: static/js/photoedit.js
 msgid "Отмена"
 msgstr "Bekor qilish"
 
@@ -5709,13 +6813,18 @@ msgstr "Bekor qilingan"
 msgid "Отменено"
 msgstr "Bekor qilindi"
 
-#: apps/deals/templates/deals/detail.html static/js/chat.js
+#: apps/chat/templates/chat/post.html apps/chat/templates/chat/thread.html
+#: apps/deals/templates/deals/detail.html
 msgid "Отменить"
 msgstr "Bekor qilish"
 
 #: apps/transport/templates/transport/trip.html
 msgid "Отменить заявку"
 msgstr "So‘rovni bekor qilish"
+
+#: static/js/photoedit.js
+msgid "Отменить шаг"
+msgstr "Qadamni bekor qilish"
 
 #: apps/deals/models.py
 msgid "Отменён"
@@ -5757,7 +6866,12 @@ msgstr "Qiziqishni qaytarib olish"
 msgid "Отписаться"
 msgstr "Obunani bekor qilish"
 
-#: apps/chat/templates/chat/thread.html apps/health/templates/health/add.html
+#: static/js/chatlist.js
+msgid "Отписаться…"
+msgstr "Obunani bekor qilish…"
+
+#: apps/assistant/templates/assistant/index.html
+#: apps/chat/templates/chat/post.html apps/chat/templates/chat/thread.html
 msgid "Отправить"
 msgstr "Yuborish"
 
@@ -5799,17 +6913,21 @@ msgstr "Hozir yuborish"
 msgid "Отправить сообщение"
 msgstr "Xabar yuborish"
 
+#: apps/chat/templates/chat/contacts.html
+msgid "Отправить ссылку на ilm4"
+msgstr "ilm4 havolasini yuborish"
+
 #: apps/chat/templates/chat/thread.html
 msgid "Отправить. Правая кнопка мыши или долгое нажатие — без звука или по расписанию"
 msgstr "Yuborish. Sichqonchaning oʻng tugmasi yoki uzoq bosish — ovozsiz yoki jadval boʻyicha"
 
+#: static/js/feed.js
+msgid "Отправить…"
+msgstr "Yuborish…"
+
 #: static/js/chat.js
 msgid "Отправка…"
 msgstr "Yuborilmoqda…"
-
-#: apps/chat/templates/chat/_threads.html
-msgid "Отправлено"
-msgstr "Yuborildi"
 
 #: static/js/chat.js
 msgid "Отправлено без звука"
@@ -5831,13 +6949,25 @@ msgstr "Yuborildi — moderatsiyadan soʻng roʻyxatda paydo boʻladi."
 msgid "Отправьте ссылку махраму. Ему нужен аккаунт ilm4 (или вход через Telegram)."
 msgstr "Havolani mahramingizga yuboring. Unga ilm4 akkaunti (yoki Telegram orqali kirish) kerak."
 
+#: static/js/photoedit.js
+msgid "Отразить"
+msgstr "Aks ettirish"
+
 #: apps/nikah/choices.py
 msgid "Отращиваю"
 msgstr "Oʻstiryapman"
 
+#: apps/assistant/templates/assistant/index.html
+msgid "Отчёт за день"
+msgstr "Kunlik hisobot"
+
 #: apps/maps/models.py
 msgid "Официальная (муфтият / духовное управление)"
 msgstr "Rasmiy (muftiyat / diniy idora)"
+
+#: apps/chat/templates/chat/space.html
+msgid "Официальное"
+msgstr "Rasmiy"
 
 #: apps/chat/templates/chat/_threads.html
 #: apps/chat/templates/chat/channels.html
@@ -5845,13 +6975,9 @@ msgstr "Rasmiy (muftiyat / diniy idora)"
 msgid "Официальный"
 msgstr "Rasmiy"
 
-#: apps/accounts/templates/accounts/profile.html
+#: apps/core/templates/core/settings.html
 msgid "Оформление"
 msgstr "Koʻrinish"
-
-#: apps/core/templates/core/settings.html
-msgid "Оформление применяется сразу и запоминается"
-msgstr "Koʻrinish darhol qoʻllanadi va eslab qolinadi"
 
 #: apps/chat/templates/chat/thread.html
 msgid "Оформление текста"
@@ -5869,6 +6995,18 @@ msgstr "Baho"
 msgid "Очередь"
 msgstr "Navbat"
 
+#: apps/maps/templates/maps/map.html
+msgid "Очистить"
+msgstr "Tozalash"
+
+#: apps/chat/templates/chat/thread.html static/js/chatlist.js
+msgid "Очистить историю"
+msgstr "Tarixni tozalash"
+
+#: apps/chat/templates/chat/thread.html static/js/chatlist.js
+msgid "Очистить историю? Сообщения пропадут только у вас."
+msgstr "Tarix tozalansinmi? Xabarlar faqat sizda yo‘qoladi."
+
 #: apps/payments/models.py
 msgid "Ошибка"
 msgstr "Xato"
@@ -5884,6 +7022,23 @@ msgstr "Pokiston"
 #: apps/core/templates/core/includes/staff_bar.html
 msgid "Панель модератора"
 msgstr "Moderator paneli"
+
+#: apps/chat/templates/chat/folder_form.html
+msgid "Папка"
+msgstr "Jild"
+
+#: apps/chat/folders.py
+msgid "Папка не найдена"
+msgstr "Jild topilmadi"
+
+#: apps/chat/templates/chat/_threads.html apps/chat/templates/chat/folders.html
+#: apps/core/templates/core/settings.html
+msgid "Папки с чатами"
+msgstr "Chat jildlari"
+
+#: apps/chat/templates/chat/folders.html
+msgid "Папки с чатами —"
+msgstr "Chat jildlari —"
 
 #: apps/chat/templates/chat/_threads.html
 msgid "Папки чатов"
@@ -6048,6 +7203,30 @@ msgstr "Shikoyat boʻyicha yozishma"
 msgid "Переписка по жалобе —"
 msgstr "Shikoyat boʻyicha yozishma —"
 
+#: apps/chat/folders.py
+msgid "Переписка с людьми, без групп и каналов"
+msgstr "Odamlar bilan yozishma, guruh va kanallarsiz"
+
+#: apps/chat/templates/chat/folder_form.html
+msgid "Переписка с людьми, поддержка, «Избранное»"
+msgstr "Odamlar bilan yozishma, yordam, «Saqlanganlar»"
+
+#: static/js/chat.js
+msgid "Переслано"
+msgstr "Yuborildi"
+
+#: static/js/chat.js
+msgid "Переслано в несколько чатов"
+msgstr "Bir nechta chatga yuborildi"
+
+#: apps/chat/templates/chat/_msg.html static/js/chat.js
+msgid "Переслано от"
+msgstr "Kimdan yuborilgan:"
+
+#: apps/chat/templates/chat/thread.html static/js/chat.js
+msgid "Переслать"
+msgstr "Yuborish"
+
 #: apps/chat/rooms.py
 msgid "Писать здесь могут только участники."
 msgstr "Bu yerda faqat a’zolar yoza oladi."
@@ -6064,6 +7243,10 @@ msgstr "Ikkalasi ham qiziqish bildirganda yozish mumkin. Roziligingizsiz hech ki
 msgid "Платежи"
 msgstr "Toʻlovlar"
 
+#: apps/social/services.py
+msgid "Платные подарки появятся вместе с оплатой из кошелька."
+msgstr "Pullik sovg‘alar hamyondan to‘lov bilan birga paydo bo‘ladi."
+
 #: templates/base.html
 msgid "Платформа"
 msgstr "Platforma"
@@ -6075,6 +7258,10 @@ msgstr "Platforma ijrochi ishni topshirguncha toʻlovni ushlab turadi — tomonl
 #: templates/base.html
 msgid "Платформа знаний, жизни и дела — для мусульман и всех, кому это полезно."
 msgstr "Bilim, hayot va ish platformasi — musulmonlar va undan foyda oladigan har bir kishi uchun."
+
+#: apps/tracker/services.py
+msgid "По 1 таблетке после еды"
+msgstr "Ovqatdan keyin 1 tadan dori"
 
 #: apps/nikah/templates/nikah/match.html
 msgid "По адабу сначала решает сестра. Если она согласится — вы увидите её фото."
@@ -6088,6 +7275,18 @@ msgstr "Kunlar bo‘yicha"
 msgid "По дням недели"
 msgstr "Hafta kunlari bo‘yicha"
 
+#: apps/tracker/templates/tracker/habit.html
+msgid "По месяцам"
+msgstr "Oylar bo‘yicha"
+
+#: apps/chat/templates/chat/contacts.html
+msgid "По номеру телефона"
+msgstr "Telefon raqami bo‘yicha"
+
+#: apps/chat/models.py
+msgid "По объявлениям"
+msgstr "E’lonlar bo‘yicha"
+
 #: apps/tracker/templates/tracker/stats.html
 msgid "По привычкам"
 msgstr "Odatlar bo‘yicha"
@@ -6095,6 +7294,10 @@ msgstr "Odatlar bo‘yicha"
 #: apps/api/views_content.py
 msgid "По пути"
 msgstr "Yo‘l-yo‘lakay"
+
+#: apps/accounts/templates/accounts/profile.html
+msgid "По ссылке-приглашению вы вступаете сами — это ограничение только на добавление вас кем-то другим."
+msgstr "Taklif havolasi orqali o‘zingiz qo‘shilasiz — bu cheklov faqat sizni boshqalar qo‘shishiga tegishli."
 
 #: apps/refugee/templates/refugee/index.html
 msgid "По странам →"
@@ -6112,9 +7315,17 @@ msgstr "Bu yo‘nalishda hozircha safar yo‘q"
 msgid "По этому направлению пока никого"
 msgstr "Bu yoʻnalishda hozircha hech kim yoʻq"
 
+#: apps/tracker/templates/tracker/board.html
+msgid "Победитель:"
+msgstr "G‘olib:"
+
 #: apps/core/templates/core/pages/salah.html
 msgid "Поверните голову направо, затем налево: «Ас-саляму ‘алейкум ва рахматуллах» — намаз завершён."
 msgstr "Boshingizni oʻngga, soʻng chapga buring: «Assalomu alaykum va rohmatulloh» — namoz tugadi."
+
+#: static/js/photoedit.js
+msgid "Повернуть"
+msgstr "Burish"
 
 #: apps/core/templates/core/includes/today.html
 msgid "Погода"
@@ -6123,6 +7334,22 @@ msgstr "Ob-havo"
 #: apps/core/templates/core/includes/today.html
 msgid "Погода и курс"
 msgstr "Ob-havo va kurs"
+
+#: apps/accounts/templates/accounts/public.html
+msgid "Подарки"
+msgstr "Sovg‘alar"
+
+#: apps/core/catalog.py
+msgid "Подарки друзьям и близким"
+msgstr "Do‘st va yaqinlarga sovg‘alar"
+
+#: apps/social/services.py
+msgid "Подарки скоро появятся."
+msgstr "Sovg‘alar tez orada paydo bo‘ladi."
+
+#: apps/social/services.py
+msgid "Подарок не найден"
+msgstr "Sovg‘a topilmadi"
 
 #: apps/core/tabs.py templates/base.html
 msgid "Подать"
@@ -6183,7 +7410,7 @@ msgstr "ilm4 qoʻllab-quvvatlash"
 msgid "Поделитесь ссылкой с теми, кто ищет никях."
 msgstr "Havolani nikoh izlayotganlar bilan ulashing."
 
-#: apps/core/templates/core/feed.html apps/news/templates/news/detail.html
+#: apps/news/templates/news/detail.html apps/social/templates/social/_item.html
 msgid "Поделиться"
 msgstr "Ulashish"
 
@@ -6219,15 +7446,27 @@ msgstr "7 kunga qidiruvda koʻtarish narxi"
 msgid "Поднять объявление в топ на 7 дней"
 msgstr "Eʼlonni 7 kunga yuqoriga koʻtarish"
 
+#: apps/accounts/templates/accounts/public.html
 #: apps/chat/templates/chat/room_info.html
 #: apps/chat/templates/chat/room_public.html
-#: apps/chat/templates/chat/thread.html
 msgid "Подписаться"
 msgstr "Obuna boʻlish"
+
+#: apps/assistant/templates/assistant/index.html
+msgid "Подписка: без лимита"
+msgstr "Obuna: cheklovsiz"
 
 #: apps/chat/templates/chat/room_info.html
 msgid "Подписчики"
 msgstr "Obunachilar"
+
+#: static/js/feed.js
+msgid "Подпись к сторис (можно пусто)"
+msgstr "Stories uchun izoh (bo‘sh bo‘lishi mumkin)"
+
+#: apps/chat/templates/chat/post.html
+msgid "Подпишитесь, чтобы комментировать"
+msgstr "Izoh yozish uchun obuna bo‘ling"
 
 #: apps/news/templates/news/list.html
 msgid "Подпишитесь, чтобы узнавать первыми —"
@@ -6237,10 +7476,6 @@ msgstr "Birinchi boʻlib bilish uchun obuna boʻling —"
 msgid "Подробнее"
 msgstr "Batafsil"
 
-#: apps/maps/templates/maps/map.html
-msgid "Подробнее и отзывы →"
-msgstr "Batafsil va sharhlar →"
-
 #: apps/nikah/templates/nikah/intro.html
 msgid "Подробнее о защите фото и правилах →"
 msgstr "Surat himoyasi va qoidalar haqida batafsil →"
@@ -6248,6 +7483,10 @@ msgstr "Surat himoyasi va qoidalar haqida batafsil →"
 #: templates/includes/report.html
 msgid "Подробности (необязательно)"
 msgstr "Tafsilotlar (ixtiyoriy)"
+
+#: apps/chat/templates/chat/folders.html
+msgid "Подсказка: на вкладке или на чате — правая кнопка мыши (на телефоне — долгое нажатие): закрепить, убрать в архив, добавить в папку."
+msgstr "Maslahat: yorliq yoki chatda sichqonchaning o‘ng tugmasi (telefonda — uzoq bosish): qadash, arxivlash, jildga qo‘shish."
 
 #: apps/maps/templates/maps/detail.html
 msgid "Подтвердили"
@@ -6350,12 +7589,13 @@ msgstr "Odamlarni chaqirish"
 msgid "Позвонить"
 msgstr "Qoʻngʻiroq qilish"
 
-#: apps/nikah/choices.py
+#: apps/chat/templates/chat/thread.html apps/nikah/choices.py
 msgid "Позже"
 msgstr "Keyinroq"
 
 #: apps/chat/templates/chat/_threads.html
-#: apps/chat/templates/chat/channels.html templates/base.html
+#: apps/chat/templates/chat/channels.html
+#: apps/chat/templates/chat/contacts.html
 msgid "Поиск"
 msgstr "Qidiruv"
 
@@ -6368,8 +7608,12 @@ msgid "Поиск объявлений: телефон, финики, коври
 msgstr "Eʼlonlarni qidirish: telefon, xurmo, joynamoz…"
 
 #: apps/maps/templates/maps/map.html
-msgid "Поиск по названию"
-msgstr "Nomi boʻyicha qidirish"
+msgid "Поиск по карте"
+msgstr "Xaritadan qidirish"
+
+#: apps/chat/templates/chat/contacts.html
+msgid "Поиск по контактам"
+msgstr "Kontaktlardan qidirish"
 
 #: apps/refugee/templates/refugee/index.html
 msgid "Поиск по справочнику"
@@ -6378,6 +7622,14 @@ msgstr "Maʼlumotnoma boʻyicha qidirish"
 #: apps/chat/templates/chat/_threads.html
 msgid "Поиск по чатам"
 msgstr "Chatlar boʻyicha qidirish"
+
+#: apps/chat/templates/chat/thread.html
+msgid "Поиск по чату"
+msgstr "Chatdan qidirish"
+
+#: apps/chat/templates/chat/thread.html
+msgid "Поиск по этому чату"
+msgstr "Shu chatdan qidirish"
 
 #: apps/nikah/templates/nikah/wizard.html
 msgid "Поиск покажет в первую очередь подходящих по возрасту."
@@ -6411,21 +7663,21 @@ msgstr "Hali qaror qilmadim"
 msgid "Пока нечего показывать: добавьте привычку и отмечайте её несколько дней."
 msgstr "Hozircha ko‘rsatadigan narsa yo‘q: odat qo‘shing va uni bir necha kun belgilang."
 
-#: apps/chat/templates/chat/contacts.html
-msgid "Пока никого из ваших контактов нет в ilm4 — пригласите их."
-msgstr "Kontaktlaringizdan hali hech kim ilm4 da yoʻq — ularni taklif qiling."
-
 #: apps/maps/templates/maps/detail.html
 msgid "Пока никто не подтвердил. Были здесь — помогите другим."
 msgstr "Hali hech kim tasdiqlamagan. Shu yerda boʻlganmisiz — boshqalarga yordam bering."
 
-#: apps/maps/templates/maps/map.html
-msgid "Пока ничего не найдено."
-msgstr "Hozircha hech narsa topilmadi."
+#: static/js/feed.js
+msgid "Пока никто не смотрел"
+msgstr "Hozircha hech kim ko‘rmadi"
 
 #: apps/core/templates/core/my_publications.html
 msgid "Пока ничего не опубликовано"
 msgstr "Hali hech narsa eʼlon qilinmagan"
+
+#: apps/social/templates/social/saved.html
+msgid "Пока ничего не сохранено"
+msgstr "Hozircha hech narsa saqlanmagan"
 
 #: apps/refugee/templates/refugee/index.html
 msgid "Пока посмотрите"
@@ -6435,6 +7687,10 @@ msgstr "Hozircha koʻrib chiqing"
 msgid "Пока пусто"
 msgstr "Hozircha bo‘sh"
 
+#: apps/chat/templates/chat/space.html
+msgid "Пока пусто."
+msgstr "Hozircha bo‘sh."
+
 #: apps/nikah/templates/nikah/interests.html
 msgid "Пока тихо"
 msgstr "Hozircha jimjit"
@@ -6442,6 +7698,14 @@ msgstr "Hozircha jimjit"
 #: apps/core/templates/core/my_publications.html
 msgid "Показать"
 msgstr "Koʻrsatish"
+
+#: apps/social/templates/social/_item.html
+msgid "Показать полностью"
+msgstr "To‘liq ko‘rsatish"
+
+#: apps/chat/templates/chat/space.html
+msgid "Показывать отдельной группой в списке участников"
+msgstr "A’zolar ro‘yxatida alohida guruh sifatida ko‘rsatish"
 
 #: apps/nikah/templates/nikah/detail.html apps/nikah/templates/nikah/edit.html
 #: apps/nikah/templates/nikah/feed.html
@@ -6497,9 +7761,29 @@ msgstr "Polsha"
 msgid "Поменять местами"
 msgstr "Oʻrnini almashtirish"
 
-#: apps/accounts/templates/accounts/profile.html
-msgid "Поменять фото"
-msgstr "Suratni almashtirish"
+#: static/js/chatlist.js
+msgid "Пометить непрочитанным"
+msgstr "O‘qilmagan deb belgilash"
+
+#: static/js/chatlist.js
+msgid "Пометить прочитанным"
+msgstr "O‘qilgan deb belgilash"
+
+#: apps/assistant/services.py
+msgid "Помощник временно недоступен."
+msgstr "Yordamchi vaqtincha ishlamayapti."
+
+#: apps/assistant/templates/assistant/index.html
+msgid "Помощник действует от вашего имени: видит только то, что видите вы, и меняет только ваш трекер."
+msgstr "Yordamchi sizning nomingizdan ishlaydi: faqat siz ko‘rgan narsani ko‘radi va faqat trekeringizni o‘zgartiradi."
+
+#: apps/assistant/templates/assistant/index.html
+msgid "Помощник может читать мои новые сообщения"
+msgstr "Yordamchi yangi xabarlarimni o‘qiy oladi"
+
+#: apps/assistant/services.py
+msgid "Помощник пока не подключён на сайте. Добавьте свой ключ ИИ — и пользуйтесь без ограничений."
+msgstr "Yordamchi saytda hali ulanmagan. O‘z SI kalitingizni qo‘shing — va cheklovsiz foydalaning."
 
 #: apps/core/i18n_data.py apps/refugee/templates/refugee/index.html
 msgid "Помощь беженцам"
@@ -6555,8 +7839,7 @@ msgstr "Davlat yoki tashkilot nomini sinab koʻring."
 msgid "Популярные направления"
 msgstr "Mashhur yoʻnalishlar"
 
-#: apps/core/publications.py apps/core/tabs.py
-#: apps/transport/templates/transport/_tabs.html
+#: apps/core/publications.py apps/core/tabs.py apps/social/services.py
 msgid "Попутчики"
 msgstr "Hamrohlar"
 
@@ -6584,6 +7867,10 @@ msgstr "Har ikki rakatdan soʻng oʻtirib «Attahiyyot» oʻqing. Oxirgi rakatda
 msgid "После одобрения вашей анкеты"
 msgstr "Anketangiz tasdiqlangandan soʻng"
 
+#: apps/tracker/templates/tracker/board.html
+msgid "После этой даты будет виден победитель. Пусто — без срока"
+msgstr "Shu sanadan keyin g‘olib ko‘rinadi. Bo‘sh — muddatsiz"
+
 #: apps/core/templates/core/moderation_chat.html
 #, python-format
 msgid "Последние %(limit)s сообщений."
@@ -6609,9 +7896,29 @@ msgstr "Elchixona"
 msgid "Пост"
 msgstr "Roʻza"
 
+#: apps/tracker/services.py
+msgid "Пост в понедельник и четверг"
+msgstr "Dushanba va payshanba ro‘zasi"
+
+#: apps/accounts/templates/accounts/profile.html
+msgid "Поставить фото"
+msgstr "Rasm qo‘yish"
+
+#: apps/assistant/templates/assistant/index.html
+msgid "Поставщик"
+msgstr "Provayder"
+
+#: apps/assistant/templates/assistant/index.html
+msgid "Поставь встречу на завтра в 15:00: забрать справку"
+msgstr "Ertaga 15:00 ga uchrashuv qo‘y: ma’lumotnomani olish"
+
 #: apps/reviews/views.py
 msgid "Поставьте оценку от 1 до 5 звёзд."
 msgstr "1 dan 5 gacha yulduz bilan baholang."
+
+#: apps/chat/templates/chat/space.html
+msgid "Постоянная ссылка"
+msgstr "Doimiy havola"
 
 #: apps/api/views_content.py
 msgid "Посылки"
@@ -6726,9 +8033,17 @@ msgstr "Premium — cheklovsiz"
 msgid "Приватность"
 msgstr "Maxfiylik"
 
+#: apps/assistant/templates/assistant/index.html
+msgid "Привычек пока нет"
+msgstr "Hozircha odatlar yo‘q"
+
 #: apps/tracker/templates/tracker/index.html
 msgid "Привычка"
 msgstr "Odat"
+
+#: apps/assistant/templates/assistant/index.html
+msgid "Привычка: Коран"
+msgstr "Odat: Qur’on"
 
 #: apps/core/catalog.py
 msgid "Привычки и дела на день — одному или вместе"
@@ -6739,13 +8054,6 @@ msgid "Привычки одни на всех — отметки у каждо�
 msgstr "Odatlar hamma uchun bir xil — belgilar har kimniki o‘ziga"
 
 #: apps/chat/templates/chat/contacts.html
-msgid "Пригласите — им пригодятся намаз, маркет и чаты."
-msgstr "Taklif qiling — namoz, bozor va chatlar ularga asqotadi."
-
-#: apps/chat/templates/chat/contacts.html
-msgid "Пригласить"
-msgstr "Taklif qilish"
-
 #: apps/nikah/templates/nikah/settings.html
 msgid "Пригласить друзей"
 msgstr "Doʻstlarni taklif qilish"
@@ -6757,6 +8065,14 @@ msgstr "Odamlarni taklif qilish"
 #: apps/nikah/templates/nikah/settings.html
 msgid "Пригласить свидетеля"
 msgstr "Guvohni taklif qilish"
+
+#: apps/chat/templates/chat/space.html
+msgid "Приглашение со сроком"
+msgstr "Muddatli taklif"
+
+#: apps/chat/templates/chat/space.html
+msgid "Приглашения"
+msgstr "Takliflar"
 
 #: apps/nikah/templates/nikah/settings.html
 msgid "Приглашено:"
@@ -6779,7 +8095,7 @@ msgstr "Biriktirish"
 msgid "Прикрепить фото, видео или файл"
 msgstr "Rasm, video yoki fayl biriktirish"
 
-#: apps/nikah/templates/nikah/feed.html
+#: apps/chat/templates/chat/space.html apps/nikah/templates/nikah/feed.html
 msgid "Применить"
 msgstr "Qoʻllash"
 
@@ -6834,6 +8150,10 @@ msgstr "Sabab — muallif uni xabarnomada koʻradi"
 msgid "Проверен ilm4"
 msgstr "ilm4 tomonidan tekshirilgan"
 
+#: apps/maps/templates/maps/map.html
+msgid "Проверенные"
+msgstr "Tekshirilgan"
+
 #: apps/core/templates/core/blocks/banner.html
 msgid "Проверенные анкеты, уважение и цель — только никах."
 msgstr "Tekshirilgan anketalar, hurmat va maqsad — faqat nikoh."
@@ -6878,6 +8198,10 @@ msgstr "Anketa va eʼlonlarni toʻgʻridan-toʻgʻri saytda — «Moderatsiya» 
 #: apps/core/templates/core/pages/salah.html
 msgid "Провести влажными руками по голове (масх) и протереть уши"
 msgstr "Hoʻl qoʻllar bilan boshga mash torting va quloqlarni arting"
+
+#: apps/tracker/services.py
+msgid "Прогулка"
+msgstr "Sayr"
 
 #: apps/nikah/templates/nikah/mine.html
 msgid "Продвижение"
@@ -6936,13 +8260,10 @@ msgid "Просмотры"
 msgstr "Koʻrishlar"
 
 #: apps/accounts/templates/accounts/blocked.html
-#: apps/core/templates/core/my_publications.html templates/base.html
+#: apps/chat/templates/chat/thread.html
+#: apps/core/templates/core/my_publications.html
 msgid "Профиль"
 msgstr "Profil"
-
-#: apps/accounts/views.py
-msgid "Профиль обновлён."
-msgstr "Profil yangilandi."
 
 #: apps/accounts/templates/accounts/profile.html
 msgid "Профиль —"
@@ -6952,13 +8273,17 @@ msgstr "Profil —"
 msgid "Прочитайте суру «аль-Фатиха». В первых двух ракаатах после неё — ещё короткую суру или несколько аятов."
 msgstr "«Al-Fotiha» surasini oʻqing. Birinchi ikki rakatda undan keyin — yana qisqa sura yoki bir necha oyat."
 
-#: apps/chat/templates/chat/_threads.html
-msgid "Прочитано"
-msgstr "Oʻqildi"
+#: apps/chat/templates/chat/folder_form.html
+msgid "Прочитанные"
+msgstr "O‘qilganlar"
 
 #: apps/tracker/templates/tracker/index.html
 msgid "Прошлая неделя"
 msgstr "O‘tgan hafta"
+
+#: apps/assistant/templates/assistant/index.html
+msgid "Прошлые разговоры"
+msgstr "Oldingi suhbatlar"
 
 #: apps/nikah/templates/nikah/detail.html apps/nikah/templates/nikah/feed.html
 msgid "Проявить интерес"
@@ -7023,6 +8348,14 @@ msgstr "Ommaviy: katalogda ko‘rinadi, istalgan kishi obuna bo‘la oladi"
 msgid "Публичных каналов пока нет"
 msgstr "Hozircha ommaviy kanallar yo‘q"
 
+#: apps/chat/templates/chat/space_board.html
+msgid "Пусто"
+msgstr "Bo‘sh"
+
+#: apps/tracker/services.py
+msgid "Пять намазов"
+msgstr "Besh vaqt namoz"
+
 #: apps/core/templates/core/pages/islam.html
 msgid "Пять столпов ислама"
 msgstr "Islomning besh ustuni"
@@ -7055,6 +8388,10 @@ msgstr "Ish —"
 msgid "Работа, переезд и право"
 msgstr "Ish, koʻchish va huquq"
 
+#: apps/assistant/templates/assistant/index.html
+msgid "Работает на вашем ключе"
+msgstr "Kalitingizda ishlayapti"
+
 #: apps/nikah/templates/nikah/wizard.html
 msgid "Работаю…, учусь…, в свободное время…"
 msgstr "Ishlayman…, oʻqiyman…, boʻsh vaqtimda…"
@@ -7085,6 +8422,10 @@ msgstr "Ajrashgan"
 msgid "Развлечения"
 msgstr "Koʻngilochar"
 
+#: apps/assistant/services.py
+msgid "Разговор получился длинным — начните новый, так помощник ответит быстрее."
+msgstr "Suhbat uzun bo‘lib ketdi — yangisini boshlang, yordamchi tezroq javob beradi."
+
 #: apps/api/views_content.py apps/library/templates/library/add.html
 msgid "Раздел"
 msgstr "Boʻlim"
@@ -7113,6 +8454,10 @@ msgstr "Maʼlumotnoma boʻlimlari"
 msgid "Разделы: вкл / выкл / скоро"
 msgstr "Boʻlimlar: yoq / oʻch / tez orada"
 
+#: apps/chat/templates/chat/folders.html
+msgid "Разложите чаты по своим папкам: вкладки появятся над списком чатов. Название, состав и порядок — как вам удобно."
+msgstr "Chatlarni o‘z jildlaringizga joylang: yorliqlar chatlar ro‘yxati ustida paydo bo‘ladi. Nomi, tarkibi va tartibi — o‘zingizga qulay."
+
 #: apps/jobs/templates/jobs/list.html
 msgid "Разместить вакансию или резюме"
 msgstr "Vakansiya yoki rezyume joylash"
@@ -7136,6 +8481,10 @@ msgstr "Rakatlar"
 #: apps/nikah/templates/nikah/feed.html
 msgid "Ранее в браке не состоял(а)"
 msgstr "Avval nikohda boʻlmagan"
+
+#: apps/chat/templates/chat/thread.html
+msgid "Раньше"
+msgstr "Avvalroq"
 
 #: apps/migration/templates/migration/list.html
 msgid "Расскажите свою — визы, работа, жильё. Кому-то это очень поможет."
@@ -7165,6 +8514,14 @@ msgstr "Hisob serverda koordinata va sana boʻyicha bajariladi — tashqi xizmat
 #: apps/nikah/templates/nikah/feed.html
 msgid "Расширьте фильтры — возраст, страну или город."
 msgstr "Filtrlarni kengaytiring — yosh, davlat yoki shahar."
+
+#: apps/chat/templates/chat/room_info.html
+msgid "Реакции на сообщения"
+msgstr "Xabarlarga reaksiyalar"
+
+#: apps/chat/msgops.py
+msgid "Реакции ставят участники. Вступите — и ставьте."
+msgstr "Reaksiyani a’zolar qo‘yadi. Qo‘shiling — va qo‘ying."
 
 #: apps/core/catalog.py
 msgid "Реальные истории переезда"
@@ -7226,6 +8583,14 @@ msgstr "Reklama"
 msgid "Религия"
 msgstr "Din"
 
+#: apps/social/templates/social/_item.html
+msgid "Репост"
+msgstr "Repost"
+
+#: apps/social/templates/social/_item.html
+msgid "Репост на свою стену"
+msgstr "O‘z devorimga repost"
+
 #: apps/nikah/templates/nikah/how.html
 msgid "Решение складывается по убеждениям и описанию, а не по внешности."
 msgstr "Qaror tashqi koʻrinishga emas, eʼtiqod va tavsifga qarab qabul qilinadi."
@@ -7237,6 +8602,14 @@ msgstr "Qaror allaqachon qabul qilingan yoki vaqt tugagan"
 #: apps/accounts/telegram.py
 msgid "Решить"
 msgstr "Qaror qilish"
+
+#: static/js/photoedit.js
+msgid "Рисунок"
+msgstr "Chizish"
+
+#: apps/chat/models.py apps/chat/templates/chat/space.html
+msgid "Роли"
+msgstr "Rollar"
 
 #: apps/refugee/models.py
 msgid "Россия"
@@ -7255,10 +8628,6 @@ msgstr "Boʻy ·"
 msgid "Рост, см"
 msgstr "Boʻy, sm"
 
-#: apps/maps/templates/maps/map.html
-msgid "Рядом со мной"
-msgstr "Yonimda"
-
 #: apps/accounts/templates/accounts/login.html
 msgid "С возвращением!"
 msgstr "Xush kelibsiz!"
@@ -7268,6 +8637,10 @@ msgstr "Xush kelibsiz!"
 msgid "С возвращением, {v1}!"
 msgstr "Xush kelibsiz, {v1}!"
 
+#: apps/core/templates/core/settings.html
+msgid "С главной — вся платформа"
+msgstr "Bosh sahifadan — butun platforma"
+
 #: apps/nikah/templates/nikah/feed.html
 msgid "С фото"
 msgstr "Suratli"
@@ -7276,9 +8649,21 @@ msgstr "Suratli"
 msgid "С чего начать"
 msgstr "Nimadan boshlash"
 
+#: apps/core/templates/core/settings.html
+msgid "С чего начинать"
+msgstr "Nimadan boshlash"
+
+#: apps/assistant/services.py
+msgid "С этим я не помогу."
+msgstr "Bunga yordam bera olmayman."
+
 #: apps/refugee/models.py
 msgid "США"
 msgstr "AQSh"
+
+#: apps/tracker/services.py
+msgid "Садака"
+msgstr "Sadaqa"
 
 #: apps/core/templates/core/pages/support.html
 msgid "Садака джария"
@@ -7323,7 +8708,7 @@ msgid "Сброс"
 msgstr "Tozalash"
 
 #: apps/core/templates/core/settings.html
-#: apps/refugee/templates/refugee/index.html
+#: apps/refugee/templates/refugee/index.html static/js/photoedit.js
 msgid "Сбросить"
 msgstr "Tozalash"
 
@@ -7375,6 +8760,10 @@ msgstr "Guvoh (mahram)"
 msgid "Свидетель убран из ваших чатов."
 msgstr "Guvoh chatlaringizdan olib tashlandi."
 
+#: static/js/photoedit.js
+msgid "Свободно"
+msgstr "Erkin"
+
 #: apps/transport/templates/transport/trip.html
 msgid "Свободных мест нет — напишите водителю, вдруг кто-то откажется."
 msgstr "Bo‘sh joy yo‘q — haydovchiga yozing, balki kimdir voz kechar."
@@ -7383,6 +8772,14 @@ msgstr "Bo‘sh joy yo‘q — haydovchiga yozing, balki kimdir voz kechar."
 #, python-brace-format
 msgid "Свободных мест: {n}"
 msgstr "Bo‘sh joylar: {n}"
+
+#: apps/assistant/templates/assistant/index.html
+msgid "Сводка дня работает и так. Чтобы помощник отвечал и делал дела за вас, подключите свой ИИ ниже — подойдёт Claude, OpenAI, Z.AI."
+msgstr "Kun xulosasi shundoq ham ishlaydi. Yordamchi javob berishi va siz uchun ish qilishi uchun quyida o‘z SI ni ulang — Claude, OpenAI, Z.AI mos keladi."
+
+#: apps/core/templates/core/settings.html
+msgid "Свои вкладки над списком чатов"
+msgstr "Chatlar ro‘yxati ustidagi o‘z yorliqlaringiz"
 
 #: apps/nikah/templates/nikah/_swipecard.html
 #: apps/nikah/templates/nikah/detail.html
@@ -7393,13 +8790,34 @@ msgstr "Oʻz farzandlari"
 msgid "Свои привычки видите только вы. В общем трекере участники видят отметки друг друга."
 msgstr "O‘z odatlaringizni faqat siz ko‘rasiz. Umumiy trekerda ishtirokchilar bir-birining belgilarini ko‘radi."
 
+#: apps/chat/templates/chat/space.html
+msgid "Свои роли — как в Discord: цвет имени, права и доступ к закрытым каналам. Роль выдаётся в меню участника."
+msgstr "O‘z rollaringiz — Discorddagi kabi: ism rangi, huquqlar va yopiq kanallarga kirish. Rol a’zo menyusida beriladi."
+
+#: apps/assistant/templates/assistant/index.html
+msgid "Свой ИИ"
+msgstr "O‘z SI"
+
+#: apps/assistant/providers.py
+msgid "Свой сервер (разрешает владелец площадки)"
+msgstr "O‘z serveringiz (sayt egasi ruxsat beradi)"
+
 #: apps/core/templates/core/settings.html
 msgid "Свой цвет"
 msgstr "O‘z rangingiz"
 
+#: apps/tracker/templates/tracker/index.html
+#: apps/tracker/templates/tracker/templates.html
+msgid "Своя привычка"
+msgstr "O‘z odatingiz"
+
 #: apps/core/templates/core/settings.html
 msgid "Своё фото"
 msgstr "O‘z rasmingiz"
+
+#: static/js/voice.js
+msgid "Связь с комнатой прервалась."
+msgstr "Xona bilan aloqa uzildi."
 
 #: apps/deals/views.py
 msgid "Сдан"
@@ -7408,6 +8826,10 @@ msgstr "Topshirildi"
 #: apps/deals/templates/deals/detail.html
 msgid "Сдать работу"
 msgstr "Ishni topshirish"
+
+#: apps/assistant/templates/assistant/index.html
+msgid "Сделай сводку моего дня: намаз, планы, трекер, кто мне написал"
+msgstr "Kunimning xulosasini tuz: namoz, rejalar, treker, kim menga yozdi"
 
 #: apps/tracker/models.py
 msgid "Сделал / не сделал"
@@ -7421,6 +8843,10 @@ msgstr "Bajardim — belgi"
 msgid "Сделать админом"
 msgstr "Admin qilish"
 
+#: static/js/photoview.js
+msgid "Сделать главным"
+msgstr "Asosiy qilish"
+
 #: apps/chat/templates/chat/room_info.html
 #: apps/tracker/templates/tracker/board.html
 msgid "Сделать новую ссылку"
@@ -7429,6 +8855,14 @@ msgstr "Yangi havola yaratish"
 #: apps/chat/templates/chat/room_info.html
 msgid "Сделать публичную ссылку"
 msgstr "Ommaviy havola yaratish"
+
+#: static/js/feed.js
+msgid "Сделать репост на свою стену?"
+msgstr "O‘z devoringizga repost qilinsinmi?"
+
+#: apps/chat/templates/chat/space.html
+msgid "Сделать:"
+msgstr "Tayinlash:"
 
 #: apps/accounts/templates/accounts/public.html
 msgid "Сделка"
@@ -7451,6 +8885,10 @@ msgstr "Bitimlar"
 msgid "Сделок пока нет. Начните с кнопки «Безопасная сделка» в чате или на странице исполнителя."
 msgstr "Hozircha bitimlar yoʻq. Chatdagi yoki ijrochi sahifasidagi «Xavfsiz bitim» tugmasidan boshlang."
 
+#: apps/social/services.py
+msgid "Себе подарок не отправить."
+msgstr "O‘zingizga sovg‘a yuborib bo‘lmaydi."
+
 #: apps/accounts/people.py
 msgid "Себя добавить нельзя."
 msgstr "O‘zingizni qo‘shib bo‘lmaydi."
@@ -7463,6 +8901,14 @@ msgstr "Bugun"
 #: apps/chat/templates/chat/thread.html
 msgid "Сегодня в 21:00"
 msgstr "Bugun 21:00 da"
+
+#: apps/social/services.py
+msgid "Сегодня вы уже выложили много сторис."
+msgstr "Bugun allaqachon ko‘p stories joyladingiz."
+
+#: apps/social/services.py
+msgid "Сегодня вы уже опубликовали много записей. Попробуйте завтра."
+msgstr "Bugun allaqachon ko‘p yozuv joyladingiz. Ertaga urinib ko‘ring."
 
 #: apps/chat/rooms.py
 msgid "Сегодня вы уже создали много групп и каналов. Попробуйте завтра."
@@ -7547,9 +8993,21 @@ msgstr "Tarmoq"
 msgid "Сирия"
 msgstr "Suriya"
 
+#: static/js/photoview.js
+msgid "Скачать"
+msgstr "Yuklab olish"
+
 #: apps/core/templates/core/moderation.html
 msgid "Скачать файл книги для проверки"
 msgstr "Tekshirish uchun kitob faylini yuklab olish"
+
+#: apps/chat/templates/chat/space.html
+msgid "Сколько раз"
+msgstr "Necha marta"
+
+#: apps/tracker/templates/tracker/habit_form.html
+msgid "Сколько раз в неделю"
+msgstr "Haftada necha marta"
 
 #: apps/core/templates/core/pages/salah.html
 msgid "Сколько ракаатов в обязательных намазах"
@@ -7559,9 +9017,17 @@ msgstr "Farz namozlarda nechta rakat bor"
 msgid "Скопировано"
 msgstr "Nusxalandi"
 
+#: static/js/feed.js
+msgid "Скопировать ссылку"
+msgstr "Havolani nusxalash"
+
 #: apps/core/templates/core/coming_soon.html
 msgid "Скоро"
 msgstr "Tez orada"
+
+#: apps/chat/templates/chat/_msg.html static/js/chat.js
+msgid "Скорость"
+msgstr "Tezlik"
 
 #: apps/nikah/templates/nikah/how.html
 msgid "Скриншоты запрещены правилами"
@@ -7619,9 +9085,25 @@ msgstr "Juda qisqa — tugmani bosib turing"
 msgid "Слишком много жалоб за сегодня. Мы уже разбираемся."
 msgstr "Bugun shikoyatlar juda koʻp. Allaqachon koʻrib chiqyapmiz."
 
+#: apps/assistant/services.py
+msgid "Слишком много запросов к ИИ — попробуйте через минуту."
+msgstr "SI ga so‘rovlar juda ko‘p — bir daqiqadan keyin urinib ko‘ring."
+
 #: apps/accounts/views.py
 msgid "Слишком много запросов. Попробуйте через час."
 msgstr "Soʻrovlar juda koʻp. Bir soatdan keyin urinib koʻring."
+
+#: apps/chat/spaces.py
+msgid "Слишком много категорий."
+msgstr "Toifalar juda ko‘p."
+
+#: apps/social/services.py
+msgid "Слишком много комментариев подряд. Подождите немного."
+msgstr "Ketma-ket juda ko‘p izoh. Biroz kuting."
+
+#: apps/accounts/people.py
+msgid "Слишком много контактов."
+msgstr "Kontaktlar juda ko‘p."
 
 #: apps/tracker/services.py
 msgid "Слишком много общих трекеров."
@@ -7634,6 +9116,10 @@ msgstr "Kirishga urinishlar juda koʻp. 15 daqiqa kuting va qayta urinib koʻrin
 #: apps/tracker/services.py
 msgid "Слишком много привычек — уберите лишние в архив."
 msgstr "Odatlar juda ko‘p — ortiqchasini arxivga oling."
+
+#: apps/chat/spaces.py
+msgid "Слишком много ролей."
+msgstr "Rollar juda ko‘p."
 
 #: apps/accounts/people.py apps/api/base.py apps/chat/consumers.py
 msgid "Слишком часто — подождите немного."
@@ -7651,6 +9137,10 @@ msgstr "Xizmat xabari"
 msgid "Слушать"
 msgstr "Tinglash"
 
+#: apps/accounts/templates/accounts/accounts.html
+msgid "Сменили пароль — запомненные входы этого аккаунта на всех устройствах перестают работать. «Выйти» убирает аккаунт с этого устройства."
+msgstr "Parol o‘zgarsa, bu akkauntning eslab qolingan kirishlari barcha qurilmalarda ishlamay qoladi. «Chiqish» akkauntni shu qurilmadan olib tashlaydi."
+
 #: apps/core/templates/core/blocks/banner.html
 msgid "Смотреть анкеты"
 msgstr "Anketalarni koʻrish"
@@ -7658,6 +9148,12 @@ msgstr "Anketalarni koʻrish"
 #: apps/accounts/templates/accounts/phone.html
 msgid "Смотреть объявления можно и без этого."
 msgstr "Eʼlonlarni busiz ham koʻrish mumkin."
+
+#: apps/accounts/templates/accounts/profile.html
+#: apps/accounts/templates/accounts/public.html
+#: apps/chat/templates/chat/room_info.html
+msgid "Смотреть фото"
+msgstr "Rasmlarni ko‘rish"
 
 #: static/js/nikah.js
 msgid "Сначала выберите страну"
@@ -7716,6 +9212,14 @@ msgstr "«Rasmiy» belgisini olib tashlash"
 msgid "Снять с публикации"
 msgstr "Eʼlondan olib tashlash"
 
+#: apps/chat/templates/chat/space.html
+msgid "Снять тайм-аут"
+msgstr "Taym-autni olib tashlash"
+
+#: apps/assistant/templates/assistant/index.html
+msgid "Со своим ключом лимита нет — за ответы вы платите поставщику напрямую. Ключ хранится зашифрованным и используется только для ваших запросов. Подписки Claude Pro и ChatGPT Plus подключить нельзя: они не выдают ключ для чужих программ. Подойдут API Anthropic и OpenAI, Z.AI (в том числе подписка Coding Plan — у неё ключ есть), OpenRouter."
+msgstr "O‘z kalitingiz bilan cheklov yo‘q — javoblar uchun provayderga to‘g‘ridan-to‘g‘ri to‘laysiz. Kalit shifrlangan holda saqlanadi va faqat sizning so‘rovlaringiz uchun ishlatiladi. Claude Pro va ChatGPT Plus obunalarini ulab bo‘lmaydi: ular begona dasturlar uchun kalit bermaydi. Anthropic va OpenAI API, Z.AI (jumladan Coding Plan obunasi — unda kalit bor), OpenRouter mos keladi."
+
 #: apps/core/templates/core/pages/salah.html
 msgid "Со словами «Аллаху акбар» наклонитесь, руки на коленях: «Субхана Раббияль-‘Азым» — 3 раза."
 msgstr "«Allohu akbar» deb egiling, qoʻllar tizzada: «Subhana Robbiyal ʼAzim» — 3 marta."
@@ -7760,8 +9264,16 @@ msgstr "Ulanmoqda…"
 msgid "Создавать группы и каналы можно только с подтверждённым номером."
 msgstr "Guruh va kanallarni faqat tasdiqlangan raqam bilan yaratish mumkin."
 
-#: apps/chat/templates/chat/room_new.html
-#: apps/tracker/templates/tracker/board_form.html
+#: apps/chat/spaces.py
+msgid "Создавать сообщества можно только с подтверждённым номером."
+msgstr "Hamjamiyatlarni faqat tasdiqlangan raqam bilan yaratish mumkin."
+
+#: apps/chat/templates/chat/spaces.html
+msgid "Создайте первое — для своей мечети, города, профессии или увлечения."
+msgstr "Birinchisini yarating — masjidingiz, shahringiz, kasbingiz yoki qiziqishingiz uchun."
+
+#: apps/chat/templates/chat/room_new.html apps/chat/templates/chat/space.html
+#: apps/chat/templates/chat/spaces.html
 msgid "Создать"
 msgstr "Yaratish"
 
@@ -7782,9 +9294,18 @@ msgstr "Ariza yaratish"
 msgid "Создать канал"
 msgstr "Kanal yaratish"
 
+#: apps/chat/templates/chat/folder_form.html
+#: apps/chat/templates/chat/folders.html
+msgid "Создать папку"
+msgstr "Jild yaratish"
+
 #: apps/chat/templates/chat/channels.html
 msgid "Создать свой"
 msgstr "O‘zingiznikini yarating"
+
+#: apps/chat/templates/chat/space_new.html
+msgid "Создать сообщество"
+msgstr "Hamjamiyat yaratish"
 
 #: apps/chat/templates/chat/thread.html
 msgid "Сообщение"
@@ -7794,11 +9315,11 @@ msgstr "Xabar"
 msgid "Сообщение запланировано"
 msgstr "Xabar rejalashtirildi"
 
-#: apps/chat/services.py
+#: apps/chat/msgops.py apps/chat/services.py
 msgid "Сообщение не найдено"
 msgstr "Xabar topilmadi"
 
-#: apps/chat/services.py
+#: apps/chat/msgops.py apps/chat/services.py
 msgid "Сообщение пустое или слишком длинное"
 msgstr "Xabar boʻsh yoki juda uzun"
 
@@ -7814,6 +9335,7 @@ msgstr "Xabarlar yoʻq."
 msgid "Сообщений пока нет. Поделитесь полезным: время джума-намаза, уроки, новости мечети."
 msgstr "Hozircha xabarlar yoʻq. Foydali narsa ulashing: juma namozi vaqti, darslar, masjid yangiliklari."
 
+#: apps/assistant/templates/assistant/index.html static/js/chatlist.js
 #: templates/base.html
 msgid "Сообщения"
 msgstr "Xabarlar"
@@ -7822,9 +9344,34 @@ msgstr "Xabarlar"
 msgid "Сообщения доставляются мгновенно — как в мессенджере."
 msgstr "Xabarlar darhol yetkaziladi — xuddi messenjerdagidek."
 
+#: apps/chat/folders.py apps/chat/templates/chat/space.html
+#: apps/chat/templates/chat/space_new.html
+msgid "Сообщества"
+msgstr "Hamjamiyatlar"
+
+#: apps/chat/spaces.py
+msgid "Сообщества сейчас выключены."
+msgstr "Hamjamiyatlar hozir o‘chirilgan."
+
+#: apps/chat/templates/chat/spaces.html
+msgid "Сообщества —"
+msgstr "Hamjamiyatlar —"
+
+#: apps/chat/spaces.py
+msgid "Сообщество закрыто."
+msgstr "Hamjamiyat yopilgan."
+
+#: apps/chat/templates/chat/space_new.html
+msgid "Сообщество — это место для своих: несколько каналов по темам, объявления, роли. Сразу появятся каналы «объявления» и «общий» — остальные добавите сами."
+msgstr "Hamjamiyat — o‘zingizga yaqinlar uchun joy: mavzular bo‘yicha bir nechta kanal, e’lonlar, rollar. «E’lonlar» va «umumiy» kanallari darhol paydo bo‘ladi — qolganlarini o‘zingiz qo‘shasiz."
+
 #: apps/maps/templates/maps/detail.html
 msgid "Сообщить о неточности"
 msgstr "Noaniqlik haqida xabar berish"
+
+#: apps/tracker/templates/tracker/board.html
+msgid "Соревнование до"
+msgstr "Musobaqa muddati:"
 
 #: apps/tracker/templates/tracker/board_form.html
 msgid "Соревнование: показывать таблицу, кто сколько выполнил"
@@ -7834,7 +9381,15 @@ msgstr "Musobaqa: kim qancha bajarganini jadvalda ko‘rsatish"
 msgid "Состояние, комплект, причина продажи — чем подробнее, тем быстрее продастся"
 msgstr "Holati, toʻplami, sotish sababi — qancha batafsil boʻlsa, shuncha tez sotiladi"
 
-#: apps/api/views_nikah.py apps/chat/views_rooms.py apps/core/my_views.py
+#: static/js/feed.js
+msgid "Сохранено"
+msgstr "Saqlandi"
+
+#: static/js/chat.js
+msgid "Сохранено в «Избранное»"
+msgstr "«Saqlanganlar»ga saqlandi"
+
+#: apps/accounts/views.py apps/api/views_nikah.py apps/assistant/views.py
 msgid "Сохранено."
 msgstr "Saqlandi."
 
@@ -7850,8 +9405,9 @@ msgstr "Saqlandi. Matn va suratni moderator tekshiradi — odatda bir kungacha."
 msgid "Сохраните документы"
 msgstr "Hujjatlarni saqlang"
 
+#: apps/assistant/templates/assistant/index.html
+#: apps/chat/templates/chat/folder_form.html
 #: apps/chat/templates/chat/room_info.html
-#: apps/core/templates/core/settings.html apps/nikah/templates/nikah/_card.html
 msgid "Сохранить"
 msgstr "Saqlash"
 
@@ -7867,13 +9423,22 @@ msgstr "Saqlash va tekshiruvga yuborish"
 msgid "Сохранить изменения"
 msgstr "Oʻzgarishlarni saqlash"
 
-#: apps/core/templates/core/settings.html
-msgid "Сохранить кнопки"
-msgstr "Tugmalarni saqlash"
-
 #: apps/accounts/templates/accounts/reset_confirm.html
 msgid "Сохранить пароль"
 msgstr "Parolni saqlash"
+
+#: apps/chat/templates/chat/space.html
+msgid "Сохранить роли"
+msgstr "Rollarni saqlash"
+
+#: apps/social/templates/social/feed.html
+#: apps/social/templates/social/saved.html
+msgid "Сохранённое"
+msgstr "Saqlanganlar"
+
+#: apps/social/templates/social/saved.html
+msgid "Сохранённое —"
+msgstr "Saqlanganlar —"
 
 #: apps/nikah/templates/nikah/_base.html
 msgid "Сохранённые"
@@ -7882,6 +9447,10 @@ msgstr "Saqlanganlar"
 #: apps/nikah/templates/nikah/saved.html
 msgid "Сохранённые · Никях"
 msgstr "Saqlanganlar · Nikoh"
+
+#: apps/core/templates/core/settings.html
+msgid "Сохранённые люди"
+msgstr "Saqlangan odamlar"
 
 #: apps/nikah/templates/nikah/saved.html
 msgid "Сохранённых нет"
@@ -7927,6 +9496,10 @@ msgstr "Mutaxassislik"
 msgid "Списание"
 msgstr "Chiqim"
 
+#: apps/maps/templates/maps/map.html
+msgid "Список мест"
+msgstr "Joylar ro‘yxati"
+
 #: apps/accounts/templates/accounts/blocked.html
 msgid "Список пуст."
 msgstr "Roʻyxat boʻsh."
@@ -7947,13 +9520,17 @@ msgstr "Nizo hal qilindi: buyurtmachiga qaytarish"
 msgid "Спор решён: выплата исполнителю"
 msgstr "Nizo hal qilindi: ijrochiga toʻlov"
 
-#: apps/core/i18n_data.py
+#: apps/core/i18n_data.py apps/tracker/services.py
 msgid "Спорт"
 msgstr "Sport"
 
 #: apps/payments/templates/payments/topup.html
 msgid "Способ оплаты"
 msgstr "Toʻlov usuli"
+
+#: apps/assistant/templates/assistant/index.html
+msgid "Спросите или попросите что-нибудь сделать…"
+msgstr "Savol bering yoki biror narsa qilishni so‘rang…"
 
 #: apps/forum/templates/forum/list.html
 msgid "Спросите первым"
@@ -7971,11 +9548,16 @@ msgstr "Oʻrta Osiyo"
 msgid "Средняя оценка"
 msgstr "Oʻrtacha baho"
 
+#: apps/chat/templates/chat/space.html
+#: apps/chat/templates/chat/space_board.html
+msgid "Срок"
+msgstr "Muddat"
+
 #: apps/deals/templates/deals/new.html
 msgid "Срок сдачи"
 msgstr "Topshirish muddati"
 
-#: apps/chat/templates/chat/room_info.html
+#: apps/chat/templates/chat/room_info.html apps/chat/templates/chat/space.html
 msgid "Ссылка"
 msgstr "Havola"
 
@@ -8008,7 +9590,7 @@ msgstr "Havola yaroqsiz."
 msgid "Ссылка обновлена — старая больше не работает."
 msgstr "Havola yangilandi — eskisi endi ishlamaydi."
 
-#: static/js/app.js
+#: static/js/app.js static/js/feed.js
 msgid "Ссылка скопирована"
 msgstr "Havola nusxalandi"
 
@@ -8039,6 +9621,11 @@ msgstr "Taklif havolasi"
 #: apps/chat/templates/chat/room_info.html
 msgid "Ссылка-приглашение — только для тех, кому вы её дали"
 msgstr "Taklif havolasi — faqat siz bergan kishilar uchun"
+
+#: apps/accounts/templates/accounts/profile.html
+#: apps/core/templates/core/settings.html
+msgid "Ссылки и соцсети"
+msgstr "Havolalar va ijtimoiy tarmoqlar"
 
 #: apps/core/i18n_data.py
 msgid "Стамбул"
@@ -8078,13 +9665,21 @@ msgstr "Guvoh boʻlish"
 msgid "Стать свидетелем · Никях"
 msgstr "Guvoh boʻlish · Nikoh"
 
-#: apps/accounts/templates/accounts/profile.html
-msgid "Стереть личные данные навсегда"
-msgstr "Shaxsiy maʼlumotlarni butunlay oʻchirish"
-
 #: apps/health/models.py
 msgid "Стоматолог"
 msgstr "Stomatolog"
+
+#: apps/social/templates/social/feed.html
+msgid "Сторис"
+msgstr "Stories"
+
+#: apps/social/services.py
+msgid "Сторис скоро появятся."
+msgstr "Stories tez orada paydo bo‘ladi."
+
+#: apps/social/services.py
+msgid "Сторис уже исчезла."
+msgstr "Stories allaqachon yo‘qolgan."
 
 #: apps/core/templates/core/pages/salah.html
 msgid "Стояние (кыям)."
@@ -8106,6 +9701,10 @@ msgstr "Davlat topilmadi"
 #: templates/404.html
 msgid "Страница не найдена —"
 msgstr "Sahifa topilmadi —"
+
+#: static/js/photoedit.js
+msgid "Стрелка"
+msgstr "Strelka"
 
 #: apps/jobs/models.py
 msgid "Строительство"
@@ -8137,6 +9736,10 @@ msgstr "Summa — {MIN_AMOUNT:,} soʻmdan."
 msgid "Сумма, сум"
 msgstr "Summa, soʻm"
 
+#: apps/tracker/services.py
+msgid "Сунна"
+msgstr "Sunnat"
+
 #: apps/maps/models.py
 msgid "Суннитская"
 msgstr "Sunniy"
@@ -8165,7 +9768,7 @@ msgstr "Miqdorni sanash"
 msgid "Счёт устарел — создайте новый в приложении"
 msgstr "Hisob eskirgan — ilovada yangisini yarating"
 
-#: apps/chat/rooms.py
+#: apps/chat/rooms.py apps/chat/spaces.py
 msgid "Сюда можно попасть только по ссылке-приглашению."
 msgstr "Bu yerga faqat taklif havolasi orqali kirish mumkin."
 
@@ -8174,6 +9777,10 @@ msgstr "Bu yerga faqat taklif havolasi orqali kirish mumkin."
 #: apps/market/templates/market/list.html
 msgid "ТОП"
 msgstr "TOP"
+
+#: apps/tracker/services.py
+msgid "Таблетки"
+msgstr "Dorilar"
 
 #: apps/tracker/templates/tracker/index.html
 msgid "Таблетки, вода, чтение, зарядка, слова на арабском — что угодно. Отмечайте каждый день и смотрите, как растёт серия."
@@ -8195,13 +9802,49 @@ msgstr "Jadval: davr ichida kim qancha bajargan"
 msgid "Таджикистан"
 msgstr "Tojikiston"
 
+#: apps/chat/templates/chat/space.html
+msgid "Тайм-аут"
+msgstr "Taym-aut"
+
+#: apps/chat/models.py
+msgid "Тайм-аут участникам"
+msgstr "A’zolarga taym-aut"
+
+#: apps/chat/templates/chat/space.html
+msgid "Тайм-аут: 1 час"
+msgstr "Taym-aut: 1 soat"
+
+#: apps/chat/templates/chat/space.html
+msgid "Тайм-аут: 5 минут"
+msgstr "Taym-aut: 5 daqiqa"
+
+#: apps/chat/templates/chat/space.html
+msgid "Тайм-аут: неделя"
+msgstr "Taym-aut: bir hafta"
+
+#: apps/chat/templates/chat/space.html
+msgid "Тайм-аут: сутки"
+msgstr "Taym-aut: bir sutka"
+
+#: apps/chat/templates/chat/space.html
+msgid "Так вас видят в каналах этого сообщества. Пусто — обычное имя. Профиль при этом тот же: нажав на имя, человек попадёт к вам."
+msgstr "Bu hamjamiyat kanallarida sizni shunday ko‘rishadi. Bo‘sh — odatdagi ism. Profil o‘sha: ismni bossa, odam sizga o‘tadi."
+
 #: apps/core/templates/core/pages/salah.html
 msgid "Такбир."
 msgstr "Takbir."
 
+#: apps/chat/msgops.py
+msgid "Такой реакции нет."
+msgstr "Bunday reaksiya yo‘q."
+
 #: templates/404.html
 msgid "Такой страницы нет"
 msgstr "Bunday sahifa yoʻq"
+
+#: apps/tracker/services.py
+msgid "Тахаджуд"
+msgstr "Tahajjud"
 
 #: apps/core/templates/core/pages/salah.html
 msgid "Ташаххуд."
@@ -8211,9 +9854,13 @@ msgstr "Tashahhud."
 msgid "Ташкент"
 msgstr "Toshkent"
 
-#: apps/chat/models.py
+#: apps/chat/models.py static/js/photoedit.js
 msgid "Текст"
 msgstr "Matn"
+
+#: apps/chat/templates/chat/space.html
+msgid "Текстовый — пишут все"
+msgstr "Matnli — hamma yozadi"
 
 #: apps/accounts/templates/accounts/_tprows.html
 #: apps/accounts/templates/accounts/profile.html apps/api/views_content.py
@@ -8236,9 +9883,9 @@ msgstr "Mavzu"
 msgid "Тема (необязательно)"
 msgstr "Mavzu (ixtiyoriy)"
 
-#: apps/accounts/templates/accounts/profile.html
-msgid "Тема и цвет"
-msgstr "Mavzu va rang"
+#: apps/core/templates/core/settings.html
+msgid "Тема, цвет, фон чата"
+msgstr "Mavzu, rang, chat foni"
 
 #: apps/nikah/templates/nikah/match.html
 msgid "Теперь брат посмотрит ваше фото и примет решение."
@@ -8247,6 +9894,10 @@ msgstr "Endi aka-uka suratingizni koʻrib, qaror qabul qiladi."
 #: apps/accounts/templates/accounts/reset_complete.html
 msgid "Теперь войдите с новым паролем."
 msgstr "Endi yangi parol bilan kiring."
+
+#: static/js/photoedit.js
+msgid "Теплота"
+msgstr "Iliqlik"
 
 #: apps/health/models.py
 msgid "Терапевт / семейный"
@@ -8260,9 +9911,17 @@ msgstr "Oqim"
 msgid "Тип"
 msgstr "Turi"
 
+#: static/js/photoedit.js
+msgid "Толщина"
+msgstr "Qalinlik"
+
 #: apps/nikah/templates/nikah/feed.html
 msgid "Только анкеты, где фото откроется при симпатии"
 msgstr "Faqat hamdardlikda surati ochiladigan anketalar"
+
+#: apps/social/templates/social/feed.html
+msgid "Только близкие друзья"
+msgstr "Faqat yaqin do‘stlar"
 
 #: apps/transport/models.py
 msgid "Только братья"
@@ -8287,6 +9946,10 @@ msgstr "Faqat opa-singillar"
 #: apps/tracker/templates/tracker/habit_form.html
 msgid "Только у меня (личное)"
 msgstr "Faqat menda (shaxsiy)"
+
+#: apps/chat/folders.py
+msgid "Только чаты с непрочитанными сообщениями"
+msgstr "Faqat o‘qilmagan xabarli chatlar"
 
 #: apps/jobs/models.py
 msgid "Торговля"
@@ -8315,6 +9978,10 @@ msgstr "Treker"
 #: apps/tracker/templates/tracker/index.html
 msgid "Трекер привычек —"
 msgstr "Odatlar trekeri —"
+
+#: apps/assistant/templates/assistant/index.html
+msgid "Трекер сегодня"
+msgstr "Bugungi treker"
 
 #: apps/nikah/choices.py
 msgid "Третью"
@@ -8348,6 +10015,11 @@ msgstr "Qorongʻi"
 msgid "У вас серьёзные намерения, а не общение ради общения?"
 msgstr "Niyatingiz jiddiymi, shunchaki gaplashish uchun emasmi?"
 
+#: apps/chat/spaces.py
+#, python-brace-format
+msgid "У вас тайм-аут в этом сообществе до {t}."
+msgstr "Bu hamjamiyatda sizga {t} gacha taym-aut berilgan."
+
 #: apps/tracker/templates/tracker/board.html
 msgid "У всех участников, вместе с отметками"
 msgstr "Barcha ishtirokchilarda, belgilar bilan birga"
@@ -8355,6 +10027,15 @@ msgstr "Barcha ishtirokchilarda, belgilar bilan birga"
 #: apps/nikah/templates/nikah/intro.html
 msgid "У меня есть аккаунт"
 msgstr "Akkauntim bor"
+
+#: apps/chat/spaces.py
+#, python-brace-format
+msgid "У одного человека может быть не больше {n} сообществ."
+msgstr "Bir kishida ko‘pi bilan {n} ta hamjamiyat bo‘lishi mumkin."
+
+#: apps/chat/msgops.py
+msgid "У этого поста нет комментариев."
+msgstr "Bu postda izohlar yo‘q."
 
 #: apps/refugee/models.py
 msgid "УВКБ ООН"
@@ -8376,7 +10057,12 @@ msgstr "Kontaktlarni olib tashlang: telefon, havola, taxallus va ijtimoiy tarmoq
 msgid "Убирать участников может только владелец."
 msgstr "Ishtirokchilarni faqat egasi olib tashlay oladi."
 
+#: static/js/feed.js
+msgid "Убрано из сохранённого"
+msgstr "Saqlanganlardan olib tashlandi"
+
 #: apps/accounts/templates/accounts/profile.html
+#: apps/core/templates/core/settings.html
 msgid "Убрать"
 msgstr "Olib tashlash"
 
@@ -8395,6 +10081,14 @@ msgstr "Trekerdan olib tashlash"
 #: apps/tracker/templates/tracker/board.html
 msgid "Убрать из трекера?"
 msgstr "Trekerdan olib tashlansinmi?"
+
+#: static/js/chatlist.js
+msgid "Убрать из этой папки"
+msgstr "Bu jilddan olib tashlash"
+
+#: apps/accounts/templates/accounts/accounts.html
+msgid "Убрать с устройства"
+msgstr "Qurilmadan olib tashlash"
 
 #: apps/nikah/templates/nikah/settings.html
 msgid "Убрать свидетеля"
@@ -8416,10 +10110,15 @@ msgstr "Bildir."
 msgid "Уведомлений нет."
 msgstr "Bildirishnomalar yoʻq."
 
+#: apps/assistant/templates/assistant/index.html
 #: apps/core/templates/core/notifications.html
-#: apps/nikah/templates/nikah/settings.html templates/base.html
+#: apps/nikah/templates/nikah/settings.html
 msgid "Уведомления"
 msgstr "Bildirishnomalar"
+
+#: apps/core/templates/core/settings.html
+msgid "Уведомления и звуки"
+msgstr "Bildirishnomalar va tovushlar"
 
 #: apps/core/templates/core/notifications.html
 msgid "Уведомления —"
@@ -8433,14 +10132,13 @@ msgstr "Bildirishnomalar — saytda (qoʻngʻiroqcha)."
 msgid "Удалено."
 msgstr "O‘chirildi."
 
-#: apps/chat/templates/chat/_msg.html
-#: apps/core/templates/core/my_publications.html
-#: apps/tracker/templates/tracker/habit_form.html
+#: apps/chat/templates/chat/_msg.html apps/chat/templates/chat/folders.html
+#: apps/chat/templates/chat/post.html
 msgid "Удалить"
 msgstr "Oʻchirish"
 
 #: apps/accounts/templates/accounts/delete.html
-#: apps/accounts/templates/accounts/profile.html
+#: apps/core/templates/core/settings.html
 msgid "Удалить аккаунт"
 msgstr "Akkauntni oʻchirish"
 
@@ -8456,9 +10154,29 @@ msgstr "Akkauntni oʻchirish —"
 msgid "Удалить вместе со всеми отметками?"
 msgstr "Barcha belgilar bilan birga o‘chirilsinmi?"
 
+#: apps/chat/templates/chat/space.html
+msgid "Удалить голосовую комнату?"
+msgstr "Ovozli xona o‘chirilsinmi?"
+
 #: apps/chat/templates/chat/room_info.html
 msgid "Удалить группу"
 msgstr "Guruhni o‘chirish"
+
+#: apps/chat/templates/chat/space_board.html
+msgid "Удалить задачу?"
+msgstr "Vazifa o‘chirilsinmi?"
+
+#: static/js/feed.js
+msgid "Удалить запись?"
+msgstr "Yozuv o‘chirilsinmi?"
+
+#: apps/accounts/templates/accounts/public.html
+msgid "Удалить из контактов"
+msgstr "Kontaktlardan o‘chirish"
+
+#: apps/chat/templates/chat/space.html
+msgid "Удалить из сообщества"
+msgstr "Hamjamiyatdan chiqarish"
 
 #: apps/chat/templates/chat/room_info.html
 msgid "Удалить из чата"
@@ -8468,17 +10186,33 @@ msgstr "Chatdan chiqarish"
 msgid "Удалить канал"
 msgstr "Kanalni o‘chirish"
 
-#: apps/chat/rooms.py apps/tracker/services.py
+#: apps/chat/templates/chat/space.html
+msgid "Удалить канал вместе с перепиской?"
+msgstr "Kanal yozishmalari bilan birga o‘chirilsinmi?"
+
+#: apps/assistant/templates/assistant/index.html
+msgid "Удалить ключ"
+msgstr "Kalitni o‘chirish"
+
+#: static/js/feed.js
+msgid "Удалить комментарий?"
+msgstr "Izoh o‘chirilsinmi?"
+
+#: apps/chat/templates/chat/contacts.html
+msgid "Удалить контакт"
+msgstr "Kontaktni o‘chirish"
+
+#: apps/chat/templates/chat/contacts.html
+msgid "Удалить контакт?"
+msgstr "Kontakt o‘chirilsinmi?"
+
+#: apps/chat/rooms.py apps/chat/spaces.py apps/tracker/services.py
 msgid "Удалить может только владелец."
 msgstr "Faqat egasi o‘chira oladi."
 
 #: apps/tracker/services.py
 msgid "Удалить может тот, кто добавил, или владелец трекера."
 msgstr "Qo‘shgan kishi yoki treker egasi o‘chira oladi."
-
-#: apps/chat/services.py
-msgid "Удалить можно только своё сообщение."
-msgstr "Faqat o‘z xabaringizni o‘chira olasiz."
 
 #: apps/chat/templates/chat/room_info.html
 msgid "Удалить навсегда вместе со всеми сообщениями?"
@@ -8487,6 +10221,34 @@ msgstr "Barcha xabarlar bilan birga butunlay o‘chirilsinmi?"
 #: apps/core/templates/core/my_publications.html
 msgid "Удалить насовсем?"
 msgstr "Butunlay oʻchirilsinmi?"
+
+#: static/js/chatlist.js
+msgid "Удалить папку"
+msgstr "Jildni o‘chirish"
+
+#: apps/chat/templates/chat/folders.html static/js/chatlist.js
+msgid "Удалить папку? Сами чаты останутся."
+msgstr "Jild o‘chirilsinmi? Chatlarning o‘zi qoladi."
+
+#: apps/chat/templates/chat/space.html
+msgid "Удалить роль?"
+msgstr "Rol o‘chirilsinmi?"
+
+#: static/js/chat.js
+msgid "Удалить сообщение у всех?"
+msgstr "Xabar hamma uchun o‘chirilsinmi?"
+
+#: apps/chat/templates/chat/space.html
+msgid "Удалить сообщество"
+msgstr "Hamjamiyatni o‘chirish"
+
+#: apps/chat/templates/chat/space.html
+msgid "Удалить сообщество со всеми каналами и перепиской? Это нельзя отменить."
+msgstr "Hamjamiyat barcha kanallari va yozishmalari bilan o‘chirilsinmi? Buni qaytarib bo‘lmaydi."
+
+#: static/js/feed.js
+msgid "Удалить сторис?"
+msgstr "Stories o‘chirilsinmi?"
 
 #: apps/tracker/templates/tracker/board.html
 msgid "Удалить трекер"
@@ -8500,15 +10262,51 @@ msgstr "Treker barcha ishtirokchilarda o‘chirilsinmi?"
 msgid "Удалить у всех"
 msgstr "Hammada o‘chirish"
 
+#: apps/chat/services.py
+msgid "Удалить у всех можно только своё сообщение."
+msgstr "Faqat o‘z xabaringizni hamma uchun o‘chirish mumkin."
+
+#: static/js/chat.js
+msgid "Удалить у себя"
+msgstr "O‘zimda o‘chirish"
+
+#: apps/chat/templates/chat/space.html
+msgid "Удалить участника из сообщества?"
+msgstr "A’zo hamjamiyatdan chiqarilsinmi?"
+
 #: apps/chat/templates/chat/room_info.html
 msgid "Удалить участника? Вернуться по ссылке он не сможет."
 msgstr "A’zo o‘chirilsinmi? U havola orqali qayta kira olmaydi."
+
+#: apps/chat/templates/chat/thread.html static/js/chatlist.js
+msgid "Удалить чат"
+msgstr "Chatni o‘chirish"
+
+#: apps/chat/templates/chat/thread.html static/js/chatlist.js
+msgid "Удалить чат? Он пропадёт из вашего списка; у собеседника переписка останется."
+msgstr "Chat o‘chirilsinmi? U ro‘yxatingizdan yo‘qoladi; suhbatdoshda yozishma qoladi."
+
+#: static/js/photoview.js
+msgid "Удалить это фото?"
+msgstr "Bu rasm o‘chirilsinmi?"
+
+#: apps/chat/models.py
+msgid "Удалять и закреплять сообщения"
+msgstr "Xabarlarni o‘chirish va qadash"
+
+#: apps/chat/models.py
+msgid "Удалять участников"
+msgstr "A’zolarni chiqarish"
 
 #: apps/chat/models.py
 msgid "Удалён"
 msgstr "Chiqarilgan"
 
-#: apps/chat/views_rooms.py
+#: apps/chat/templates/chat/space.html
+msgid "Удалённые участники"
+msgstr "Chiqarilgan a’zolar"
+
+#: apps/chat/persona.py apps/chat/views_rooms.py
 msgid "Удалённый аккаунт"
 msgstr "Oʻchirilgan akkaunt"
 
@@ -8568,6 +10366,10 @@ msgstr "Summani raqam bilan kiriting"
 msgid "Украина"
 msgstr "Ukraina"
 
+#: static/js/photoedit.js
+msgid "Улучшить"
+msgstr "Yaxshilash"
+
 #: apps/prayer/services.py
 msgid "Умм аль-Кура — Саудовская Аравия"
 msgstr "Ummul Quro — Saudiya Arabistoni"
@@ -8580,7 +10382,11 @@ msgstr "Yuzni yuvish — soch chizigʻidan iyakkacha va quloqdan quloqqacha, 3 m
 msgid "Университет Карачи — СНГ, Азия (по умолчанию)"
 msgstr "Karachi universiteti — MDH, Osiyo (standart)"
 
-#: templates/base.html
+#: apps/chat/models.py
+msgid "Упоминать @everyone"
+msgstr "@everyone ni eslatish"
+
+#: apps/chat/templates/chat/space.html templates/base.html
 msgid "Управление"
 msgstr "Boshqaruv"
 
@@ -8613,6 +10419,14 @@ msgstr "Xizmatlar va frilans"
 msgid "Услуги —"
 msgstr "Xizmatlar —"
 
+#: apps/tracker/services.py
+msgid "Утренние азкары"
+msgstr "Ertalabki zikrlar"
+
+#: apps/tracker/models.py apps/tracker/templates/tracker/index.html
+msgid "Утро"
+msgstr "Ertalab"
+
 #: apps/core/i18n_data.py
 msgid "Уфа"
 msgstr "Ufa"
@@ -8622,7 +10436,11 @@ msgid "Участник"
 msgstr "Ishtirokchi"
 
 #: apps/chat/templates/chat/room_info.html
-#: apps/tracker/templates/tracker/board.html
+msgid "Участник пишет не чаще, чем раз в выбранное время. На админов не действует."
+msgstr "A’zo tanlangan vaqtda ko‘pi bilan bir marta yoza oladi. Adminlarga taalluqli emas."
+
+#: apps/chat/spaces.py apps/chat/templates/chat/_space_roster.html
+#: apps/chat/templates/chat/room_info.html
 msgid "Участники"
 msgstr "A’zolar"
 
@@ -8634,9 +10452,17 @@ msgstr "Oʻrganing, sotib oling va soting, ish va uy-joy toping, yangiliklarni o
 msgid "Учусь читать"
 msgstr "Oʻqishni oʻrganyapman"
 
+#: apps/tracker/services.py
+msgid "Учёба и польза"
+msgstr "O‘qish va foyda"
+
 #: apps/core/templates/core/pages/salah.html apps/prayer/services.py
 msgid "Фаджр"
 msgstr "Bomdod"
+
+#: apps/tracker/services.py
+msgid "Фаджр вовремя"
+msgstr "Bomdod o‘z vaqtida"
 
 #: apps/accounts/templates/accounts/public.html apps/chat/events.py
 #: apps/chat/models.py
@@ -8681,6 +10507,10 @@ msgstr "Fayllar"
 msgid "Файлы пользователей"
 msgstr "Foydalanuvchi fayllari"
 
+#: apps/chat/templates/chat/contacts.html
+msgid "Фамилия (необязательно)"
+msgstr "Familiya (ixtiyoriy)"
+
 #: apps/core/models.py
 msgid "Фейк, чужие фото, обман"
 msgstr "Soxta, birovning suratlari, aldov"
@@ -8713,7 +10543,7 @@ msgstr "Moliya"
 msgid "Финляндия"
 msgstr "Finlyandiya"
 
-#: apps/chat/templates/chat/_threads.html
+#: apps/chat/templates/chat/_threads.html apps/chat/templates/chat/thread.html
 #: apps/core/templates/core/settings.html
 msgid "Фон чата"
 msgstr "Chat foni"
@@ -8781,6 +10611,14 @@ msgstr "Rasm yoki video"
 msgid "Фото исчезнет через {v1} мин. Скриншот и пересылка запрещены — нарушение = блокировка."
 msgstr "Surat {v1} daqiqadan soʻng yoʻqoladi. Skrinshot va yuborish taqiqlangan — buzish = bloklash."
 
+#: apps/core/catalog.py
+msgid "Фото на 24 часа — для всех или близких друзей"
+msgstr "24 soatlik rasmlar — hamma yoki yaqin do‘stlar uchun"
+
+#: apps/accounts/people.py
+msgid "Фото не найдено"
+msgstr "Rasm topilmadi"
+
 #: apps/nikah/templates/nikah/match.html
 msgid "Фото откроется один раз на"
 msgstr "Surat bir marta ochiladi:"
@@ -8796,6 +10634,10 @@ msgstr "Surat bir marta koʻrsatiladi. Vaqt javobsiz tugasa — bu rad: hech kim
 #: apps/nikah/templates/nikah/_swipecard.html
 msgid "Фото при симпатии"
 msgstr "Hamdardlikda surat"
+
+#: static/js/photoedit.js
+msgid "Фото профиля"
+msgstr "Profil rasmi"
 
 #: apps/nikah/templates/nikah/match.html
 msgid "Фото скрыто"
@@ -8865,6 +10707,10 @@ msgstr "Halol hordiq: tadbirlar, dam olish, oʻyinlar"
 msgid "Халяль-инвестиции и партнёрства"
 msgstr "Halol investitsiyalar va hamkorlik"
 
+#: apps/assistant/templates/assistant/index.html
+msgid "Халяль-кафе рядом"
+msgstr "Yaqin atrofdagi halol kafe"
+
 #: apps/core/templates/core/blocks/banner.html
 msgid "Халяль-маркетплейс уммы"
 msgstr "Ummatning halol bozori"
@@ -8909,6 +10755,10 @@ msgstr "Oʻz farzandlaringizni xohlaysizmi?"
 msgid "Хотите ответить?"
 msgstr "Javob berishni xohlaysizmi?"
 
+#: apps/tracker/services.py
+msgid "Хотя бы раз в неделю"
+msgstr "Haftada kamida bir marta"
+
 #: apps/nikah/templates/nikah/_swipecard.html
 #: apps/nikah/templates/nikah/feed.html
 msgid "Хочет детей"
@@ -8918,7 +10768,8 @@ msgstr "Farzand istaydi"
 msgid "Хочу начать"
 msgstr "Boshlamoqchiman"
 
-#: apps/tracker/templates/tracker/habit_form.html
+#: apps/chat/templates/chat/space.html
+#: apps/tracker/templates/tracker/habit_form.html static/js/photoedit.js
 msgid "Цвет"
 msgstr "Rang"
 
@@ -8974,6 +10825,10 @@ msgstr "Raqamli xizmatlar"
 msgid "Цифровые услуги и фриланс"
 msgstr "Raqamli xizmatlar va frilans"
 
+#: apps/tracker/services.py
+msgid "Час без телефона"
+msgstr "Telefonsiz bir soat"
+
 #: apps/core/templates/core/pages/islam.html
 msgid "Частые вопросы"
 msgstr "Koʻp soʻraladigan savollar"
@@ -8990,6 +10845,10 @@ msgstr "Chat"
 #: apps/chat/rooms.py apps/chat/templates/chat/thread.html
 msgid "Чат закрыт модератором."
 msgstr "Chat moderator tomonidan yopilgan."
+
+#: apps/tracker/services.py
+msgid "Чат общего трекера"
+msgstr "Umumiy treker chati"
 
 #: apps/nikah/templates/nikah/settings.html
 msgid "Чат открывается сразу после взаимной симпатии. Фото — лично в чате, когда решите."
@@ -9008,6 +10867,10 @@ msgstr "Chat ochiq"
 msgid "Чат поддержки сейчас недоступен — напишите на странице «Поддержка»."
 msgstr "Qoʻllab-quvvatlash chati hozir mavjud emas — «Qoʻllab-quvvatlash» sahifasida yozing."
 
+#: apps/tracker/templates/tracker/board.html
+msgid "Чат трекера"
+msgstr "Treker chati"
+
 #: apps/nikah/templates/nikah/intro.html
 msgid "Чат — только при взаимности"
 msgstr "Chat — faqat oʻzaro hamdardlikda"
@@ -9016,9 +10879,13 @@ msgstr "Chat — faqat oʻzaro hamdardlikda"
 msgid "Чатов пока нет"
 msgstr "Hozircha chatlar yoʻq"
 
+#: apps/chat/templates/chat/folder_form.html
+msgid "Чатов пока нет."
+msgstr "Hozircha chatlar yo‘q."
+
 #: apps/chat/templates/chat/_threads.html
 #: apps/chat/templates/chat/channels.html
-#: apps/chat/templates/chat/contacts.html
+#: apps/chat/templates/chat/room_new.html
 msgid "Чаты"
 msgstr "Chatlar"
 
@@ -9026,9 +10893,29 @@ msgstr "Chatlar"
 msgid "Чаты · Никях"
 msgstr "Chatlar · Nikoh"
 
+#: apps/chat/templates/chat/folder_form.html
+msgid "Чаты по объявлениям, вакансиям, услугам, поездкам"
+msgstr "E’lonlar, vakansiyalar, xizmatlar, safarlar bo‘yicha chatlar"
+
+#: apps/chat/templates/chat/_threads.html
+msgid "Чаты попадают сюда по правилам папки. Изменить правила — «Настроить папки»."
+msgstr "Chatlar bu yerga jild qoidalari bo‘yicha tushadi. Qoidalarni o‘zgartirish — «Jildlarni sozlash»."
+
+#: apps/chat/folders.py
+msgid "Чаты с продавцами, покупателями, работодателями"
+msgstr "Sotuvchilar, xaridorlar, ish beruvchilar bilan chatlar"
+
 #: apps/chat/templates/chat/inbox.html
 msgid "Чаты —"
 msgstr "Chatlar —"
+
+#: apps/chat/templates/chat/folder_form.html
+msgid "Чаты, у которых выключен звук"
+msgstr "Ovozi o‘chirilgan chatlar"
+
+#: apps/chat/templates/chat/folder_form.html
+msgid "Чаты, убранные в архив"
+msgstr "Arxivlangan chatlar"
 
 #: apps/tracker/templates/tracker/habit_form.html
 msgid "Чего"
@@ -9049,6 +10936,10 @@ msgstr "Bir yildan keyin"
 #: apps/chat/templates/chat/thread.html
 msgid "Через час"
 msgstr "Bir soatdan keyin"
+
+#: apps/chat/templates/chat/_threads.html
+msgid "Черновик:"
+msgstr "Qoralama:"
 
 #: apps/nikah/templates/nikah/how.html
 msgid "Честно: браузер и Telegram не умеют запрещать скриншоты. Поэтому — обещание перед показом, водяной знак и бан за нарушение."
@@ -9086,9 +10977,17 @@ msgstr "Beshalasini oʻqiyman"
 msgid "Читаю нерегулярно"
 msgstr "Muntazam emas oʻqiyman"
 
+#: apps/tracker/services.py
+msgid "Чтение"
+msgstr "O‘qish"
+
 #: apps/core/templates/core/pages/islam.html
 msgid "Что будет с грехами, совершёнными до ислама?"
 msgstr "Islomdan oldin qilingan gunohlar nima boʻladi?"
+
+#: apps/chat/templates/chat/folder_form.html
+msgid "Что входит в папку"
+msgstr "Jildga nimalar kiradi"
 
 #: apps/nikah/templates/nikah/feed.html
 msgid "Что дальше →"
@@ -9106,6 +11005,10 @@ msgstr "Aynan nima topshiriladi, hajmi, formati, nechta tuzatish. Qanchalik aniq
 msgid "Что ищете? Например: iPhone…"
 msgstr "Nima izlayapsiz? Masalan: iPhone…"
 
+#: apps/chat/templates/chat/folder_form.html
+msgid "Что не показывать"
+msgstr "Nimani ko‘rsatmaslik"
+
 #: apps/maps/templates/maps/detail.html
 msgid "Что не так: адрес, телефон, часы, имам…"
 msgstr "Nima notoʻgʻri: manzil, telefon, vaqt, imom…"
@@ -9117,6 +11020,10 @@ msgstr "Nima notoʻgʻri: muddat, sifat, shartlarga mos kelmaslik"
 #: templates/includes/report.html
 msgid "Что не так? Автор не узнает, кто пожаловался."
 msgstr "Nima notoʻgʻri? Muallif kim shikoyat qilganini bilmaydi."
+
+#: apps/tracker/templates/tracker/board.html
+msgid "Что нового"
+msgstr "Nima yangiliklar"
 
 #: apps/tracker/templates/tracker/habit_form.html
 msgid "Что нужно делать"
@@ -9130,9 +11037,21 @@ msgstr "Nima qilish kerak"
 msgid "Что откроется дальше"
 msgstr "Keyin nima ochiladi"
 
+#: apps/core/templates/core/settings.html
+msgid "Что показать в профиле и кому"
+msgstr "Profilda nimani va kimga ko‘rsatish"
+
+#: apps/core/templates/core/settings.html
+msgid "Что пришло и что вас ждёт"
+msgstr "Nima keldi va sizni nima kutmoqda"
+
 #: apps/deals/templates/deals/detail.html
 msgid "Что сдаёте: ссылка, файлы в чате, комментарий"
 msgstr "Nima topshirasiz: havola, chatdagi fayllar, izoh"
+
+#: apps/social/templates/social/feed.html
+msgid "Что у вас нового?"
+msgstr "Sizda nima yangiliklar?"
 
 #: templates/500.html
 msgid "Что-то пошло не так"
@@ -9218,6 +11137,10 @@ msgstr "Bu funksiya hozir oʻchirilgan"
 msgid "Эти"
 msgstr "Bu"
 
+#: apps/accounts/people.py
+msgid "Это ваш собственный аккаунт."
+msgstr "Bu sizning o‘z akkauntingiz."
+
 #: apps/jobs/views.py
 msgid "Это ваша вакансия."
 msgstr "Bu sizning vakansiyangiz."
@@ -9234,7 +11157,7 @@ msgstr "Bu sizning havolangiz — uni mahramingizga yuboring."
 msgid "Это внешний сайт — не ilm4. Мы не отвечаем за его содержание, товары и услуги. Не вводите пароли и данные карт, если не уверены в сайте."
 msgstr "Bu tashqi sayt — ilm4 emas. Biz uning mazmuni, tovar va xizmatlari uchun javob bermaymiz. Saytga ishonchingiz komil boʻlmasa, parol va karta maʼlumotlarini kiritmang."
 
-#: apps/api/views_people.py
+#: apps/api/views_people.py apps/social/services.py
 msgid "Это вы сами."
 msgstr "Bu o‘zingizsiz."
 
@@ -9250,6 +11173,10 @@ msgstr "Bu nom ilm4 jamoasi uchun band qilingan — boshqasini tanlang."
 msgid "Это имя уже занято."
 msgstr "Bu nom band."
 
+#: apps/chat/rooms.py
+msgid "Это канал сообщества — выйти можно из сообщества целиком."
+msgstr "Bu hamjamiyat kanali — faqat hamjamiyatdan butunlay chiqish mumkin."
+
 #: apps/core/templates/core/pages/islam.html
 msgid "Это краткое введение. Подробности и вопросы по вашей ситуации лучше обсудить с имамом ближайшей мечети."
 msgstr "Bu qisqa kirish. Tafsilotlar va vaziyatingiz boʻyicha savollarni yaqin masjid imomi bilan muhokama qilgan maʼqul."
@@ -9257,6 +11184,14 @@ msgstr "Bu qisqa kirish. Tafsilotlar va vaziyatingiz boʻyicha savollarni yaqin 
 #: apps/chat/media.py
 msgid "Это не изображение"
 msgstr "Bu rasm emas"
+
+#: apps/assistant/services.py
+msgid "Это не похоже на ключ API — проверьте, что скопировали его целиком."
+msgstr "Bu API kalitiga o‘xshamaydi — uni to‘liq nusxalaganingizni tekshiring."
+
+#: apps/assistant/services.py
+msgid "Это не похоже на ключ Claude API (он начинается с sk-ant-)."
+msgstr "Bu Claude API kalitiga o‘xshamaydi (u sk-ant- bilan boshlanadi)."
 
 #: apps/accounts/templates/accounts/delete.html
 msgid "Это нельзя отменить. Будут удалены: имя, email, телефон, аватар, анкета никяха и фото, привязка Telegram. Ваши объявления и публикации снимутся с сайта. Переписка останется у собеседников без вашего имени. Записи об оплатах хранятся обезличенно — этого требует закон."
@@ -9280,6 +11215,10 @@ msgstr ""
 "\n"
 "Imom Navaviy bu hadisni «Qirq hadis»ida birinchi qilib keltirgan va uni Islomning uchdan biri deb atagan: niyat har bir harakatga hamroh."
 
+#: apps/chat/spaces.py
+msgid "Это приглашение больше не действует."
+msgstr "Bu taklif endi amal qilmaydi."
+
 #: apps/chat/templates/chat/_msg.html static/js/chat.js
 msgid "Это программа. Открывайте, только если доверяете отправителю."
 msgstr "Bu dastur. Faqat jo‘natuvchiga ishonsangiz oching."
@@ -9292,13 +11231,33 @@ msgstr "Bu koʻringanidan osonroq: shahodat, ilk qadamlar va koʻp soʻraladigan
 msgid "Это чат с командой ilm4. Отвечаем по очереди — обычно в течение дня."
 msgstr "Bu ilm4 jamoasi bilan chat. Navbat bilan javob beramiz — odatda bir kun ichida."
 
-#: apps/chat/rooms.py
+#: apps/chat/spaces.py
+msgid "Этого участника изменить нельзя."
+msgstr "Bu a’zoni o‘zgartirib bo‘lmaydi."
+
+#: apps/chat/rooms.py apps/chat/spaces.py
 msgid "Этого участника удалить нельзя."
 msgstr "Bu a’zoni chiqarib bo‘lmaydi."
+
+#: apps/accounts/people.py
+msgid "Этого человека пока нет в ilm4 — или он запретил находить себя по номеру. Пригласите его ссылкой."
+msgstr "Bu odam hali ilm4’da yo‘q — yoki raqam orqali topilishni taqiqlagan. Uni havola orqali taklif qiling."
+
+#: apps/chat/spaces.py
+msgid "Этому участнику нельзя дать тайм-аут."
+msgstr "Bu a’zoga taym-aut berib bo‘lmaydi."
 
 #: apps/accounts/forms.py
 msgid "Этот email уже зарегистрирован."
 msgstr "Bu email allaqachon roʻyxatdan oʻtgan."
+
+#: apps/assistant/services.py
+msgid "Этот адрес сервера не разрешён владельцем площадки."
+msgstr "Bu server manzili sayt egasi tomonidan ruxsat etilmagan."
+
+#: apps/accounts/views.py
+msgid "Этот вход устарел — войдите в аккаунт заново."
+msgstr "Bu kirish eskirgan — akkauntga qaytadan kiring."
 
 #: apps/accounts/forms.py
 msgid "Этот логин занят."
@@ -9315,6 +11274,10 @@ msgstr "Bu raqam boshqa ilm4 akkauntida allaqachon tasdiqlangan. Oʻsha akkauntg
 #: apps/payments/views.py
 msgid "Этот способ пока недоступен."
 msgstr "Bu usul hozircha mavjud emas."
+
+#: apps/chat/spaces.py
+msgid "Эту задачу может менять автор, исполнитель или админ."
+msgstr "Bu vazifani muallif, ijrochi yoki admin o‘zgartira oladi."
 
 #: apps/core/my_views.py
 msgid "Эту публикацию можно только удалить и добавить заново."
@@ -9339,6 +11302,10 @@ msgstr "Men"
 #: apps/nikah/templates/nikah/wizard.html
 msgid "Я брат"
 msgstr "Men aka-ukaman"
+
+#: apps/chat/templates/chat/space.html
+msgid "Я в этом сообществе"
+msgstr "Men bu hamjamiyatda"
 
 #: templates/includes/pledge.html
 msgid "Я веду общение с уважением и по шариату, без обмана и пустых обещаний."
@@ -9385,6 +11352,10 @@ msgstr "Xutba tili"
 msgid "Яндекс"
 msgstr "Yandex"
 
+#: static/js/photoedit.js
+msgid "Яркость"
+msgstr "Yorqinlik"
+
 #: apps/core/i18n_data.py
 msgid "Ясно"
 msgstr "Ochiq"
@@ -9426,17 +11397,25 @@ msgstr "anketalar cheklovsiz"
 msgid "без сжатия, в исходном качестве · до %(mb)s МБ"
 msgstr "siqilmaydi, asl sifatda · %(mb)s MB gacha"
 
+#: apps/chat/templates/chat/space.html
+msgid "без срока"
+msgstr "muddatsiz"
+
 #: apps/wallet/templates/wallet/index.html
 msgid "бесплатно"
 msgstr "bepul"
 
-#: apps/core/templates/core/feed.html
-msgid "бета · листайте вверх"
-msgstr "beta · yuqoriga suring"
-
 #: apps/core/fx.py
 msgid "биткоин"
 msgstr "bitkoin"
+
+#: apps/social/templates/social/_item.html
+msgid "близким"
+msgstr "yaqinlarga"
+
+#: apps/tracker/templates/tracker/habit.html
+msgid "больше"
+msgstr "ko‘proq"
 
 #: apps/nikah/templates/nikah/interests.html
 msgid "братья"
@@ -9470,17 +11449,14 @@ msgstr "ancha oldin bo‘lgan"
 msgid "был(а) недавно"
 msgstr "yaqinda bo‘lgan"
 
-#: apps/chat/templates/chat/contacts.html
-msgid "в ilm4"
-msgstr "ilm4 da"
-
 #: apps/tracker/templates/tracker/stats.html
 msgid "в архиве — открыть, чтобы вернуть или удалить"
 msgstr "arxivda — qaytarish yoki o‘chirish uchun oching"
 
-#: apps/core/templates/core/settings.html
-msgid "в вашем профиле"
-msgstr "profilingizda"
+#: apps/tracker/templates/tracker/habit.html
+#: apps/tracker/templates/tracker/templates.html
+msgid "в день"
+msgstr "kuniga"
 
 #: apps/core/templates/core/pages/islam.html
 msgid "в месяц Рамадан"
@@ -9494,6 +11470,10 @@ msgstr "siyosatda"
 #: apps/chat/templates/chat/_person.html
 msgid "в сети"
 msgstr "tarmoqda"
+
+#: apps/maps/templates/maps/map.html
+msgid "в этой части карты"
+msgstr "xaritaning shu qismida"
 
 #: apps/accounts/templates/accounts/_tprows.html
 #: apps/accounts/templates/accounts/profile.html
@@ -9529,6 +11509,7 @@ msgstr "jo‘natma olaman"
 msgid "вс"
 msgstr "Ya"
 
+#: apps/tracker/templates/tracker/habit.html
 #: apps/tracker/templates/tracker/stats.html
 msgid "всего"
 msgstr "jami"
@@ -9540,6 +11521,10 @@ msgstr "Se"
 #: apps/chat/views.py
 msgid "вчера"
 msgstr "kecha"
+
+#: apps/chat/templates/chat/spaces.html
+msgid "вы участник"
+msgstr "siz a’zosiz"
 
 #: apps/core/models.py
 msgid "выключен"
@@ -9595,9 +11580,17 @@ msgstr "kun"
 msgid "дней ·"
 msgstr "kun ·"
 
+#: apps/tracker/templates/tracker/habit.html
+msgid "дней выполнено"
+msgstr "kun bajarildi"
+
 #: apps/tracker/templates/tracker/stats.html
 msgid "дней на 100%"
 msgstr "100% kunlar"
+
+#: apps/tracker/templates/tracker/habit.html
+msgid "дней подряд"
+msgstr "kun ketma-ket"
 
 #: apps/nikah/templates/nikah/premium.html
 msgid "дней."
@@ -9607,8 +11600,8 @@ msgstr "kun."
 msgid "днём"
 msgstr "kunduzi"
 
-#: apps/market/templates/market/my.html apps/nikah/templates/nikah/_dual.html
-#: apps/nikah/templates/nikah/edit.html
+#: apps/chat/templates/chat/space.html apps/market/templates/market/my.html
+#: apps/nikah/templates/nikah/_dual.html
 msgid "до"
 msgstr "gacha"
 
@@ -9627,6 +11620,10 @@ msgstr "yevro"
 #: apps/core/fx.py apps/core/money.py
 msgid "ег. фунт"
 msgstr "Misr funti"
+
+#: apps/tracker/templates/tracker/habit_form.html
+msgid "ещё"
+msgstr "yana"
 
 #: apps/core/templates/core/moderation.html
 msgid "жалоб"
@@ -9662,7 +11659,11 @@ msgstr "bir haftada"
 msgid "за сегодня. Завтра, иншаАллах, будут новые."
 msgstr "bugun. Ertaga, inshaalloh, yangilari boʻladi."
 
-#: apps/prayer/services.py
+#: apps/tracker/templates/tracker/board.html
+msgid "завершено"
+msgstr "yakunlangan"
+
+#: apps/assistant/templates/assistant/index.html apps/prayer/services.py
 msgid "завтра"
 msgstr "ertaga"
 
@@ -9678,6 +11679,27 @@ msgstr "ertaga, soat {v1} — {v3} dan keyin"
 #: apps/chat/templates/chat/room_info.html
 msgid "закрыт модератором"
 msgstr "moderator yopgan"
+
+#: apps/chat/templates/chat/space.html
+msgid "закрытое"
+msgstr "yopiq"
+
+#: apps/chat/templates/chat/thread.html
+msgid "заметки и пересланное — видите только вы"
+msgstr "eslatmalar va yuborilganlar — faqat siz ko‘rasiz"
+
+#: apps/accounts/templates/accounts/public.html
+#: apps/social/templates/social/feed.html
+msgid "записей"
+msgstr "yozuv"
+
+#: static/js/chat.js
+msgid "записывает голосовое"
+msgstr "ovozli xabar yozmoqda"
+
+#: static/js/chat.js
+msgid "записывает кружок"
+msgstr "dumaloq video yozmoqda"
 
 #: apps/tracker/templates/tracker/stats.html
 msgid "запланировано"
@@ -9699,10 +11721,7 @@ msgstr "va GPS"
 msgid "и курс"
 msgstr "va kurs"
 
-#: apps/chat/templates/chat/contacts.html
-msgid "и отметьте «можно найти по номеру»."
-msgstr "va «raqam boʻyicha topish mumkin»ni belgilang."
-
+#: apps/assistant/templates/assistant/index.html
 #: apps/tracker/templates/tracker/stats.html
 #: apps/transport/templates/transport/trip.html
 msgid "из"
@@ -9716,9 +11735,10 @@ msgstr "5 dan"
 msgid "из 5 · отзывов:"
 msgstr "5 dan · sharhlar:"
 
-#: apps/chat/templates/chat/contacts.html
-msgid "или вставьте номера вручную"
-msgstr "yoki raqamlarni qoʻlda kiriting"
+#: apps/chat/templates/chat/_msg.html apps/social/templates/social/_item.html
+#: static/js/chat.js
+msgid "изменено"
+msgstr "tahrirlangan"
 
 #: apps/refugee/templates/refugee/index.html
 msgid "или миграционную службу страны, где вы находитесь, — только там оформляют статус."
@@ -9758,6 +11778,14 @@ msgstr "ish izlayman"
 msgid "к никяху"
 msgstr "nikohga"
 
+#: apps/tracker/templates/tracker/templates.html
+msgid "каждый день"
+msgstr "har kuni"
+
+#: apps/tracker/templates/tracker/habit.html
+msgid "каждый запланированный день"
+msgstr "har rejalashtirilgan kun"
+
 #: apps/chat/templates/chat/channels.html
 #: apps/chat/templates/chat/room_info.html
 #: apps/chat/templates/chat/room_public.html
@@ -9773,7 +11801,7 @@ msgstr "kafe"
 msgid "кг"
 msgstr "kg"
 
-#: apps/maps/templates/maps/map.html
+#: static/js/mapx.js
 msgid "км"
 msgstr "km"
 
@@ -9794,6 +11822,14 @@ msgstr "lira"
 msgid "лучшая"
 msgstr "eng yaxshisi"
 
+#: apps/tracker/templates/tracker/habit.html
+msgid "лучшая серия"
+msgstr "eng yaxshi ketma-ketlik"
+
+#: static/js/mapx.js
+msgid "м"
+msgstr "m"
+
 #: apps/nikah/templates/nikah/mine.html
 msgid "махрам в чатах"
 msgstr "chatlarda mahram"
@@ -9805,6 +11841,10 @@ msgstr "namozlar orasida:"
 #: apps/refugee/templates/refugee/index.html
 msgid "международные организации"
 msgstr "xalqaro tashkilotlar"
+
+#: apps/tracker/templates/tracker/habit.html
+msgid "меньше"
+msgstr "kamroq"
 
 #: apps/core/models.py
 msgid "меры приняты"
@@ -9828,7 +11868,7 @@ msgstr "joy: {n}"
 msgid "метод:"
 msgstr "usul:"
 
-#: apps/nikah/templates/nikah/match.html
+#: apps/nikah/templates/nikah/match.html apps/tracker/services.py
 msgid "минут"
 msgstr "daqiqa"
 
@@ -9875,13 +11915,25 @@ msgstr "ilm4 da."
 msgid "на ilm4: отзывы, рейтинг, объявления и услуги."
 msgstr "ilm4 da: sharhlar, reyting, eʼlonlar va xizmatlar."
 
+#: apps/tracker/templates/tracker/_habit.html
+msgid "на неделе"
+msgstr "bu hafta"
+
+#: apps/social/models.py
+msgid "на проверке"
+msgstr "tekshiruvda"
+
 #: apps/nikah/templates/nikah/feed.html
 msgid "на сегодня"
 msgstr "bugunga"
 
-#: apps/core/templates/core/feed.html
-msgid "назад"
-msgstr "orqaga"
+#: apps/chat/templates/chat/space.html
+msgid "название"
+msgstr "nomi"
+
+#: apps/tracker/services.py
+msgid "намазов"
+msgstr "namoz"
 
 #: apps/services/templates/services/create.html
 msgid "например: 1 страница — 50 000 сум"
@@ -9891,9 +11943,21 @@ msgstr "masalan: 1 sahifa — 50 000 soʻm"
 msgid "например: iPhone 14 Pro"
 msgstr "masalan: iPhone 14 Pro"
 
+#: apps/chat/templates/chat/space.html
+msgid "например: Учитель"
+msgstr "masalan: O‘qituvchi"
+
+#: apps/chat/templates/chat/space.html
+msgid "например: Учёба"
+msgstr "masalan: O‘qish"
+
 #: apps/transport/templates/transport/trip.html
 msgid "нас"
 msgstr "biz"
+
+#: static/js/chat.js
+msgid "не найдено"
+msgstr "topilmadi"
 
 #: apps/accounts/templates/accounts/profile.html
 msgid "не подтверждён"
@@ -9919,6 +11983,14 @@ msgstr "koʻrsatilmagan"
 msgid "не указывать"
 msgstr "koʻrsatmaslik"
 
+#: apps/tracker/templates/tracker/_habit.html
+msgid "нед. подряд"
+msgstr "hafta ketma-ket"
+
+#: apps/tracker/templates/tracker/habit.html
+msgid "недель подряд"
+msgstr "hafta ketma-ket"
+
 #: apps/accounts/templates/accounts/profile.html
 msgid "необязательно"
 msgstr "ixtiyoriy"
@@ -9930,6 +12002,14 @@ msgstr "hech kim ko‘rmaydi"
 #: apps/core/models.py
 msgid "новая"
 msgstr "yangi"
+
+#: apps/chat/spaces.py
+msgid "новая постоянная ссылка"
+msgstr "yangi doimiy havola"
+
+#: apps/chat/spaces.py
+msgid "новое приглашение"
+msgstr "yangi taklif"
 
 #: templates/base.html
 msgid "новых"
@@ -9943,6 +12023,10 @@ msgstr "raqam"
 msgid "нужна картинка JPG или PNG."
 msgstr "JPG yoki PNG rasm kerak."
 
+#: apps/accounts/templates/accounts/accounts.html
+msgid "нужно войти заново"
+msgstr "qaytadan kirish kerak"
+
 #: apps/nikah/models.py
 msgid "обмен фото"
 msgstr "surat almashish"
@@ -9950,6 +12034,14 @@ msgstr "surat almashish"
 #: apps/core/templates/core/blocks/rates.html
 msgid "обновлён:"
 msgstr "yangilandi:"
+
+#: apps/chat/spaces.py
+msgid "общий"
+msgstr "umumiy"
+
+#: apps/chat/spaces.py
+msgid "объявления"
+msgstr "e’lonlar"
 
 #: apps/core/templates/core/pages/islam.html
 msgid "обязательная милостыня"
@@ -9959,10 +12051,18 @@ msgstr "majburiy sadaqa"
 msgid "онлайн"
 msgstr "onlayn"
 
+#: apps/social/models.py
+msgid "опубликовано"
+msgstr "e’lon qilingan"
+
 #: apps/health/templates/health/detail.html
 #: apps/health/templates/health/index.html
 msgid "опыт"
 msgstr "tajriba"
+
+#: apps/tracker/templates/tracker/board.html
+msgid "осталось дней:"
+msgstr "qolgan kunlar:"
 
 #: apps/wallet/templates/wallet/index.html
 msgid "остаток"
@@ -9986,10 +12086,15 @@ msgstr "sharh,sharh,sharh"
 msgid "отклонена"
 msgstr "rad etildi"
 
+#: apps/social/models.py
+msgid "отклонено"
+msgstr "rad etilgan"
+
 #: apps/core/templates/core/moderation.html
 msgid "открыть переписку по этой жалобе"
 msgstr "shu shikoyat boʻyicha yozishmani ochish"
 
+#: apps/tracker/templates/tracker/board.html
 #: apps/tracker/templates/tracker/stats.html
 msgid "отметок"
 msgstr "belgi"
@@ -10022,9 +12127,17 @@ msgstr "old o‘rindiq bo‘sh"
 msgid "переписка защищена"
 msgstr "yozishma himoyalangan"
 
+#: static/js/chat.js
+msgid "печатает"
+msgstr "yozmoqda"
+
 #: apps/chat/views.py
 msgid "пн"
 msgstr "Du"
+
+#: apps/tracker/templates/tracker/templates.html
+msgid "пн и чт"
+msgstr "du va pa"
 
 #: apps/jobs/templates/jobs/detail.html
 #: apps/services/templates/services/list.html
@@ -10035,9 +12148,13 @@ msgstr "kelishuv asosida"
 msgid "поддержку"
 msgstr "qoʻllab-quvvatlash xizmatiga"
 
+#: apps/accounts/templates/accounts/public.html
+msgid "подписок"
+msgstr "obuna"
+
+#: apps/accounts/templates/accounts/public.html
 #: apps/chat/templates/chat/channels.html
 #: apps/chat/templates/chat/room_info.html
-#: apps/chat/templates/chat/room_public.html
 msgid "подписчиков"
 msgstr "obunachi"
 
@@ -10061,9 +12178,22 @@ msgstr "foydalanuvchi,foydalanuvchi,foydalanuvchi"
 msgid "пополнить"
 msgstr "toʻldirish"
 
+#: apps/nikah/templates/nikah/feed.html
+msgid "премиум"
+msgstr "premium"
+
 #: apps/nikah/templates/nikah/witness_join.html
 msgid "приглашает вас свидетелем (махрамом) в переписку никяха. Вы будете видеть все сообщения в её/его чатах знакомства и сможете писать. По адабу — это отец, брат или другой махрам."
 msgstr "sizni nikoh yozishmasiga guvoh (mahram) sifatida taklif qilmoqda. Siz uning tanishuv chatlaridagi barcha xabarlarni koʻrasiz va yoza olasiz. Adabga koʻra bu — ota, aka-uka yoki boshqa mahram."
+
+#: apps/nikah/templates/nikah/mine.html
+msgid "пройдена"
+msgstr "oʻtilgan"
+
+#: apps/tracker/templates/tracker/_habit.html
+#: apps/tracker/templates/tracker/habit.html
+msgid "пропуск"
+msgstr "o‘tkazildi"
 
 #: apps/nikah/templates/nikah/interests.html
 msgid "проявили к вам интерес. Ответите взаимностью — откроется следующий шаг."
@@ -10077,10 +12207,6 @@ msgstr "Ju"
 msgid "публикаций ждут проверки"
 msgstr "eʼlon tekshiruvni kutmoqda"
 
-#: apps/core/templates/core/settings.html
-msgid "пусто"
-msgstr "bo‘sh"
-
 #: apps/core/templates/core/pages/islam.html
 msgid "пять молитв в день"
 msgstr "kuniga besh vaqt namoz"
@@ -10088,6 +12214,15 @@ msgstr "kuniga besh vaqt namoz"
 #: apps/core/templates/core/catalog.html
 msgid "работают"
 msgstr "ishlamoqda"
+
+#: apps/tracker/templates/tracker/habit.html
+#: apps/tracker/templates/tracker/templates.html
+msgid "раз в неделю"
+msgstr "haftada marta"
+
+#: apps/tracker/services.py
+msgid "раза"
+msgstr "marta"
 
 #: apps/tracker/templates/tracker/_habit.html
 msgid "разовое дело"
@@ -10118,10 +12253,6 @@ msgstr "raqam bilan"
 msgid "с семьёй, друзьями, напарниками"
 msgstr "oila, do‘stlar, sheriklar bilan"
 
-#: apps/maps/templates/maps/map.html
-msgid "сайт"
-msgstr "sayt"
-
 #: apps/chat/views.py
 msgid "сб"
 msgstr "Sha"
@@ -10142,11 +12273,19 @@ msgstr "bo‘sh joylar"
 msgid "сделано"
 msgstr "bajarildi"
 
+#: apps/assistant/templates/assistant/index.html
+msgid "сегодня"
+msgstr "bugun"
+
 #: apps/core/templates/core/includes/today.html
 #: apps/prayer/templates/prayer/blocks/widget.html
 #: apps/prayer/templates/prayer/index.html
 msgid "сейчас"
 msgstr "hozir"
+
+#: apps/accounts/templates/accounts/accounts.html
+msgid "сейчас открыт"
+msgstr "hozir ochiq"
 
 #: apps/tracker/templates/tracker/stats.html
 msgid "серия"
@@ -10178,11 +12317,19 @@ msgstr "tez orada"
 msgid "скрыто ото всех"
 msgstr "hammadan yashirilgan"
 
+#: apps/chat/templates/chat/thread.html
+msgid "скрыть имя автора"
+msgstr "muallif ismini yashirish"
+
 #: apps/core/templates/core/includes/today.html
 #: apps/prayer/templates/prayer/blocks/widget.html
 #: apps/prayer/templates/prayer/index.html
 msgid "следующий"
 msgstr "keyingi"
+
+#: apps/tracker/services.py
+msgid "слов"
+msgstr "so‘z"
 
 #: apps/nikah/templates/nikah/_swipecard.html
 #: apps/nikah/templates/nikah/detail.html apps/nikah/templates/nikah/feed.html
@@ -10205,6 +12352,10 @@ msgstr "som"
 msgid "сомони"
 msgstr "somoni"
 
+#: apps/chat/views_tg.py
+msgid "сообщество"
+msgstr "hamjamiyat"
+
 #: apps/tracker/templates/tracker/board.html
 msgid "соревнование"
 msgstr "musobaqa"
@@ -10225,9 +12376,17 @@ msgstr "Chor"
 msgid "срок"
 msgstr "muddat"
 
+#: apps/tracker/services.py
+msgid "стаканов"
+msgstr "stakan"
+
 #: apps/tracker/templates/tracker/habit_form.html
 msgid "стаканов, страниц, минут"
 msgstr "stakan, sahifa, daqiqa"
+
+#: apps/tracker/services.py
+msgid "страниц"
+msgstr "sahifa"
 
 #: apps/api/views_content.py apps/core/fx.py apps/core/money.py
 msgid "сум"
@@ -10255,9 +12414,13 @@ msgstr "soʻm. Pul ushlab turiladi, ijrochi uni tasdiqingizdan soʻng oladi."
 msgid "сёстры"
 msgstr "opa-singillar"
 
-#: apps/maps/templates/maps/map.html
-msgid "тел."
-msgstr "tel."
+#: apps/chat/templates/chat/space.html
+msgid "тайм-аут"
+msgstr "taym-aut"
+
+#: apps/chat/templates/chat/space.html
+msgid "тема канала (необязательно)"
+msgstr "kanal mavzusi (ixtiyoriy)"
 
 #: apps/core/fx.py apps/core/money.py
 msgid "тенге"
@@ -10277,8 +12440,8 @@ msgid "удалить"
 msgstr "oʻchirish"
 
 #: apps/chat/templates/chat/contacts.html
-msgid "укажите номер в профиле"
-msgstr "profilda raqam koʻrsating"
+msgid "укажите и подтвердите свой номер"
+msgstr "raqamingizni kiriting va tasdiqlang"
 
 #: templates/admin/base_site.html
 msgid "управление"
@@ -10294,8 +12457,8 @@ msgstr "ishtirokchi"
 msgid "участников"
 msgstr "a’zo"
 
+#: apps/chat/templates/chat/space.html apps/chat/templates/chat/spaces.html
 #: apps/tracker/templates/tracker/board.html
-#: apps/tracker/templates/tracker/index.html
 msgid "участников:"
 msgstr "ishtirokchilar:"
 
@@ -10315,13 +12478,17 @@ msgstr "funt"
 msgid "хранятся в объектном хранилище и отдаются через CDN; приватные файлы — только по временным ссылкам с проверкой прав (ARCHITECTURE.md §5.5)."
 msgstr "obyekt omborida saqlanadi va CDN orqali beriladi; shaxsiy fayllar — faqat huquqlar tekshiriladigan vaqtinchalik havolalar orqali (ARCHITECTURE.md §5.5)."
 
+#: apps/assistant/services.py
+msgid "чат"
+msgstr "chat"
+
 #: apps/nikah/models.py
 msgid "чат открыт"
 msgstr "chat ochiq"
 
+#: apps/assistant/templates/assistant/index.html
 #: apps/prayer/templates/prayer/index.html
 #: apps/transport/templates/transport/_trip_card.html
-#: apps/transport/templates/transport/trip.html
 msgid "через"
 msgstr "keyin"
 
@@ -10431,22 +12598,9 @@ msgstr "↺ Rad etilganlarni qaytarish ("
 msgid "☪ {v1} · {v3} · намаз: {v5}"
 msgstr "☪ {v1} · {v3} · namoz: {v5}"
 
-#: apps/nikah/templates/nikah/settings.html
-msgid "⚠ Без своего фото вы не увидите фото других — обмен работает по принципу взаимности."
-msgstr "⚠ Oʻz suratingiz boʻlmasa, boshqalarning suratini koʻrmaysiz — almashish oʻzaro tamoyilda ishlaydi."
-
 #: apps/nikah/bot.py
 msgid "⚠️ Тревожные закрытые ответы: "
 msgstr "⚠️ Xavotirli yopiq javoblar: "
-
-#: apps/nikah/templates/nikah/settings.html
-msgid "✅ Telegram подключён"
-msgstr "✅ Telegram ulangan"
-
-#: apps/core/signals.py
-#, python-brace-format
-msgid "✅ «{t}» одобрено и опубликовано."
-msgstr "✅ «{t}» tasdiqlandi va eʼlon qilindi."
 
 #: apps/nikah/bot.py
 #, python-brace-format
@@ -10477,10 +12631,6 @@ msgstr ""
 msgid "✅ Верифицирован"
 msgstr "✅ Tasdiqlandi"
 
-#: apps/nikah/templates/nikah/settings.html
-msgid "✅ Вы верифицированы"
-msgstr "✅ Siz tasdiqlangansiz"
-
 #: apps/api/tglogin.py
 msgid "✅ Готово! Вернитесь на сайт или в приложение — вход выполнится сам."
 msgstr "✅ Tayyor! Saytga yoki ilovaga qayting — kirish oʻzi bajariladi."
@@ -10501,10 +12651,6 @@ msgstr "✅ Tasdiqlandi"
 msgid "✅ Одобрить"
 msgstr "✅ Tasdiqlash"
 
-#: apps/nikah/templates/nikah/mine.html
-msgid "✅ пройдена"
-msgstr "✅ oʻtilgan"
-
 #: apps/maps/templates/maps/detail.html
 msgid "✓ Вы подтвердили эти сведения"
 msgstr "✓ Siz bu maʼlumotlarni tasdiqladingiz"
@@ -10512,11 +12658,6 @@ msgstr "✓ Siz bu maʼlumotlarni tasdiqladingiz"
 #: apps/nikah/templates/nikah/mine.html
 msgid "✓ Опубликована — видна в ленте"
 msgstr "✓ Eʼlon qilingan — lentada koʻrinadi"
-
-#: apps/core/signals.py
-#, python-brace-format
-msgid "❌ «{t}» не прошло проверку. Исправьте и отправьте снова (Мои публикации)."
-msgstr "❌ «{t}» tekshiruvdan oʻtmadi. Tuzating va qayta yuboring (Mening nashrlarim)."
 
 #: apps/nikah/bot.py
 msgid "❌ Верификация отклонена"
@@ -10552,10 +12693,6 @@ msgstr "📱 Kirish va raqamimni yuborish"
 #: apps/accounts/phone_verify.py
 msgid "📱 Отправить мой номер"
 msgstr "📱 Raqamimni yuborish"
-
-#: apps/accounts/templates/accounts/phone.html
-msgid "🔒 Ваш номер никто не увидит: ни продавцы, ни собеседники, ни анкеты. Его знает только ilm4 — чтобы один человек не заводил много аккаунтов."
-msgstr "🔒 Raqamingizni hech kim koʻrmaydi: na sotuvchilar, na suhbatdoshlar, na anketalar. Uni faqat ilm4 biladi — bir odam koʻp akkaunt ochmasligi uchun."
 
 #: apps/core/my_views.py
 #, python-brace-format

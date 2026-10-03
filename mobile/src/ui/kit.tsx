@@ -309,7 +309,7 @@ export function Badge({ n }: { n: number }) {
 export type SheetItem = { title: string; subtitle?: string; icon?: IconName; danger?: boolean; on?: boolean; onPress: () => void };
 
 /** Меню снизу экрана (как в Telegram): сколько угодно пунктов — системное окно Android вмещает только три. */
-export function Sheet({ open, onClose, title, items }: { open: boolean; onClose: () => void; title?: string; items: SheetItem[] }) {
+export function Sheet({ open, onClose, title, items, header }: { open: boolean; onClose: () => void; title?: string; items: SheetItem[]; header?: ReactNode }) {
   const { c } = useApp();
   const insets = useSafeAreaInsets();
   return (
@@ -318,6 +318,7 @@ export function Sheet({ open, onClose, title, items }: { open: boolean; onClose:
       <View style={{ backgroundColor: c.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 8, paddingBottom: 10 + insets.bottom, maxHeight: '75%' }}>
         <View style={{ alignSelf: 'center', width: 38, height: 4, borderRadius: 2, backgroundColor: c.line, marginBottom: 6 }} />
         {title ? <Txt kind="label" style={{ paddingHorizontal: 20, paddingVertical: 6 }}>{title}</Txt> : null}
+        {header}
         <ScrollView>
           {items.map((it) => (
             <Pressable key={it.title} onPress={() => { onClose(); it.onPress(); }}

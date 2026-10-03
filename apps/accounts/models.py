@@ -47,6 +47,11 @@ class User(AbstractUser):
     last_seen_at = models.DateTimeField('был(а) в сети', null=True, blank=True, editable=False)
     phone_privacy = models.CharField('кто видит мой номер', max_length=6, choices=PRIVACY, default=NOBODY)
     seen_privacy = models.CharField('кто видит, когда я в сети', max_length=6, choices=PRIVACY, default=ALL)
+    forward_privacy = models.CharField('кто может ссылаться на мой профиль при пересылке', max_length=6,
+                                       choices=PRIVACY, default=ALL)
+    invite_privacy = models.CharField('кто может добавлять меня в группы', max_length=6, choices=PRIVACY, default=ALL)
+    counts_privacy = models.CharField('кто видит мои счётчики (записи, подписчики, подписки)', max_length=6, choices=PRIVACY, default=ALL)
+    birthday = models.DateField('день рождения', null=True, blank=True)
     # свои настройки интерфейса: какие кнопки внизу экрана (сайт и приложение — отдельно)
     ui = models.JSONField('настройки интерфейса', default=dict, blank=True)
     telegram_id = models.BigIntegerField('Telegram ID', null=True, blank=True, unique=True,
@@ -119,6 +124,54 @@ class SocialLink(models.Model):
 
     def __str__(self):
         return f'{self.get_kind_display()}: {self.value}'
+
+
+class ProfilePhoto(models.Model):
+    """Фото профиля — как в Telegram, их может быть несколько: новое становится главным, старые листаются."""
+
+    MAX = 30
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='photos')
+    image = models.ImageField('фото', upload_to='avatars/')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at', '-pk']
+        verbose_name = 'фото профиля'
+        verbose_name_plural = 'фото профиля'
+
+
+class Contact(models.Model):
+    """Контакт — как в Telegram: человек, которого я сохранил себе (по номеру или из профиля), под своим именем."""
+
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='contacts')
+    friend = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='contact_of')
+    first_name = models.CharField('имя (как записал я)', max_length=60, blank=True)
+    last_name = models.CharField('фамилия', max_length=60, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['owner', 'friend'], name='one_contact')]
+        verbose_name = 'контакт'
+        verbose_name_plural = 'контакты'
+
+    @property
+    def name(self) -> str:
+        return ' '.join(x for x in (self.first_name, self.last_name) if x) or self.friend.get_display_name()
+
+
+class DeviceAccount(models.Model):
+    """«Запомненный вход» для переключения аккаунтов на одном устройстве (apps/accounts/multi.py). Ключ хранится хешем."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='device_accounts')
+    token_hash = models.CharField(max_length=64, unique=True)
+    auth_hash = models.CharField(max_length=128)          # сменили пароль — запись больше не подходит
+    created_at = models.DateTimeField(auto_now_add=True)
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'запомненный вход (несколько аккаунтов)'
+        verbose_name_plural = 'запомненные входы (несколько аккаунтов)'
 
 
 class CloseFriend(models.Model):

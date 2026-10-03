@@ -107,17 +107,64 @@ UI_ICONS = {
     'trash': '<path d="M4 7h16M9.5 7V4.5h5V7M6 7l1 13h10l1-13"/>',
     'play': '<path d="M8 5.5v13l11-6.5z"/>',
     'stop': '<rect x="6.5" y="6.5" width="11" height="11" rx="2"/>',
+    # --- мессенджер «как в Telegram» ---
+    'tack': '<path d="M14.5 3.5l6 6-3 1-3.2 3.2.5 4.3-1.6 1.6-4.4-4.4L4 20l4.8-4.8-4.4-4.4L6 9.2l4.3.5L13.5 6.5z"/>',
+    'untack': '<path d="M14.5 3.5l6 6-3 1-3.2 3.2.5 4.3-1.6 1.6-4.4-4.4L4 20l4.8-4.8-4.4-4.4L6 9.2l4.3.5L13.5 6.5zM3.5 3.5l17 17"/>',
+    'archive': '<rect x="3.5" y="4.5" width="17" height="4.5" rx="1.2"/><path d="M5 9v9.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V9M12 11.5v5M9.5 14.2l2.5 2.5 2.5-2.5"/>',
+    'unarchive': '<rect x="3.5" y="4.5" width="17" height="4.5" rx="1.2"/><path d="M5 9v9.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V9M12 17v-5M9.5 14.3l2.5-2.5 2.5 2.5"/>',
+    'folder': '<path d="M3.5 7A1.5 1.5 0 0 1 5 5.5h4.2l2 2.2H19a1.5 1.5 0 0 1 1.5 1.5v8.3A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"/>',
+    'folderplus': '<path d="M3.5 7A1.5 1.5 0 0 1 5 5.5h4.2l2 2.2H19a1.5 1.5 0 0 1 1.5 1.5v8.3A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5zM12 10.8v5M9.5 13.3h5"/>',
+    'reply': '<path d="M9.5 7 4.5 12l5 5M4.5 12h9a6 6 0 0 1 6 6v.5"/>',
+    'forward': '<path d="M14.5 7l5 5-5 5M19.5 12h-9a6 6 0 0 0-6 6v.5"/>',
+    'bookmark': '<path d="M7 4h10a1 1 0 0 1 1 1v15l-6-4.2L6 20V5a1 1 0 0 1 1-1z"/>',
+    'smile': '<circle cx="12" cy="12" r="8.5"/><path d="M8.5 14.2a4.2 4.2 0 0 0 7 0"/><circle cx="9.2" cy="10" r=".6"/><circle cx="14.8" cy="10" r=".6"/>',
+    'close': '<path d="M6 6l12 12M18 6 6 18"/>',
+    'down': '<path d="M6 9.5l6 6 6-6"/>',
+    'up': '<path d="M6 14.5l6-6 6 6"/>',
+    'sliders': '<path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="17" r="2"/>',
+    'unread': '<path d="M20.5 11.5a8 8 0 0 1-11.4 7.2L3.5 20.5l1.8-5.5a8 8 0 0 1 9-11.2"/><circle cx="18.5" cy="5.5" r="2.6" fill="currentColor" stroke="none"/>',
+    'checks': '<path d="M2.5 12.5l4 4 8-9M10.5 16.5l1.3 1.3L21.5 7.5"/>',
+    'comment': '<path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H9l-4.5 2.5v-5A7.5 7.5 0 0 1 4 11.5a8 8 0 0 1 16 0z"/>',
+    'poll': '<path d="M6 19V11M12 19V5M18 19v-5"/>',
+    'download': '<path d="M12 4v11M7.5 11 12 15.5 16.5 11M5 19.5h14"/>',
+    'broom': '<path d="M14 4l6 6M4 20c0-4 2-7 5.5-9l4 4C11.500 18.500 8 20 4 20zM12 9l3 3"/>',
+    'exit': '<path d="M14 4.500H6.500A1.500 1.500 0 0 0 5 6v12a1.500 1.500 0 0 0 1.500 1.500H14M10 12h10M16.500 8.500 20 12l-3.500 3.500"/>',
+    'repost': '<path d="M17 3l4 4-4 4"/><path d="M3 11V10a3 3 0 0 1 3-3h15"/><path d="M7 21l-4-4 4-4"/><path d="M21 13v1a3 3 0 0 1-3 3H3"/>',
+    'more': '<circle cx="5.5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18.5" cy="12" r="1.3"/>',
 }
+
+
+def icon_body(name: str) -> str | None:
+    """Содержимое значка: свой набор UI_ICONS, затем Lucide (apps/core/icons_lucide.py)."""
+    from apps.core.icons_lucide import LUCIDE
+    return UI_ICONS.get(name) or LUCIDE.get(name)
 
 
 @register.simple_tag
 def ico(name: str, css: str = '') -> str:
-    """Инлайн-иконка интерфейса из набора UI_ICONS."""
-    body = UI_ICONS.get(name, UI_ICONS['info'])
+    """Инлайн-иконка интерфейса: {% ico 'pin' %}. Эмодзи в интерфейсе не используем — только такие значки."""
+    body = icon_body(name) or UI_ICONS['info']
     cls = f' class="{css}"' if css else ''
     return mark_safe(
         f'<svg{cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" '
         f'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{body}</svg>')
+
+
+@register.simple_tag
+def hicon(value: str, css: str = '') -> str:
+    """Значок привычки/папки, выбранный человеком: ключ из набора → SVG; старое значение-эмодзи показываем как есть."""
+    if value and icon_body(str(value)):
+        return ico(str(value), css)
+    return format_html('<span class="emo">{}</span>', value or '')
+
+
+@register.simple_tag
+def ui_icons(*names):
+    """Иконки для скриптов: <script type="application/json" id="ui-icons">{"reply": "<svg…>", …}</script>."""
+    import json
+    data = {n: str(ico(n)) for n in names if icon_body(n)}
+    return mark_safe('<script type="application/json" id="ui-icons">'
+                     + json.dumps(data, ensure_ascii=False).replace('</', '<\\/') + '</script>')
 
 
 @cache

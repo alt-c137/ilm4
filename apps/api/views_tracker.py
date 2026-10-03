@@ -73,14 +73,47 @@ def habit_log(request, pk):
     """Отметить: {'day': …, 'value': число} или без value — переключить."""
     h = _wrap(tr.get_habit, request.user, pk)
     d = request.data
-    value = _wrap(tr.set_value, request.user, h, tr.parse_day(d.get('day')), d.get('value') if 'value' in d else None)
+    day = tr.parse_day(d.get('day'))
+    if 'skip' in d:                                  # пропуск по уважительной причине
+        value = _wrap(tr.set_value, request.user, h, day, skip=str(d['skip']).lower() in ('1', 'true'), note=d.get('note'))
+    elif 'note' in d and 'value' not in d:           # только заметка к дню
+        from apps.tracker.models import HabitLog
+        cur = HabitLog.objects.filter(habit=h, user=request.user, day=day).values_list('value', flat=True).first() or 0
+        value = _wrap(tr.set_value, request.user, h, day, value=cur, note=d.get('note'))
+    else:
+        value = _wrap(tr.set_value, request.user, h, day, d.get('value') if 'value' in d else None)
     return {'value': value, 'done': value >= h.target}
+
+
+@api(auth=True, module='tracker')
+def habit_detail(request, pk):
+    """Календарь за год, серии, итоги по месяцам, заметки."""
+    h = _wrap(tr.get_habit, request.user, pk)
+    return tr.habit_detail(request.user, h, request.GET.get('days') or 365)
+
+
+@api(methods=('GET', 'POST'), auth=True, module='tracker')
+def templates(request):
+    """Готовые привычки. POST {'key', 'board'?, 'tz_offset'?} — добавить."""
+    if request.method == 'POST':
+        d = request.data
+        board = _wrap(tr.get_board, request.user, d['board']) if d.get('board') else None
+        tz = d.get('tz_offset')
+        habit = _wrap(tr.add_template, request.user, str(d.get('key', '')), board, int(tz) if str(tz or '').lstrip('-').isdigit() else None)
+        return {'id': habit.pk}
+    return {'groups': [{'key': k, 'name': str(n)} for k, n in tr.TEMPLATE_GROUPS], 'items': tr.templates()}
+
+
+@api(methods=('POST',), auth=True, module='tracker')
+def board_chat(request, pk):
+    b = _wrap(tr.get_board, request.user, pk)
+    return {'thread': _wrap(tr.board_chat, request.user, b).pk}
 
 
 @api(methods=('POST',), auth=True, module='tracker')
 def board_create(request):
     d = request.data
-    board = _wrap(tr.create_board, request.user, d.get('title', ''), str(d.get('emoji', '🤝')),
+    board = _wrap(tr.create_board, request.user, d.get('title', ''), str(d.get('emoji', 'h-together')),
                   str(d.get('compete', '')).lower() in ('1', 'true', 'on'))
     return {'id': board.pk}
 

@@ -39,7 +39,7 @@ def test_site_tabs_are_customizable(ali, client):
     client.post('/settings/', {'what': 'tabs', 'tab': ['hack', 'chats']})
     ali.refresh_from_db()
     assert 'tabs_site' not in ali.ui
-    assert tabs.clean_ui({'tabs_site': ['home', 'home', 'x', 'chats', 'map', 'buy', 'news'], 'evil': 1}) == {'tabs_site': ['home', 'chats', 'map', 'buy']}
+    assert tabs.clean_ui({'tabs_site': ['home', 'home', 'x', 'chats', 'map', 'buy', 'news', 'jobs'], 'evil': 1}) == {'tabs_site': ['home', 'chats', 'map', 'buy', 'news', 'jobs']}   # v51: кнопок сколько угодно, панель листается
 
 
 def test_app_tabs_saved_in_profile(ali, client):

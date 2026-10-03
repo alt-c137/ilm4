@@ -32,7 +32,19 @@ def test_pending_place_hidden(client):
 def test_map_markers_json(client):
     make_place()
     html = client.get('/map/').content.decode()
-    assert 'Кафе Зайнаб' in html and 'circleMarker' in html  # карта и маркеры на месте
+    assert 'Кафе Зайнаб' in html and 'mapx-initial' in html and 'mapx.js' in html  # карта и метки на месте
+
+
+def test_map_data_by_visible_area(client):
+    p = make_place()
+    lat, lon = float(p.lat), float(p.lon)
+    bbox = f'{lat - 0.1},{lon - 0.1},{lat + 0.1},{lon + 0.1}'
+    items = client.get('/map/data/', {'bbox': bbox}).json()['items']
+    assert [x['name'] for x in items] == ['Кафе Зайнаб'] and items[0]['icon']
+    assert client.get('/map/data/', {'bbox': '0,0,1,1'}).json()['items'] == []
+    assert client.get('/map/data/', {'bbox': bbox, 'q': 'нет такого'}).json()['items'] == []
+    assert client.get('/map/data/', {'bbox': bbox, 'verified': '1'}).json()['items'] == []     # ещё не проверено
+    assert client.get('/map/data/', {'bbox': 'мусор'}).status_code == 400
 
 
 def test_map_filters(client):

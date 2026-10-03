@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load icons static %}
+{% block title %}{% translate "Папки с чатами —" %} {{ block.super }}{% endblock %}
+{% block body_class %}s-chat page-tp{% endblock %}
+
+{% block content %}
+<div class="tp tp--plain">
+  <header class="tp__bar">
+    <a class="tp__back tp__back--in" href="{% url 'chat:inbox' %}" aria-label="{% translate 'Назад' %}">{% ico 'back' %}</a>
+    <h1>{% translate "Папки с чатами" %}</h1>
+  </header>
+  <p class="tp__lead">{% translate "Разложите чаты по своим папкам: вкладки появятся над списком чатов. Название, состав и порядок — как вам удобно." %}</p>
+
+  <h2 class="ppl__h">{% translate "Мои папки" %}</h2>
+  <section class="tp__card">
+    <div class="tp__row fold">{% ico 'chat' %}<span><b>{% translate "Все" %}</b><small>{% translate "Все чаты, кроме архива. Эта вкладка есть всегда" %}</small></span></div>
+    {% for f in folders %}
+    <div class="tp__row fold">
+      <span class="fold__emo">{% ico 'folder' %}</span>
+      <a class="fold__a" href="{% url 'chat:folder_edit' f.pk %}"><b>{{ f.title }}</b><small>{% translate "Изменить состав и название" %}</small></a>
+      <form method="post" class="fold__btns">{% csrf_token %}<input type="hidden" name="what" value="move"><input type="hidden" name="id" value="{{ f.pk }}">
+        <button type="submit" name="by" value="-1" {% if forloop.first %}disabled{% endif %} aria-label="{% translate 'Выше' %}">{% ico 'up' %}</button>
+        <button type="submit" name="by" value="1" {% if forloop.last %}disabled{% endif %} aria-label="{% translate 'Ниже' %}">{% ico 'down' %}</button>
+      </form>
+      <form method="post" class="fold__btns" onsubmit="return confirm('{% translate 'Удалить папку? Сами чаты останутся.' %}')">{% csrf_token %}<input type="hidden" name="what" value="delete"><input type="hidden" name="id" value="{{ f.pk }}">
+        <button type="submit" class="bad" aria-label="{% translate 'Удалить' %}">{% ico 'trash' %}</button></form>
+    </div>
+    {% endfor %}
+    {% if folders|length < max %}<a class="tp__row tp__row--todo" href="{% url 'chat:folder_new' %}">{% ico 'folderplus' %}<span><b>{% translate "Создать папку" %}</b><small>{% blocktranslate %}До {{ max }} папок{% endblocktranslate %}</small></span></a>{% endif %}
+  </section>
+
+  {% if recommended and folders|length < max %}
+  <h2 class="ppl__h">{% translate "Готовые папки" %}</h2>
+  <section class="tp__card">
+    {% for r in recommended %}
+    <form method="post" class="tp__row fold">{% csrf_token %}<input type="hidden" name="what" value="recommended"><input type="hidden" name="key" value="{{ r.key }}">
+      <span class="fold__emo">{% ico 'folderplus' %}</span>
+      <span class="fold__a"><b>{{ r.title }}</b><small>{{ r.hint }}</small></span>
+      <button type="submit" class="btn btn--s btn--p">{% translate "Добавить" %}</button>
+    </form>
+    {% endfor %}
+  </section>
+  {% endif %}
+  <p class="tp__note">{% translate "Подсказка: на вкладке или на чате — правая кнопка мыши (на телефоне — долгое нажатие): закрепить, убрать в архив, добавить в папку." %}</p>
+</div>
+{% endblock %}

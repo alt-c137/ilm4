@@ -78,7 +78,9 @@ def prepare(kind: str, upload, duration) -> tuple[ContentFile, int | None]:
         img.thumbnail((2048, 2048))
         buf = io.BytesIO()
         img.save(buf, 'JPEG', quality=85, optimize=True)   # без EXIF — геометки не утекут
-        return ContentFile(buf.getvalue(), name=f'{name}.jpg'), None
+        out = ContentFile(buf.getvalue(), name=f'{name}.jpg')
+        out.dims = img.size                                 # ширина и высота — чтобы показать фото в его пропорциях, как в Telegram
+        return out, None
 
     head = upload.read(16)
     upload.seek(0)

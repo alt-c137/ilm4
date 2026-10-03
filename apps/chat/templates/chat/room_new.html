@@ -32,7 +32,7 @@
       </div>
       <div class="field field--wide">
         <label for="r-avatar">{% translate "Картинка (необязательно)" %}</label>
-        <input type="file" id="r-avatar" name="avatar" accept="image/*">
+        <input type="file" id="r-avatar" name="avatar" accept="image/*" data-crop="1">
       </div>
       <div class="field field--wide field--check">
         <label class="check"><input type="checkbox" name="is_public" id="r-public"{% if data.is_public %} checked{% endif %}><span>{% if kind == 'channel' %}{% translate "Публичный: виден в каталоге, подписаться может любой" %}{% else %}{% translate "Публичная: видна в каталоге, вступить может любой" %}{% endif %}</span></label>

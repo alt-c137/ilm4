@@ -100,32 +100,54 @@ def thread_info(thread, user) -> dict:
             'room': rooms.info(thread, user) if thread.is_room else None}
 
 
-def inbox(user, limit: int = 300) -> list:
+def inbox(user, limit: int = 300, space=None) -> list:
     """Диалоги человека для списка чатов — фиксированным числом запросов, сколько бы чатов ни было.
 
     Возвращает [(thread, other, last)]: собеседник (не свидетель; у группы и канала — None)
     и последнее видимое сообщение. У thread есть .unread: в личном чате — по Message.read_at,
-    в группе и канале — всё, что новее Member.last_read_at."""
-    from django.db.models import Count, OuterRef, Q, Subquery
+    в группе и канале — всё, что новее Member.last_read_at. И личное состояние (как в Telegram):
+    .pinned_at, .archived, .unread_mark, .draft. Закреплённые идут первыми.
+    Каналы сообществ в общий список не попадают; space=сообщество — наоборот, только его каналы."""
+    from django.db.models import Count, Exists, OuterRef, Q, Subquery
 
     from . import rooms
-    from .models import Member
-    visible = Message.objects.filter(thread=OuterRef('pk')).filter(Q(scheduled_at__isnull=True) | Q(sender=user))
+    from .models import ChatState, HiddenMessage, Member
+    visible = (Message.objects.filter(thread=OuterRef('pk'), comment_of__isnull=True)
+               .filter(Q(scheduled_at__isnull=True) | Q(sender=user))
+               .exclude(Exists(HiddenMessage.objects.filter(message=OuterRef('pk'), user=user))))
     mine = Member.objects.filter(thread=OuterRef('pk'), user=user)
-    incoming = Q(messages__scheduled_at__isnull=True) & ~Q(messages__sender=user)
+    incoming = Q(messages__scheduled_at__isnull=True, messages__comment_of__isnull=True) & ~Q(messages__sender=user)
     threads = list(
-        user.chat_threads.filter(kind__in=rooms.visible_kinds()).prefetch_related('participants', 'observers')
+        user.chat_threads.filter(kind__in=rooms.visible_kinds(), **({'space': space} if space is not None else {'space__isnull': True}))
+        .prefetch_related('participants', 'observers')
         .annotate(read_until=Subquery(mine.values('last_read_at')[:1]), muted=Subquery(mine.values('muted')[:1]),
                   last_id=Subquery(visible.order_by('-created_at', '-pk').values('pk')[:1]))
         .annotate(unread_direct=Count('messages', filter=incoming & Q(messages__read_at__isnull=True)),
                   unread_room=Count('messages', filter=incoming & ~Q(messages__kind=Message.SYSTEM)
                                     & (Q(read_until__isnull=True) | Q(messages__created_at__gt=F('read_until')))))[:limit])
+    states = {st.thread_id: st for st in ChatState.objects.filter(user=user, thread__in=[t.pk for t in threads])}
+    threads = [t for t in threads if not (states.get(t.pk) and states[t.pk].hidden)]
+    for t in threads:                             # очищенная история: считаем заново только то, что после очистки
+        st = states.get(t.pk)
+        if st is not None and st.cleared_at:
+            after = visible_messages(t, user).filter(created_at__gt=st.cleared_at)
+            t.last_id = after.order_by('-created_at', '-pk').values_list('pk', flat=True).first()
+            fresh = after.exclude(sender=user).exclude(kind=Message.SYSTEM)
+            t.unread_room = fresh.filter(created_at__gt=t.read_until).count() if t.read_until else fresh.count()
+            t.unread_direct = fresh.filter(read_at__isnull=True).count()
     last = Message.objects.select_related('sender').in_bulk([t.last_id for t in threads if t.last_id])
     rows = []
     for t in threads:
+        st = states.get(t.pk)
         t.unread = t.unread_room if t.is_room else t.unread_direct
+        if t.is_saved:
+            t.unread = 0
+        t.pinned_at = st.pinned_at if st else None
+        t.archived = bool(st and st.archived)
+        t.unread_mark = bool(st and st.unread_mark)
+        t.draft = _draft_text(t.pk, st)
         other = None
-        if not t.is_room:
+        if not t.is_room and not t.is_saved:
             watchers = {u.pk for u in t.observers.all()}
             others = [u for u in t.participants.all() if u.pk != user.pk]
             other = next((u for u in others if u.pk not in watchers), None) or (others[0] if others else None)
@@ -133,7 +155,19 @@ def inbox(user, limit: int = 300) -> list:
         if msg is not None:
             msg.thread = t                       # для расшифровки и превью — без запроса за чатом
         rows.append((t, other, msg))
+    # закреплённые — сверху (позже закрепил — выше), остальные — по времени последнего сообщения
+    rows.sort(key=lambda r: (r[0].pinned_at is None, -(r[0].pinned_at.timestamp()) if r[0].pinned_at else 0))
     return rows
+
+
+def _draft_text(thread_id, state) -> str:
+    if state is None or not state.draft_enc:
+        return ''
+    from .keyring import decrypt_text
+    try:
+        return decrypt_text(thread_id, state.draft_enc)
+    except ValueError:
+        return ''
 
 
 def folders_for(user, rows) -> list:
@@ -243,11 +277,18 @@ def flags(thread=None) -> dict:
 
 
 def visible_messages(thread, user):
-    """Сообщения диалога, которые видит человек (чужие запланированные — нет)."""
-    return thread.messages.visible_to(user)
+    """Сообщения диалога, которые видит человек: без чужих запланированных, без удалённых «у себя»,
+    без комментариев к постам и без того, что было до «очистить историю»."""
+    from .models import ChatState
+    qs = thread.messages.visible_to(user)
+    cleared = (ChatState.objects.filter(thread=thread, user=user, cleared_at__isnull=False)
+               .values_list('cleared_at', flat=True).first()) if getattr(user, 'pk', None) else None
+    return qs.filter(created_at__gt=cleared) if cleared else qs
 
 
 def mark_read(thread, user) -> int:
+    from .models import ChatState
+    ChatState.objects.filter(thread=thread, user=user, unread_mark=True).update(unread_mark=False)
     if thread.is_room:
         from . import rooms
         rooms.mark_read(thread, user)
@@ -261,7 +302,21 @@ def mark_read(thread, user) -> int:
 def _check_can_write(thread, user):
     if thread.is_room:
         from . import rooms
-        return rooms.check_post(thread, user)
+        rooms.check_post(thread, user)
+        if thread.space_id:                                # канал сообщества: тайм-аут участника
+            from . import spaces
+            spaces.check_write(thread, user)
+        if thread.slow_seconds and thread.kind == Thread.GROUP and not rooms.is_admin(thread, user):
+            last = (thread.messages.filter(sender=user, scheduled_at__isnull=True).order_by('-created_at')
+                    .values_list('created_at', flat=True).first())
+            if last and (timezone.now() - last).total_seconds() < thread.slow_seconds:
+                wait = int(thread.slow_seconds - (timezone.now() - last).total_seconds()) + 1
+                raise ChatError(_('Медленный режим: следующее сообщение — через {v1} с.').format(v1=wait), 429)
+        return
+    if thread.is_saved:
+        if not is_participant(thread, user):
+            raise ChatError(_('Нет доступа'), 403)
+        return
     if not is_participant(thread, user):
         raise ChatError(_('Нет доступа'), 403)
     if blocked(thread, user):
@@ -296,21 +351,66 @@ def _broadcast(msg) -> dict:
     layer = get_channel_layer()
     if layer is not None:
         async_to_sync(layer.group_send)(f'chat_{msg.thread_id}', {'type': 'chat.message', 'payload': payload})
-    if msg.kind != Message.SYSTEM:
-        notify(msg.thread, msg.sender, str(preview(msg)), silent=msg.silent)
+    if msg.kind != Message.SYSTEM and not msg.comment_of_id:
+        notify(msg.thread, msg.sender, str(preview(msg)), silent=msg.silent, msg=msg)
     return payload
 
 
-def notify(thread, sender, text: str, silent: bool = False) -> None:
-    """Сообщить получателям: в личном диалоге — колокольчик и пуш, в группе и канале — только пуш."""
+def notify(thread, sender, text: str, silent: bool = False, msg=None) -> None:
+    """Сообщить получателям: в личном диалоге — колокольчик и пуш, в группе и канале — только пуш.
+    Упомянутым (@имя) и автору сообщения, на которое ответили, пуш придёт даже при «без звука» — как в Telegram."""
+    if thread.is_saved:
+        return None
     if thread.is_room:
         from . import rooms
-        return rooms.notify(thread, sender, text, silent=silent)
+        return rooms.notify(thread, sender, text, silent=silent, always=_must_notify(thread, msg))
     from .events import notify_recipients
     notify_recipients(thread, sender, text, silent=silent)
 
 
-def send_text(thread, user, body: str, silent: bool = False, schedule=None, broadcast: bool = True) -> dict:
+def _must_notify(thread, msg) -> set:
+    """Кого уведомить в группе даже при «без звука»: упомянутых и того, кому ответили."""
+    import re
+    if msg is None:
+        return set()
+    ids = set()
+    if msg.reply_to_id and msg.reply_to and msg.reply_to.sender_id != msg.sender_id:
+        ids.add(msg.reply_to.sender_id)
+    handles = set(re.findall(r'(?<![\w@])@([a-z][a-z0-9_]{3,31})', (msg.body or '').lower()))
+    if handles:
+        ids.update(thread.participants.filter(handle__in=handles).values_list('pk', flat=True))
+    if thread.space_id:                                    # канал сообщества: @everyone и @роль
+        from . import spaces
+        ids.update(spaces.mention_targets(thread, msg.sender, msg.body))
+    ids.discard(msg.sender_id)
+    return ids
+
+
+def _touch(thread, sender) -> None:
+    """Новое сообщение в чате: поднять чат в списке; у получателей вернуть его из архива (если не «без звука»)
+    и из «удалённых у себя» — как в Telegram."""
+    from .models import ChatState, Member
+    thread.save(update_fields=['updated_at'])
+    states = ChatState.objects.filter(thread=thread)
+    states.filter(user=sender).exclude(draft_enc='').update(draft_enc='')      # отправил — черновика больше нет
+    states.filter(hidden=True).update(hidden=False)
+    muted = Member.objects.filter(thread=thread, muted=True).values('user_id')
+    states.filter(archived=True).exclude(user=sender).exclude(user__in=muted).update(archived=False)
+
+
+def reply_target(thread, user, reply_to):
+    """Сообщение, на которое отвечают: из этого же чата и видимое человеку. Иначе — без ответа."""
+    if not reply_to:
+        return None
+    try:
+        pk = int(reply_to)
+    except (TypeError, ValueError):
+        return None
+    return visible_messages(thread, user).filter(pk=pk, scheduled_at__isnull=True).select_related('sender').first()
+
+
+def send_text(thread, user, body: str, silent: bool = False, schedule=None, broadcast: bool = True,
+              reply_to=None) -> dict:
     """Текстовое сообщение (сайт, приложение, WebSocket — одни и те же проверки)."""
     from .events import message_payload
     body = (body or '').strip()
@@ -320,14 +420,16 @@ def send_text(thread, user, body: str, silent: bool = False, schedule=None, broa
     if nikah_contacts_forbidden(thread.pk, body):
         raise ChatError(_('В чате никяха нельзя передавать телефоны, ники и ссылки — общение внутри ilm4, при махраме.'))
     when = parse_schedule(schedule)
-    msg = Message.objects.create(thread=thread, sender=user, body=body, silent=bool(silent), scheduled_at=when)
+    msg = Message.objects.create(thread=thread, sender=user, body=body, silent=bool(silent), scheduled_at=when,
+                                 reply_to=reply_target(thread, user, reply_to))
     if when:
         return message_payload(msg)          # видно только автору, уйдёт в своё время
-    thread.save(update_fields=['updated_at'])
+    _touch(thread, user)
     return _broadcast(msg) if broadcast else message_payload(msg)
 
 
-def store_upload(thread, user, kind, upload_file, duration=None, caption='', silent=False, schedule=None) -> dict:
+def store_upload(thread, user, kind, upload_file, duration=None, caption='', silent=False, schedule=None,
+                 reply_to=None) -> dict:
     """Фото / видео / голосовое / кружок / файл: проверить, зашифровать, сохранить, разослать.
 
     kind='file' — «отправить файлом»: любой документ, а также фото и видео без сжатия.
@@ -351,9 +453,11 @@ def store_upload(thread, user, kind, upload_file, duration=None, caption='', sil
     when = parse_schedule(schedule)
     size = content.size
     msg = Message(thread=thread, sender=user, kind=kind, duration=sec, body=(caption or '').strip()[:1000],
-                  silent=bool(silent), scheduled_at=when)
+                  silent=bool(silent), scheduled_at=when, reply_to=reply_target(thread, user, reply_to))
     if kind == 'file':
         msg.set_meta(name=original, size=size)
+    elif getattr(content, 'dims', None):
+        msg.set_meta(w=content.dims[0], h=content.dims[1])
     msg.attachment.save(content.name + SUFFIX, seal_file(thread.pk, content, size), save=False)
     msg.save()
     _count_upload(user, size)
@@ -362,7 +466,7 @@ def store_upload(thread, user, kind, upload_file, duration=None, caption='', sil
         transcode.schedule(msg.pk)
     if when:
         return message_payload(msg)
-    thread.save(update_fields=['updated_at'])
+    _touch(thread, user)
     return _broadcast(msg)
 
 
@@ -406,7 +510,8 @@ def _upload_path(name: str) -> str:
     return os.path.join(settings.MEDIA_ROOT, name)
 
 
-def upload_begin(thread, user, kind, name, size, duration=None, caption='', silent=False, schedule=None) -> dict:
+def upload_begin(thread, user, kind, name, size, duration=None, caption='', silent=False, schedule=None,
+                 reply_to=None) -> dict:
     """Начать загрузку большого файла или видео частями. Возвращает id загрузки и размер части.
 
     Дальше клиент шлёт части по порядку (upload_part) и завершает (upload_finish). Оборвалась
@@ -444,8 +549,9 @@ def upload_begin(thread, user, kind, name, size, duration=None, caption='', sile
     os.makedirs(os.path.dirname(_upload_path(rel)), exist_ok=True)
     with open(_upload_path(rel), 'wb') as fh:
         filecrypt.begin(fh)
+    target = reply_target(thread, user, reply_to)
     info = {'name': clean_name(name), 'caption': (caption or '').strip()[:1000], 'silent': bool(silent),
-            'schedule': str(schedule or ''), 'duration': sec}
+            'schedule': str(schedule or ''), 'duration': sec, 'reply_to': target.pk if target else None}
     up = Upload.objects.create(thread=thread, user=user, kind=kind, path=rel, size=size,
                                info_enc=encrypt_text(thread.pk, json.dumps(info, ensure_ascii=False)))
     return {'upload': str(up.pk), 'part': PART, 'received': 0, 'size': size}
@@ -524,7 +630,8 @@ def upload_finish(user, upload_id) -> dict:
         os.makedirs(os.path.dirname(_upload_path(rel)), exist_ok=True)
         os.replace(_upload_path(up.path), _upload_path(rel))
         msg = Message(thread=thread, sender=user, kind=up.kind, duration=info.get('duration'), body=info.get('caption', ''),
-                      silent=bool(info.get('silent')), scheduled_at=when)
+                      silent=bool(info.get('silent')), scheduled_at=when,
+                      reply_to=reply_target(thread, user, info.get('reply_to')))
         if up.kind == 'file':
             msg.set_meta(name=info.get('name', 'file'), size=up.size)
         msg.attachment.name = rel
@@ -537,7 +644,7 @@ def upload_finish(user, upload_id) -> dict:
         transcode.schedule(msg.pk)
     if when:
         return message_payload(msg)
-    thread.save(update_fields=['updated_at'])
+    _touch(thread, user)
     return _broadcast(msg)
 
 
@@ -581,31 +688,43 @@ def system_message(thread, sender, text: str, duration=None, broadcast: bool = F
     """Служебная запись в переписке (открыт чат никяха, звонок 3:12, пропущенный)."""
     msg = Message.objects.create(thread=thread, sender=sender, kind=Message.SYSTEM, body=text, duration=duration)
     thread.save(update_fields=['updated_at'])
+    from .models import ChatState
+    ChatState.objects.filter(thread=thread, hidden=True).update(hidden=False)
     if broadcast:
         return _broadcast(msg)
     from .events import message_payload
     return message_payload(msg)
 
 
-def delete_message(user, message_id) -> dict:
-    """Удалить сообщение у всех: своё — автор, любое — владелец и админы группы / канала."""
-    from asgiref.sync import async_to_sync
-    from channels.layers import get_channel_layer
-
+def delete_message(user, message_id, for_all: bool = True) -> dict:
+    """Удалить сообщение. «У всех»: своё — автор, любое — владелец и админы группы / канала.
+    «У себя» (for_all=False): сообщение остаётся у остальных, этот человек его больше не видит."""
     from . import rooms
+    from .models import HiddenMessage
     msg = Message.objects.select_related('thread').filter(pk=message_id, scheduled_at__isnull=True).first()
     if msg is None or not can_read(msg.thread, user):
         raise ChatError(_('Сообщение не найдено'), 404)
+    if not for_all:
+        HiddenMessage.objects.get_or_create(user=user, message=msg)
+        return {'ok': True, 'id': int(message_id), 'for_all': False}
     if msg.sender_id != user.pk and not (msg.thread.is_room and rooms.is_admin(msg.thread, user)):
-        raise ChatError(_('Удалить можно только своё сообщение.'), 403)
-    thread_id = msg.thread_id
+        raise ChatError(_('Удалить у всех можно только своё сообщение.'), 403)
+    thread_id, post_id = msg.thread_id, msg.comment_of_id
     if msg.attachment:
         msg.attachment.delete(save=False)
     msg.delete()
+    if post_id:
+        Message.objects.filter(pk=post_id, comments_count__gt=0).update(comments_count=F('comments_count') - 1)
+    _group_send(thread_id, {'type': 'chat.deleted', 'ids': [int(message_id)]})
+    return {'ok': True, 'id': int(message_id), 'for_all': True}
+
+
+def _group_send(thread_id, event: dict) -> None:
+    from asgiref.sync import async_to_sync
+    from channels.layers import get_channel_layer
     layer = get_channel_layer()
     if layer is not None:
-        async_to_sync(layer.group_send)(f'chat_{thread_id}', {'type': 'chat.deleted', 'ids': [int(message_id)]})
-    return {'ok': True, 'id': int(message_id)}
+        async_to_sync(layer.group_send)(f'chat_{thread_id}', event)
 
 
 def cancel_scheduled(user, message_id) -> None:
@@ -631,7 +750,7 @@ def _deliver(msg) -> None:
     msg.scheduled_at = None
     msg.created_at = timezone.now()           # время в переписке — когда ушло, как в Telegram
     msg.save(update_fields=['scheduled_at', 'created_at'])
-    Thread.objects.filter(pk=msg.thread_id).update(updated_at=timezone.now())
+    _touch(msg.thread, msg.sender)
 
 
 def deliver_due(now=None) -> int:
@@ -650,3 +769,36 @@ def deliver_due(now=None) -> int:
         _broadcast(msg)
         sent += 1
     return sent
+
+
+# ---------- свои папки, архив, закреп, ответы, реакции, пересылка (как в Telegram) ----------
+# Код — в folders.py и msgops.py; снаружи зовут только отсюда.
+from .folders import (  # noqa: F401
+    clear_history,
+    delete_folder,
+    folder_summary,
+    hide_chat,
+    recommended_folders,
+    reorder_folders,
+    save_folder,
+    set_archived,
+    set_draft,
+    set_folder_chat,
+    set_pinned,
+    set_unread,
+    state_of,
+    user_folders,
+)
+from .msgops import (  # noqa: F401
+    add_comment,
+    comments_of,
+    edit_message,
+    forward_messages,
+    message_raw,
+    open_saved,
+    pin_message,
+    pinned_messages,
+    react,
+    search_messages,
+    window_around,
+)

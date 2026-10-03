@@ -17,7 +17,8 @@ def user(client):
 
 def test_feed_toggle(client, user):
     assert client.get('/feed/').status_code == 200
-    SiteSettings.objects.update(feed_enabled=False)
+    from apps.core.models import ModuleConfig
+    ModuleConfig.objects.filter(key='feed').update(status='off')    # лента теперь — модуль «Лента» (v49)
     assert client.get('/feed/').status_code == 404
     assert '/feed/' not in client.get('/catalog/').content.decode()
 

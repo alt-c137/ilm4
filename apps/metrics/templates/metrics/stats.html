@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load i18n icons %}
+{% block title %}Аналитика — {{ block.super }}{% endblock %}
+{% block body_class %}page-tp{% endblock %}
+{% block content %}
+<div class="mx">
+  <a class="crumb" href="/moderation/">{% ico 'back' %}Модерация</a>
+  <header class="tp__bar"><h1>Как пользуются ilm4</h1>
+    <span class="mx__range">{% for d in '7,30,90'|make_list %}{% endfor %}<a class="{% if days == 7 %}on{% endif %}" href="?days=7">7 дней</a><a class="{% if days == 30 %}on{% endif %}" href="?days=30">30 дней</a><a class="{% if days == 90 %}on{% endif %}" href="?days=90">90 дней</a></span></header>
+
+  <section class="mx__tiles">
+    <div><b>{{ dau }}</b><span>были сегодня</span></div>
+    <div><b>{{ wau }}</b><span>за 7 дней</span></div>
+    <div><b>{{ mau }}</b><span>за 30 дней</span></div>
+    <div><b>{{ users_total }}</b><span>всего аккаунтов</span></div>
+    <div><b>{{ minutes_per_user_day }}</b><span>минут в день на человека</span></div>
+  </section>
+
+  <h2 class="ppl__h">Возвращаются ли</h2>
+  <section class="tp__card tp__pad">
+    <table class="mx__tab"><tr><th>День после регистрации</th><th>Зарегистрировались</th><th>Вернулись в этот день</th><th>Доля</th></tr>
+      {% for r in retention %}<tr><td>{{ r.day }}-й день</td><td>{{ r.cohort }}</td><td>{{ r.back }}</td><td>{% if r.rate is None %}—{% else %}<b>{{ r.rate }}%</b>{% endif %}</td></tr>{% endfor %}</table>
+    <p class="hint">Считается по тем, кто зарегистрировался за последние два месяца. Ориентир для соцсетей: 1-й день — 25–40%, 7-й — 10–20%, 30-й — 5–10%.</p>
+  </section>
+
+  <h2 class="ppl__h">По дням</h2>
+  <section class="tp__card tp__pad mx__days">
+    {% for d in daily %}<div title="{{ d.day|date:'d.m' }}: {{ d.users }} чел., {{ d.minutes }} мин, новых {{ d.new }}"><i style="height:{{ d.bar }}%"></i><span>{{ d.day|date:"d" }}</span></div>{% endfor %}
+  </section>
+
+  <h2 class="ppl__h">Разделы за {{ days }} дней</h2>
+  <section class="tp__card tp__pad">
+    <table class="mx__tab"><tr><th>Раздел</th><th>Людей</th><th>Охват</th><th>Открытий</th><th>Минут всего</th><th>Минут на человека</th><th>Доля времени</th></tr>
+      {% for r in sections %}<tr{% if r.reach < 5 %} class="is-low"{% endif %}><td>{{ r.name }}</td><td>{{ r.users }}</td><td>{{ r.reach }}%</td><td>{{ r.opens }}</td><td>{{ r.minutes }}</td><td>{{ r.per_user }}</td>
+        <td><span class="mx__bar"><i style="width:{{ r.share }}%"></i></span>{{ r.share }}%</td></tr>{% empty %}<tr><td colspan="7">Данных пока нет — они появятся, когда люди начнут пользоваться сайтом и приложением.</td></tr>{% endfor %}</table>
+    <p class="hint">«Охват» — какая доля активных людей заходила в раздел. Серые строки (меньше 5%) — кандидаты на «убрать или переделать».{% if unused %} Совсем не открывали: {{ unused|join:", " }}.{% endif %}</p>
+    <p class="hint">Сайт: {{ platforms.web|default:0 }} мин · приложение: {{ platforms.app|default:0 }} мин.</p>
+  </section>
+
+  <h2 class="ppl__h">Что интересно</h2>
+  <section class="tp__card tp__pad">
+    <p>Записей: <b>{{ interests.posts|default:0 }}</b> · репостов: <b>{{ interests.reposts|default:0 }}</b> · сохранений: <b>{{ interests.saves|default:0 }}</b></p>
+    <table class="mx__tab"><tr><th>Чему ставят лайки</th><th>Лайков</th></tr>
+      {% for k, n in interests.likes %}<tr><td>{% for key, name in kind_names.items %}{% if key == k %}{{ name }}{% endif %}{% endfor %}</td><td>{{ n }}</td></tr>{% empty %}<tr><td colspan="2">Пока нет лайков.</td></tr>{% endfor %}</table>
+    <p class="hint">По лайкам, сохранениям и подпискам каждого человека строится порядок его ленты (apps/social/services.py, rank).</p>
+  </section>
+</div>
+{% endblock %}

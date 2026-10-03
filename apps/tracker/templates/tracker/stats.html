@@ -26,16 +26,16 @@
     <h2>{% translate "По привычкам" %}</h2>
     {% for h in habits %}
     <div class="trk__row" style="--hc:{{ h.color }}">
-      <div class="trk__row-top"><span>{{ h.emoji }} <b>{{ h.title }}</b></span><em>{{ h.rate }}%</em></div>
+      <div class="trk__row-top"><span>{% hicon h.emoji %} <b>{{ h.title }}</b></span><em>{{ h.rate }}%</em></div>
       <div class="trk__line"><i style="width:{{ h.rate }}%"></i></div>
       <div class="trk__cells">{% for c in h.cells %}<i class="{% if c %}on{% endif %}"></i>{% endfor %}</div>
-      <small>{{ h.done }} {% translate "из" %} {{ h.total }}{% if h.sum %} · {% translate "всего" %} {{ h.sum }} {{ h.unit }}{% endif %} · 🔥 {% translate "серия" %} {{ h.streak }} · {% translate "лучшая" %} {{ h.best }}</small>
+      <small>{{ h.done }} {% translate "из" %} {{ h.total }}{% if h.sum %} · {% translate "всего" %} {{ h.sum }} {{ h.unit }}{% endif %} · {% ico 'flame' 'i-inl i-flame' %} {% translate "серия" %} {{ h.streak }} · {% translate "лучшая" %} {{ h.best }}</small>
     </div>
     {% endfor %}
   </section>
   {% else %}<p class="tp__none">{% translate "Пока нечего показывать: добавьте привычку и отмечайте её несколько дней." %}</p>{% endif %}
 
   {% if archived %}<section class="tp__card trk__chart"><h2>{% translate "Архив" %}</h2>
-    {% for h in archived %}<a class="tp__row" href="{% url 'tracker:edit' h.pk %}">{% ico 'edit' %}<span><b>{{ h.emoji }} {{ h.title }}</b><small>{% translate "в архиве — открыть, чтобы вернуть или удалить" %}</small></span></a>{% endfor %}</section>{% endif %}
+    {% for h in archived %}<a class="tp__row" href="{% url 'tracker:edit' h.pk %}">{% ico 'edit' %}<span><b>{% hicon h.emoji %} {{ h.title }}</b><small>{% translate "в архиве — открыть, чтобы вернуть или удалить" %}</small></span></a>{% endfor %}</section>{% endif %}
 </div>
 {% endblock %}

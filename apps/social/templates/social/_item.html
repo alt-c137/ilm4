@@ -1,0 +1,32 @@
+{% load i18n humanize icons %}<article class="fcard" data-key="{{ x.key }}"{% if x.kind == 'post' %} data-post="{{ x.id }}"{% endif %}>
+  <div class="fcard__h">
+    {% if x.author %}<a class="fcard__who" href="{{ x.author.url }}">{% include 'social/_ava.html' with a=x.author size='sm' %}
+      <span><b>{{ x.author.name }}{% if x.author.verified %}<i class="tgver">{% ico 'check' %}</i>{% endif %}</b>
+        <small>{% if x.label %}{{ x.label }} · {% endif %}{{ x.created|naturaltime }}{% if x.privacy == 'close' %} · {% translate "близким" %}{% endif %}{% if x.edited %} · {% translate "изменено" %}{% endif %}</small></span></a>
+    {% else %}<span class="fcard__who"><span class="tava tava--sm fcard__kind">{% if x.kind == 'news' %}{% ico 'news' %}{% else %}{% ico 'pin' %}{% endif %}</span>
+      <span><b>{{ x.label }}</b><small>{{ x.created|naturaltime }}</small></span></span>{% endif %}
+    {% if x.mine %}<details class="tp__menu tp__menu--row fcard__menu"><summary aria-label="{% translate 'Ещё' %}">{% ico 'dots' %}</summary><div class="tp__pop">
+      <button type="button" data-fa="edit">{% ico 'edit' %}{% translate "Изменить" %}</button>
+      <button type="button" data-fa="delete" class="bad">{% ico 'trash' %}{% translate "Удалить" %}</button></div></details>{% endif %}
+  </div>
+  {% if x.title %}<a class="fcard__t" href="{{ x.url }}">{{ x.title }}</a>{% endif %}
+  {% if x.text %}<div class="fcard__txt{% if x.text|length > 420 %} is-long{% endif %}">{{ x.text|urlize|linebreaksbr }}</div>{% if x.text|length > 420 %}<button type="button" class="fcard__more">{% translate "Показать полностью" %}</button>{% endif %}{% endif %}
+  {% if x.price %}<span class="fcard__price">{{ x.price }}</span>{% endif %}
+  {% if x.images %}<div class="fgrid fgrid--{% if x.images|length > 4 %}many{% else %}{{ x.images|length }}{% endif %}">{% for im in x.images %}{% if forloop.counter <= 9 %}<a href="{{ im.url }}" class="fgrid__i" data-full="{{ im.url }}"><img src="{{ im.url }}" alt="" loading="lazy">{% if forloop.counter == 9 and x.images|length > 9 %}<b>+{{ x.images|length|add:"-9" }}</b>{% endif %}</a>{% endif %}{% endfor %}</div>{% endif %}
+  {% if x.repost %}<div class="fcard__rp">
+    <a class="fcard__who" href="{{ x.repost.author.url }}">{% include 'social/_ava.html' with a=x.repost.author size='xs' %}<span><b>{{ x.repost.author.name }}</b><small>{{ x.repost.created|naturaltime }}</small></span></a>
+    {% if x.repost.text %}<div class="fcard__txt">{{ x.repost.text|urlize|linebreaksbr }}</div>{% endif %}
+    {% if x.repost.images %}<div class="fgrid fgrid--{% if x.repost.images|length > 4 %}many{% else %}{{ x.repost.images|length }}{% endif %}">{% for im in x.repost.images %}<a href="{{ im.url }}" class="fgrid__i" data-full="{{ im.url }}"><img src="{{ im.url }}" alt="" loading="lazy"></a>{% endfor %}</div>{% endif %}
+  </div>{% endif %}
+  {% if x.kind != 'post' and x.kind != 'channel' %}<a class="fcard__open" href="{{ x.url }}">{% translate "Открыть" %} {% ico 'arrow' %}</a>{% endif %}
+  <div class="fcard__f">
+    <button type="button" class="fbtn fbtn--like{% if x.liked %} on{% endif %}" data-like aria-pressed="{{ x.liked|yesno:'true,false' }}">{% ico 'heart' %}<span>{% if x.likes %}{{ x.likes }}{% endif %}</span></button>
+    {% if x.kind == 'channel' %}{% if x.channel_comments %}<a class="fbtn" href="/chat/{{ x.author.room }}/post/{{ x.id }}/">{% ico 'comment' %}<span>{% if x.comments_count %}{{ x.comments_count }}{% endif %}</span></a>{% endif %}
+    {% else %}<button type="button" class="fbtn" data-comments>{% ico 'comment' %}<span>{% if x.comments %}{{ x.comments }}{% endif %}</span></button>{% endif %}
+    {% if x.kind == 'post' %}<button type="button" class="fbtn" data-repost-now="{{ x.id }}" title="{% translate 'Репост на свою стену' %}" aria-label="{% translate 'Репост' %}">{% ico 'repost' %}<span>{% if x.reposts %}{{ x.reposts }}{% endif %}</span></button>{% endif %}
+    <button type="button" class="fbtn" data-share data-url="{{ x.url }}" aria-label="{% translate 'Поделиться' %}">{% ico 'forward' %}</button>
+    <button type="button" class="fbtn fbtn--save{% if x.saved %} on{% endif %}" data-save aria-label="{% translate 'Сохранить' %}" title="{% translate 'Сохранить' %}">{% ico 'bookmark' %}</button>
+    {% if x.views %}<span class="fbtn fbtn--views">{% ico 'eye' %}<span>{{ x.views }}</span></span>{% endif %}
+  </div>
+  <div class="fcom" hidden></div>
+</article>

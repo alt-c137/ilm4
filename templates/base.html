@@ -26,6 +26,8 @@
 <link rel="stylesheet" href="{% static 'css/motion.css' %}?v={{ asset_v }}">
 <link rel="stylesheet" href="{% static 'css/tracker.css' %}?v={{ asset_v }}">
 <link rel="stylesheet" href="{% static 'css/people.css' %}?v={{ asset_v }}">
+<link rel="stylesheet" href="{% static 'css/tg.css' %}?v={{ asset_v }}">
+<link rel="stylesheet" href="{% static 'css/feed.css' %}?v={{ asset_v }}">
 {# Мгновенные переходы: браузер заранее подгружает страницу, на ссылку которой навели или нажали. Только разделы без побочных действий при открытии. #}
 <script type="speculationrules">{"prefetch":[{"where":{"and":[{"href_matches":["/","/buy/*","/jobs/*","/news/*","/forum/*","/services/*","/transport/*","/health/*","/map/*","/library/*","/prayer/*","/migration/*","/refugee/*","/catalog/"]},{"not":{"href_matches":["/*/add/*","/*/ask/*","/*/request/*","/*/download/*","/*/boost/*","/*/respond/*","/*/reply/*","/*/confirm/*","/*\\?*"]}}]},"eagerness":"moderate"}]}</script>
 {{ js_i18n|json_script:"i18n-js" }}
@@ -35,7 +37,7 @@ window._t = (function () { var d = {}; try { d = JSON.parse(document.getElementB
 {% block extra_head %}{% endblock %}
 {% if current_theme %}<style>:root{--accent:{{ current_theme.accent }};--accent-d:{{ current_theme.accent_d }};--accent-soft:{{ current_theme.accent_soft }}}</style>{% endif %}
 </head>
-<body class="{% block body_class %}{% endblock %}{% if is_home %} page-home{% endif %}{% if nikah_mode %} mode-nikah{% endif %}"{% if user.is_authenticated and calls_on %} data-calls="1"{% endif %}>
+<body class="{% block body_class %}{% endblock %}{% if is_home %} page-home{% endif %}{% if nikah_mode %} mode-nikah{% endif %}" data-sec="{{ active_section|default:'' }}"{% if user.is_authenticated and calls_on %} data-calls="1"{% endif %}>
 {% include 'includes/messages.html' %}
 <div class="wrap">
   <header class="top" id="top"><div class="top__row">
@@ -176,6 +178,24 @@ setInterval(function(){ if (!document.hidden) fetch('/accounts/ping/', {credenti
 <script src="{% static 'js/theme.js' %}?v={{ asset_v }}"></script>
 <script src="{% static 'js/app.js' %}?v={{ asset_v }}"></script>
 <script src="{% static 'js/photoedit.js' %}?v={{ asset_v }}" defer></script>
+<script src="{% static 'js/select.js' %}?v={{ asset_v }}" defer></script>
+<script>
+/* Сколько времени человек проводит в разделе (только секунды и название раздела; при «Do Not Track» — ничего не шлём).
+   Нужно, чтобы видеть, какие разделы живые, а какие лишние: /moderation/stats/ */
+(function () {
+  if (navigator.doNotTrack === '1' || !navigator.sendBeacon) return;
+  var b = document.body, sec = b.dataset.sec || (b.classList.contains('page-home') ? 'home' : (location.pathname.split('/')[1] || 'home'));
+  sec = { accounts: 'profile', feed: 'feed', m: 'other' }[sec] || sec;
+  var t0 = Date.now(), acc = 0, first = 1, vis = !document.hidden;
+  function flush() {
+    if (vis) { acc += Date.now() - t0; t0 = Date.now(); }
+    var s = Math.round(acc / 1000); if (s < 1 && !first) return;
+    acc = 0; navigator.sendBeacon('/m/', new URLSearchParams({ s: sec, t: s, o: first })); first = 0;
+  }
+  document.addEventListener('visibilitychange', function () { if (document.hidden) { if (vis) acc += Date.now() - t0; vis = false; flush(); } else { vis = true; t0 = Date.now(); } });
+  setTimeout(flush, 3000); setInterval(flush, 30000); window.addEventListener('pagehide', flush);
+})();
+</script>
 {% block extra_js %}{% endblock %}
 <script>if ('serviceWorker' in navigator && location.protocol === 'https:') { navigator.serviceWorker.register('/sw.js').catch(function () {}); }</script>
 </body>

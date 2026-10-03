@@ -14,7 +14,7 @@ import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/d
 import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioRecorder } from 'expo-audio';
 import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react';
 import { ActivityIndicator, Alert, Modal, Platform, Pressable, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Svg, { Circle as SvgCircle } from 'react-native-svg';
@@ -28,6 +28,9 @@ import { useApp } from '@/state/app';
 import { Button, Icon, Txt } from './kit';
 
 export type SendOpts = { silent?: boolean; schedule?: string };
+/** Полоска над полем ввода: ответ на сообщение или правка своего (как в Telegram). */
+export type Banner = { kind: 'reply' | 'edit'; title: string; text: string };
+export type ComposerHandle = { setText: (text: string) => void; getText: () => string; focus: () => void };
 type Mode = 'voice' | 'circle';
 type Rec = { kind: Mode; locked: boolean; started: number; cancelled: boolean; sendAfter: boolean; recording: boolean;
   idle: number; pausedAt: number; gen: number };
@@ -49,18 +52,36 @@ const CANCEL_DX = -110;
 const LOCK_DY = -70;
 const LIMIT: Record<Mode, number> = { voice: 300, circle: 60 };
 
-export function Composer({ features: f, busy, onText, onFile, onAttach }: {
+export function Composer({ features: f, busy, onText, onFile, onAttach, banner, onBannerClose, onChange, onTyping, ref }: {
   features: Record<string, any>;
   busy: boolean;
   onText: (body: string, opts?: SendOpts) => Promise<boolean>;
   onFile: (kind: Mode, uri: string, name: string, type: string, seconds: number) => void;
   onAttach?: () => void;
+  banner?: Banner | null;
+  onBannerClose?: () => void;
+  onChange?: (text: string) => void;                       // для черновика
+  onTyping?: (what: 'text' | 'voice' | 'circle') => void;   // «печатает…», «записывает голосовое»
+  ref?: Ref<ComposerHandle>;
 }) {
   const { c, t } = useApp();
+  const field = useRef<TextInput>(null);
   const win = useWindowDimensions();
   const canVoice = !!f.voice;
   const canCircle = !!f.circle && Platform.OS !== 'web';
-  const [text, setText] = useState('');
+  const [text, setTextState] = useState('');
+  const latest = useRef('');
+  const setText = (v: string) => {
+    latest.current = v;
+    setTextState(v);
+    onChange?.(v);
+    if (v.trim()) onTyping?.('text');
+  };
+  useImperativeHandle(ref, () => ({
+    setText: (v: string) => { latest.current = v; setTextState(v); },
+    getText: () => latest.current,
+    focus: () => field.current?.focus(),
+  }), []);
   const [mode, setMode] = useState<Mode>(canVoice ? 'voice' : 'circle');
   const [rec, setRec] = useState<Rec | null>(null);
   const [sec, setSec] = useState(0);
@@ -146,6 +167,7 @@ export function Composer({ features: f, busy, onText, onFile, onAttach }: {
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     startTimer(kind);
+    onTyping?.(kind);
   };
 
   const onCameraReady = async () => {
@@ -323,7 +345,7 @@ export function Composer({ features: f, busy, onText, onFile, onAttach }: {
 
   const canRecord = canVoice || canCircle;
   const recording = !!rec;
-  const showSend = !recording && (!!text.trim() || !canRecord);
+  const showSend = !recording && (!!text.trim() || !canRecord || banner?.kind === 'edit');
   const round = { width: 46, height: 46, borderRadius: 23, alignItems: 'center' as const, justifyContent: 'center' as const };
   const shadow = { shadowColor: c.accent, shadowOpacity: 0.35, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 3 };
   const floating = { position: 'absolute' as const, backgroundColor: c.card, alignItems: 'center' as const, justifyContent: 'center' as const,
@@ -375,7 +397,20 @@ export function Composer({ features: f, busy, onText, onFile, onAttach }: {
           </Pressable>
         </View>
       ) : null}
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8, paddingHorizontal: 8, paddingVertical: 7, backgroundColor: c.card, borderTopWidth: 0.5, borderTopColor: c.line }}>
+      {banner && !recording ? (
+        <Animated.View entering={FadeInDown.duration(160)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingLeft: 14, paddingRight: 6, paddingTop: 7, paddingBottom: 2,
+          backgroundColor: c.card, borderTopWidth: 0.5, borderTopColor: c.line }}>
+          <Icon name={banner.kind === 'edit' ? 'pencil' : 'arrow-undo'} size={21} color={c.accent} />
+          <View style={{ flex: 1, borderLeftWidth: 3, borderLeftColor: c.accent, paddingLeft: 9 }}>
+            <Text style={{ color: c.accent, fontSize: 13.5, fontWeight: '700' }} numberOfLines={1}>{banner.title}</Text>
+            <Text style={{ color: c.inkSoft, fontSize: 14 }} numberOfLines={1}>{banner.text}</Text>
+          </View>
+          <Pressable onPress={onBannerClose} hitSlop={10} accessibilityLabel={t('Отмена')} style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name="close" size={20} color={c.inkSoft} />
+          </Pressable>
+        </Animated.View>
+      ) : null}
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8, paddingHorizontal: 8, paddingVertical: 7, backgroundColor: c.card, borderTopWidth: banner && !recording ? 0 : 0.5, borderTopColor: c.line }}>
         {recording ? (
           <Animated.View entering={FadeIn.duration(150)} style={{ flex: 1, height: 46, flexDirection: 'row', alignItems: 'center', gap: 9, paddingLeft: 10 }}>
             <RecDot color={c.bad} still={!!rec?.pausedAt} />
@@ -394,7 +429,7 @@ export function Composer({ features: f, busy, onText, onFile, onAttach }: {
         ) : (
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-end', minHeight: 46, backgroundColor: c.card2, borderRadius: 23,
             borderWidth: 1, borderColor: c.line, paddingLeft: 16, paddingRight: onAttach ? 2 : 12 }}>
-            <TextInput value={text} onChangeText={setText} onSelectionChange={(e) => setSel(e.nativeEvent.selection)} placeholder={t('Сообщение')} placeholderTextColor={c.inkSoft} multiline maxLength={2000}
+            <TextInput ref={field} value={text} onChangeText={setText} onSelectionChange={(e) => setSel(e.nativeEvent.selection)} placeholder={t('Сообщение')} placeholderTextColor={c.inkSoft} multiline maxLength={2000}
               {...(Platform.OS === 'web' ? { rows: 1 } : {})}
               style={{ flex: 1, maxHeight: 120, paddingTop: Platform.OS === 'ios' ? 12 : 9, paddingBottom: Platform.OS === 'ios' ? 12 : 9, fontSize: 16, lineHeight: 21, color: c.ink }} />
             {onAttach ? (
@@ -411,7 +446,7 @@ export function Composer({ features: f, busy, onText, onFile, onAttach }: {
             <Pressable onPress={() => sendText()} onLongPress={menu} delayLongPress={400} disabled={!text.trim()}
               accessibilityLabel={t('Отправить')} accessibilityHint={t('Долгое нажатие — без звука или по расписанию')}
               style={[round, shadow, { backgroundColor: text.trim() ? c.accent : c.line }]}>
-              <Icon name="send" size={20} color="#fff" />
+              <Icon name={banner?.kind === 'edit' ? 'checkmark' : 'send'} size={banner?.kind === 'edit' ? 24 : 20} color="#fff" />
             </Pressable>
           </Animated.View>
         ) : canRecord ? (

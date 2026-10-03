@@ -12,7 +12,7 @@
       <button type="submit" name="photo_mode" value="exchange" class="nkpm{% if p.photo_mode == 'exchange' %} on{% endif %}">{% nk_icon 'photo_exchange' %}<b>{% translate "Открывать фото при взаимной симпатии" %}</b><small>{% translate "Одноразовый показ на несколько минут с водяным знаком. Сестра смотрит первой." %}</small></button>
       <button type="submit" name="photo_mode" value="none" class="nkpm{% if p.photo_mode == 'none' %} on{% endif %}">{% nk_icon 'photo_none' %}<b>{% translate "Без фото — только переписка" %}</b><small>{% translate "Чат открывается сразу после взаимной симпатии. Фото — лично в чате, когда решите." %}</small></button>
     </form>
-    <p class="nkstep__tip">{% translate "⚠ Без своего фото вы не увидите фото других — обмен работает по принципу взаимности." %}</p>
+    <p class="nkstep__tip">{% translate "Без своего фото вы не увидите фото других — обмен работает по принципу взаимности." %}</p>
   </section>
 
   <section class="nkfs"><h4>{% translate "Личные данные" %}</h4>
@@ -24,7 +24,7 @@
   </section>
 
   <section class="nkfs" id="verify"><h4>{% translate "Верификация" %}</h4>
-    {% if p.verified %}<p class="nkok">{% translate "✅ Вы верифицированы" %} {{ p.verified_at|date:"d.m.Y" }} {% translate "— на анкете значок." %}</p>
+    {% if p.verified %}<p class="nkok">{% translate "Вы верифицированы" %} {{ p.verified_at|date:"d.m.Y" }} {% translate "— на анкете значок." %}</p>
     {% else %}
     <p class="nkstep__sub">{% translate "Подтвердите, что анкету ведёт живой человек: запишите боту видео-кружок и скажите «" %}{{ p.display_name }}, {{ p.age }}{% translate "». Запись видит только модератор, на нашем сервере она не хранится." %}</p>
     {% if user.telegram_id %}<form method="post" action="{% url 'nikah:verify' %}">{% csrf_token %}<button class="btn btn--p" type="submit">{% nk_icon 'telegram' %}{% translate "Пройти в Telegram" %}</button></form>
@@ -34,7 +34,7 @@
   </section>
 
   <section class="nkfs" id="witness"><h4>{% translate "Свидетель (махрам)" %}</h4>
-    {% if p.witness %}<p class="nkok">👁 {{ p.witness.get_display_name }} {% translate "— свидетель во всех ваших чатах никяха." %}</p>
+    {% if p.witness %}<p class="nkok">{{ p.witness.get_display_name }} {% translate "— свидетель во всех ваших чатах никяха." %}</p>
       <form method="post" action="{% url 'nikah:witness' %}">{% csrf_token %}<input type="hidden" name="remove" value="1"><button class="linkbtn" type="submit">{% translate "Убрать свидетеля" %}</button></form>
     {% else %}
       <p class="nkstep__sub">{% translate "Добавьте махрама (отца, брата) — он будет видеть переписку в ваших чатах никяха и сможет писать. Так общение остаётся в рамках адаба." %}</p>
@@ -45,7 +45,7 @@
   </section>
 
   <section class="nkfs"><h4>{% translate "Уведомления" %}</h4>
-    {% if user.telegram_id %}<p class="nkok">{% translate "✅ Telegram подключён" %}{% if user.telegram_username %} (@{{ user.telegram_username }}){% endif %} {% translate "— о симпатиях и сообщениях пишет бот." %}</p>
+    {% if user.telegram_id %}<p class="nkok">{% translate "Telegram подключён" %}{% if user.telegram_username %} (@{{ user.telegram_username }}){% endif %} {% translate "— о симпатиях и сообщениях пишет бот." %}</p>
     {% elif tg_bot %}<p class="nkstep__sub">{% translate "Откройте никях через бота — уведомления будут приходить в Telegram." %}</p><a class="btn btn--g" href="https://t.me/{{ tg_bot }}" target="_blank" rel="noopener">{% nk_icon 'telegram' %}{% translate "Открыть бота" %}</a>
     {% else %}<p class="nkmeta">{% translate "Уведомления — на сайте (колокольчик)." %}</p>{% endif %}
   </section>

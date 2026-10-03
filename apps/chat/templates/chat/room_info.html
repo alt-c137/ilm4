@@ -23,7 +23,8 @@
         {% if me_owner or can_moderate %}<form method="post" action="{% url 'chat:room_act' room.pk 'delete' %}" onsubmit="return confirm('{% translate 'Удалить навсегда вместе со всеми сообщениями?' %}')">{% csrf_token %}<button type="submit" class="bad">{% ico 'trash' %}{% if room.kind == 'channel' %}{% translate "Удалить канал" %}{% else %}{% translate "Удалить группу" %}{% endif %}</button></form>{% endif %}
       </div>
     </details>
-    <div class="tp__ava">{% if pic.url %}<img src="{{ pic.url }}" alt="">{% else %}<span>{{ pic.letter }}</span>{% endif %}</div>
+    {% if pic.url %}<button type="button" class="tp__ava tp__ava--view" data-photos="room-photos" aria-label="{% translate 'Смотреть фото' %}"><img src="{{ pic.url }}" alt=""></button>{{ room_photos|json_script:"room-photos" }}
+    {% else %}<div class="tp__ava"><span>{{ pic.letter }}</span></div>{% endif %}
     <h1 class="tp__name">{{ room.title }}{% if room.platform_verified %}<i class="tgver" title="{% translate 'Официальный' %}">{% ico 'check' %}</i>{% endif %}</h1>
     <div class="tp__status">{% if room.kind == 'channel' %}{% translate "канал" %}{% else %}{% translate "группа" %}{% endif %} · {{ room.members_count }} {% if room.kind == 'channel' %}{% translate "подписчиков" %}{% else %}{% translate "участников" %}{% endif %}{% if room.closed %} · {% translate "закрыт модератором" %}{% endif %}</div>
   </header>
@@ -56,7 +57,19 @@
       <label class="fcheck"><input type="checkbox" name="is_public"{% if room.is_public %} checked{% endif %}> {% translate "Виден в каталоге, вступить может любой" %}</label>
       <div><label for="r-handle">{% translate "Публичное имя" %}</label><div class="tp__at"><i>@</i><input type="text" id="r-handle" name="handle" maxlength="32" value="{{ room.handle|default:'' }}" autocapitalize="none" spellcheck="false" placeholder="masjid_nur"></div>
         <span class="hint">{% translate "Латинские буквы, цифры и «_», от 4 знаков, первая — буква. Адрес будет ilm4.com/c/имя" %}</span></div>
-      {% if room.kind == 'group' %}<label class="fcheck"><input type="checkbox" name="only_admins_post"{% if room.only_admins_post %} checked{% endif %}> {% translate "Писать могут только админы" %}</label>{% endif %}
+      {% if room.kind == 'group' %}<label class="fcheck"><input type="checkbox" name="only_admins_post"{% if room.only_admins_post %} checked{% endif %}> {% translate "Писать могут только админы" %}</label>
+      <div><label for="r-slow">{% translate "Медленный режим" %}</label><select id="r-slow" name="slow_seconds">
+        <option value="0"{% if not room.slow_seconds %} selected{% endif %}>{% translate "Выключен" %}</option>
+        <option value="10"{% if room.slow_seconds == 10 %} selected{% endif %}>{% translate "10 секунд" %}</option>
+        <option value="30"{% if room.slow_seconds == 30 %} selected{% endif %}>{% translate "30 секунд" %}</option>
+        <option value="60"{% if room.slow_seconds == 60 %} selected{% endif %}>{% translate "1 минута" %}</option>
+        <option value="300"{% if room.slow_seconds == 300 %} selected{% endif %}>{% translate "5 минут" %}</option>
+        <option value="900"{% if room.slow_seconds == 900 %} selected{% endif %}>{% translate "15 минут" %}</option>
+        <option value="3600"{% if room.slow_seconds == 3600 %} selected{% endif %}>{% translate "1 час" %}</option></select>
+        <span class="hint">{% translate "Участник пишет не чаще, чем раз в выбранное время. На админов не действует." %}</span></div>{% endif %}
+      {% if room.kind == 'channel' %}<label class="fcheck"><input type="checkbox" name="comments_on"{% if room.comments_on %} checked{% endif %}> {% translate "Комментарии под постами" %}</label>{% endif %}
+      <label class="fcheck"><input type="checkbox" name="reactions_on"{% if room.reactions_on %} checked{% endif %}> {% translate "Реакции на сообщения" %}</label>
+      <label class="fcheck"><input type="checkbox" name="protected"{% if room.protected %} checked{% endif %}> {% translate "Запретить пересылку и копирование" %}</label>
       <button type="submit" class="btn btn--p tp__save">{% translate "Сохранить" %}</button>
     </form>
   </details>
@@ -95,4 +108,4 @@
 </div>
 {% endblock %}
 
-{% block extra_js %}<script src="{% static 'js/people.js' %}?v={{ asset_v }}" defer></script>{% endblock %}
+{% block extra_js %}<script src="{% static 'js/people.js' %}?v={{ asset_v }}" defer></script><script src="{% static 'js/photoview.js' %}?v={{ asset_v }}" defer></script>{% endblock %}

@@ -107,12 +107,15 @@ class ProfileForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'handle', 'bio', 'city', 'avatar', 'phone', 'findable_by_phone',
-                  'phone_privacy', 'seen_privacy']
+                  'phone_privacy', 'seen_privacy', 'forward_privacy', 'invite_privacy', 'counts_privacy']
         labels = {
             'first_name': 'Имя', 'last_name': 'Фамилия', 'city': 'Город',
             'avatar': 'Аватар', 'phone': 'Телефон', 'handle': 'Имя пользователя', 'bio': 'О себе',
             'findable_by_phone': 'Меня можно найти по номеру телефона',
             'phone_privacy': 'Кто видит мой номер', 'seen_privacy': 'Кто видит, когда я в сети',
+            'forward_privacy': 'Кто может перейти в мой профиль из пересланного сообщения',
+            'invite_privacy': 'Кто может добавлять меня в группы',
+            'counts_privacy': 'Кто видит мои счётчики: записи, подписчики, подписки',
         }
         widgets = {
             # аву меняем кликом по фото в карточке — стандартная кнопка не нужна
@@ -126,7 +129,7 @@ class ProfileForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for name in ('phone_privacy', 'seen_privacy'):       # не пришло в форме — остаётся как было
+        for name in ('phone_privacy', 'seen_privacy', 'forward_privacy', 'invite_privacy', 'counts_privacy'):   # не пришло — как было
             self.fields[name].required = False
         # раньше вместо имени был «ник»: показываем его в поле «Имя», после сохранения ник больше не нужен
         if not self.is_bound and not self.instance.first_name and self.instance.nickname:
@@ -137,6 +140,15 @@ class ProfileForm(forms.ModelForm):
 
     def clean_seen_privacy(self):
         return self.cleaned_data.get('seen_privacy') or self.instance.seen_privacy
+
+    def clean_forward_privacy(self):
+        return self.cleaned_data.get('forward_privacy') or self.instance.forward_privacy
+
+    def clean_invite_privacy(self):
+        return self.cleaned_data.get('invite_privacy') or self.instance.invite_privacy
+
+    def clean_counts_privacy(self):
+        return self.cleaned_data.get('counts_privacy') or self.instance.counts_privacy
 
     def clean_handle(self):
         from . import people

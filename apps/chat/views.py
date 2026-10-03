@@ -17,9 +17,10 @@ from django.views.decorators.http import require_POST
 from apps.accounts import phone_verify
 from apps.core.decorators import module_required
 
-from . import rooms, services
+from . import persona, rooms, services
 from .events import preview
-from .models import Message, Thread
+from .models import Message, Reaction, Thread
+from .msgops import EDIT_HOURS
 from .services import ChatError, UploadRefused, nikah_contacts_forbidden, send_text, store_upload  # noqa: F401
 from .services import blocked as _blocked
 from .services import flags as _flags
@@ -54,11 +55,14 @@ def _day_label(d):
 
 
 def _rows(user):
-    """Диалоги пользователя для списка: собеседник (или группа / канал), последнее сообщение, непрочитанные."""
+    """Диалоги пользователя для списка: собеседник (или группа / канал), последнее сообщение, непрочитанные.
+    Заодно возвращает сами чаты — по ним собираются вкладки-папки."""
     from .views_rooms import pic
-    rows = []
+    rows, threads = [], []
     for thread, other, last in services.inbox(user):
         who = pic(thread, other, user)
+        thread.list_name = who['name']
+        threads.append(thread)
         rows.append({
             'thread': thread,
             'other': other,
@@ -73,24 +77,30 @@ def _rows(user):
             'kind': last.kind if last else '',
             'when': _when(last.created_at if last else thread.updated_at),
             'unread': thread.unread,
+            'unread_mark': thread.unread_mark,
             'muted': bool(thread.muted),
+            'pinned': bool(thread.pinned_at),
+            'archived': thread.archived,
+            'draft': thread.draft,
             'hue': who['hue'],
-            'folder': thread.folder,
+            'type': thread.chat_type,
         })
-    return rows
+    return rows, threads
 
 
 def _side(request):
-    """Список чатов с папками (как папки Telegram): ?f=buy — только «Покупки»."""
-    rows = _rows(request.user)
-    folders = services.folders_for(request.user, rows)
+    """Список чатов со своими папками (как в Telegram): ?f=<id папки> или ?f=archive."""
+    rows, threads = _rows(request.user)
+    tabs = services.folder_summary(request.user, threads)
     current = request.GET.get('f', '')
-    if current not in {f['key'] for f in folders}:
+    by_id = {str(f['id']): f for f in tabs['folders']}
+    if current not in by_id and current != 'archive':
         current = ''
     f = _flags()
-    return {'rows': [r for r in rows if not current or r['folder'] == current], 'folders': folders,
-            'folder': current, 'all_unread': sum(r['unread'] for r in rows), 'support_on': bool(services.support_user()),
-            'rooms_on': f['groups'] or f['channels'], 'channels_on': f['channels']}
+    return {'rows': rows, 'tabs': tabs, 'folder': current,
+            'all_unread': sum(r['unread'] for r in rows if not r['muted'] and not r['archived']),
+            'support_on': bool(services.support_user()), 'rooms_on': f['groups'] or f['channels'],
+            'channels_on': f['channels'], 'contacts_on': f['contacts']}
 
 
 @login_required
@@ -166,24 +176,41 @@ def thread_detail(request, pk):
     if request.method == 'POST':  # fallback без JS: отправить обычной формой
         try:
             send_text(thread, request.user, request.POST.get('body', '')[:2000],
-                      silent=request.POST.get('silent') == '1', schedule=request.POST.get('schedule'))
+                      silent=request.POST.get('silent') == '1', schedule=request.POST.get('schedule'),
+                      reply_to=request.POST.get('reply_to'))
         except ChatError as exc:
             messages.error(request, exc.message)
         return redirect('chat:thread', pk=pk)
     services.mark_read(thread, request.user)          # открыл диалог — входящие прочитаны
 
     from . import contexts
+    from .events import decorate, reply_brief
     items, prev, risky = [], None, contexts.risky(thread)
     group = thread.kind == Thread.GROUP
-    # последние HISTORY сообщений: длинная переписка не грузит страницу целиком
-    msgs = list(services.visible_messages(thread, request.user).select_related('sender')
-                .order_by('-created_at', '-pk')[:HISTORY])[::-1]
+    base = services.visible_messages(thread, request.user).select_related('sender', 'reply_to__sender')
+    at, more_after = request.GET.get('at', ''), False
+    if at.isdigit():
+        # переход к сообщению из ответа, закрепа или поиска: показываем «окно» вокруг него
+        try:
+            win = services.window_around(thread, request.user, int(at), half=HISTORY // 2)
+            msgs, more_after = win['items'], win['more_after']
+        except ChatError:
+            at, msgs = '', None
+    else:
+        at, msgs = '', None
+    if msgs is None:
+        # последние HISTORY сообщений: длинная переписка не грузит страницу целиком
+        msgs = list(base.order_by('-created_at', '-pk')[:HISTORY])[::-1]
+    for m in msgs:
+        m.thread = thread
+    decorate(msgs, request.user)
     for i, m in enumerate(msgs):
         local = timezone.localtime(m.created_at)
         nxt = msgs[i + 1] if i + 1 < len(msgs) else None
         items.append({
             'm': m,
             'mine': m.sender_id == request.user.id,
+            'read': bool(m.read_at) or m._room_read,
             'day': _day_label(local.date()) if not prev or timezone.localtime(prev.created_at).date() != local.date() else '',
             'time': local.strftime('%H:%M'),
             'dur': f'{(m.duration or 0) // 60}:{(m.duration or 0) % 60:02d}',
@@ -193,23 +220,39 @@ def thread_detail(request, pk):
             'warn': risky and m.sender_id != request.user.id and contexts.is_scam(m.body),
             'meta': _file_meta(m),
             # группа: имя автора над первым сообщением серии
-            'who': m.sender.get_display_name() if group and m.sender_id != request.user.id
+            'who': persona.name_in(thread, m.sender) if group and m.sender_id != request.user.id
                    and (not prev or prev.sender_id != m.sender_id or prev.kind == Message.SYSTEM) else '',
             'hue': m.sender_id % 7,
+            'reply': reply_brief(m.reply_to) if m.reply_to_id else None,
+            'fwd': m.fwd if m.fwd_enc else None,
+            'rx': m._rx, 'my': m._my,
         })
         prev = m
     from .views_rooms import pic
-    other = None if thread.is_room else thread.other_participant(request.user)
+    other = None if thread.is_room or thread.is_saved else thread.other_participant(request.user)
     info = services.thread_info(thread, request.user)
     room = info['room']
     who = pic(thread, other, request.user)
     presence = None
-    if other is not None:
+    if other is not None and not who.get('masked'):
         from apps.accounts import people as ppl
         presence = ppl.presence(other, request.user)
         presence['text'] = ppl.status_text(presence)
+    from .events import message_payload
+    pins = services.pinned_messages(thread, request.user)
+    state = services.state_of(thread, request.user)
+    saved = thread.is_saved
+    space_side = None
+    if thread.space_id:
+        from .views_spaces import side as space_panel
+        space_side = space_panel(thread.space, request.user, thread.pk)
     return render(request, 'chat/thread.html', {
-        'thread': thread,
+        'thread': thread, 'space_side': space_side,
+        'saved': saved,
+        'at': at, 'more_after': more_after,
+        'draft': services._draft_text(thread.pk, state),
+        'pins': [message_payload(p) for p in pins],
+        'rx_all': Reaction.EMOJI,
         'other': other,
         'presence': presence,
         'muted': services.is_muted(thread, request.user),
@@ -224,7 +267,12 @@ def thread_detail(request, pk):
         'witnesses': [u.get_display_name() for u in thread.observers.exclude(pk=request.user.pk)],
         'chat_cfg': {'me': request.user.id, 'thread': thread.pk, 'other': who['name'], 'features': _flags(thread),
                      'room': thread.kind if thread.is_room else '', 'admin': bool(room and room['admin']),
-                     'warn_text': contexts.warn_text() if risky else ''},
+                     'warn_text': contexts.warn_text() if risky else '',
+                     'can_pin': bool(room['admin']) if room else True, 'can_post': room['can_post'] if room else True,
+                     'member': bool(room['member']) if room else True,
+                     'protected': thread.protected or services.is_nikah(thread.pk), 'reactions': Reaction.EMOJI if thread.reactions_on else [],
+                     'comments': bool(thread.is_channel and thread.comments_on), 'saved': saved,
+                     'edit_hours': 0 if thread.is_channel else EDIT_HOURS, 'at': int(at) if at else 0},
     })
 
 
@@ -271,13 +319,16 @@ def upload(request, pk):
     try:
         payload = store_upload(thread, request.user, request.POST.get('kind', ''), request.FILES.get('file'),
                                request.POST.get('duration'), request.POST.get('caption', ''),
-                               silent=request.POST.get('silent') == '1', schedule=request.POST.get('schedule'))
+                               silent=request.POST.get('silent') == '1', schedule=request.POST.get('schedule'),
+                               reply_to=request.POST.get('reply_to'))
     except ChatError as exc:
         return JsonResponse({'error': exc.message}, status=exc.status)
     return JsonResponse(payload)
 
 
 def _file_meta(m) -> dict:
+    if m.kind == 'photo':
+        return m.meta if m.meta_enc else {}
     if m.kind != 'file':
         return {}
     from .media import is_risky_name
@@ -303,7 +354,7 @@ def upload_step(request, user, step, upload_id=None, thread=None) -> dict:
         return services.upload_begin(thread, user, d.get('kind', 'file'), d.get('name', ''), d.get('size'),
                                      d.get('duration'), d.get('caption', ''),
                                      silent=str(d.get('silent', '')).lower() in ('1', 'true'),
-                                     schedule=d.get('schedule') or None)
+                                     schedule=d.get('schedule') or None, reply_to=d.get('reply_to') or None)
     if step == 'part':
         return services.upload_part(user, upload_id, request.GET.get('offset'), read_part(request))
     if step == 'finish':
@@ -349,15 +400,24 @@ def upload_chunk(request, upload_id, step='status'):
 @login_required
 @require_POST
 def scheduled_action(request, msg_id, action):
-    """Своё запланированное сообщение: «отправить сейчас» или «удалить»."""
+    """Действия с сообщением: запланированное — send / cancel; обычное — delete (у всех), hide (у себя),
+    edit, pin / unpin, react."""
     try:
         if action == 'send':
             return JsonResponse(services.send_scheduled_now(request.user, msg_id))
         if action == 'cancel':
             services.cancel_scheduled(request.user, msg_id)
             return JsonResponse({'ok': True, 'id': msg_id})
-        if action == 'delete':
-            return JsonResponse(services.delete_message(request.user, msg_id))
+        if action in ('delete', 'hide'):
+            return JsonResponse(services.delete_message(request.user, msg_id, for_all=action == 'delete'))
+        if action == 'edit':
+            return JsonResponse(services.edit_message(request.user, msg_id, request.POST.get('body', '')))
+        if action == 'raw':
+            return JsonResponse({'id': msg_id, 'body': services.message_raw(request.user, msg_id)})
+        if action in ('pin', 'unpin'):
+            return JsonResponse(services.pin_message(request.user, msg_id, action == 'pin'))
+        if action == 'react':
+            return JsonResponse(services.react(request.user, msg_id, request.POST.get('emoji', '')))
     except ChatError as exc:
         return JsonResponse({'error': exc.message}, status=exc.status)
     raise Http404
@@ -370,7 +430,8 @@ def attachment(request, msg_id):
 
     msg = get_object_or_404(Message.objects.select_related('thread'), pk=msg_id)
     if (not msg.attachment or not services.can_read(msg.thread, request.user)
-            or (msg.scheduled_at and msg.sender_id != request.user.pk)):
+            or (msg.scheduled_at and msg.sender_id != request.user.pk)
+            or (not msg.comment_of_id and not services.visible_messages(msg.thread, request.user).filter(pk=msg.pk).exists())):
         raise Http404
     name = msg.meta.get('name', 'file') if msg.kind == Message.FILE else ''
     return serve(request, msg.attachment, msg.thread_id, download_name=name)
@@ -392,10 +453,30 @@ def support(request):
 @module_required('chat')
 @phone_verify.required('contacts')
 def contacts(request):
-    """«Найти знакомых»: кто из контактов телефона уже в ilm4."""
+    """«Контакты» — как в Telegram: сохранённые люди с поиском и «Добавить контакт» (имя, фамилия, номер)."""
+    from apps.accounts import people as ppl
     if not _flags()['contacts']:
         raise Http404
-    return render(request, 'chat/contacts.html', {'has_phone': bool(request.user.phone)})
+    me = request.user
+    if request.method == 'POST':
+        try:
+            if request.POST.get('remove'):
+                ppl.remove_contact(me, get_object_or_404(User, pk=request.POST['remove']))
+            else:
+                person = get_object_or_404(User, pk=request.POST['user'], is_active=True) if request.POST.get('user') else None
+                c = ppl.add_contact(me, request.POST.get('phone', ''), person, request.POST.get('first_name', ''), request.POST.get('last_name', ''))
+                messages.success(request, _('Контакт добавлен: {name}').format(name=c.name))
+        except ppl.PeopleError as exc:
+            messages.error(request, exc.message)
+        nxt = request.POST.get('next', '')
+        return redirect(nxt if nxt.startswith('/') and not nxt.startswith('//') else 'chat:contacts')
+    rows = []
+    for person, name in ppl.saved_contacts(me):
+        row = _person_row(person, me)
+        row['name'], row['letter'] = name, (name or '?')[:1].upper()
+        row['status'] = ppl.status_text(ppl.presence(person, me))
+        rows.append(row)
+    return render(request, 'chat/contacts.html', {'contacts': rows, 'has_phone': bool(me.phone)})
 
 
 @login_required

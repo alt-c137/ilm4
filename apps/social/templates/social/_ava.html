@@ -1,0 +1,1 @@
+{% if a.avatar %}<img class="tava{% if size %} tava--{{ size }}{% endif %}" src="{{ a.avatar }}" alt="" loading="lazy">{% else %}<span class="tava tava--h{{ a.hue|default:0 }}{% if size %} tava--{{ size }}{% endif %}">{{ a.name|slice:":1"|upper }}</span>{% endif %}

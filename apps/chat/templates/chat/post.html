@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load icons chatfmt %}
+{% block title %}{% translate "Комментарии —" %} {{ thread.title }} — {{ block.super }}{% endblock %}
+{% block body_class %}s-chat page-tp{% endblock %}
+
+{% block content %}
+<div class="tp tp--plain cmt">
+  <header class="tp__bar">
+    <a class="tp__back tp__back--in" href="{% url 'chat:thread' thread.pk %}" aria-label="{% translate 'Назад' %}">{% ico 'back' %}</a>
+    <h1>{% translate "Комментарии" %}{% if items %} · {{ items|length }}{% endif %}</h1>
+  </header>
+  <article class="tp__card cmt__post">
+    <b class="cmt__ch">{{ thread.title }}</b>
+    {% if post.kind == 'photo' %}<img class="cmt__img" src="{% url 'chat:file' post.pk %}" alt="">{% elif post.kind == 'video' %}<video class="cmt__img" src="{% url 'chat:file' post.pk %}" controls preload="metadata" playsinline></video>{% elif post.kind != 'text' %}<a class="btn btn--s btn--g" href="{% url 'chat:file' post.pk %}">{% ico 'clip' %}{% translate "Открыть вложение" %}</a>{% endif %}
+    {% if post.body %}<div class="cmt__t">{{ post.body|rich }}</div>{% endif %}
+    <small>{{ post.created_at|date:"j E, H:i" }} · {% ico 'eye' %} {{ post.views }}</small>
+  </article>
+  <section class="cmt__list" id="cmt-list">
+    {% for m in items %}
+    <div class="cmt__row" id="c{{ m.pk }}">
+      <a href="{% url 'accounts:public' m.sender_id %}">{% if m.sender.avatar %}<img class="tava tava--sm" src="{{ m.sender.avatar.url }}" alt="">{% else %}<span class="tava tava--sm tava--h{{ m.hue }}">{{ m.sender.get_display_name|slice:":1"|upper }}</span>{% endif %}</a>
+      <div class="cmt__b">
+        <b>{{ m.sender.get_display_name }}</b>
+        {% if m.reply_to_id %}<a class="cmt__re" href="#c{{ m.reply_to_id }}">{% ico 'reply' %}{{ m.reply_to.sender.get_display_name }}</a>{% endif %}
+        <div class="cmt__t">{{ m.body|rich }}</div>
+        <small>{{ m.created_at|date:"j E, H:i" }}{% if member %} · <button type="button" class="cmt__ans" data-reply="{{ m.pk }}" data-name="{{ m.sender.get_display_name }}">{% translate "Ответить" %}</button>{% endif %}{% if m.sender_id == user.pk or member.is_admin %} · <button type="button" class="cmt__ans cmt__del" data-del="{{ m.pk }}">{% translate "Удалить" %}</button>{% endif %}</small>
+      </div>
+    </div>
+    {% empty %}
+    <p class="ppl__hint">{% translate "Комментариев пока нет — напишите первым." %}</p>
+    {% endfor %}
+  </section>
+  {% if member %}
+  <form method="post" class="cmt__form" id="cmt-form">{% csrf_token %}
+    <input type="hidden" name="reply_to" id="cmt-reply">
+    <div class="cmt__to" id="cmt-to" hidden><span></span><button type="button" id="cmt-to-x" aria-label="{% translate 'Отменить' %}">{% ico 'close' %}</button></div>
+    <div class="cmt__in"><textarea name="body" rows="1" maxlength="2000" required placeholder="{% translate 'Комментарий' %}"></textarea><button type="submit" class="tg__send" aria-label="{% translate 'Отправить' %}">{% ico 'send' %}</button></div>
+  </form>
+  {% else %}
+  <form method="post" action="{% url 'chat:room_act' thread.pk 'join' %}" class="cmt__form">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button class="btn btn--p" type="submit">{% translate "Подпишитесь, чтобы комментировать" %}</button></form>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  var form = document.getElementById('cmt-form'); if (!form) return;
+  var csrf = form.querySelector('[name=csrfmiddlewaretoken]').value;
+  var to = document.getElementById('cmt-to'), rid = document.getElementById('cmt-reply');
+  document.getElementById('cmt-list').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-reply]');
+    if (b) { rid.value = b.dataset.reply; to.querySelector('span').textContent = '↩ ' + b.dataset.name; to.hidden = false; form.querySelector('textarea').focus(); return; }
+    var d = e.target.closest('[data-del]');
+    if (d && confirm(_t('Удалить комментарий?'))) {
+      fetch('/chat/msg/' + d.dataset.del + '/delete/', { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRFToken': csrf } })
+        .then(function () { location.reload(); });
+    }
+  });
+  document.getElementById('cmt-to-x').addEventListener('click', function () { rid.value = ''; to.hidden = true; });
+  var ta = form.querySelector('textarea');
+  ta.addEventListener('input', function () { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 140) + 'px'; });
+  if (location.hash) { var el = document.querySelector(location.hash); if (el) el.classList.add('is-flash'); }
+})();
+</script>
+{% endblock %}

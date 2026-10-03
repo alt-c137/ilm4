@@ -14,10 +14,14 @@ class Board(models.Model):
 
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='tracker_boards_owned')
     title = models.CharField('название', max_length=80)
-    emoji = models.CharField('значок', max_length=8, default='🤝')
+    emoji = models.CharField('значок', max_length=16, default='h-together')   # ключ значка из набора (hicon); раньше — эмодзи
     compete = models.BooleanField('соревнование', default=False,
                                   help_text='Таблица: кто сколько выполнил. Выключено — просто общий список')
     invite_code = models.CharField('код приглашения', max_length=24, unique=True)
+    ends_on = models.DateField('соревнование до', null=True, blank=True,
+                               help_text='Пусто — без срока. С датой — после неё видно победителя')
+    thread = models.ForeignKey('chat.Thread', null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+                               verbose_name='чат трекера')
     members = models.ManyToManyField(settings.AUTH_USER_MODEL, through='BoardMember', related_name='tracker_boards')
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -50,7 +54,7 @@ class Habit(models.Model):
     board = models.ForeignKey(Board, null=True, blank=True, on_delete=models.CASCADE, related_name='habits',
                               verbose_name='общий трекер', help_text='Пусто — личная привычка')
     title = models.CharField('что делать', max_length=80)
-    emoji = models.CharField('значок', max_length=8, default='✅')
+    emoji = models.CharField('значок', max_length=16, default='h-check')      # ключ значка из набора (hicon); раньше — эмодзи
     color = models.CharField('цвет', max_length=7, default='#6d5efc')
     kind = models.CharField('вид', max_length=5, choices=KINDS, default=CHECK)
     target = models.PositiveIntegerField('цель в день', default=1)
@@ -62,6 +66,13 @@ class Habit(models.Model):
     tz_offset = models.SmallIntegerField('часовой пояс автора, минут от UTC', default=300)
     archived = models.BooleanField('в архиве', default=False)
     order = models.PositiveSmallIntegerField(default=0)
+    # --- v49: время дня, «N раз в неделю», несколько напоминаний, заметка (дозировка, «после еды») ---
+    PARTS = [('', _lazy('В любое время')), ('morning', _lazy('Утро')), ('day', _lazy('День')), ('evening', _lazy('Вечер'))]
+    part = models.CharField('время дня', max_length=8, choices=PARTS, blank=True, default='')
+    per_week = models.PositiveSmallIntegerField('раз в неделю', default=0,
+                                                help_text='0 — по дням недели; 1–6 — столько раз в неделю, в любые дни')
+    reminders = models.CharField('напоминания', max_length=60, blank=True, help_text='Через запятую: 08:00,14:00,20:00')
+    note = models.CharField('заметка', max_length=200, blank=True, help_text='Например: «1 таблетка после еды»')
     created_at = models.DateTimeField(auto_now_add=True)
     start_on = models.DateField('с какого дня', null=True, blank=True)
 
@@ -79,7 +90,18 @@ class Habit(models.Model):
             return self.once_on == day
         if self.start_on and day < self.start_on:
             return False
+        if self.per_week:
+            return True                       # «3 раза в неделю» — в любой день, пока недельная цель не выполнена
         return str(day.isoweekday()) in self.days
+
+    def times(self) -> list:
+        """Все времена напоминаний ['08:00', '20:00']."""
+        out = [t for t in (self.reminders or '').split(',') if t]
+        if self.remind_at:
+            first = self.remind_at.strftime('%H:%M')
+            if first not in out:
+                out.insert(0, first)
+        return out
 
 
 class HabitLog(models.Model):
@@ -89,6 +111,9 @@ class HabitLog(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='habit_logs')
     day = models.DateField('день')
     value = models.PositiveIntegerField('сделано', default=0)
+    skipped = models.BooleanField('пропуск по уважительной причине', default=False,
+                                  help_text='Болезнь, дорога — день не считается и серию не рвёт')
+    note = models.CharField('заметка', max_length=200, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

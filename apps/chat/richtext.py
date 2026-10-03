@@ -15,6 +15,7 @@ _PAIRS = [(re.compile(r'\*\*(?=\S)(.+?)(?<=\S)\*\*', re.DOTALL), '<b>{}</b>'),
           (re.compile(r'\|\|(?=\S)(.+?)(?<=\S)\|\|', re.DOTALL),
            '<span class="spoiler" role="button" tabindex="0">{}</span>')]
 _URL = re.compile(r'(?<![\w"=>/])(https?://[^\s<]+[^\s<.,:;!?)\]»"\'])')
+_MENTION = re.compile(r'(?<![\w@/.])@([A-Za-z][A-Za-z0-9_]{3,31})(?![\w.])')
 _SPOILER = re.compile(r'\|\|(?=\S)(.+?)(?<=\S)\|\|', re.DOTALL)
 _MARKS = re.compile(r'\*\*|__|~~|`')
 
@@ -32,6 +33,9 @@ def to_html(text: str):
     for rx, tpl in _PAIRS:
         out = rx.sub(lambda m, t=tpl: t.format(m.group(1)), out)
     out = _URL.sub(r'<a href="\1" target="_blank" rel="noopener nofollow ugc">\1</a>', out)
+    # @имя — ссылка на человека, группу или канал (как упоминание в Telegram); внутри уже готовых ссылок не трогаем
+    out = re.sub(r'(<a [^>]*>.*?</a>)|' + _MENTION.pattern,
+                 lambda m: m.group(1) or f'<a class="mention" href="/@{m.group(2).lower()}/">@{m.group(2)}</a>', out)
     out = re.sub(r'\x00(\d+)\x00', lambda m: f'<code>{codes[int(m.group(1))]}</code>', out)
     return mark_safe(out.replace('\n', '<br>'))
 

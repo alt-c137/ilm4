@@ -1,6 +1,6 @@
 {% load i18n %}{% if author and author.is_active and not author.is_staff %}
 <details class="modc__rej modc__ban">
-  <summary class="btn btn--s modc__no">⛔ {% translate "Заблокировать автора" %}</summary>
+  <summary class="btn btn--s modc__no">{% translate "Заблокировать автора" %}</summary>
   <form method="post" action="{% url 'core:moderation_ban' author.pk %}" class="modc__rejform">{% csrf_token %}
     <input type="hidden" name="next" value="{{ next|default:request.get_full_path }}">
     <p class="modc__banwarn">{% translate "Аккаунт выключится, все его публикации и анкета снимутся, номер и Telegram попадут в чёрный список — новый аккаунт с ними не создать. Отменить можно в админке → Пользователи." %}</p>

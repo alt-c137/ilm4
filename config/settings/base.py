@@ -52,6 +52,9 @@ INSTALLED_APPS = [
     'apps.refugee',
     'apps.transport',
     'apps.tracker',
+    'apps.social',
+    'apps.assistant',
+    'apps.metrics',
     'apps.reviews',
     'apps.deals',
     'apps.payments',
@@ -132,6 +135,14 @@ TURNSTILE_SECRET_KEY = env('TURNSTILE_SECRET_KEY', default='')
 
 # ИИ-модерация (apps/core/ai_moderation.py): Claude (Anthropic) — основной, OpenAI moderation — запасной
 ANTHROPIC_API_KEY = env('ANTHROPIC_API_KEY', default='')
+# ИИ-помощник: по умолчанию работает на ANTHROPIC_API_KEY. Другой поставщик площадки (OpenAI, Z.AI, OpenRouter…):
+# ASSISTANT_PROVIDER=openai|zai|zai_coding|openrouter|deepseek|custom + ASSISTANT_API_KEY [+ ASSISTANT_MODEL].
+# ASSISTANT_EXTRA_HOSTS — хосты «своего сервера» через запятую (https), которые можно выбирать людям.
+ASSISTANT_PROVIDER = env('ASSISTANT_PROVIDER', default='')
+ASSISTANT_API_KEY = env('ASSISTANT_API_KEY', default='')
+ASSISTANT_MODEL = env('ASSISTANT_MODEL', default='')
+ASSISTANT_BASE_URL = env('ASSISTANT_BASE_URL', default='')
+ASSISTANT_EXTRA_HOSTS = env.list('ASSISTANT_EXTRA_HOSTS', default=[])
 AI_MODERATION_MODEL = env('AI_MODERATION_MODEL', default='claude-haiku-4-5')
 OPENAI_API_KEY = env('OPENAI_API_KEY', default='')
 

@@ -27,7 +27,6 @@ urlpatterns = [
     path('currency/', views.set_currency, name='set_currency'),
     path('catalog/', views.catalog, name='catalog'),
     path('settings/', views.settings_view, name='settings'),
-    path('feed/', views.feed, name='feed'),
     path('islam/', TemplateView.as_view(template_name='core/pages/islam.html'), name='shahada'),
     path('salah/', TemplateView.as_view(template_name='core/pages/salah.html'), name='salah'),
 ]

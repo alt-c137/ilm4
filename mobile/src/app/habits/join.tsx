@@ -27,7 +27,7 @@ export default function BoardJoin() {
   return (
     <Screen back title={t('Общий трекер')}>
       {!data ? (loading ? <Loading /> : <ErrorBox error={error?.message ?? ''} onRetry={reload} />) : (
-        <Empty icon="people-outline" title={`${data.emoji} ${data.title}`}
+        <Empty icon="people-outline" title={data.title}
           text={t('{name} зовёт вас вести трекер вместе. Участники видят отметки друг друга.', { name: data.owner_name })}
           action={data.member ? <Button title={t('Открыть')} onPress={() => router.replace(`/habits/board/${data.id}`)} />
             : <Button title={t('Присоединиться')} onPress={join} loading={busy} />} />

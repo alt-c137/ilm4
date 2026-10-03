@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% load i18n icons %}
+{% block title %}{{ space.title }} — {{ block.super }}{% endblock %}
+{% block body_class %}page-tp page-spaces{% endblock %}
+{% block content %}
+<div class="tp sp">
+  <a class="crumb" href="{% url 'spaces:index' %}">{% ico 'back' %}{% translate "Сообщества" %}</a>
+  <header class="tp__head">
+    {% include 'chat/_pic.html' with p=pic size='lg' %}
+    <h1 class="tp__name">{{ space.title }}{% if space.platform_verified %}<i class="tgver" title="{% translate 'Официальное' %}">{% ico 'check' %}</i>{% endif %}</h1>
+    <div class="tp__status">{% translate "участников:" %} {{ space.members_count }}{% if not space.is_public %} · {% translate "закрытое" %}{% endif %}</div>
+    {% if space.about %}<p class="sp__about">{{ space.about|linebreaksbr }}</p>{% endif %}
+  </header>
+
+  {% if not me %}
+  <form method="post" action="{% url 'spaces:act' space.pk %}" class="sp__join">{% csrf_token %}<input type="hidden" name="action" value="join">
+    {% if user.is_authenticated %}<button type="submit" class="btn btn--p">{% translate "Вступить" %}</button>
+    {% else %}<a class="btn btn--p" href="{% url 'accounts:login' %}?next={{ request.path }}">{% translate "Войдите, чтобы вступить" %}</a>{% endif %}
+  </form>
+  {% else %}
+  <div class="tp__acts">
+    {% if first %}<a class="tp__act" href="{% url 'chat:thread' first %}">{% ico 'chat' %}<span>{% translate "Каналы" %}</span></a>{% endif %}
+    <a class="tp__act" href="{% url 'spaces:board' space.pk %}">{% ico 'kanban' %}<span>{% translate "Доска задач" %}</span></a>
+    {% if invite %}<button type="button" class="tp__act" data-copy="{{ invite }}">{% ico 'link' %}<span>{% translate "Ссылка" %}</span></button>{% endif %}
+  </div>
+  {% endif %}
+
+  <h2 class="ppl__h">{% translate "Каналы" %}</h2>
+  <section class="tp__card sp__list">{% include 'chat/_space_channels.html' with current=0 %}</section>
+
+  {% if me %}
+  <h2 class="ppl__h">{% translate "Я в этом сообществе" %}</h2>
+  <section class="tp__card tp__pad">
+    <form method="post" action="{% url 'spaces:act' space.pk %}" class="sp__inline">{% csrf_token %}<input type="hidden" name="action" value="nick">
+      <label for="sp-nick">{% translate "Мой ник здесь" %}</label>
+      <div><input type="text" id="sp-nick" name="nick" maxlength="32" value="{{ me.nick }}" placeholder="{{ user.get_display_name }}"><button type="submit" class="btn btn--s btn--g">{% translate "Сохранить" %}</button></div>
+      <span class="hint">{% translate "Так вас видят в каналах этого сообщества. Пусто — обычное имя. Профиль при этом тот же: нажав на имя, человек попадёт к вам." %}</span>
+    </form>
+  </section>
+
+  <h2 class="ppl__h">{% translate "Участники" %}</h2>
+  <section class="tp__card">
+    {% for m in people %}<div class="tp__row sp__man">
+      <a href="{% url 'accounts:public' m.user_id %}" class="sp__manlink">{% if m.user.avatar %}<img class="tava tava--sm" src="{{ m.user.avatar.url }}" alt="">{% else %}<span class="tava tava--sm tava--h2">{{ m.user.get_display_name|slice:":1"|upper }}</span>{% endif %}
+        <span><b>{{ m.nick|default:m.user.get_display_name }}</b><small>{{ m.get_role_display }}{% for r in m.roles.all %} · <i class="sp__rolechip" style="--rc:{{ r.color }}">{{ r.name }}</i>{% endfor %}{% if m.muted_until %} · {% translate "тайм-аут" %}{% endif %}</small></span></a>
+      {% if m.role != 'owner' and m.user_id != user.pk %}{% if 'kick' in perms or 'timeout' in perms or 'manage_roles' in perms %}
+      <details class="tp__menu"><summary class="tp__ic" aria-label="{% translate 'Ещё' %}">{% ico 'dots' %}</summary>
+        <div class="tp__pop">
+          {% if me.is_admin %}{% for key, name in ranks %}{% if key != m.role %}<form method="post" action="{% url 'spaces:act' space.pk %}">{% csrf_token %}<input type="hidden" name="action" value="role"><input type="hidden" name="user" value="{{ m.user_id }}"><input type="hidden" name="role" value="{{ key }}"><button type="submit">{% ico 'shieldcheck' %}{% translate "Сделать:" %} {{ name }}</button></form>{% endif %}{% endfor %}{% endif %}
+          {% if 'manage_roles' in perms and space_roles %}<form method="post" action="{% url 'spaces:act' space.pk %}" class="sp__popform">{% csrf_token %}<input type="hidden" name="action" value="member_roles"><input type="hidden" name="user" value="{{ m.user_id }}">
+            {% for r in space_roles %}<label class="fcheck"><input type="checkbox" name="roles" value="{{ r.pk }}"{% if r in m.roles.all %} checked{% endif %}> <i class="sp__rolechip" style="--rc:{{ r.color }}">{{ r.name }}</i></label>{% endfor %}
+            <button type="submit">{% ico 'check' %}{% translate "Сохранить роли" %}</button></form>{% endif %}
+          {% if 'timeout' in perms %}<form method="post" action="{% url 'spaces:act' space.pk %}" class="sp__popform">{% csrf_token %}<input type="hidden" name="action" value="timeout"><input type="hidden" name="user" value="{{ m.user_id }}">
+            <select name="for" data-native aria-label="{% translate 'Тайм-аут' %}"><option value="5m">{% translate "Тайм-аут: 5 минут" %}</option><option value="1h">{% translate "Тайм-аут: 1 час" %}</option><option value="1d">{% translate "Тайм-аут: сутки" %}</option><option value="7d">{% translate "Тайм-аут: неделя" %}</option><option value="">{% translate "Снять тайм-аут" %}</option></select>
+            <button type="submit">{% ico 'clock' %}{% translate "Применить" %}</button></form>{% endif %}
+          {% if 'kick' in perms %}<form method="post" action="{% url 'spaces:act' space.pk %}" onsubmit="return confirm('{% translate "Удалить участника из сообщества?" %}')">{% csrf_token %}<input type="hidden" name="action" value="kick"><input type="hidden" name="user" value="{{ m.user_id }}"><button type="submit" class="is-bad">{% ico 'ban' %}{% translate "Удалить из сообщества" %}</button></form>{% endif %}
+        </div></details>{% endif %}{% endif %}
+    </div>{% endfor %}
+  </section>
+
+  {% if 'manage_roles' in perms %}
+  <h2 class="ppl__h">{% translate "Роли" %}</h2>
+  <section class="tp__card tp__pad sp__admin">
+    <p class="hint">{% translate "Свои роли — как в Discord: цвет имени, права и доступ к закрытым каналам. Роль выдаётся в меню участника." %}</p>
+    {% for r in space_roles %}<details class="sp__more"><summary><i class="sp__rolechip" style="--rc:{{ r.color }}">{{ r.name }}</i></summary>
+      <form method="post" action="{% url 'spaces:act' space.pk %}" class="sp__inline">{% csrf_token %}<input type="hidden" name="action" value="role_save"><input type="hidden" name="role_id" value="{{ r.pk }}">
+        <div><input type="text" name="name" value="{{ r.name }}" maxlength="32" required><input type="color" name="color" value="{{ r.color }}" aria-label="{% translate 'Цвет' %}"></div>
+        <div class="sp__perms">{% for key, name in perm_choices %}<label class="fcheck"><input type="checkbox" name="perms" value="{{ key }}"{% if key in r.perms %} checked{% endif %}> {{ name }}</label>{% endfor %}
+          <label class="fcheck"><input type="checkbox" name="hoist" value="1"{% if r.hoist %} checked{% endif %}> {% translate "Показывать отдельной группой в списке участников" %}</label></div>
+        <div><button type="submit" class="btn btn--s btn--p">{% translate "Сохранить" %}</button>
+          <button type="submit" name="action" value="role_delete" class="btn btn--s btn--g is-bad" onclick="return confirm('{% translate "Удалить роль?" %}')">{% translate "Удалить" %}</button></div>
+      </form></details>{% endfor %}
+    <form method="post" action="{% url 'spaces:act' space.pk %}" class="sp__inline">{% csrf_token %}<input type="hidden" name="action" value="role_save">
+      <label for="sp-role">{% translate "Новая роль" %}</label>
+      <div><input type="text" id="sp-role" name="name" maxlength="32" required placeholder="{% translate 'например: Учитель' %}"><input type="color" name="color" value="#22c55e" aria-label="{% translate 'Цвет' %}">
+        <input type="hidden" name="hoist" value="1"><button type="submit" class="btn btn--s btn--p">{% translate "Создать" %}</button></div>
+    </form>
+  </section>
+  {% endif %}
+
+  {% if 'manage_channels' in perms or 'manage_space' in perms %}
+  <h2 class="ppl__h">{% translate "Управление" %}</h2>
+  <section class="tp__card tp__pad sp__admin">
+    {% if 'manage_channels' in perms %}
+    <form method="post" action="{% url 'spaces:act' space.pk %}" class="sp__inline">{% csrf_token %}<input type="hidden" name="action" value="channel">
+      <label for="sp-ch">{% translate "Новый канал" %}</label>
+      <div><input type="text" id="sp-ch" name="title" maxlength="60" required placeholder="{% translate 'название' %}">
+        <select name="kind" aria-label="{% translate 'Вид канала' %}"><option value="text">{% translate "Текстовый — пишут все" %}</option><option value="news">{% translate "Объявления — пишут админы" %}</option><option value="voice">{% translate "Голосовая комната" %}</option></select>
+        <select name="category" aria-label="{% translate 'Категория' %}">{% for g in groups %}{% if g.id %}<option value="{{ g.id }}">{{ g.title }}</option>{% endif %}{% endfor %}</select></div>
+      {% if space_roles %}<div class="sp__perms"><label class="fcheck"><input type="checkbox" name="private" value="1"> {% translate "Закрытый — только этим ролям:" %}</label>
+        {% for r in space_roles %}<label class="fcheck"><input type="checkbox" name="roles" value="{{ r.pk }}"> <i class="sp__rolechip" style="--rc:{{ r.color }}">{{ r.name }}</i></label>{% endfor %}</div>{% endif %}
+      <div><button type="submit" class="btn btn--s btn--p">{% translate "Добавить канал" %}</button></div>
+    </form>
+    <form method="post" action="{% url 'spaces:act' space.pk %}" class="sp__inline">{% csrf_token %}<input type="hidden" name="action" value="category">
+      <label for="sp-cat">{% translate "Новая категория" %}</label>
+      <div><input type="text" id="sp-cat" name="title" maxlength="60" required placeholder="{% translate 'например: Учёба' %}"><button type="submit" class="btn btn--s btn--g">{% translate "Добавить" %}</button></div>
+    </form>
+    <details class="sp__more"><summary>{% translate "Настройки каналов" %}</summary>
+      {% for t in threads_all %}<form method="post" action="{% url 'spaces:act' space.pk %}" class="sp__inline sp__chset">{% csrf_token %}<input type="hidden" name="action" value="channel_set"><input type="hidden" name="thread" value="{{ t.pk }}">
+        <div><input type="text" name="title" value="{{ t.title }}" maxlength="60" required><input type="text" name="topic" value="{{ t.space_topic }}" maxlength="200" placeholder="{% translate 'тема канала (необязательно)' %}"></div>
+        {% if space_roles %}<div class="sp__perms"><label class="fcheck"><input type="checkbox" name="private" value="1"{% if t.space_private %} checked{% endif %}> {% translate "Закрытый — только этим ролям:" %}</label>
+          {% for r in space_roles %}<label class="fcheck"><input type="checkbox" name="roles" value="{{ r.pk }}"{% if r in t.space_roles_allowed.all %} checked{% endif %}> <i class="sp__rolechip" style="--rc:{{ r.color }}">{{ r.name }}</i></label>{% endfor %}</div>{% endif %}
+        <div><button type="submit" class="btn btn--s btn--g">{% translate "Сохранить" %}</button>
+          <button type="submit" name="action" value="drop_channel" class="btn btn--s btn--g is-bad" onclick="return confirm('{% translate "Удалить канал вместе с перепиской?" %}')" aria-label="{% translate 'Удалить' %}">{% ico 'trash' %}</button></div>
+      </form>{% endfor %}
+      {% for g in groups %}{% for ch in g.channels %}{% if ch.kind == 'voice' %}<form method="post" action="{% url 'spaces:act' space.pk %}" class="sp__edit" onsubmit="return confirm('{% translate "Удалить голосовую комнату?" %}')">{% csrf_token %}<input type="hidden" name="action" value="drop_channel"><input type="hidden" name="voice" value="{{ ch.id }}"><span>{% ico 'voice' %} {{ ch.title }}</span><button type="submit" class="btn btn--s btn--g is-bad" aria-label="{% translate 'Удалить' %}">{% ico 'trash' %}</button></form>{% endif %}{% endfor %}{% endfor %}
+    </details>
+    {% endif %}
+    {% if 'manage_space' in perms %}
+    <details class="sp__more"><summary>{% translate "Приглашения" %}</summary>
+      <div class="sp__inline"><label>{% translate "Постоянная ссылка" %}</label>
+        <div><input type="text" readonly value="{{ invite }}" onclick="this.select()">
+          <form method="post" action="{% url 'spaces:act' space.pk %}">{% csrf_token %}<input type="hidden" name="action" value="invite"><button type="submit" class="btn btn--s btn--g">{% translate "Новая ссылка" %}</button></form></div></div>
+      <form method="post" action="{% url 'spaces:act' space.pk %}" class="sp__inline">{% csrf_token %}<input type="hidden" name="action" value="invite_new">
+        <label>{% translate "Приглашение со сроком" %}</label>
+        <div><select name="hours" aria-label="{% translate 'Срок' %}"><option value="1">{% translate "1 час" %}</option><option value="24" selected>{% translate "1 день" %}</option><option value="168">{% translate "7 дней" %}</option><option value="0">{% translate "Без срока" %}</option></select>
+          <select name="max_uses" aria-label="{% translate 'Сколько раз' %}"><option value="0">{% translate "Без ограничения" %}</option><option value="1">{% translate "1 человек" %}</option><option value="10">10</option><option value="100">100</option></select>
+          <button type="submit" class="btn btn--s btn--p">{% translate "Создать" %}</button></div>
+      </form>
+      {% for i in invites %}<div class="sp__edit"><span><input type="text" readonly value="{{ i.link }}" onclick="this.select()"><small>{% if i.obj.expires_at %}{% translate "до" %} {{ i.obj.expires_at|date:"d.m H:i" }}{% else %}{% translate "без срока" %}{% endif %} · {{ i.obj.uses }}{% if i.obj.max_uses %}/{{ i.obj.max_uses }}{% endif %}</small></span>
+        <form method="post" action="{% url 'spaces:act' space.pk %}">{% csrf_token %}<input type="hidden" name="action" value="invite_delete"><input type="hidden" name="invite" value="{{ i.obj.pk }}"><button type="submit" class="btn btn--s btn--g is-bad" aria-label="{% translate 'Удалить' %}">{% ico 'trash' %}</button></form></div>{% endfor %}
+    </details>
+    <details class="sp__more"><summary>{% translate "Название, описание, значок" %}</summary>
+      <form method="post" action="{% url 'spaces:act' space.pk %}" enctype="multipart/form-data" class="sp__inline">{% csrf_token %}<input type="hidden" name="action" value="update">
+        <input type="text" name="title" value="{{ space.title }}" maxlength="80" required>
+        <textarea name="about" rows="3" maxlength="500">{{ space.about }}</textarea>
+        <input type="file" name="icon" accept="image/*" data-crop="1">
+        <label class="fcheck"><input type="checkbox" name="is_public" value="1"{% if space.is_public %} checked{% endif %}> {% translate "Открытое: видно в каталоге, вступить может любой" %}</label>
+        <div><button type="submit" class="btn btn--s btn--p">{% translate "Сохранить" %}</button></div>
+      </form>
+    </details>
+    {% if banned %}<details class="sp__more"><summary>{% translate "Удалённые участники" %} ({{ banned|length }})</summary>
+      {% for b in banned %}<form method="post" action="{% url 'spaces:act' space.pk %}" class="sp__edit">{% csrf_token %}<input type="hidden" name="action" value="unban"><input type="hidden" name="user" value="{{ b.user_id }}"><span>{{ b.user.get_display_name }}</span><button type="submit" class="btn btn--s btn--g">{% translate "Вернуть" %}</button></form>{% endfor %}
+    </details>{% endif %}
+    <details class="sp__more"><summary>{% translate "Журнал действий" %}</summary>
+      <div class="sp__log">{% for l in logs %}<div><time>{{ l.created_at|date:"d.m H:i" }}</time><b>{{ l.actor.get_display_name|default:"—" }}</b><span>{{ l.action }} {{ l.text }}</span></div>{% empty %}<p class="hint">{% translate "Пока пусто." %}</p>{% endfor %}</div>
+    </details>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  <section class="tp__card">
+    <form method="post" action="{% url 'spaces:act' space.pk %}" onsubmit="return confirm('{% translate "Выйти из сообщества?" %}')">{% csrf_token %}<input type="hidden" name="action" value="leave"><button type="submit" class="tp__row is-bad">{% ico 'exit' %}<span><b>{% translate "Выйти из сообщества" %}</b></span></button></form>
+    {% if me.role == 'owner' %}<form method="post" action="{% url 'spaces:act' space.pk %}" onsubmit="return confirm('{% translate "Удалить сообщество со всеми каналами и перепиской? Это нельзя отменить." %}')">{% csrf_token %}<input type="hidden" name="action" value="delete"><button type="submit" class="tp__row is-bad">{% ico 'trash' %}<span><b>{% translate "Удалить сообщество" %}</b></span></button></form>{% endif %}
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

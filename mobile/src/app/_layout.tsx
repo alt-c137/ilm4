@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import { router, Stack } from 'expo-router';
+import { router, Stack, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
@@ -9,6 +9,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { onPhoneRequired } from '@/lib/api';
 import { openSiteUrl } from '@/lib/links';
+import { startMetrics, trackScreen } from '@/lib/metrics';
 import { Notifications } from '@/lib/notify';
 import { AppProvider, useApp } from '@/state/app';
 import { IncomingCalls } from '@/ui/incoming';
@@ -20,6 +21,14 @@ function newer(a: string, b: string) {
   const pa = a.split('.').map(Number), pb = b.split('.').map(Number);
   for (let i = 0; i < 3; i++) if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) > (pb[i] || 0);
   return false;
+}
+
+/** Время по разделам приложения — для сводки владельца (lib/metrics.ts). Ничего не рисует. */
+function Metrics() {
+  const pathname = usePathname();
+  useEffect(() => { startMetrics(); }, []);
+  useEffect(() => { trackScreen(pathname); }, [pathname]);
+  return null;
 }
 
 /** Нажали на уведомление — открываем нужный экран (только телефон). */
@@ -68,6 +77,7 @@ function Root() {
       <StatusBar style={dark ? 'light' : 'dark'} />
       {Notifications ? <NotificationRouter /> : null}
       <IncomingCalls />
+      <Metrics />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg }, animation: 'slide_from_right' }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="login" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />

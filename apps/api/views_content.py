@@ -364,6 +364,18 @@ def places_map(request):
     cat = request.GET.get('category', '')
     if cat:
         qs = qs.filter(category=cat)
-    return {'items': [{'id': p.pk, 'name': p.name, 'category': p.category, 'category_name': p.get_category_display(),
-                       'lat': float(p.lat), 'lon': float(p.lon), 'verified': p.platform_verified}
-                      for p in qs[:500]]}
+    text = request.GET.get('q', '').strip()[:60]
+    if text:
+        from django.db.models import Q
+        qs = qs.filter(Q(name__icontains=text) | Q(address__icontains=text) | Q(city__icontains=text))
+    from apps.maps.views import ICONS
+    out = []
+    for p in qs.prefetch_related('confirmations')[:500]:
+        v = p.verification()
+        if request.GET.get('verified') and v['level'] == 'none':
+            continue
+        out.append({'id': p.pk, 'name': p.name, 'category': p.category, 'category_name': p.get_category_display(),
+                    'lat': float(p.lat), 'lon': float(p.lon), 'verified': p.platform_verified, 'icon': ICONS.get(p.category, 'place'),
+                    'address': p.address, 'city': p.city, 'phone': p.phone, 'verif': v['level'], 'verif_label': str(v['label']),
+                    'brief': p.mosque_brief() if p.is_mosque else '', 'photo': abs_url(request, p.photo.url) if p.photo else ''})
+    return {'items': out, 'categories': [{'key': k, 'name': str(n), 'icon': ICONS.get(k, 'place')} for k, n in HalalPlace.CATEGORIES]}

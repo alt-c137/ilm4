@@ -68,6 +68,33 @@ def _pubs(request, person) -> list:
     return out[:24]
 
 
+def _photos(request, person) -> list:
+    """Все фото профиля, главное первым (как в Telegram — листаются)."""
+    return [{'id': ph.pk, 'url': file_url(request, ph.image), 'date': ph.created_at.date().isoformat()}
+            for ph in people.photos(person)]
+
+
+@api(methods=('GET', 'POST'), auth=True)
+def my_photos(request):
+    """Мои фото профиля. POST {'main': id} — сделать главным; {'delete': id} — удалить;
+    файл 'photo' — добавить новое (оно становится главным)."""
+    me = request.user
+    try:
+        if request.method == 'POST':
+            if 'photo' in request.FILES:
+                from apps.core.uploads import clean_image
+                me.avatar = clean_image(request.FILES['photo'])
+                me.save(update_fields=['avatar'])
+            elif request.data.get('main'):
+                people.set_main_photo(me, request.data.get('main'))
+            elif request.data.get('delete'):
+                people.delete_photo(me, request.data.get('delete'))
+            me.refresh_from_db()
+    except people.PeopleError as exc:
+        raise ApiError(exc.message, exc.status) from exc
+    return {'items': _photos(request, me), 'avatar': file_url(request, me.avatar)}
+
+
 @api(auth=True)
 def user(request, pk):
     """Профиль человека — ровно то, что он разрешил видеть тому, кто смотрит."""
@@ -78,11 +105,13 @@ def user(request, pk):
     return {
         'id': person.pk, 'me': mine, 'name': person.get_display_name(), 'handle': person.handle or '',
         'bio': person.bio, 'city': person.city, 'avatar': file_url(request, person.avatar),
+        'photos': _photos(request, person),
         'verified': person.platform_verified, 'joined': person.date_joined.date().isoformat(),
         'presence': people.presence(person, me, close),
         'phone': people.phone_for(person, me, close),
         'links': people.links_for(person, me, close),
         'close': (not mine) and people.is_close(me, person),     # он у меня в близких друзьях
+        'contact': (not mine) and people.is_contact(me, person),  # сохранён у меня в контактах
         'blocked': (not mine) and UserBlock.objects.filter(blocker=me, blocked=person).exists(),
         'blocked_any': (not mine) and UserBlock.between(me, person),
         'thread': thread.pk if thread else None,
@@ -135,3 +164,26 @@ def my_links(request):
     except people.PeopleError as exc:
         raise ApiError(exc.message, exc.status) from exc
     return {'links': people.links_for(request.user, request.user)}
+
+
+@api(methods=('GET', 'POST'), auth=True, module='chat')
+def contacts(request):
+    """Контакты как в Telegram. GET — список; POST {first_name, last_name, phone} или {user} — добавить; {remove: id} — убрать."""
+    me = request.user
+    if request.method == 'POST':
+        d = request.data
+        try:
+            if d.get('remove'):
+                people.remove_contact(me, _person(d['remove']))
+            else:
+                people.add_contact(me, str(d.get('phone', '')), _person(d['user']) if d.get('user') else None,
+                                   str(d.get('first_name', '')), str(d.get('last_name', '')))
+        except people.PeopleError as exc:
+            raise ApiError(exc.message, exc.status) from exc
+    items = []
+    for person, name in people.saved_contacts(me):
+        card = person_card(request, person)
+        card['name'] = name
+        card['status'] = str(people.status_text(people.presence(person, me)))
+        items.append(card)
+    return {'items': items}

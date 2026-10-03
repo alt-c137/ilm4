@@ -273,8 +273,13 @@ def test_each_listing_has_its_own_chat_with_card(pair, client):
     assert services.thread_info(t1, a)['card']['closed'] is True       # объявление сняли — карточка это показывает
     client.force_login(a)
     html = client.get(f'/chat/{t1.pk}/').content.decode()
-    assert 'ctxcard' in html and 'Финики аджва' in html and 'tg__folders' in html
-    assert client.get('/chat/?f=buy').content.decode().count('<a class="tgrow') == 2
+    assert 'ctxcard' in html and 'Финики аджва' in html and 'tgtabs' not in html   # вкладок нет, пока человек не создал папку (как в Telegram)
+    # своя папка «Объявления» собирает чаты по объявлениям (а личный чат в неё не попадает)
+    folder = services.save_folder(a, {'title': 'Объявления', 'types': ['ads']})
+    tabs = services.folder_summary(a, [t for t, _o, _m in services.inbox(a)])
+    assert set(tabs['folders'][0]['ids']) == {t1.pk, t2.pk}
+    page = client.get(f'/chat/?f={folder.pk}').content.decode()
+    assert page.count('data-id="') == 3 and f'data-f="{folder.pk}"' in page
 
 
 def test_context_must_belong_to_the_other_person(pair):

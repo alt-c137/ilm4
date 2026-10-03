@@ -1,0 +1,11 @@
+{% load i18n humanize icons %}<div class="fcom__list">{% for c in comments %}
+  <div class="fcom__row" data-cid="{{ c.pk }}">
+    <a href="{% url 'accounts:public' c.user_id %}">{% if c.user.avatar %}<img class="tava tava--xs" src="{{ c.user.avatar.url }}" alt="">{% else %}<span class="tava tava--xs tava--h{{ c.hue }}">{{ c.user.get_display_name|slice:":1"|upper }}</span>{% endif %}</a>
+    <div class="fcom__b"><b>{{ c.user.get_display_name }}</b>{% if c.reply_to %} <i>→ {{ c.reply_to.user.get_display_name }}</i>{% endif %}
+      <p>{{ c.text|urlize|linebreaksbr }}</p>
+      <small>{{ c.created_at|naturaltime }}{% if user.is_authenticated %} · <button type="button" data-creply="{{ c.pk }}" data-name="{{ c.user.get_display_name }}">{% translate "Ответить" %}</button>{% endif %}{% if c.user_id == user.pk or user.is_staff %} · <button type="button" class="bad" data-cdel="{{ c.pk }}">{% translate "Удалить" %}</button>{% endif %}</small></div>
+  </div>{% empty %}<p class="fcom__none">{% translate "Комментариев пока нет — напишите первым." %}</p>{% endfor %}</div>
+{% if user.is_authenticated %}<form class="fcom__form" data-target="{{ target }}"><input type="hidden" name="reply_to" value="">
+  <span class="fcom__to" hidden></span>
+  <div class="fcom__in"><textarea name="text" rows="1" maxlength="2000" placeholder="{% translate 'Комментарий' %}" required></textarea><button type="submit" class="tg__send" aria-label="{% translate 'Отправить' %}">{% ico 'send' %}</button></div>
+</form>{% else %}<a class="btn btn--s btn--g" href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">{% translate "Войдите, чтобы комментировать" %}</a>{% endif %}

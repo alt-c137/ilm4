@@ -1,0 +1,13 @@
+{% load i18n icons %}{# боковая панель чата внутри сообщества — как в Discord: слева мои сообщества, рядом каналы #}
+<aside class="tg__side sp__side" id="tg-side">
+  <nav class="sp__rail" aria-label="{% translate 'Мои сообщества' %}">
+    <a class="sp__railbtn" href="{% url 'chat:inbox' %}" title="{% translate 'Личные чаты' %}">{% ico 'chat' %}</a>
+    {% for r in space_side.rail %}<a class="sp__railpic{% if r.on %} on{% endif %}" href="{% url 'spaces:space' r.id %}" title="{{ r.pic.name }}">{% include 'chat/_pic.html' with p=r.pic size='sm' %}</a>{% endfor %}
+    <a class="sp__railbtn" href="{% url 'spaces:index' %}" title="{% translate 'Все сообщества' %}">{% ico 'compass' %}</a>
+  </nav>
+  <div class="sp__chans">
+    <a class="sp__title" href="{% url 'spaces:space' space_side.space.pk %}"><b>{{ space_side.space.title }}</b>{% ico 'settings' %}</a>
+    <a class="sp__ch sp__ch--tool" href="{% url 'spaces:board' space_side.space.pk %}">{% ico 'kanban' %}<b>{% translate "Доска задач" %}</b></a>
+    {% include 'chat/_space_channels.html' with groups=space_side.groups me=space_side.me current=space_side.current space=space_side.space %}
+  </div>
+</aside>

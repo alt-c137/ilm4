@@ -32,15 +32,29 @@ export function privacyName(p: Privacy | undefined, t: (s: string) => string) {
   return p === 'close' ? t('Близкие друзья') : p === 'nobody' ? t('Никто') : t('Все');
 }
 
-export function ProfileHead({ name, avatar, hue, status, online, verified, onAvatar }: {
+export function ProfileHead({ name, avatar, hue, status, online, verified, onAvatar, photos, onCamera }: {
   name: string; avatar?: string; hue: number; status: string; online?: boolean; verified?: boolean; onAvatar?: () => void;
+  photos?: number; onCamera?: () => void;
 }) {
   const { c } = useApp();
   return (
     <View style={{ alignItems: 'center', gap: 4, paddingTop: 4 }}>
-      <Pressable onPress={onAvatar} disabled={!onAvatar}>
-        <Avatar uri={avatar} name={name} size={108} hue={hue} />
-      </Pressable>
+      <View>
+        <Pressable onPress={onAvatar} disabled={!onAvatar} accessibilityLabel={name}>
+          <Avatar uri={avatar} name={name} size={108} hue={hue} />
+          {photos && photos > 1 ? (
+            <View style={{ position: 'absolute', right: 4, bottom: 4, minWidth: 24, height: 24, paddingHorizontal: 7, borderRadius: 12, backgroundColor: 'rgba(10,12,22,0.62)', alignItems: 'center', justifyContent: 'center' }}>
+              <Txt kind="small" color="#fff" style={{ fontWeight: '800', fontSize: 12 }}>{photos}</Txt>
+            </View>
+          ) : null}
+        </Pressable>
+        {onCamera ? (
+          <Pressable onPress={onCamera} hitSlop={8} style={{ position: 'absolute', right: -2, bottom: -2, width: 38, height: 38, borderRadius: 19, backgroundColor: c.accent,
+            alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: c.bg }}>
+            <Icon name="camera" size={18} color="#fff" />
+          </Pressable>
+        ) : null}
+      </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, paddingHorizontal: 20 }}>
         <Txt style={{ fontSize: 23, fontWeight: '800', letterSpacing: -0.2, textAlign: 'center', flexShrink: 1 }} numberOfLines={2}>{name}</Txt>
         {verified ? <Icon name="checkmark-circle" size={20} color={c.accent} /> : null}

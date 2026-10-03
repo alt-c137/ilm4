@@ -2,11 +2,14 @@
 from django.urls import path
 
 from . import views_account as a
+from . import views_assistant as ai
 from . import views_chat as c
 from . import views_content as v
 from . import views_nikah as n
 from . import views_people as u
 from . import views_pubs as m
+from . import views_social as so
+from . import views_spaces as sp
 from . import views_tracker as t
 
 app_name = 'api'
@@ -33,8 +36,11 @@ urlpatterns = [
     path('block/', a.block),
     path('ping/', u.ping),
     path('me/links/', u.my_links),
+    path('me/photos/', u.my_photos),
     path('me/close/', u.close_friends),
     path('people/', u.people_list),
+    path('contacts/', u.contacts),
+    path('chat/find/', c.find),
     path('users/<int:pk>/', u.user),
     path('users/<int:pk>/chat/', u.user_chat),
     path('users/<int:pk>/close/', u.user_close),
@@ -72,12 +78,43 @@ urlpatterns = [
     path('nikah/match/<int:pk>/decide/', n.match_decide),
     path('nikah/match/<int:pk>/pay/', n.match_pay),
 
+    path('assistant/', ai.state),
+    path('assistant/send/', ai.send),
+    path('assistant/key/', ai.key),
+    path('assistant/<int:chat_id>/delete/', ai.delete),
+    path('communities/', sp.index),
+    path('communities/new/', sp.new),
+    path('communities/join/<str:code>/', sp.join),
+    path('communities/<int:pk>/', sp.detail),
+    path('communities/<int:pk>/act/', sp.act),
+    path('communities/<int:pk>/board/', sp.board),
+
+    path('feed/', so.feed),
+    path('feed/new/', so.post_new),
+    path('feed/like/', so.like),
+    path('feed/save/', so.save),
+    path('feed/saved/', so.saved),
+    path('metrics/', so.metrics),
+    path('feed/comments/', so.comments),
+    path('feed/comment/<int:pk>/delete/', so.comment_delete),
+    path('feed/post/<int:pk>/<str:action>/', so.post_act),
+    path('feed/wall/<int:user_id>/', so.wall),
+    path('feed/stories/', so.stories),
+    path('feed/stories/new/', so.story_new),
+    path('feed/stories/<int:pk>/<str:action>/', so.story_act),
+    path('feed/gifts/', so.gifts),
+    path('users/<int:user_id>/follow/', so.follow),
+    path('users/<int:user_id>/gift/', so.gift_send),
+
     path('tracker/', t.day),
     path('tracker/stats/', t.stats),
     path('tracker/habits/', t.habits),
     path('tracker/habits/new/', t.habit_create),
     path('tracker/habits/<int:pk>/', t.habit),
     path('tracker/habits/<int:pk>/log/', t.habit_log),
+    path('tracker/habits/<int:pk>/detail/', t.habit_detail),
+    path('tracker/templates/', t.templates),
+    path('tracker/boards/<int:pk>/chat/', t.board_chat),
     path('tracker/boards/new/', t.board_create),
     path('tracker/boards/<int:pk>/', t.board),
     path('tracker/join/<str:code>/', t.board_join),
@@ -85,6 +122,14 @@ urlpatterns = [
     path('chat/', c.threads),
     path('chat/file/<int:msg_id>/', c.file),
     path('chat/support/', c.support),
+    path('chat/saved/', c.saved),
+    path('chat/forward/', c.forward),
+    path('chat/folders/', c.folders),
+    path('chat/folders/<int:pk>/', c.folder),
+    path('chat/<int:pk>/state/<str:action>/', c.state),
+    path('chat/<int:pk>/draft/', c.draft),
+    path('chat/<int:pk>/search/', c.search),
+    path('chat/<int:pk>/post/<int:msg_id>/', c.post),
     path('chat/rooms/', c.rooms_catalog),
     path('chat/rooms/new/', c.room_create),
     path('chat/join/<str:code>/', c.room_link),

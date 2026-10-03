@@ -80,6 +80,79 @@ def _allowed(level: str, close: bool) -> bool:
     return level == User.ALL or (level == User.CLOSE and close)
 
 
+def can_invite(owner, by) -> bool:
+    """Можно ли этому человеку добавить owner в группу (настройка «кто может добавлять меня в группы»)."""
+    return _allowed(owner.invite_privacy, is_close(owner, by))
+
+
+def can_see_counts(owner, viewer=None) -> bool:
+    """Видны ли этому человеку счётчики профиля (записи, подписчики, подписки). Себе — всегда."""
+    if viewer is not None and getattr(viewer, 'pk', None) == owner.pk:
+        return True
+    return _allowed(owner.counts_privacy, bool(getattr(viewer, 'pk', None)) and is_close(owner, viewer))
+
+
+def forward_link(owner, viewer=None) -> bool:
+    """Показывать ли ссылку на профиль в «Переслано от …» (иначе — только имя, как в Telegram)."""
+    return owner.forward_privacy == User.ALL
+
+
+# ---------- фото профиля: несколько, как в Telegram ----------
+
+def photos(user) -> list:
+    """Фото профиля, новое первым. У старых аккаунтов история начинается с текущего аватара."""
+    from .models import ProfilePhoto
+    rows = list(ProfilePhoto.objects.filter(user=user)[:ProfilePhoto.MAX])
+    if not rows and user.avatar:
+        rows = [ProfilePhoto.objects.create(user=user, image=user.avatar.name)]
+    return rows
+
+
+def add_photo(user, image_name: str) -> None:
+    """Новый аватар сохранён в user.avatar — добавить его в историю (прежние остаются, их можно листать)."""
+    from .models import ProfilePhoto
+    if not image_name:
+        return
+    if not ProfilePhoto.objects.filter(user=user, image=image_name).exists():
+        ProfilePhoto.objects.create(user=user, image=image_name)
+    else:                                              # вернул прежнее фото главным — оно снова первое
+        ProfilePhoto.objects.filter(user=user, image=image_name).update(created_at=timezone.now())
+    old = list(ProfilePhoto.objects.filter(user=user)[ProfilePhoto.MAX:])
+    for ph in old:
+        _drop_photo(ph)
+
+
+def _drop_photo(photo) -> None:
+    name = photo.image.name
+    photo.delete()
+    from .models import ProfilePhoto
+    if name and not ProfilePhoto.objects.filter(image=name).exists() and not User.objects.filter(avatar=name).exists():
+        photo.image.storage.delete(name)
+
+
+def set_main_photo(user, photo_id) -> None:
+    from .models import ProfilePhoto
+    ph = ProfilePhoto.objects.filter(user=user, pk=photo_id).first()
+    if ph is None:
+        raise PeopleError(_('Фото не найдено'), 404)
+    user.avatar = ph.image.name
+    user.save(update_fields=['avatar'])               # сигнал поднимет это фото первым в списке
+
+
+def delete_photo(user, photo_id) -> None:
+    """Удалить фото; если это было главное — главным становится следующее (или аватара не будет)."""
+    from .models import ProfilePhoto
+    ph = ProfilePhoto.objects.filter(user=user, pk=photo_id).first()
+    if ph is None:
+        raise PeopleError(_('Фото не найдено'), 404)
+    was_main = user.avatar and user.avatar.name == ph.image.name
+    if was_main:
+        nxt = ProfilePhoto.objects.filter(user=user).exclude(pk=ph.pk).first()
+        user.avatar = nxt.image.name if nxt else None
+        user.save(update_fields=['avatar'])
+    _drop_photo(ph)
+
+
 def presence(person, viewer, close=None) -> dict:
     """Что зритель знает о времени человека в сети.
 
@@ -273,6 +346,54 @@ def contacts(viewer, limit: int = 200):
     blocked = UserBlock.ids_for(viewer)
     return list(User.objects.filter(chat_threads__in=mine, is_active=True).exclude(pk=viewer.pk)
                 .exclude(pk__in=blocked).distinct().order_by('-last_seen_at')[:limit])
+
+
+# ---------- контакты (как в Telegram: «Контакты» → «Добавить контакт») ----------
+
+MAX_CONTACTS = 2000
+
+
+def saved_contacts(viewer) -> list:
+    """Сохранённые контакты: [(человек, имя как записал я)], по алфавиту."""
+    from .models import Contact
+    blocked = UserBlock.ids_for(viewer)
+    rows = (Contact.objects.filter(owner=viewer, friend__is_active=True).exclude(friend__in=blocked).select_related('friend'))
+    out = [(c.friend, c.name) for c in rows]
+    out.sort(key=lambda x: x[1].casefold())
+    return out
+
+
+def is_contact(viewer, person) -> bool:
+    from .models import Contact
+    return bool(getattr(viewer, 'pk', None)) and Contact.objects.filter(owner=viewer, friend=person).exists()
+
+
+def add_contact(viewer, phone: str = '', person=None, first_name: str = '', last_name: str = ''):
+    """Добавить контакт по номеру (как «Добавить контакт» в Telegram) или из профиля человека.
+    По номеру находится только тот, кто подтвердил номер и разрешил находить себя; сам номер нигде не показывается."""
+    from .models import Contact
+    if person is None:
+        number = digits(phone)
+        if len(number) < 9:
+            raise PeopleError(_('Введите номер телефона целиком, с кодом страны.'))
+        found = search(viewer, '+' + number, limit=1)
+        if not found:
+            raise PeopleError(_('Этого человека пока нет в ilm4 — или он запретил находить себя по номеру. Пригласите его ссылкой.'), 404)
+        person = found[0]
+    if person.pk == viewer.pk:
+        raise PeopleError(_('Это ваш собственный аккаунт.'))
+    if UserBlock.between(viewer, person):
+        raise PeopleError(_('Недоступно: один из вас заблокировал другого.'), 403)
+    if Contact.objects.filter(owner=viewer).count() >= MAX_CONTACTS:
+        raise PeopleError(_('Слишком много контактов.'), 409)
+    contact, _new = Contact.objects.update_or_create(owner=viewer, friend=person, defaults={
+        'first_name': ' '.join((first_name or '').split())[:60], 'last_name': ' '.join((last_name or '').split())[:60]})
+    return contact
+
+
+def remove_contact(viewer, person) -> None:
+    from .models import Contact
+    Contact.objects.filter(owner=viewer, friend=person).delete()
 
 
 def search(viewer, q: str, limit: int = 20) -> list:

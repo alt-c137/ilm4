@@ -103,6 +103,9 @@ class SiteSettings(SingletonModel):
         'автопринятие работы через, дней', default=3,
         help_text='Если заказчик не принял и не открыл спор — деньги уходят исполнителю')
     feed_enabled = models.BooleanField('лента (/feed/) включена', default=True)
+    assistant_daily_free = models.PositiveSmallIntegerField(
+        'ИИ-помощник: бесплатных сообщений в день', default=10,
+        help_text='На ключе площадки (ANTHROPIC_API_KEY). Со своим ключом человек пишет без лимита. 0 — только свой ключ')
     chat_contacts_enabled = models.BooleanField('чат: «Найти знакомых из контактов»', default=True)
     chat_photos_enabled = models.BooleanField('чат: фото', default=True)
     chat_voice_enabled = models.BooleanField('чат: голосовые сообщения', default=True)

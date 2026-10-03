@@ -1,83 +1,46 @@
 {% extends 'base.html' %}
-{% load i18n %}
+{% load i18n static icons %}
 {% block title %}{% translate "Карта халяль —" %} {{ block.super }}{% endblock %}
+{% block description %}{% translate "Мечети, халяль-кафе, магазины, мясные лавки и отели на карте — рядом с вами." %}{% endblock %}
+{% block body_class %}page-mapx{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/map.css' %}?v={{ asset_v }}">{% endblock %}
 
 {% block content %}
-{% include 'includes/section_hero.html' with icon="🗺️" title=_("Карта халяль") desc=_("Кафе, магазины, отели и врачи — на одной карте, рядом с вами") class="map" cta=_("Добавить место") cta_url="/map/add/" %}
-<section class="sec">
-  <div class="sec__h">
-    <a class="sec__l" href="{% url 'maps:add' %}">{% translate "+ Добавить место" %}</a>
-  </div>
+{# карта как в навигаторах: на весь экран, поиск и категории поверх, список мест в видимой области — сбоку (на телефоне — снизу) #}
+<div class="mapx" id="mapx" data-cat="{{ category }}" data-q="{{ q }}">
+  <div id="map" class="mapx__map" aria-label="{% translate 'Карта' %}"></div>
 
-  <form method="get" class="map__form">
-    <input type="text" name="q" value="{{ q }}" placeholder="{% translate 'Поиск по названию' %}">
-    <div class="chips" style="width:100%;margin-bottom:10px">
-      <a class="chip{% if not category %} chip--on{% endif %}" href="/map/?q={{ q|urlencode }}&city={{ city|urlencode }}">{% translate "Все категории" %}</a>
-      {% for key, label in categories %}
-      <a class="chip{% if key == category %} chip--on{% endif %}" href="?{% if q %}q={{ q|urlencode }}&{% endif %}{% if city %}city={{ city|urlencode }}&{% endif %}category={{ key }}">{{ label }}</a>
-      {% endfor %}
+  <div class="mapx__top">
+    <form class="mapx__search" id="mapx-form" role="search">
+      {% ico 'search' %}<input type="search" id="mapx-q" name="q" value="{{ q }}" placeholder="{% translate 'Мечеть, кафе, адрес…' %}" autocomplete="off" aria-label="{% translate 'Поиск по карте' %}">
+      <button type="button" class="mapx__clear" id="mapx-clear" aria-label="{% translate 'Очистить' %}" hidden>{% ico 'close' %}</button>
+    </form>
+    <div class="mapx__cats" id="mapx-cats">
+      <button type="button" class="mapx__cat{% if not category %} on{% endif %}" data-cat="">{% translate "Все" %}</button>
+      {% for key, label, icon in categories %}<button type="button" class="mapx__cat{% if key == category %} on{% endif %}" data-cat="{{ key }}">{% ico icon %}{{ label }}</button>{% endfor %}
+      <button type="button" class="mapx__cat mapx__cat--v" id="mapx-verified" aria-pressed="false">{% ico 'check' %}{% translate "Проверенные" %}</button>
     </div>
-    <input type="text" name="city" value="{{ city }}" placeholder="{% translate 'Город' %}">
-    <button type="submit" class="btn btn--p">{% translate "Найти" %}</button>
-    <button type="button" class="btn btn--g" id="near-btn"><svg class="mmeta" viewBox="0 0 24 24"><path d="M12 21s-6.5-5.3-6.5-10a6.5 6.5 0 0 1 13 0c0 4.7-6.5 10-6.5 10z"/><circle cx="12" cy="10.6" r="2.3"/></svg>{% translate "Рядом со мной" %}</button>
-  </form>
-
-  {% include 'includes/disclaimer.html' %}
-  <div id="map"></div>
-
-  <div class="grid g3 plist">
-    {% for p in places %}
-    <a class="card pitem" href="{% url 'maps:detail' p.pk %}">
-      <div class="card__b">
-        <div class="card__c">{{ p.get_category_display|upper }}</div>
-        <div class="card__t">{{ p.name }}</div>
-        {% if p.is_mosque and p.mosque_brief %}<div class="pitem__brief">{{ p.mosque_brief }}</div>{% endif %}
-        <div class="card__d">{{ p.city }}{% if p.address %} · {{ p.address }}{% endif %}
-          {% if p.distance_km is not None %} · <b>{{ p.distance_km }} {% translate "км" %}</b>{% endif %}</div>
-        <span class="vbadge vbadge--{{ p.verif.level }}">{{ p.verif.label }}</span>
-      </div>
-    </a>
-    {% empty %}
-    <p>{% translate "Пока ничего не найдено." %} {% if user.is_authenticated %}<a class="link" href="{% url 'maps:add' %}">{% translate "Добавьте первое место →" %}</a>{% endif %}</p>
-    {% endfor %}
   </div>
-</section>
+
+  <div class="mapx__fabs">
+    <a class="mapx__fab" href="{% url 'maps:add' %}" title="{% translate 'Добавить место' %}" aria-label="{% translate 'Добавить место' %}">{% ico 'plus' %}</a>
+    <button type="button" class="mapx__fab mapx__fab--me" id="mapx-me" title="{% translate 'Где я' %}" aria-label="{% translate 'Где я' %}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8z"/></svg></button>
+  </div>
+
+  <aside class="mapx__panel" id="mapx-panel">
+    <button type="button" class="mapx__grip" id="mapx-grip" aria-label="{% translate 'Список мест' %}"><i></i></button>
+    <div class="mapx__ph"><b id="mapx-count">{% translate "Мест:" %} {{ places|length }}</b><span id="mapx-hint">{% translate "в этой части карты" %}</span></div>
+    <div class="mapx__list" id="mapx-list">
+      {# список для поисковиков и без JavaScript; скрипт перерисует его по видимой области #}
+      {% for p in places %}<a class="mapx__item" href="{% url 'maps:detail' p.pk %}"><span class="mapx__ic">{% ico 'place' %}</span><span class="mapx__ib"><b>{{ p.name }}</b><small>{{ p.get_category_display }} · {{ p.city }}</small></span></a>{% endfor %}
+    </div>
+  </aside>
+</div>
+{{ markers_json|json_script:"mapx-initial" }}
+{% ui_icons 'mosque' 'cafe' 'shop' 'hotel' 'butcher' 'place' %}
 {% endblock %}
 
 {% block extra_js %}
 {% include 'includes/map_assets.html' %}
-<script>
-var markers = {{ markers_json|safe }};
-var map = ilmMap('map', {center: [41.3111, 69.2797], zoom: 6});
-/* данные мест — от пользователей: экранируем всё, ссылку пускаем только http(s) */
-function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
-function safeUrl(u) { return /^https?:\/\//i.test(u || '') ? esc(u) : ''; }
-var bounds = [];
-markers.forEach(function (m) {
-  var url = safeUrl(m.url);
-  bounds.push([m.lat, m.lon]);
-  L.circleMarker([m.lat, m.lon], {radius: m.kind === 'mosque' ? 9 : 8, color: m.kind === 'mosque' ? '#0e8f57' : '#5646e8', weight: 2, fillOpacity: .8})
-    .addTo(map)
-    .bindPopup('<b>' + esc(m.name) + '</b><br>' + esc(m.category) + ' · ' + esc(m.city) +
-               (m.brief ? '<br><span style="color:#0e8f57;font-weight:700">' + esc(m.brief) + '</span>' : '') +
-               (m.affiliation ? '<br>' + esc(m.affiliation) : '') +
-               (m.address ? '<br>' + esc(m.address) : '') +
-               (m.phone ? '<br>{{ _("тел.")|escapejs }} ' + esc(m.phone) : '') +
-               '<br><span class="vbadge vbadge--' + esc(m.verif) + '">' + esc(m.verif_label) + '</span>' +
-               (url ? '<br><a href="' + url + '" target="_blank" rel="noopener nofollow" data-ext>{{ _("сайт")|escapejs }}</a>' : '') +
-               '<br><a href="/map/' + parseInt(m.id, 10) + '/"><b>{{ _("Подробнее и отзывы →")|escapejs }}</b></a>')
-    .bindTooltip('<b>' + esc(m.name) + '</b>' + (m.brief ? '<br>' + esc(m.brief) : ''), {direction: 'top', offset: [0, -6]});
-});
-if (bounds.length > 1) map.fitBounds(bounds, {padding: [30, 30], maxZoom: 14});
-else if (bounds.length === 1) map.setView(bounds[0], 14);
-document.getElementById('near-btn').addEventListener('click', function () {
-  if (!navigator.geolocation) { alert('{{ _("Браузер не умеет определять местоположение")|escapejs }}'); return; }
-  navigator.geolocation.getCurrentPosition(function (pos) {
-    var u = new URL(window.location);
-    u.searchParams.set('lat', pos.coords.latitude.toFixed(4));
-    u.searchParams.set('lon', pos.coords.longitude.toFixed(4));
-    window.location = u;
-  }, function () { alert('{{ _("Не удалось получить координаты — разрешите доступ к геолокации")|escapejs }}'); });
-});
-</script>
+<script src="{% static 'js/mapx.js' %}?v={{ asset_v }}"></script>
 {% endblock %}

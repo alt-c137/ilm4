@@ -21,7 +21,9 @@ PAGE_SIZE = 20
 # раздел приложения → ключ ModuleConfig (выключен в админке — пропадает и в приложении)
 MODULE_OF = {'buy': 'buy', 'jobs': 'jobs', 'services': 'services', 'transport': 'transport', 'trips': 'transport', 'places': 'map',
              'doctors': 'health', 'stories': 'migration', 'books': 'library', 'topics': 'forum', 'news': 'news',
-             'nikah': 'nikah', 'chat': 'chat', 'wallet': 'wallet', 'prayer': 'prayer', 'tracker': 'tracker'}
+             'nikah': 'nikah', 'chat': 'chat', 'wallet': 'wallet', 'prayer': 'prayer', 'tracker': 'tracker',
+             'feed': 'feed', 'story': 'stories', 'shorts': 'shorts', 'gifts': 'gifts', 'assistant': 'assistant',
+             'communities': 'communities'}   # 'stories' — истории переезда
 
 
 class ApiError(Exception):
