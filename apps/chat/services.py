@@ -97,7 +97,8 @@ def thread_info(thread, user) -> dict:
     from . import contexts, rooms
     return {'folder': thread.folder, 'context': thread.context_type, 'card': contexts.card(thread, user),
             'notice': contexts.notice(thread), 'warn_text': contexts.warn_text() if contexts.risky(thread) else '',
-            'room': rooms.info(thread, user) if thread.is_room else None}
+            'room': rooms.info(thread, user) if thread.is_room else None,
+            'support': support_state(thread, user)}       # 'call' — можно позвать поддержку третьей, 'drop' — она уже в чате
 
 
 def inbox(user, limit: int = 300, space=None) -> list:
@@ -262,7 +263,8 @@ def flags(thread=None) -> dict:
     media = True
     if thread is not None and not st.nikah_chat_media:
         media = not is_nikah(thread.pk)
-    direct = thread is None or not thread.is_room          # звонки — только в личных диалогах
+    # звонки — только в личных диалогах с другим человеком: в «Избранном» (чат с самим собой) звонить некому
+    direct = thread is None or (not thread.is_room and not thread.is_saved)
     return {'contacts': st.chat_contacts_enabled, 'photo': st.chat_photos_enabled and media,
             'video': st.chat_videos_enabled and media, 'voice': st.chat_voice_enabled,
             'circle': st.chat_circles_enabled and media,
@@ -286,8 +288,22 @@ def visible_messages(thread, user):
     return qs.filter(created_at__gt=cleared) if cleared else qs
 
 
+def unread_total(user) -> int:
+    """Сколько непрочитанного во всех чатах — для значка в меню. Считается не чаще раза в 20 секунд на человека."""
+    from django.core.cache import cache
+    key = f'chat:unread:{user.pk}'
+    n = cache.get(key)
+    if n is None:
+        n = sum(t.unread for t, _o, _m in inbox(user) if not getattr(t, 'archived', False) and not getattr(t, 'muted', False))
+        cache.set(key, n, 20)
+    return n
+
+
 def mark_read(thread, user) -> int:
+    from django.core.cache import cache
+
     from .models import ChatState
+    cache.delete(f'chat:unread:{user.pk}')
     ChatState.objects.filter(thread=thread, user=user, unread_mark=True).update(unread_mark=False)
     if thread.is_room:
         from . import rooms
@@ -682,6 +698,55 @@ def purge_uploads(now=None) -> int:
                 except OSError:
                     pass
     return len(old)
+
+
+# ---------- «Позвать поддержку»: сотрудник третьим в чате по объявлению, услуге, вакансии, с врачом ----------
+
+NO_SUPPORT_CTX = ('', 'nikah', 'saved', 'support')        # личные чаты, никях, «Избранное» и сам чат поддержки — без этого
+
+
+def support_state(thread, user) -> str:
+    """Что показать в меню чата: 'call' — можно позвать поддержку, 'drop' — она уже здесь (можно отключить), '' — недоступно."""
+    from apps.core.models import SiteSettings
+    if thread.is_room or thread.context_type in NO_SUPPORT_CTX or not is_participant(thread, user):
+        return ''
+    support_id = SiteSettings.get_solo().support_user_id
+    if not support_id:
+        return ''
+    return 'drop' if thread.observers.filter(pk=support_id).exists() else 'call'
+
+
+def call_support(thread, user) -> None:
+    """Пригласить аккаунт поддержки в этот чат. Он видит только то, что написано ПОСЛЕ приглашения (прошлая переписка
+    для него закрыта — как «очищенная история»), может писать; обоим собеседникам об этом сообщает служебная запись."""
+    from apps.core.models import Notification, SiteSettings
+
+    from .models import ChatState
+    if support_state(thread, user) != 'call':
+        raise ChatError(_('В этом чате поддержку позвать нельзя.'), 400)
+    from django.core.cache import cache
+    key = f'support_call:{user.pk}'
+    if cache.get(key, 0) >= 5:
+        raise ChatError(_('Вы уже несколько раз звали поддержку сегодня. Напишите в чат поддержки.'), 429)
+    cache.set(key, cache.get(key, 0) + 1, 86400)
+    support = SiteSettings.get_solo().support_user
+    thread.participants.add(support)
+    thread.observers.add(support)
+    ChatState.objects.update_or_create(thread=thread, user=support, defaults={'cleared_at': timezone.now(), 'hidden': False, 'archived': False})
+    system_message(thread, user, str(_('Поддержка ilm4 приглашена в чат. Она видит сообщения, написанные после этого.')), broadcast=True)
+    Notification.objects.create(user=support, text=str(_('Вас позвали в чат: {title}')).format(title=thread.subject or thread.title or f'#{thread.pk}'),
+                                url=f'/chat/{thread.pk}/')
+
+
+def drop_support(thread, user) -> None:
+    """Отключить поддержку от чата (любой из собеседников или сама поддержка)."""
+    from apps.core.models import SiteSettings
+    support = SiteSettings.get_solo().support_user
+    if support is None or thread.is_room or not is_participant(thread, user) or not thread.observers.filter(pk=support.pk).exists():
+        raise ChatError(_('Поддержки в этом чате нет.'), 400)
+    thread.observers.remove(support)
+    thread.participants.remove(support)
+    system_message(thread, user, str(_('Поддержка ilm4 отключена от чата.')), broadcast=True)
 
 
 def system_message(thread, sender, text: str, duration=None, broadcast: bool = False) -> dict:

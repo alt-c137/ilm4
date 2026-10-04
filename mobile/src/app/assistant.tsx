@@ -15,7 +15,8 @@ type Provider = { key: string; name: string; model: string; where: string; custo
 type Brief = { hello: string; name: string; unread: number; notifications: number;
   prayer: { name: string; time: string; in: string; tomorrow: boolean; city: string } | null;
   tracker: { done: number; total: number; left: { id: number; title: string }[] } | null;
-  plans: { title: string; date: string; today: boolean; time: string }[]; chats: { id: number; name: string; unread: number }[] };
+  plans: { title: string; date: string; today: boolean; time: string }[]; chats: { id: number; name: string; unread: number }[];
+  week?: { day: string; pct: number }[] };
 type St = { own_key: string; provider: string; provider_name: string; model: string; site: boolean; free: number; left: number; unlimited: boolean;
   read_chats: boolean; ready: boolean; providers: Provider[]; chats: { id: number; title: string }[]; brief?: Brief };
 
@@ -177,6 +178,25 @@ export default function Assistant() {
                       b.plans.length > 1 ? `${t('ещё')} ${b.plans.length - 1}` : ''].filter(Boolean).join(' · ') : t('Скажите помощнику — он поставит'),
                     () => router.push('/tracker')) : null}
                 </View>
+              ) : null}
+              {b?.week?.length && b.tracker?.total ? (
+                // график недели: какая доля дел выполнена по дням — как на панели помощника на сайте
+                <Pressable onPress={() => router.push('/habits/stats')} style={{ backgroundColor: c.card, borderRadius: 18, padding: 14, gap: 10 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Txt kind="label">{t('Неделя в трекере')}</Txt>
+                    <Txt kind="small">{Math.round(b.week.reduce((sum, d) => sum + d.pct, 0) / b.week.length)}%</Txt>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8, height: 74 }}>
+                    {b.week.map((d, i) => (
+                      <View key={d.day} style={{ flex: 1, alignItems: 'center', gap: 5 }}>
+                        <View style={{ width: '100%', height: 54, justifyContent: 'flex-end', backgroundColor: c.card2, borderRadius: 8, overflow: 'hidden' }}>
+                          <View style={{ height: `${Math.max(d.pct, 4)}%`, backgroundColor: i === b.week!.length - 1 ? c.accent : c.accentSoft, borderRadius: 8 }} />
+                        </View>
+                        <Txt kind="small" style={{ fontSize: 10.5 }}>{d.day.slice(0, 2)}</Txt>
+                      </View>
+                    ))}
+                  </View>
+                </Pressable>
               ) : null}
               {st?.ready ? (
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>

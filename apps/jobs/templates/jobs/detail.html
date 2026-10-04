@@ -33,7 +33,7 @@
         <div class="dact">
           {% if user.is_authenticated %}
           <a class="btn btn--p" href="{% url 'jobs:respond' vacancy.pk %}">{% ico 'send' %}{% if vacancy.is_resume %}{% translate "Предложить работу" %}{% else %}{% translate "Откликнуться" %}{% endif %}</a>
-          {% if vacancy.owner != user %}<a class="btn btn--g" href="{% url 'chat:start' %}?user={{ vacancy.owner.pk }}&amp;ctx=jobs&amp;ctx_id={{ vacancy.pk }}">{% ico 'chat' %}{% translate "Написать работодателю" %}</a>{% endif %}
+          {% if vacancy.owner != user %}<a class="btn btn--g" href="{% url 'chat:start' %}?ctx=jobs&amp;ctx_id={{ vacancy.pk }}">{% ico 'chat' %}{% translate "Написать работодателю" %}</a>{% endif %}
           {% else %}
           <a class="btn btn--p" href="{% url 'accounts:login' %}?next={{ request.path }}">{% translate "Войти и откликнуться" %}</a>
           {% endif %}

@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
 from apps.chat import spaces
-from apps.chat.models import Space, SpaceMember
+from apps.chat.models import Space, SpaceMember, SpaceRole
 from apps.chat.rooms import ChatError
 
 from .base import ApiError, abs_url, api, file_url
@@ -34,11 +34,31 @@ def _full(request, s) -> dict:
             'board': abs_url(request, f'/communities/{s.pk}/board/'), 'web': abs_url(request, f'/communities/{s.pk}/'),
             'space_roles': [{'id': r.pk, 'name': r.name, 'color': r.color, 'perms': r.perms} for r in s.roles.all()] if me else [],
             'people': [{'id': m.user_id, 'name': m.nick or m.user.get_display_name(), 'real': m.user.get_display_name() if m.nick else '',
-                        'avatar': file_url(request, m.user.avatar), 'role': m.role, 'role_name': str(m.get_role_display()),
+                        'avatar': abs_url(request, spaces.avatar_of(m.user)) if spaces.avatar_of(m.user) else '', 'role': m.role, 'role_name': str(m.get_role_display()),
                         'roles': [{'id': r.pk, 'name': r.name, 'color': r.color} for r in m.roles.all()],
                         'timeout': bool(m.muted_until and m.muted_until > timezone.now())}
                        for m in spaces.people(s, 100)] if me else [],
-            'roles': [{'key': k, 'name': str(n)} for k, n in SpaceMember.ROLES if k in ('admin', 'mod', 'member')]}
+            'roles': [{'key': k, 'name': str(n)} for k, n in SpaceMember.ROLES if k in ('admin', 'mod', 'member')],
+            'manage': _manage(request, s, perms) if me else None}
+
+
+def _manage(request, s, perms) -> dict | None:
+    """Данные для экрана «Управление сообществом» — только то, на что у человека есть права."""
+    if not perms & {'manage_space', 'manage_roles', 'manage_channels', 'kick'}:
+        return None
+    out = {'perm_choices': [{'key': k, 'name': str(n)} for k, n in SpaceRole.PERMS]}
+    if 'manage_channels' in perms:
+        out['channels'] = [{'id': t.pk, 'title': t.title, 'topic': t.space_topic, 'private': t.space_private,
+                            'roles': list(t.space_roles_allowed.values_list('pk', flat=True))}
+                           for t in s.threads.order_by('space_order', 'pk')]
+    if 'manage_space' in perms:
+        out['invites'] = [{'id': i.pk, 'link': abs_url(request, f'/communities/join/{i.code}/'), 'uses': i.uses, 'max_uses': i.max_uses,
+                           'expires': i.expires_at.isoformat() if i.expires_at else ''} for i in s.invites.all()[:20]]
+        out['logs'] = [{'time': timezone.localtime(x.created_at).strftime('%d.%m %H:%M'), 'actor': x.actor.get_display_name() if x.actor else '',
+                        'action': x.action, 'text': x.text} for x in s.logs.select_related('actor')[:40]]
+    if 'kick' in perms:
+        out['banned'] = [{'id': b.user_id, 'name': b.user.get_display_name()} for b in spaces.banned(s)]
+    return out
 
 
 @api(auth=True, module='communities')
@@ -127,6 +147,8 @@ def act(request, pk):
     elif a == 'channel_set':
         _wrap(spaces.set_channel, s, user, d.get('thread'), title=d.get('title'), topic=d.get('topic'),
               private=d.get('private'), role_ids=d.get('roles'))
+    elif a == 'invite_delete':
+        _wrap(spaces.delete_invite, s, user, d.get('invite'))
     elif a == 'invite_new':
         inv = _wrap(spaces.create_invite, s, user, d.get('hours') or 0, d.get('max_uses') or 0)
         return {**_full(request, s), 'new_invite': abs_url(request, f'/communities/join/{inv.code}/')}

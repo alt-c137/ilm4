@@ -104,7 +104,7 @@ def test_2fa_setup_page_renders(client):
     response = client.get('/accounts/2fa/')
     assert response.status_code == 200
     html = response.content.decode()
-    assert 'Подключение 2FA' in html
+    assert 'Двухшаговая защита' in html
     assert 'data:image/png;base64' in html
 
 

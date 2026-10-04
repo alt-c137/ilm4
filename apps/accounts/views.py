@@ -136,6 +136,37 @@ def accounts_switch(request):
 
 
 @login_required
+def personas_view(request):
+    """«Мои профили» — маски: как человека видят в объявлениях и в сообществах (по одной на раздел), плюс анкета никяха."""
+    from apps.core.models import ModuleConfig
+
+    from . import people
+    if request.method == 'POST':
+        section = request.POST.get('section', '')
+        try:
+            if request.POST.get('remove'):
+                people.delete_persona(request.user, section)
+            else:
+                people.save_persona(request.user, section, request.POST.get('name', ''),
+                                    link_main=section != people.BOARD or request.POST.get('link_main') == '1',
+                                    avatar=request.FILES.get('avatar'))
+            messages.success(request, _('Сохранено.'))
+        except people.PeopleError as exc:
+            messages.error(request, exc.message)
+        return redirect('accounts:personas')
+    mine = people.personas(request.user)
+    sections = [
+        {'key': people.BOARD, 'title': _('Объявления, работа, услуги'), 'p': mine[people.BOARD],
+         'hint': _('Под этим именем вас видят в объявлениях, вакансиях и в чатах по ним.')},
+        {'key': people.SPACES, 'title': _('Сообщества'), 'p': mine[people.SPACES],
+         'hint': _('Ваше имя во всех сообществах. В отдельном сообществе можно поставить свой ник — он важнее.')},
+    ]
+    return render(request, 'accounts/personas.html', {
+        'sections': sections, 'nikah': getattr(request.user, 'nikah_profile', None),
+        'nikah_on': ModuleConfig.objects.filter(key='nikah', status=ModuleConfig.ON).exists()})
+
+
+@login_required
 def accounts_view(request):
     """«Аккаунты» — как в Telegram: кто вошёл на этом устройстве, переключиться, добавить ещё один (до трёх), убрать."""
     from django.contrib.auth import logout
@@ -213,7 +244,10 @@ def profile(request):
             people.set_links(user, rows)
         except people.PeopleError as exc:
             link_error = exc.message
+        people.set_links_view(user, request.POST.get('links_view', ''))
         form.save()
+        from apps.social import services as social
+        social.set_private(user, user.is_private)          # открыл профиль — ждавшие заявки становятся подписками
         if not link_error:
             messages.success(request, _('Сохранено.'))
             sec = request.POST.get('s', '')
@@ -223,7 +257,8 @@ def profile(request):
     me = User.objects.get(pk=user.pk)                 # без несохранённых правок формы
     return render(request, 'accounts/profile.html', {
         'photos': _photo_rows(me),
-        'form': form, 'me': me, 'links': people.links_for(me, me), 'link_error': link_error,
+        'form': form, 'me': me, 'links': (my_links := people.links_for(me, me)), 'link_error': link_error,
+        'links_view': people.links_view(me, len(my_links)), 'links_mode': (me.ui or {}).get('links_view', 'auto'),
         'link_kinds': SocialLink.KINDS, 'privacy_levels': User.PRIVACY,
         'close_friends': people.close_friends(user)[:50],
         'section': _profile_section(request)})
@@ -267,9 +302,22 @@ def photos(request):
 
 @login_required
 def two_factor_setup(request):
-    """Подключение TOTP: QR + подтверждение кодом. Обязательно для staff."""
+    """Двухшаговая защита: QR для приложения-аутентификатора + подтверждение кодом. Админам обязательна, остальным — по желанию."""
     from django_otp.plugins.otp_totp.models import TOTPDevice
 
+    from . import twofa
+    if twofa.enabled(request.user):                       # уже подключена — страница управления
+        if request.method == 'POST' and request.POST.get('action') == 'disable':
+            if request.user.is_staff:
+                messages.error(request, _('Сотрудникам двухшаговая защита обязательна.'))
+            elif twofa.check(request.user, request.POST.get('code', '')):
+                twofa.disable(request.user)
+                log_action(request, 'Отключена 2FA', request.user.email)
+                messages.success(request, _('Двухшаговая защита отключена.'))
+                return redirect('core:settings')
+            else:
+                messages.error(request, _('Код неверный — проверьте приложение и время на телефоне.'))
+        return render(request, 'accounts/2fa_setup.html', {'on': True})
     device = (request.user.totpdevice_set.filter(confirmed=False).first()
               or TOTPDevice.objects.create(user=request.user, name='Основной', confirmed=False))
     if request.method == 'POST':
@@ -277,10 +325,11 @@ def two_factor_setup(request):
         if device.verify_token(code):
             device.confirmed = True
             device.save()
+            twofa.forget(request.user)
             django_otp.login(request, device)
             log_action(request, 'Подключена 2FA', request.user.email)
-            messages.success(request, _('2FA подключена.'))
-            return redirect('core:home')
+            messages.success(request, _('Двухшаговая защита подключена.'))
+            return redirect('core:settings')
         messages.error(request, _('Код неверный — проверьте приложение и время на телефоне.'))
 
     # QR данными (data-URI), без внешних сервисов
@@ -288,20 +337,25 @@ def two_factor_setup(request):
     buffer = io.BytesIO()
     img.save(buffer, format='PNG')
     qr_data = base64.b64encode(buffer.getvalue()).decode()
-    return render(request, 'accounts/2fa_setup.html', {'qr_data': qr_data})
+    import base64 as _b64
+    secret = _b64.b32encode(device.bin_key).decode().rstrip('=')          # для ручного ввода, если камера не читает QR
+    return render(request, 'accounts/2fa_setup.html', {'qr_data': qr_data, 'secret': ' '.join(secret[k:k + 4] for k in range(0, len(secret), 4))})
 
 
 @login_required
 def two_factor_verify(request):
-    """Ввод кода при входе (для staff с уже подключённой 2FA)."""
+    """Ввод кода после входа — для всех, у кого подключена двухшаговая защита."""
+    from . import twofa
+    if request.user.is_verified():
+        return redirect('core:home')
     if request.method == 'POST':
-        code = request.POST.get('code', '').strip()
-        for device in request.user.totpdevice_set.filter(confirmed=True):
-            if device.verify_token(code):
-                django_otp.login(request, device)
-                return redirect('core:home')
-        messages.error(request, _('Код неверный.'))
-    return render(request, 'accounts/2fa_verify.html')
+        device = twofa.check(request.user, request.POST.get('code', ''))
+        if device is not None:
+            django_otp.login(request, device)
+            nxt = request.POST.get('next') or ''
+            return redirect(nxt if nxt and url_has_allowed_host_and_scheme(nxt, allowed_hosts={request.get_host()}) else 'core:home')
+        messages.error(request, _('Слишком много неверных кодов. Подождите 15 минут.') if twofa.blocked(request.user) else _('Код неверный.'))
+    return render(request, 'accounts/2fa_verify.html', {'next': request.GET.get('next', '')})
 
 
 def _call_flags(thread) -> dict:
@@ -342,14 +396,16 @@ def public_profile(request, pk):
     if social.module_on('feed'):
         wall = [social.post_item(p, viewer) for p in social.wall(person, viewer, limit=20)]
         social.decorate(wall, viewer)
-        follow = {'on': social.is_following(viewer, person), **social.counts(person, viewer)}
+        follow = {'on': social.is_following(viewer, person), 'state': social.follow_state(viewer, person),
+                  'locked': not social.can_see_wall(person, viewer), **social.counts(person, viewer)}
     return render(request, 'accounts/public.html', {
         'wall': wall, 'follow': follow,
         'gifts': social.gifts_of(person) if social.module_on('gifts') else [],
         'photos': _photo_rows(person),
         'person': person, 'mine': mine,
         'status': people.status_text(presence), 'online': presence['online'],
-        'phone': people.phone_for(person, viewer, close), 'links': people.links_for(person, viewer, close),
+        'phone': people.phone_for(person, viewer, close), 'links': (shown_links := people.links_for(person, viewer, close)),
+        'links_view': people.links_view(person, len(shown_links)),
         'is_close': viewer is not None and not mine and people.is_close(viewer, person),
         'is_contact': viewer is not None and not mine and people.is_contact(viewer, person),
         'thread': thread, 'shared': shared,
@@ -409,7 +465,76 @@ def close_toggle(request, pk):
 def ping(request):
     """Открытая вкладка раз в минуту сообщает «я в сети» (сама отметка — в LastSeenMiddleware)."""
     from django.http import JsonResponse
+    if request.user.is_authenticated:
+        from . import devices
+        devices.touch(request)                      # «Устройства»: когда этим сеансом пользовались последний раз
     return JsonResponse({'ok': True})
+
+
+# ---------- устройства: активные сеансы и вход по QR-коду (apps/accounts/devices.py) ----------
+
+@login_required
+def devices_view(request):
+    """«Устройства» — как «Активные сеансы» в Telegram: где открыт аккаунт, завершить один сеанс или все остальные."""
+    from . import devices, twofa
+    key = request.session.session_key or ''
+    if request.method == 'POST':
+        if request.POST.get('others'):
+            n = devices.terminate_others(request.user, key)
+            messages.success(request, _('Завершено сеансов: {n}.').format(n=n))
+        elif request.POST.get('kind') in ('web', 'app') and (request.POST.get('id') or '').isdigit():
+            devices.terminate(request.user, request.POST['kind'], int(request.POST['id']))
+            messages.success(request, _('Сеанс завершён.'))
+        return redirect('accounts:devices')
+    devices.touch(request)
+    rows = devices.sessions(request.user, key)
+    return render(request, 'accounts/devices.html', {'rows': rows, 'others': sum(1 for r in rows if not r['current']),
+                                                     'twofa': twofa.enabled(request.user)})
+
+
+def qr_start(request):
+    """Страница входа просит QR-код: одноразовый, на 3 минуты, привязан к этому браузеру."""
+    from django.core.cache import cache
+    from django.http import JsonResponse
+
+    from . import devices
+    if request.method != 'POST' or request.user.is_authenticated:
+        return JsonResponse({'error': 'bad'}, status=400)
+    key = f'qr_new:{client_ip(request)}'
+    if cache.get(key, 0) >= 40:
+        return JsonResponse({'error': _('Слишком часто. Попробуйте через несколько минут.')}, status=429)
+    cache.set(key, cache.get(key, 0) + 1, 600)
+    token = devices.qr_new(request)
+    url = request.build_absolute_uri(reverse('accounts:qr_confirm', args=[token]))
+    return JsonResponse({'img': devices.qr_image(url), 'ttl': devices.QR_TTL})
+
+
+def qr_status(request):
+    """Компьютер ждёт подтверждения с телефона. Подтвердили — входим (двухшаговую защиту это не обходит)."""
+    from django.http import JsonResponse
+
+    from . import devices
+    state, user = devices.qr_take(request)
+    if state != 'ok':
+        return JsonResponse({'state': state})
+    auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+    nxt = request.GET.get('next') or ''
+    return JsonResponse({'state': 'ok', 'next': nxt if nxt and url_has_allowed_host_and_scheme(nxt, allowed_hosts={request.get_host()}) else '/'})
+
+
+@login_required
+def qr_confirm(request, token):
+    """Телефон отсканировал код: показать, какое устройство просит вход, и спросить подтверждение."""
+    from . import devices
+    info = devices.qr_info(token)
+    done = False
+    if request.method == 'POST' and info is not None:
+        if request.POST.get('ok') == '1' and devices.qr_approve(token, request.user):
+            log_action(request, 'Вход по QR подтверждён', f"{info.get('ua', '')} {info.get('ip', '')}")
+            done = True
+        else:
+            return redirect('core:home')
+    return render(request, 'accounts/qr_confirm.html', {'info': info, 'done': done, 'token': token})
 
 
 @login_required

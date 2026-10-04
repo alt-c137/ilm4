@@ -50,6 +50,8 @@ def clean_ui(data: dict) -> dict:
         out['tabs_site'] = site
     if app:
         out['tabs_app'] = app
+    if data.get('links_view') in ('auto', 'icons', 'list'):       # как показывать соцсети в профиле
+        out['links_view'] = data['links_view']
     if data.get('start') in START:                  # с какого раздела открывается ilm4: платформа целиком или, например, только чаты
         out['start'] = data['start']
     return out
@@ -81,6 +83,17 @@ def site_tabs(user, modules_on: set, path: str, is_home: bool) -> list:
         for t in out:
             t['on'] = t is best
     return out
+
+
+def side_nav(user, modules, path: str, is_home: bool) -> dict:
+    """Боковое меню для широкого экрана (как у ВК и X): сверху — разделы, которые человек сам держит под рукой
+    (те же, что в нижних кнопках), ниже — остальные включённые разделы."""
+    on = {m.key for m in modules}
+    main = [t for t in site_tabs(user, on, path, is_home) if t['key'] not in ('add', 'services')]    # «Все сервисы» в меню есть всегда
+    taken = {TABS[t['key']][2] for t in main if TABS[t['key']][2]}
+    rest = [{'key': m.key, 'label': m.name, 'url': f'/{m.key}/', 'icon_key': m.key, 'icon': m.icon, 'on': path.startswith(f'/{m.key}/')}
+            for m in modules if m.key not in taken and m.key != 'wallet']
+    return {'main': main, 'rest': rest}
 
 
 def choices(modules_on: set, app: bool = False) -> list:

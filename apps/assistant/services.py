@@ -325,7 +325,7 @@ def delete_chat(user, chat_id) -> None:
 
 # ---------- сводка дня (без ИИ) ----------
 
-def briefing(user) -> dict:
+def briefing(user, week: bool = True) -> dict:
     """Что важно прямо сейчас: ближайший намаз, трекер, встречи, кто написал, уведомления. Без запроса к ИИ."""
     from apps.core.models import ModuleConfig, Notification
     today = timezone.localdate()
@@ -347,12 +347,12 @@ def briefing(user) -> dict:
         day = tr.day_view(user, today)
         out['tracker'] = {'done': day['done'], 'total': day['total'],
                           'left': [{'id': x['id'], 'title': x['title'], 'icon': x['emoji']} for x in day['items'] if not x['done']][:5]}
-        week = []                                           # неделя в трекере: доля выполненного по дням — для графика
-        for i in range(6, -1, -1):
+        days = []                                           # неделя в трекере: доля выполненного по дням — для графика
+        for i in range(6, -1, -1) if week else ():
             d = today - timedelta(days=i)
             v = day if i == 0 else tr.day_view(user, d)
-            week.append({'day': d.strftime('%d.%m'), 'pct': round(100 * v['done'] / v['total']) if v['total'] else 0})
-        out['week'] = week
+            days.append({'day': d.strftime('%d.%m'), 'pct': round(100 * v['done'] / v['total']) if v['total'] else 0})
+        out['week'] = days
         rows = Habit.objects.filter(owner=user, archived=False, once_on__gte=today, once_on__lte=today + timedelta(days=7)).order_by('once_on', 'remind_at')[:6]
         out['plans'] = [{'title': h.title, 'date': h.once_on.isoformat(), 'today': h.once_on == today, 'time': (h.times() or [''])[0]} for h in rows]
     if 'chat' in on:

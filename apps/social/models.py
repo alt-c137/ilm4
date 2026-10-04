@@ -63,6 +63,7 @@ class Follow(models.Model):
 
     follower = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='following')
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='followers')
+    approved = models.BooleanField('одобрена', default=True)      # у закрытого профиля подписка — заявка, пока автор не одобрит
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

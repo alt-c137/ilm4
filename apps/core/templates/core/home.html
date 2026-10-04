@@ -8,6 +8,7 @@
   <span class="hello__g" id="hello-greg">{% now "l, j E" %}</span>
   <span class="hello__h" id="hello-hijri" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.4 14.2A8.5 8.5 0 1 1 9.8 3.6a7 7 0 1 0 10.6 10.6z"/></svg><span></span></span>
 </div>
+{% if home_mode == 'showcase' %}<div class="hb hb--showcase">{% include 'core/blocks/showcase.html' %}</div>{% endif %}
 {% for b in blocks %}<div class="hb hb--{{ b.key }}">{% include b.template %}</div>{% endfor %}
 </div>
 {% endblock %}

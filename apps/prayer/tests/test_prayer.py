@@ -81,10 +81,11 @@ def test_prayer_disabled_returns_404(client):
 
 
 def test_widget_on_homepage(client):
-    response = client.get('/')
-    html = response.content.decode()
-    assert 'Время намаза' in html       # блок на главной
-    assert 'Ближайший намаз' in html
+    html = client.get('/').content.decode()
+    assert 'Время намаза' in html       # плитка намаза на витрине: ближайший намаз и время
+    assert 'через' in html
+    brief = client.get('/?view=brief').content.decode()
+    assert 'Ближайший намаз' in brief   # вид «Сводка» — прежний блок с расписанием
 
 
 def test_makkah_isha_after_maghrib():

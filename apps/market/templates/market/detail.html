@@ -47,7 +47,7 @@
           {% if listing.owner == request.user %}
             <a class="btn btn--g" href="{% url 'market:my' %}">{% ico 'edit' %}{% translate "Мои объявления" %}</a>
           {% else %}
-            <a class="btn btn--p" href="{% url 'chat:start' %}?user={{ owner.pk }}&amp;ctx=buy&amp;ctx_id={{ listing.pk }}">{% ico 'chat' %}{% translate "Написать продавцу" %}</a>
+            <a class="btn btn--p" href="{% url 'chat:start' %}?ctx=buy&amp;ctx_id={{ listing.pk }}">{% ico 'chat' %}{% translate "Написать продавцу" %}</a>
           {% endif %}
         </div>
 
@@ -59,14 +59,15 @@
         {% endif %}
 
         <div class="sepline"></div>
-        <a class="person person--link" href="{% url 'accounts:public' owner.pk %}">
-          {% if owner.avatar %}<img class="person__ava" src="{{ owner.avatar.url }}" alt="">{% else %}<span class="person__ava">{{ owner.get_display_name|slice:":1"|upper }}</span>{% endif %}
+        {% face owner 'board' as seller %}
+        {% if seller.link %}<a class="person person--link" href="{{ seller.link }}">{% else %}<div class="person">{% endif %}
+          {% if seller.avatar %}<img class="person__ava" src="{{ seller.avatar }}" alt="">{% else %}<span class="person__ava">{{ seller.name|slice:":1"|upper }}</span>{% endif %}
           <div>
-            <div class="person__n">{{ owner.get_display_name }}</div>
+            <div class="person__n">{{ seller.name }}</div>
             <div class="person__s">{% translate "на ilm4 с" %} {{ owner.date_joined|date:"E Y"|lower }}</div>
           </div>
-          <svg class="person__go" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
-        </a>
+          {% if seller.link %}<svg class="person__go" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+        </a>{% else %}</div>{% endif %}
         <div class="pcard__rep pcard__rep--left">{% rating_badge owner %}{% verified_badge owner %}</div>
       </div>
 
@@ -83,7 +84,7 @@
     <div class="dbar__v">{% if listing.price == 0 %}{% translate "Даром" %}{% else %}{% money listing.price listing.currency %}{% endif %}</div>
     <div class="dbar__s">{{ listing.title }}</div>
   </div>
-  <a class="btn btn--p" href="{% url 'chat:start' %}?user={{ owner.pk }}&amp;ctx=buy&amp;ctx_id={{ listing.pk }}">{% ico 'chat' %}{% translate "Написать" %}</a>
+  <a class="btn btn--p" href="{% url 'chat:start' %}?ctx=buy&amp;ctx_id={{ listing.pk }}">{% ico 'chat' %}{% translate "Написать" %}</a>
 </div>
 {% endif %}
 {% endwith %}

@@ -173,3 +173,7 @@
   .feedside__nav a:hover{background:var(--card-2)}
   .feedside__nav svg{width:19px;height:19px;color:var(--accent);flex:none}
 }
+.feed__bar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.feed__saved{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--accent-d);font-weight:600;font-size:14px;text-decoration:none}
+.feed__saved svg{width:17px;height:17px}
+.tg__toastlink{margin-left:14px;color:#a5b4fc;font-weight:700;text-decoration:none;pointer-events:auto}

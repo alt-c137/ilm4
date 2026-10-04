@@ -144,8 +144,15 @@ html[data-theme=dark] .bub--me .tick{color:#fff}
 /* фото */
 .bub--photo{padding:4px 4px 6px}
 /* фото в сообщении — как в Telegram: свои пропорции (вертикальное остаётся вертикальным), не шире 30rem и не выше 27rem, без обрезки */
-.bub__photo{display:block;border-radius:13px;overflow:hidden;max-width:min(480px,100%);background:rgba(127,127,160,.12)}
-.bub__photo img{display:block;width:auto;height:auto;max-width:100%;max-height:432px;min-width:96px;min-height:64px;object-fit:cover}
+.bub__photo{display:block;border-radius:13px;overflow:hidden;width:fit-content;max-width:100%;background:rgba(127,127,160,.12)}
+/* Ширина задана числом (а не «100% пузыря»): иначе браузер считает пузырь по исходной ширине файла, и справа от фото остаётся
+   пустая цветная полоса. 72cqi — 72% ширины ленты сообщений (она объявлена контейнером ниже). */
+.bub__photo img{display:block;width:auto;height:auto;max-width:min(480px,62vw);max-width:min(480px,72cqi);max-height:432px;min-width:96px;min-height:64px;object-fit:cover}
+.tg__log{container-type:inline-size}
+/* пузырь с фото — ровно по ширине фото, подпись переносится под ним (как в Telegram) */
+.bub--photo{width:min-content;max-width:none}
+.bub--photo:has(.bub__t) .bub__photo img{min-width:min(240px,72cqi)}
+.bub--photo .bub__photo{max-width:none}
 .bub__video{border-radius:13px;overflow:hidden;max-width:320px;background:#000}
 .bub__video video{display:block;width:100%;max-height:420px}
 .bub--photo .bub__t{display:block;padding:6px 8px 0}

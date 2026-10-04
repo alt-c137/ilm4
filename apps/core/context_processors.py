@@ -62,6 +62,13 @@ NS_TO_KEY = {
 }
 
 
+def _unread_chats(user, modules) -> int:
+    if user is None or not user.is_authenticated or not any(m.key == 'chat' for m in modules):
+        return 0
+    from apps.chat.services import unread_total
+    return unread_total(user)
+
+
 def site(request):
     from . import tabs
     settings_obj = SiteSettings.get_solo()
@@ -122,6 +129,8 @@ def site(request):
         'active_section': active_section,
         'menu_more_keys': [m.key for m in more],
         'site_tabs': tabs.site_tabs(user, {m.key for m in modules}, request.path, is_home),
+        'side_nav': tabs.side_nav(user, modules, request.path, is_home),
+        'unread_chats': _unread_chats(user, modules),
         'is_home': is_home,
         'is_dark': request.COOKIES.get('ilm4_dark') == '1',
         # кнопка Google — только когда ключи заданы (иначе она вела обратно на вход и путала)

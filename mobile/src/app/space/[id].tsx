@@ -3,7 +3,6 @@ import { useCallback, useState } from 'react';
 import { Alert, Pressable, Share, TextInput, View } from 'react-native';
 
 import { api, ApiError } from '@/lib/api';
-import { openSiteUrl } from '@/lib/links';
 import { useApp } from '@/state/app';
 import { Avatar, Badge, Button, Card, ErrorBox, Icon, Loading, Screen, Section, Sheet, Txt, type IconName, type SheetItem } from '@/ui/kit';
 import { useFetch } from '@/ui/useFetch';
@@ -77,7 +76,7 @@ export default function SpaceScreen() {
               {g.title ? <Txt kind="label" style={{ marginTop: 8, marginBottom: 2 }}>{g.title}</Txt> : null}
               {g.channels.map((ch) => (
                 <Pressable key={`${ch.kind}${ch.id}`} disabled={!me}
-                  onPress={() => (ch.kind === 'voice' ? openSiteUrl(`${data.web}voice/${ch.id}/`) : router.push(`/chat/${ch.id}`))}
+                  onPress={() => (ch.kind === 'voice' ? router.push({ pathname: '/space/voice/[id]', params: { id: String(ch.id), title: ch.title, web: `${data.web}voice/${ch.id}/` } }) : router.push(`/chat/${ch.id}`))}
                   onLongPress={can('manage_channels') ? () => sure(t('Удалить канал вместе с перепиской?'), { action: 'drop_channel', [ch.kind === 'voice' ? 'voice' : 'thread']: ch.id }) : undefined}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10 }}>
                   <Icon name={ch.private ? 'lock-closed-outline' : CH_ICON[ch.kind]} size={19} color={ch.unread ? c.ink : c.inkSoft} />
@@ -97,7 +96,7 @@ export default function SpaceScreen() {
               style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <Icon name="at" size={20} color={c.accent} />
               <View style={{ flex: 1 }}><Txt style={{ fontWeight: '700' }}>{me.nick || user?.name}</Txt><Txt kind="small">{t('Мой ник здесь')}</Txt></View>
-              <Icon name="create-outline" size={18} color={c.inkSoft} />
+              <Icon name="pencil-outline" size={18} color={c.inkSoft} />
             </Card>
           </Section>
           <Section title={t('Участники')}>
@@ -125,13 +124,14 @@ export default function SpaceScreen() {
           { icon: 'folder-open-outline' as const, title: t('Новая категория'), onPress: () => setTimeout(() => setAsk({ title: t('Новая категория'), hint: t('например: Учёба'), value: '', body: (v) => ({ action: 'category', title: v }) }), 300) },
         ] : []),
         ...(can('manage_roles') ? [
-          { icon: 'pricetag-outline' as const, title: t('Новая роль'), onPress: () => setTimeout(() => setAsk({ title: t('Новая роль'), hint: t('Цвет, права и закрытые каналы настраиваются на сайте — «Управление сообществом».'), value: '', body: (v) => ({ action: 'role_save', name: v }) }), 300) },
+        ] : []),
+        ...(can('manage_space') || can('manage_roles') || can('manage_channels') || can('kick') ? [
+          { icon: 'settings-outline' as const, title: t('Управление сообществом'), subtitle: t('Роли и права, закрытые каналы, приглашения, журнал'), onPress: () => router.push(`/space/manage/${id}`) },
         ] : []),
         ...(can('manage_space') ? [
           { icon: 'link-outline' as const, title: t('Ссылка-приглашение'), onPress: () => { Share.share({ message: data.invite }); } },
-          { icon: 'create-outline' as const, title: t('Изменить название'), onPress: () => setTimeout(() => setAsk({ title: t('Название'), hint: '', value: data.title, body: (v) => ({ action: 'update', title: v }) }), 300) },
+          { icon: 'pencil-outline' as const, title: t('Изменить название'), onPress: () => setTimeout(() => setAsk({ title: t('Название'), hint: '', value: data.title, body: (v) => ({ action: 'update', title: v }) }), 300) },
           { icon: (data.public ? 'lock-closed-outline' : 'earth-outline') as IconName, title: data.public ? t('Сделать закрытым') : t('Сделать открытым'), onPress: () => act({ action: 'update', is_public: !data.public }) },
-          { icon: 'settings-outline' as const, title: t('Управление сообществом'), subtitle: t('Роли, права, закрытые каналы, приглашения со сроком, журнал'), onPress: () => openSiteUrl(data.web) },
         ] : []),
         { icon: 'exit-outline', danger: true, title: t('Выйти из сообщества'), onPress: () => sure(t('Выйти из сообщества?'), { action: 'leave' }) },
         ...(me?.role === 'owner' ? [{ icon: 'trash-outline' as const, danger: true, title: t('Удалить сообщество'),

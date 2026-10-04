@@ -49,8 +49,9 @@ def feed(request):
     if request.user.is_authenticated:                       # боковая колонка на ПК: я, сохранённое, мои сообщества
         from apps.chat import spaces
         side = {'counts': services.counts(request.user, request.user), 'spaces': spaces.mine(request.user)[:6] if spaces.enabled() else []}
+    from apps.core import ads
     return render(request, 'social/feed.html', {
-        'side': side,
+        'side': side, 'ad': ads.pick('feed') if len(data['items']) >= 3 else None,
         'tab': tab, 'items': data['items'], 'next': data['next'], 'stories': stories,
         'stories_on': services.module_on('stories'), 'active_section': 'feed',
         'me_hue': request.user.pk % 7 if request.user.is_authenticated else 0})
@@ -164,10 +165,23 @@ def comment_delete(request, pk):
 def follow(request, user_id):
     author = get_object_or_404(User, pk=user_id, is_active=True)
     try:
-        on = services.follow(request.user, author, request.POST.get('on', '1') == '1')
+        services.follow(request.user, author, request.POST.get('on', '1') == '1')
     except SocialError as exc:
         return _fail(request, exc)
-    return JsonResponse({'following': on, **services.counts(author, request.user)}) if _ajax(request) else _back(request)
+    state = services.follow_state(request.user, author)
+    return JsonResponse({'following': state == 'on', 'requested': state == 'requested',
+                         **services.counts(author, request.user)}) if _ajax(request) else _back(request)
+
+
+@login_required
+def requests_view(request):
+    """Заявки в подписчики закрытого профиля: одобрить или отклонить."""
+    if request.method == 'POST':
+        uid = request.POST.get('user', '')
+        if uid.isdigit():
+            services.answer_request(request.user, int(uid), request.POST.get('ok') == '1')
+        return redirect('social:requests')
+    return render(request, 'social/requests.html', {'people': services.follow_requests(request.user), 'active_section': 'feed'})
 
 
 @login_required

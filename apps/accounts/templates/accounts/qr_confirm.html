@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load i18n icons %}
+{% block title %}{% translate "Вход по QR-коду —" %} {{ block.super }}{% endblock %}
+{% block body_class %}page-tp{% endblock %}
+{% block content %}
+<div class="tp qrc">
+  {% if done %}
+  <div class="tg__empty"><div class="empty__plug">{% ico 'check' %}</div><b>{% translate "Готово" %}</b><span>{% translate "На том устройстве сейчас откроется ваш аккаунт. Завершить его сеанс можно в Настройках → «Устройства»." %}</span>
+    <a class="btn btn--p" href="{% url 'accounts:devices' %}">{% translate "Устройства" %}</a></div>
+  {% elif not info or info.uid %}
+  <div class="tg__empty"><div class="empty__plug">{% ico 'clock' %}</div><b>{% translate "Код устарел" %}</b><span>{% translate "QR-код действует 3 минуты и срабатывает один раз. Обновите страницу входа на компьютере и отсканируйте новый." %}</span></div>
+  {% else %}
+  <header class="tp__bar"><h1>{% translate "Войти на новом устройстве?" %}</h1></header>
+  <section class="tp__card"><div class="tp__row acc__row">
+    <span class="tava tava--sm tava--h4">{% ico 'monitor' %}</span>
+    <span><b>{{ info.ua }}</b><small>{% if info.ip %}IP {{ info.ip }}{% endif %}</small></span>
+  </div></section>
+  <p class="tp__note">{% blocktranslate with name=user.get_display_name %}Это устройство получит полный доступ к аккаунту «{{ name }}»: чатам, профилю, кошельку.{% endblocktranslate %}</p>
+  <p class="tp__note qrc__warn">{% ico 'info' %} {% translate "Подтверждайте, только если вы сами сейчас открыли страницу входа ilm4 на своём компьютере. Если код вам прислали или показали другие люди — нажмите «Отмена»: так крадут аккаунты." %}</p>
+  <form method="post" class="qrc__act">{% csrf_token %}
+    <button type="submit" name="ok" value="1" class="btn btn--p">{% translate "Да, войти" %}</button>
+    <button type="submit" name="ok" value="0" class="btn btn--g">{% translate "Отмена" %}</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

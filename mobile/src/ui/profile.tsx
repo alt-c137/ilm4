@@ -97,8 +97,8 @@ function InfoRow({ icon, value, label, onPress, first, accent }: { icon: IconNam
 }
 
 /** Карточка сведений. mine — свой профиль: рядом с подписью видно, кому это показывается. */
-export function ProfileInfo({ phone, handle, bio, city, links, joined, mine, phonePrivacy, onSetHandle }: {
-  phone?: string; handle?: string; bio?: string; city?: string; links?: SocialLink[]; joined?: string; mine?: boolean;
+export function ProfileInfo({ phone, handle, bio, city, links, linksView, joined, mine, phonePrivacy, onSetHandle }: {
+  phone?: string; handle?: string; bio?: string; city?: string; links?: SocialLink[]; linksView?: string; joined?: string; mine?: boolean;
   phonePrivacy?: Privacy; onSetHandle?: () => void;
 }) {
   const { c, t, dark } = useApp();
@@ -115,10 +115,28 @@ export function ProfileInfo({ phone, handle, bio, city, links, joined, mine, pho
   else if (mine && onSetHandle) add('handle', (f) => <InfoRow first={f} accent icon="at-outline" value={t('Задать имя пользователя')} label={t('Чтобы вас находили в поиске и писали вам, не зная номера')} onPress={onSetHandle} />);
   if (bio) add('bio', (f) => <InfoRow first={f} icon="information-circle-outline" value={bio} label={t('О себе')} />);
   if (city) add('city', (f) => <InfoRow first={f} icon="location-outline" value={city} label={t('Город')} />);
-  (links ?? []).forEach((l, i) => add(`l${i}`, (f) => (
-    <InfoRow first={f} icon={SOCIAL_BY[l.kind]?.icon ?? 'link-outline'} value={l.value} label={(l.title || SOCIAL_BY[l.kind]?.name || '') + who(l.privacy)}
-      onPress={() => (l.url ? Linking.openURL(l.url).catch(() => copy(l.value)) : copy(l.value))} />
-  )));
+  const openLink = (l: SocialLink) => (l.url ? Linking.openURL(l.url).catch(() => copy(l.value)) : copy(l.value));
+  if (linksView === 'icons' && links?.length) {
+    // много ссылок не растягивают профиль: значки сетей в ряд, нажатие открывает, долгое — копирует
+    add('links', (f) => (
+      <View style={{ paddingVertical: 12, paddingHorizontal: 16, gap: 8, borderTopWidth: f ? 0 : 0.5, borderTopColor: c.line }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+          {links.map((l, i) => (
+            <Pressable key={i} onPress={() => openLink(l)} onLongPress={() => copy(l.show || l.value)} accessibilityLabel={`${l.title}: ${l.show || l.value}`}
+              style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: c.card2, alignItems: 'center', justifyContent: 'center', opacity: l.privacy === 'nobody' ? 0.45 : 1 }}>
+              <Icon name={SOCIAL_BY[l.kind]?.icon ?? 'link-outline'} size={21} color={c.accent} />
+            </Pressable>
+          ))}
+        </View>
+        <Txt kind="small">{t('Соцсети и ссылки')}</Txt>
+      </View>
+    ));
+  } else {
+    (links ?? []).forEach((l, i) => add(`l${i}`, (f) => (
+      <InfoRow first={f} icon={SOCIAL_BY[l.kind]?.icon ?? 'link-outline'} value={l.show || l.value} label={(l.title || SOCIAL_BY[l.kind]?.name || '') + who(l.privacy)}
+        onPress={() => openLink(l)} />
+    )));
+  }
   if (joined) add('joined', (f) => <InfoRow first={f} icon="calendar-outline" value={joined} label={t('на ilm4 с')} />);
   if (!rows.length) return null;
   return (

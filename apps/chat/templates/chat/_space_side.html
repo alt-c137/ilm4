@@ -6,7 +6,7 @@
     <a class="sp__railbtn" href="{% url 'spaces:index' %}" title="{% translate 'Все сообщества' %}">{% ico 'compass' %}</a>
   </nav>
   <div class="sp__chans">
-    <a class="sp__title" href="{% url 'spaces:space' space_side.space.pk %}"><b>{{ space_side.space.title }}</b>{% ico 'settings' %}</a>
+    <a class="sp__title" href="{% url 'spaces:space' space_side.space.pk %}?s=overview"><b>{{ space_side.space.title }}</b>{% ico 'settings' %}</a>
     <a class="sp__ch sp__ch--tool" href="{% url 'spaces:board' space_side.space.pk %}">{% ico 'kanban' %}<b>{% translate "Доска задач" %}</b></a>
     {% include 'chat/_space_channels.html' with groups=space_side.groups me=space_side.me current=space_side.current space=space_side.space %}
   </div>

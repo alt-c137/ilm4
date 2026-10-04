@@ -16,7 +16,7 @@ class CoreConfig(AppConfig):
 
         register_block(key='hero', template='core/blocks/hero.html', order=10)
         # rates: курс валют переехал в инфопанель героя (v26), отдельной полосой больше не показываем
-        register_block(key='banner', template='core/blocks/banner.html', order=12)
+        register_block(key='banner', template='core/blocks/banner.html', order=27)
         register_block(key='modules', template='core/blocks/modules.html', order=20)
         register_block(key='basics', template='core/blocks/basics.html', order=25)
         register_block(key='support', template='core/blocks/support.html', order=90)

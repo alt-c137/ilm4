@@ -98,7 +98,7 @@ class VoiceConsumer(AsyncJsonWebsocketConsumer):
         m = spaces.membership(room.space, self.user)
         if m is None:
             return None
-        return {'id': self.user.pk, 'name': m.nick or self.user.get_display_name(), 'avatar': self.user.avatar.url if self.user.avatar else ''}
+        return {'id': self.user.pk, 'name': spaces.nick_of(room.space_id, self.user), 'avatar': spaces.avatar_of(self.user)}
 
     async def disconnect(self, code):
         if getattr(self, 'inside', False):

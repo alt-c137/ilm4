@@ -109,7 +109,7 @@ def user(request, pk):
         'verified': person.platform_verified, 'joined': person.date_joined.date().isoformat(),
         'presence': people.presence(person, me, close),
         'phone': people.phone_for(person, me, close),
-        'links': people.links_for(person, me, close),
+        'links': (shown := people.links_for(person, me, close)), 'links_view': people.links_view(person, len(shown)),
         'close': (not mine) and people.is_close(me, person),     # он у меня в близких друзьях
         'contact': (not mine) and people.is_contact(me, person),  # сохранён у меня в контактах
         'blocked': (not mine) and UserBlock.objects.filter(blocker=me, blocked=person).exists(),
@@ -163,7 +163,9 @@ def my_links(request):
         people.set_links(request.user, rows)
     except people.PeopleError as exc:
         raise ApiError(exc.message, exc.status) from exc
-    return {'links': people.links_for(request.user, request.user)}
+    people.set_links_view(request.user, str(request.data.get('view', '')))
+    rows = people.links_for(request.user, request.user)
+    return {'links': rows, 'links_view': people.links_view(request.user, len(rows)), 'links_mode': (request.user.ui or {}).get('links_view', 'auto')}
 
 
 @api(methods=('GET', 'POST'), auth=True, module='chat')

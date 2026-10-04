@@ -14,6 +14,35 @@
     <div><b>{{ mau }}</b><span>за 30 дней</span></div>
     <div><b>{{ users_total }}</b><span>всего аккаунтов</span></div>
     <div><b>{{ minutes_per_user_day }}</b><span>минут в день на человека</span></div>
+    <div><b>{{ stickiness }}%</b><span>«липкость»: из месячных заходят каждый день</span></div>
+    <div><b>{{ sleeping.n }}</b><span>не заходили {{ sleeping.days }} дней ({{ sleeping.rate }}%)</span></div>
+  </section>
+
+  <details class="tp__card tp__pad mx__help">
+    <summary><b>Что значат эти числа</b></summary>
+    <p><b>Были сегодня / за 7 / за 30 дней</b> — сколько разных людей заходило (в отчётах больших приложений это DAU, WAU, MAU).</p>
+    <p><b>«Липкость»</b> — «были сегодня» ÷ «за 30 дней». 20% и выше — приложением пользуются по привычке; у мессенджеров бывает 50%+.</p>
+    <p><b>Возвращаемость</b> (retention) — из тех, кто зарегистрировался, сколько вернулись на 1-й, 7-й и 30-й день. Главный показатель: растёт ли аудитория или «утекает».</p>
+    <p><b>Воронка новичков</b> — на каком шаге люди бросают: регистрация → номер → второй заход → первое сообщение → первая публикация.</p>
+    <p><b>Не заходили 14 дней</b> — «уснувшие»: были раньше и пропали (отток).</p>
+    <p><b>Охват раздела</b> — какая доля активных людей в него заходила. Раздел с охватом меньше 5% почти никому не нужен — или его не находят.</p>
+    <p>Имён и переписки здесь нет: считается только время по разделам.</p>
+  </details>
+
+  <h2 class="ppl__h">Воронка новичков за {{ days }} дней</h2>
+  <section class="tp__card tp__pad">
+    <table class="mx__tab"><tr><th>Шаг</th><th>Людей</th><th>Доля от зарегистрировавшихся</th></tr>
+      {% for f in funnel %}<tr><td>{{ f.name }}</td><td>{{ f.n }}</td><td>{% if f.rate is None %}—{% else %}<span class="mx__bar"><i style="width:{{ f.rate }}%"></i></span>{{ f.rate }}%{% endif %}</td></tr>{% endfor %}</table>
+    <p class="hint">Где самый большой обрыв — там и чинить в первую очередь.</p>
+  </section>
+
+  <h2 class="ppl__h">Что создают за {{ days }} дней</h2>
+  <section class="mx__tiles">
+    <div><b>{{ content.messages|default:0 }}</b><span>сообщений</span></div>
+    <div><b>{{ content.chats|default:0 }}</b><span>новых чатов</span></div>
+    <div><b>{{ content.posts|default:0 }}</b><span>записей в ленте</span></div>
+    <div><b>{{ content.comments|default:0 }}</b><span>комментариев</span></div>
+    <div><b>{{ content.listings|default:0 }}</b><span>объявлений</span></div>
   </section>
 
   <h2 class="ppl__h">Возвращаются ли</h2>

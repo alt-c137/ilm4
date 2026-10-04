@@ -1,1 +1,1 @@
-{% for x in items %}{% include 'social/_item.html' %}{% endfor %}
+{% for x in items %}{% include 'social/_item.html' %}{% if ad and forloop.counter == 3 %}{% include 'includes/ad.html' with kind='card' %}{% endif %}{% endfor %}

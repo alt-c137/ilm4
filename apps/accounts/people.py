@@ -92,6 +92,90 @@ def can_see_counts(owner, viewer=None) -> bool:
     return _allowed(owner.counts_privacy, bool(getattr(viewer, 'pk', None)) and is_close(owner, viewer))
 
 
+# ---------- профили разделов («маски») ----------
+
+BOARD, SPACES = 'board', 'spaces'
+_NO_PERSONA = '-'
+
+
+def persona_of(user, section: str):
+    """Маска человека в разделе или None. Из кеша — спрашивают на каждую карточку и сообщение."""
+    from .models import Persona
+    if user is None or not getattr(user, 'pk', None):
+        return None
+    key = f'persona:{user.pk}:{section}'
+    row = cache.get(key)
+    if row is None:
+        p = Persona.objects.filter(user=user, section=section).first()
+        row = {'name': p.name, 'avatar': p.avatar.url if p.avatar else '', 'link_main': p.link_main} if p else _NO_PERSONA
+        cache.set(key, row, 3600)
+    return None if row == _NO_PERSONA else row
+
+
+def face(user, section: str = BOARD) -> dict:
+    """Как показать человека в разделе: имя, аватар и можно ли вести в основной профиль.
+    Без маски — обычный профиль. С маской — её имя и аватар; ссылка на основной профиль только если человек её оставил."""
+    from django.urls import reverse
+    if user is None:
+        return {'name': str(_('Удалённый аккаунт')), 'avatar': '', 'link': '', 'id': None, 'masked': False, 'verified': False}
+    p = persona_of(user, section)
+    if p is None:
+        return {'name': user.get_display_name(), 'avatar': user.avatar.url if user.avatar else '',
+                'link': reverse('accounts:public', args=[user.pk]), 'id': user.pk, 'masked': False,
+                'verified': user.platform_verified}
+    open_ = p['link_main']
+    return {'name': p['name'], 'avatar': p['avatar'], 'link': reverse('accounts:public', args=[user.pk]) if open_ else '',
+            'id': user.pk if open_ else None, 'masked': True, 'verified': user.platform_verified and open_}
+
+
+def personas(user) -> dict:
+    """Маски человека для экрана «Мои профили»: {раздел: {'name', 'avatar', 'link_main'} | None}."""
+    return {BOARD: persona_of(user, BOARD), SPACES: persona_of(user, SPACES)}
+
+
+def save_persona(user, section: str, name: str, link_main: bool = True, avatar=None, clear_avatar: bool = False):
+    """Создать или изменить маску. Одна на раздел; пустое имя — убрать маску (вернуться к основному профилю)."""
+    from apps.core.uploads import clean_image
+
+    from .models import Persona
+    if section not in (BOARD, SPACES):
+        raise PeopleError(_('Такого раздела нет.'), 404)
+    name = ' '.join((name or '').split())[:40]
+    if not name:
+        delete_persona(user, section)
+        return None
+    if len(name) < 2:
+        raise PeopleError(_('Имя слишком короткое — от 2 знаков.'))
+    low = name.casefold()
+    if not user.is_staff and any(x in low for x in ('ilm4', 'админ', 'admin', 'поддержк', 'support', 'модератор', 'moderator')):
+        raise PeopleError(_('Это имя могут принять за сотрудника ilm4 — выберите другое.'))
+    p, _created = Persona.objects.get_or_create(user=user, section=section, defaults={'name': name})
+    p.name, p.link_main = name, bool(link_main)
+    if clear_avatar and p.avatar:
+        p.avatar.delete(save=False)
+        p.avatar = ''
+    if avatar:
+        try:
+            cleaned = clean_image(avatar)
+        except Exception as exc:
+            raise PeopleError(' '.join(getattr(exc, 'messages', [str(exc)]))) from exc
+        if p.avatar:
+            p.avatar.delete(save=False)
+        p.avatar = cleaned
+    p.save()
+    cache.delete(f'persona:{user.pk}:{section}')
+    return p
+
+
+def delete_persona(user, section: str) -> None:
+    from .models import Persona
+    for p in Persona.objects.filter(user=user, section=section):
+        if p.avatar:
+            p.avatar.delete(save=False)
+        p.delete()
+    cache.delete(f'persona:{user.pk}:{section}')
+
+
 def forward_link(owner, viewer=None) -> bool:
     """Показывать ли ссылку на профиль в «Переслано от …» (иначе — только имя, как в Telegram)."""
     return owner.forward_privacy == User.ALL
@@ -279,6 +363,39 @@ def link_url(kind: str, value: str) -> str:
     return SOCIAL[kind][0].format(value) if kind in SOCIAL else ''
 
 
+AT_KINDS = {'telegram', 'instagram', 'tiktok', 'x', 'github', 'threads', 'youtube'}      # где принято писать @имя
+LINKS_VIEWS = ('auto', 'icons', 'list')
+
+
+def link_show(kind: str, value: str) -> str:
+    """Как показать ссылку в профиле: имя в сетях с никами — с «@»; адрес сайта — без «https://»."""
+    v = (value or '').strip()
+    low = v.lower()
+    if low.startswith(('http://', 'https://')):
+        return v.split('://', 1)[1].rstrip('/')
+    if kind in AT_KINDS and v and not v.startswith('@') and ' ' not in v and '/' not in v:
+        return '@' + v
+    return v
+
+
+def links_view(person, count: int) -> str:
+    """Вид ссылок в профиле: 'icons' — значками в ряд, 'list' — строками. Человек выбирает сам; «авто» — значками, если ссылок больше двух."""
+    mode = (getattr(person, 'ui', None) or {}).get('links_view', 'auto')
+    if mode in ('icons', 'list'):
+        return mode
+    return 'icons' if count > 2 else 'list'
+
+
+def set_links_view(user, mode: str) -> None:
+    if mode not in LINKS_VIEWS:
+        return
+    ui = dict(user.ui or {})
+    if ui.get('links_view', 'auto') != mode:
+        ui['links_view'] = mode
+        user.ui = ui
+        user.save(update_fields=['ui'])
+
+
 def set_links(user, rows) -> None:
     """Заменить соцсети целиком: rows = [{'kind', 'value', 'privacy'}, …]."""
     levels = dict(User.PRIVACY)
@@ -303,7 +420,7 @@ def links_for(person, viewer, close=None) -> list:
     for x in rows:
         if me or _allowed(x.privacy, close):
             item = {'kind': x.kind, 'title': str(_KINDS.get(x.kind, x.kind)), 'value': x.value,
-                    'url': link_url(x.kind, x.value)}
+                    'show': link_show(x.kind, x.value), 'url': link_url(x.kind, x.value)}
             if me:
                 item['privacy'] = x.privacy
             out.append(item)
@@ -363,6 +480,30 @@ def saved_contacts(viewer) -> list:
     return out
 
 
+def alias_map(viewer) -> dict:
+    """Имена, под которыми человек записал свои контакты: {id человека: имя}. Как в Telegram — в чатах видно «как записал я»."""
+    from .models import Contact
+    if not getattr(viewer, 'pk', None):
+        return {}
+    key = f'contacts:alias:{viewer.pk}'
+    out = cache.get(key)
+    if out is None:
+        out = {}
+        for friend_id, first, last in Contact.objects.filter(owner=viewer).values_list('friend_id', 'first_name', 'last_name'):
+            name = ' '.join(x for x in (first, last) if x)
+            if name:
+                out[friend_id] = name
+        cache.set(key, out, 600)
+    return out
+
+
+def shown_name(person, viewer=None) -> str:
+    """Имя человека для этого зрителя: как он записан в его контактах, иначе — имя из профиля."""
+    if person is None:
+        return str(_('Удалённый аккаунт'))
+    return alias_map(viewer).get(person.pk) or person.get_display_name()
+
+
 def is_contact(viewer, person) -> bool:
     from .models import Contact
     return bool(getattr(viewer, 'pk', None)) and Contact.objects.filter(owner=viewer, friend=person).exists()
@@ -388,12 +529,14 @@ def add_contact(viewer, phone: str = '', person=None, first_name: str = '', last
         raise PeopleError(_('Слишком много контактов.'), 409)
     contact, _new = Contact.objects.update_or_create(owner=viewer, friend=person, defaults={
         'first_name': ' '.join((first_name or '').split())[:60], 'last_name': ' '.join((last_name or '').split())[:60]})
+    cache.delete(f'contacts:alias:{viewer.pk}')
     return contact
 
 
 def remove_contact(viewer, person) -> None:
     from .models import Contact
     Contact.objects.filter(owner=viewer, friend=person).delete()
+    cache.delete(f'contacts:alias:{viewer.pk}')
 
 
 def search(viewer, q: str, limit: int = 20) -> list:

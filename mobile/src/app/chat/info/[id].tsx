@@ -80,7 +80,7 @@ export default function RoomInfo() {
     { icon: 'chatbubble', label: t('Чат'), onPress: () => router.push(`/chat/${id}`) },
     { icon: data.muted ? 'notifications-off' : 'notifications', label: data.muted ? t('Без звука') : t('Звук'), off: data.muted, onPress: () => act(data.muted ? 'unmute' : 'mute') },
     ...(link ? [{ icon: 'share-social' as const, label: t('Ссылка'), onPress: () => { Share.share({ message: `${data.title}\n${link}` }); } }] : []),
-    ...(data.admin ? [{ icon: 'create' as const, label: t('Изменить'), onPress: startEdit }] : []),
+    ...(data.admin ? [{ icon: 'pencil' as const, label: t('Изменить'), onPress: startEdit }] : []),
   ];
   // редкое и опасное — в меню «⋮», как в Telegram, а не большой кнопкой внизу
   const items: SheetItem[] = [

@@ -13,9 +13,10 @@ def test_home(client):
     response = client.get('/')
     assert response.status_code == 200
     html = response.content.decode()
-    assert 'app__ic' in html        # витрина — ряд иконок-приложений
-    assert 'скоро' in html          # не включённые разделы помечены
-    assert 'Время намаза' in html   # модуль из сидинга присутствует
+    assert 'id="showcase"' in html       # главная по умолчанию — «Витрина»: каждый сервис живой плиткой
+    assert 'Время намаза' in html        # модуль из сидинга присутствует
+    brief = client.get('/?view=brief').content.decode()
+    assert 'app__ic' in brief and 'Что есть в ilm4' in brief     # второй вид — «Сводка»: разделы по смыслу с подписями
 
 
 def test_active_nav_pill(client):

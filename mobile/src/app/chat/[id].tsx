@@ -18,7 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { api, authHeaders, cachedGet, chatFileUrl, wsUrl } from '@/lib/api';
 import { useApp } from '@/state/app';
-import { Avatar, Button, Icon, OfflineBar, Sheet, Txt, type SheetItem } from '@/ui/kit';
+import { AdCard, Avatar, Button, Icon, OfflineBar, Sheet, Txt, type AdData, type SheetItem } from '@/ui/kit';
 import { callsSupported } from '@/lib/webrtc';
 import { setOpenThread } from '@/state/calls';
 import { CallView, type CallHandle } from '@/ui/call';
@@ -41,7 +41,7 @@ type Thread = { id: number; title: string; subject: string; other_id: number | n
   witnesses: string[]; features: Record<string, any>; card: CtxCard | null; notice: string; warn_text: string;
   room: Room | null; presence?: Presence | null; verified?: boolean;
   saved?: boolean; muted?: boolean; pins?: Msg[]; draft?: string; can_pin?: boolean; member?: boolean; protected?: boolean;
-  reactions?: string[]; comments?: boolean; edit_hours?: number };
+  reactions?: string[]; comments?: boolean; edit_hours?: number; support?: '' | 'call' | 'drop' };
 type Typer = { name: string; what: string };
 type Found = { id: number; name: string; text: string };
 
@@ -65,6 +65,7 @@ export default function ChatScreen() {
   const list = useRef<FlatList<Msg>>(null);
   const scrolledUp = useRef(false);
   const [thread, setThread] = useState<Thread | null>(null);
+  const [ad, setAd] = useState<AdData | null>(null);        // реклама — только в открытых каналах, внизу ленты
   const [more, setMore] = useState(false);
   const [moreAfter, setMoreAfter] = useState(false);     // открыто «окно» в прошлом — ниже есть ещё сообщения
   const windowed = useRef(false);
@@ -117,8 +118,9 @@ export default function ChatScreen() {
     });
   }, [norm, user?.id]);
 
-  const apply = useCallback((data: { items: Msg[]; thread?: Thread; more: boolean; more_after?: boolean }) => {
+  const apply = useCallback((data: { items: Msg[]; thread?: Thread; more: boolean; more_after?: boolean; ad?: AdData | null }) => {
     if (!initial.current) initial.current = new Set(data.items.map((m: Msg) => m.id));
+    if (data.ad !== undefined) setAd(data.ad);
     setItems(data.items.map(norm));
     setMore(data.more);
     setMoreAfter(!!data.more_after);
@@ -534,9 +536,10 @@ export default function ChatScreen() {
   const typingText = who.length
     ? `${thread?.room ? who.slice(0, 2).map((x) => x.name).join(', ') + ' ' : ''}${who[0].what === 'voice' ? t('записывает голосовое') : who[0].what === 'circle' ? t('записывает кружок') : t('печатает')}…`
     : '';
-  const stateAct = async (action: 'mute' | 'unmute' | 'clear' | 'hide') => {
+  const stateAct = async (action: 'mute' | 'unmute' | 'clear' | 'hide' | 'support_call' | 'support_drop') => {
     try {
       await api(`/chat/${id}/state/${action}/`, { body: {} });
+      if (action === 'support_call' || action === 'support_drop') return setThread((th) => (th ? { ...th, support: action === 'support_call' ? 'drop' : 'call' } : th));
       if (action === 'hide') return router.canGoBack() ? router.back() : router.replace('/chats');
       if (action === 'clear') { setItems([]); setPins([]); }
       setThread((th) => (th ? { ...th, muted: action === 'mute' ? true : action === 'unmute' ? false : th.muted } : th));
@@ -670,6 +673,7 @@ export default function ChatScreen() {
             ref={list}
             inverted
             data={data}
+            ListHeaderComponent={ad ? <AdCard ad={ad} onOpen={openSiteUrl} style={{ borderRadius: 18, marginHorizontal: 12, marginVertical: 8 }} /> : null}
             keyExtractor={(m) => String(m.id)}
             onEndReached={older}
             onEndReachedThreshold={0.4}
@@ -809,6 +813,10 @@ export default function ChatScreen() {
         ...(f.video_calls && !thread?.blocked && Platform.OS !== 'web' ? [{ icon: 'videocam-outline' as const, title: t('Видеозвонок'), onPress: () => startCall(true) }] : []),
         ...(!thread?.saved ? [{ icon: thread?.muted ? 'notifications-outline' as const : 'notifications-off-outline' as const,
           title: thread?.muted ? t('Включить звук') : t('Без звука'), onPress: () => stateAct(thread?.muted ? 'unmute' : 'mute') }] : []),
+        ...(thread?.support === 'call' ? [{ icon: 'shield-checkmark-outline' as const, title: t('Позвать поддержку'), subtitle: t('Она увидит сообщения, написанные после этого'),
+          onPress: () => Alert.alert(t('Позвать поддержку ilm4 в этот чат?'), t('Она увидит сообщения, написанные после этого.'), [
+            { text: t('Отмена'), style: 'cancel' }, { text: t('Позвать'), onPress: () => stateAct('support_call') }]) }] : []),
+        ...(thread?.support === 'drop' ? [{ icon: 'shield-outline' as const, title: t('Отключить поддержку'), onPress: () => stateAct('support_drop') }] : []),
         { icon: 'image-outline', title: t('Фон чата'), onPress: () => router.push('/chat-look') },
         ...(!thread?.room || thread.room.member ? [{ icon: 'brush-outline' as const, title: t('Очистить историю'), subtitle: t('Сообщения пропадут только у вас'),
           onPress: () => Alert.alert(t('Очистить историю?'), t('Сообщения пропадут только у вас.'), [

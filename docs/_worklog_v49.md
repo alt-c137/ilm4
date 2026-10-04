@@ -92,3 +92,36 @@
 - Переводы 100% (сайт 3060, приложение 1010). pytest: 373 passed, 1 skipped. Ничего не закоммичено.
 - Что осталось — ПЛАН.md, раздел «G».
 
+## v52 (4 октября 2026) — замечания с телефона и ПК: структура, главная, маски
+- Android: вложенный <Text> с color:'transparent' рисуется цветом родителя (0 = «цвет не задан») → распорка под время в bubble.tsx
+  теперь rgba(127,127,127,0.01). Иконка create-outline → pencil-outline.
+- Приложение: (tabs)/me.tsx — «моё» + одна строка «Настройки»; settings.tsx — блоки SetGroup/SetRow (ui/kit), язык/тема/валюта через Sheet;
+  account-delete.tsx; personas.tsx; follow-requests.tsx; feed/saved.tsx (+ Feed saved, toast/ToastHost в kit); ui/intro.tsx (первый запуск,
+  флаг intro_seen); главная — NowTile + разделы по группам; space/manage/[id].tsx; space/voice/[id].tsx (WebRTC mesh, только сборка);
+  трекер — одна кнопка «Добавить»; помощник — график недели.
+- Сайт: static/css/shell.css (подключён последним) — маска шапки, боковое меню .side на ≥1100px, page-chat во весь экран, главная
+  (.mynow, .hgroups), поиск (.srch), сообщество по разделам (.spx). base.html — <aside class="side">; tabs.side_nav(); core.views.search;
+  блоки главной hero.html / modules.html переписаны; баннер маркета опущен ниже (order 27). ВНИМАНИЕ: класс .pillars уже занят в features.css.
+- Маски: accounts.Persona (0019), people.face/persona_of/save_persona; persona.mask для buy/jobs/services; чат по объявлению без user=;
+  жалоба и сделка из чата под маской — по номеру чата.
+- Закрытый профиль: User.is_private, social.Follow.approved (social 0003), follow_state/requests.
+- Статистика: stickiness, funnel(), sleeping(), content(); пояснения на странице.
+- Политика конфиденциальности переписана (учёт времени, шифрование на сервере).
+- Демо-сервер кеширует шаблоны (--noreload): после правки шаблона перезапускать, иначе на снимке старая вёрстка.
+- Миграции применены к настоящей базе (копия: backups/db_2026-10-04_before_v52.sqlite3). pytest: 379 passed. Ничего не закоммичено.
+- Что осталось — ПЛАН.md, конец раздела «v52».
+
+## v53 (4 октября 2026, вечер) — пропавшие чаты, безопасность, «Витрина», реклама
+- БАГ: chatlist.js брал перечень чатов из вкладки «Все», а вкладок нет, когда у человека нет папок (v50) → список пуст.
+  Воспроизведено на копии настоящей базы (scratchpad/real_copy.sqlite3, restart2.sh). Урок: проверять экраны на аккаунте БЕЗ папок.
+- Фото: у img max-width в процентах не ограничивает «естественную» ширину пузыря → справа пустая полоса. Теперь max-width числом
+  (min(480px, 72cqi), лента сообщений — контейнер), пузырь width:min-content.
+- accounts/twofa.py, devices.py (DeviceSession — миграция 0020), QR-вход (кеш, привязка к сессии браузера), middleware для всех с 2FA,
+  OtpGate для WebSocket, API: otp при входе, /auth/sessions/, /auth/qr/<token>/. Приложение: devices.tsx (сканер expo-camera), код в login.tsx.
+- finder: top_people / recent / remember; сайт — панель при фокусе поиска, приложение — то же.
+- Ссылки профиля: _links.html (значки сетей, «@», вид icons | list, User.ui['links_view']).
+- core/showcase.py + blocks/showcase.html + ui/showcase.tsx — «Витрина» (по умолчанию), ?view=brief — «Сводка»; arrange() — порядок и скрытие плиток.
+- Боковое меню: кнопки убрать / показать (localStorage ilm4.side).
+- core.Ad (миграция core 0042), ads.py, includes/ad.html; каналы, лента, витрина; AdCard в приложении.
+- services.call_support / drop_support; spaces.avatar_of (маска сообществ); звонки в «Избранном» выключены.
+- Миграции применены к настоящей базе (копия backups/db_2026-10-04_before_v53.sqlite3). pytest: 391 passed. v52 и v53 не закоммичены.

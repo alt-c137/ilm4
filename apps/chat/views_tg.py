@@ -66,6 +66,10 @@ def state(request, pk, action):
             services.clear_history(thread, user)
         elif action == 'hide':
             services.hide_chat(thread, user)
+        elif action == 'support_call':
+            services.call_support(thread, user)
+        elif action == 'support_drop':
+            services.drop_support(thread, user)
         elif action in ('folder_add', 'folder_remove') and folder is not None:
             services.set_folder_chat(user, folder.pk, thread, action == 'folder_add')
         else:
@@ -243,20 +247,50 @@ def find(request):
     """Единый поиск из строки над чатами: люди, каналы и группы, сообщества, сообщения (JSON)."""
     from django.urls import reverse
 
+    from apps.accounts import people as ppl
+
     from . import finder
     from .views_rooms import pic
     from .views_spaces import space_pic
-    data = finder.find(request.user, request.GET.get('q', ''))
 
     def face(p):
         return {'url': p['url'], 'letter': p['letter'], 'hue': p['hue']}
+
+    def user_face(u):
+        return {'url': u.avatar.url if u.avatar else '', 'letter': (u.get_display_name() or '?')[:1].upper(), 'hue': u.pk % 7}
+
+    if request.method == 'POST':                      # открыл что-то из поиска — запомнить в «Недавних»; clear — очистить
+        if request.POST.get('clear'):
+            finder.forget_recent(request.user)
+        else:
+            finder.remember(request.user, request.POST.get('kind', ''), request.POST.get('id'))
+        return JsonResponse({'ok': True})
+    if not request.GET.get('q', '').strip():
+        # ничего не набрано: «частые» (кому пишет чаще всего) и «недавние» (что открывал из поиска) — как в Telegram
+        top = [{'name': ppl.shown_name(o, request.user), 'href': reverse('chat:thread', args=[t.pk]), 'pic': user_face(o)}
+               for t, o in finder.top_people(request.user)]
+        rec = []
+        for kind, obj in finder.recent(request.user):
+            if kind == 'u':
+                rec.append({'name': ppl.shown_name(obj, request.user), 'sub': f'@{obj.handle}' if obj.handle else '',
+                            'href': f"{reverse('chat:start')}?user={obj.pk}", 'pic': user_face(obj), 'kind': 'u', 'id': obj.pk})
+            elif kind == 's':
+                rec.append({'name': obj.title, 'sub': str(_('сообщество')), 'href': reverse('spaces:space', args=[obj.pk]),
+                            'pic': face(space_pic(obj)), 'kind': 's', 'id': obj.pk})
+            else:
+                other = None if obj.is_room or obj.is_saved else obj.other_participant(request.user)
+                p = pic(obj, other, request.user)
+                rec.append({'name': p['name'], 'sub': str(_('канал')) if obj.is_channel else str(_('группа')) if obj.is_room else '',
+                            'href': reverse('chat:thread', args=[obj.pk]), 'pic': face(p), 'kind': 't', 'id': obj.pk})
+        return JsonResponse({'top': top, 'recent': rec})
+    data = finder.find(request.user, request.GET.get('q', ''))
     people_rows = [{'name': u.get_display_name(), 'sub': f'@{u.handle}' if u.handle else '', 'href': f"{reverse('chat:start')}?user={u.pk}",
-                    'pic': {'url': u.avatar.url if u.avatar else '', 'letter': (u.get_display_name() or '?')[:1].upper(), 'hue': u.pk % 7}}
+                    'pic': user_face(u), 'kind': 'u', 'id': u.pk}
                    for u in data['people']]
     room_rows = [{'name': t.title, 'sub': (str(_('канал')) if t.is_channel else str(_('группа'))) + f' · {t.members_count}',
-                  'href': reverse('chat:thread', args=[t.pk]), 'pic': face(pic(t)), 'verified': t.platform_verified} for t in data['rooms']]
+                  'href': reverse('chat:thread', args=[t.pk]), 'pic': face(pic(t)), 'verified': t.platform_verified, 'kind': 't', 'id': t.pk} for t in data['rooms']]
     space_rows = [{'name': s.title, 'sub': f"{_('сообщество')} · {s.members_count}", 'href': reverse('spaces:space', args=[s.pk]),
-                   'pic': face(space_pic(s)), 'verified': s.platform_verified} for s in data['spaces']]
+                   'pic': face(space_pic(s)), 'verified': s.platform_verified, 'kind': 's', 'id': s.pk} for s in data['spaces']]
     msg_rows = [{'name': m['title'] or str(_('Избранное')), 'sub': (m['who'] + ': ' if m['who'] else '') + m['text'], 'time': m['time'],
                  'href': f"{reverse('chat:thread', args=[m['thread']])}?at={m['id']}"} for m in data['messages']]
     return JsonResponse({'global': people_rows + room_rows + space_rows, 'messages': msg_rows})

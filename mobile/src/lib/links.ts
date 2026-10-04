@@ -34,6 +34,10 @@ export function openSiteUrl(url: string) {
   if (m) return router.push(`/news/${m[1]}`);
   m = path.match(/^\/(buy|jobs|map|health|migration|forum)\/(\d+)\/?$/);
   if (m) return router.push(`/pub/${PUB_PREFIX[m[1]]}/${m[2]}`);
+  m = path.match(/^\/communities\/(\d+)\/?/);                // сообщество
+  if (m) return router.push(`/space/${m[1]}`);
+  if (path.startsWith('/communities')) return router.push('/space');
+  if (path.startsWith('/feed')) return router.push('/tab-feed');
   if (path.startsWith('/wallet')) return router.push('/wallet');
   if (path.startsWith('/notifications')) return router.push('/notifications');
   return openWeb(path || '/');

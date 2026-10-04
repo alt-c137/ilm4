@@ -23,6 +23,7 @@ export default function Tracker() {
   const { c, t, user, tabs } = useApp();
   const [day, setDay] = useState(isoDay());
   const [more, setMore] = useState<Habit | null>(null);
+  const [add, setAdd] = useState(false);
   const [noteFor, setNoteFor] = useState<Habit | null>(null);
   const [note, setNote] = useState('');
   const { data, setData, loading, error, reload } = useFetch<Data>(user ? `/tracker/?day=${day}` : null);
@@ -74,7 +75,7 @@ export default function Tracker() {
       right={
         <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
           <Pressable onPress={() => router.push('/habits/stats')} hitSlop={8} accessibilityLabel={t('Графики')}><Icon name="bar-chart-outline" size={23} color={c.accent} /></Pressable>
-          <Pressable onPress={() => router.push('/habits/edit')} hitSlop={8} accessibilityLabel={t('Добавить')}><Icon name="add-circle" size={28} color={c.accent} /></Pressable>
+          <Pressable onPress={() => setAdd(true)} hitSlop={8} accessibilityLabel={t('Добавить')}><Icon name="add-circle" size={28} color={c.accent} /></Pressable>
         </View>}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
         <Pressable onPress={() => setDay(shift(day, -7))} hitSlop={8}><Icon name="chevron-back" size={20} color={c.inkSoft} /></Pressable>
@@ -117,16 +118,13 @@ export default function Tracker() {
       ) : (
         <Empty icon="checkmark-circle-outline" title={data.habits_total ? t('На этот день ничего не запланировано') : t('Начните с одной привычки')}
           text={t('Таблетки, вода, чтение, зарядка, слова на арабском — что угодно. Отмечайте каждый день и смотрите, как растёт серия.')}
-          action={<View style={{ gap: 8 }}>
-            <Button small title={t('Готовые привычки')} icon="star" onPress={() => router.push('/habits/templates')} />
-            <Button small kind="soft" title={t('Своя привычка')} icon="add" onPress={() => router.push('/habits/edit')} />
-          </View>} />
+          action={data.habits_total ? <Button small kind="soft" title={t('Добавить')} icon="add" onPress={() => setAdd(true)} /> : (
+            <View style={{ gap: 8 }}>
+              <Button small title={t('Выбрать из готовых')} icon="star" onPress={() => router.push('/habits/templates')} />
+              <Button small kind="soft" title={t('Своя привычка')} icon="add" onPress={() => router.push('/habits/edit')} />
+            </View>)} />
       )}
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        <Button small kind="soft" icon="add" title={t('Привычка')} style={{ flex: 1 }} onPress={() => router.push('/habits/edit')} />
-        <Button small kind="soft" icon="add" title={t('Дело на день')} style={{ flex: 1 }} onPress={() => router.push({ pathname: '/habits/edit', params: { once: day } })} />
-      </View>
-      <Button small kind="ghost" icon="star-outline" title={t('Готовые привычки: намаз, Коран, вода, таблетки…')} onPress={() => router.push('/habits/templates')} />
+      {items.length ? <Button small kind="soft" icon="add" title={t('Добавить')} onPress={() => setAdd(true)} /> : null}
 
       <Section title={t('Вместе')}>
         {(data?.boards ?? []).map((b) => (
@@ -153,10 +151,17 @@ export default function Tracker() {
           <Txt kind="small" style={{ flex: 1, fontSize: 12.5 }}>{t('Свои привычки видите только вы. В общем трекере участники видят отметки друг друга.')}</Txt>
         </View>
       </Section>
+      {/* одна кнопка «Добавить» — выбор, что именно */}
+      <Sheet open={add} onClose={() => setAdd(false)} title={t('Добавить')} items={[
+        { icon: 'repeat-outline', title: t('Привычка'), subtitle: t('Повторяется: каждый день или по дням недели'), onPress: () => router.push('/habits/edit') },
+        { icon: 'today-outline', title: t('Дело на день'), subtitle: t('Один раз — на выбранный день'), onPress: () => router.push({ pathname: '/habits/edit', params: { once: day } }) },
+        { icon: 'star-outline', title: t('Готовые привычки'), subtitle: t('Намаз, Коран, вода, таблетки…'), onPress: () => router.push('/habits/templates') },
+        { icon: 'people-outline', title: t('Общий трекер'), subtitle: t('С семьёй, друзьями, напарниками'), onPress: () => router.push('/habits/board-new') },
+      ]} />
       <Sheet open={!!more} onClose={() => setMore(null)} title={more ? more.title : ''} items={more ? [
         ...(canMark ? [{ icon: more.skipped ? 'refresh-outline' as const : 'bed-outline' as const, title: more.skipped ? t('Отменить пропуск') : t('Пропуск по уважительной причине'),
           subtitle: t('Болезнь, дорога — день не считается, серия не рвётся'), onPress: () => log(more, { skip: !more.skipped }) },
-          { icon: 'create-outline' as const, title: t('Заметка к этому дню'), subtitle: more.log_note || undefined,
+          { icon: 'pencil-outline' as const, title: t('Заметка к этому дню'), subtitle: more.log_note || undefined,
             onPress: () => { setNote(more.log_note ?? ''); setTimeout(() => setNoteFor(more), 300); } }] : []),
         { icon: 'calendar-outline', title: t('Календарь и история'), onPress: () => router.push(`/habits/${more.id}`) },
         ...(more.can_edit ? [{ icon: 'settings-outline' as const, title: t('Изменить'), onPress: () => edit(more) }] : []),

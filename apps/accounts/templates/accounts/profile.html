@@ -36,7 +36,7 @@
     {% else %}<a class="tp__row tp__row--todo" href="?s=edit">{% ico 'at' %}<span><b>{% translate "Задать имя пользователя" %}</b><small>{% translate "Чтобы вас находили в поиске и писали вам, не зная номера" %}</small></span></a>{% endif %}
     {% if me.bio %}<div class="tp__row">{% ico 'info' %}<span><b>{{ me.bio }}</b><small>{% translate "О себе" %}</small></span></div>{% endif %}
     {% if me.city %}<div class="tp__row">{% ico 'pin' %}<span><b>{{ me.city }}</b><small>{% translate "Город" %}</small></span></div>{% endif %}
-    {% for l in links %}<div class="tp__row">{% ico 'link' %}<span><b>{{ l.value }}</b><small>{{ l.title }} · {% if l.privacy == 'all' %}{% translate "видят все" %}{% elif l.privacy == 'close' %}{% translate "видят близкие друзья" %}{% else %}{% translate "скрыто ото всех" %}{% endif %}</small></span></div>{% endfor %}
+    {% include 'accounts/_links.html' with view=links_view %}
     <div class="tp__row">{% ico 'calendar' %}<span><b>{{ me.date_joined|date:"E Y"|lower }}</b><small>{% translate "на ilm4 с" %}</small></span></div>
   </section>
 
@@ -74,6 +74,8 @@
         <span class="hint">{% translate "По ссылке-приглашению вы вступаете сами — это ограничение только на добавление вас кем-то другим." %}</span></div>
       <div><label for="{{ form.counts_privacy.id_for_label }}">{{ form.counts_privacy.label }}</label>{{ form.counts_privacy }}
         <span class="hint">{% translate "«Никто» — в вашем профиле не будет чисел «записей / подписчиков / подписок». Вы сами их видите всегда." %}</span></div>
+      <label class="fcheck">{{ form.is_private }} {{ form.is_private.label }}</label>
+      <span class="hint">{% translate "Ваши записи и сторис увидят только подписчики, которых вы одобрили. Новая подписка приходит заявкой." %} <a class="link" href="{% url 'social:requests' %}">{% translate "Заявки в подписчики" %}</a></span>
       {% if close_friends %}
       <div><label>{% translate "Близкие друзья" %}</label>
         <div class="tp__chips">{% for f in close_friends %}<a class="chip" href="{% url 'accounts:public' f.pk %}">{{ f.get_display_name }}</a>{% endfor %}</div>
@@ -87,6 +89,12 @@
     <div class="tp__form">
       <span class="hint">{% translate "Instagram, Telegram, YouTube, GitHub, Discord — что хотите. Для каждой ссылки выберите, кто её видит." %}</span>
       {% if link_error %}<span class="err">{{ link_error }}</span>{% endif %}
+      <div><label for="links-view">{% translate "Как показывать ссылки в профиле" %}</label>
+        <select name="links_view" id="links-view">
+          <option value="auto"{% if links_mode == 'auto' %} selected{% endif %}>{% translate "Авто: значками, если ссылок больше двух" %}</option>
+          <option value="icons"{% if links_mode == 'icons' %} selected{% endif %}>{% translate "Значками в ряд" %}</option>
+          <option value="list"{% if links_mode == 'list' %} selected{% endif %}>{% translate "Списком — каждая ссылка отдельной строкой" %}</option>
+        </select></div>
       <div id="link-rows">
         {% for l in links %}
         <div class="lrow">

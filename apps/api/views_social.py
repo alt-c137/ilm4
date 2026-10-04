@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from apps.social import services
 from apps.social.services import SocialError
 
-from .base import ApiError, abs_url, api, as_int
+from .base import ApiError, abs_url, api, as_int, file_url
 
 User = get_user_model()
 
@@ -39,7 +39,11 @@ def _wrap(fn):
 def feed(request):
     tab = request.GET.get('tab', 'for_you')
     data = services.feed(request.user, tab if tab in ('for_you', 'following') else 'for_you', before=request.GET.get('before') or None)
-    return {'items': [_fix(request, x) for x in data['items']], 'next': data['next'],
+    from apps.core import ads
+    ad = ads.pick('feed') if len(data['items']) >= 3 and not request.GET.get('before') else None
+    if ad:
+        ad = {**ad, 'image': abs_url(request, ad['image']) if ad['image'] else '', 'url': abs_url(request, ad['url'])}
+    return {'items': [_fix(request, x) for x in data['items']], 'next': data['next'], 'ad': ad,
             'stories': services.module_on('stories'), 'shorts': services.module_on('shorts')}
 
 
@@ -48,7 +52,9 @@ def wall(request, user_id):
     person = get_object_or_404(User, pk=user_id, is_active=True)
     rows = [services.post_item(p, request.user) for p in services.wall(person, request.user, request.GET.get('before') or None)]
     services.decorate(rows, request.user)
-    return {'items': [_fix(request, x) for x in rows], 'following': services.is_following(request.user, person),
+    state = services.follow_state(request.user, person)
+    return {'items': [_fix(request, x) for x in rows], 'following': state == 'on', 'requested': state == 'requested',
+            'private': person.is_private, 'locked': not services.can_see_wall(person, request.user),
             **services.counts(person, request.user)}
 
 
@@ -108,7 +114,17 @@ def follow(request, user_id):
     person = get_object_or_404(User, pk=user_id, is_active=True)
     on = str(request.data.get('on', '1')).lower() in ('1', 'true', 'on')
     _wrap(lambda: services.follow(request.user, person, on))
-    return {'following': on, **services.counts(person, request.user)}
+    state = services.follow_state(request.user, person)
+    return {'following': state == 'on', 'requested': state == 'requested', **services.counts(person, request.user)}
+
+
+@api(methods=('GET', 'POST'), auth=True, module='feed')
+def follow_requests(request):
+    """Заявки в подписчики закрытого профиля. POST {user, ok} — одобрить или отклонить."""
+    if request.method == 'POST':
+        services.answer_request(request.user, as_int(request.data.get('user')), str(request.data.get('ok', '1')).lower() in ('1', 'true', 'on'))
+    return {'items': [{'id': u.pk, 'name': u.get_display_name(), 'handle': u.handle or '', 'avatar': file_url(request, u.avatar)}
+                      for u in services.follow_requests(request.user)]}
 
 
 @api(auth=True, module='story')

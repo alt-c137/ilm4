@@ -6,9 +6,10 @@
   if (!root) return;
   var csrf = (document.querySelector('#feed-csrf [name=csrfmiddlewaretoken]') || document.querySelector('[name=csrfmiddlewaretoken]') || {}).value || '';
   function T(s) { return window._t ? window._t(s) : s; }
-  function toast(text) {
+  function toast(text, link, label) {          // link + label — «Сохранено · Открыть» (как в Telegram)
     var t = document.createElement('div'); t.className = 'tg__toast'; t.textContent = text;
-    document.body.appendChild(t); setTimeout(function () { t.remove(); }, 3200);
+    if (link) { var a = document.createElement('a'); a.href = link; a.textContent = label; a.className = 'tg__toastlink'; t.appendChild(a); }
+    document.body.appendChild(t); setTimeout(function () { t.remove(); }, 3600);
   }
   function post(url, data) {
     var fd = data instanceof FormData ? data : new FormData();
@@ -48,7 +49,7 @@
       e.preventDefault();
       if (!authed) { location.href = '/accounts/login/?next=' + encodeURIComponent(location.pathname); return; }
       keep.classList.toggle('on');
-      post('/feed/save/', { target: card.dataset.key }).then(function (j) { keep.classList.toggle('on', j.saved); toast(j.saved ? T('Сохранено') : T('Убрано из сохранённого')); })
+      post('/feed/save/', { target: card.dataset.key }).then(function (j) { keep.classList.toggle('on', j.saved); if (j.saved) toast(T('Сохранено'), '/feed/saved/', T('Открыть')); else toast(T('Убрано из сохранённого')); })
         .catch(function (err) { keep.classList.toggle('on'); fail(err); });
       return;
     }

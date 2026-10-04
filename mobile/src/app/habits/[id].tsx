@@ -87,7 +87,7 @@ export default function HabitDetail() {
           </Card>
         </Section>
       ) : null}
-      {h.can_edit ? <Button kind="soft" icon="create-outline" title={t('Изменить привычку')} onPress={() => router.push({ pathname: '/habits/edit', params: { id: String(h.id) } })} /> : null}
+      {h.can_edit ? <Button kind="soft" icon="pencil-outline" title={t('Изменить привычку')} onPress={() => router.push({ pathname: '/habits/edit', params: { id: String(h.id) } })} /> : null}
     </Screen>
   );
 }

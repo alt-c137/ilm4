@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load i18n %}
+{% load i18n icons %}
 {% block title %}{% translate "Вход —" %} {{ block.super }}{% endblock %}
 
 {% block content %}
@@ -22,5 +22,48 @@
   </form>
   <p class="auth__hint"><a href="{% url 'accounts:password_reset' %}" class="link">{% translate "Забыли пароль?" %}</a></p>
   <p class="auth__hint">{% translate "Нет аккаунта?" %} <a href="{% url 'accounts:register' %}" class="link">{% translate "Зарегистрироваться" %}</a></p>
+
+  {# вход по QR-коду — как в Telegram: код показывает компьютер, подтверждает телефон, на котором уже вошли #}
+  <div class="qrl" id="qrl" data-new="{% url 'accounts:qr_start' %}" data-status="{% url 'accounts:qr_status' %}" data-next="{{ next }}">
+    <form id="qrl-csrf" hidden>{% csrf_token %}</form>
+    <button type="button" class="btn btn--g qrl__open" id="qrl-open">{% ico 'qr' %}{% translate "Войти по QR-коду" %}</button>
+    <div class="qrl__box" id="qrl-box" hidden>
+      <img id="qrl-img" alt="{% translate 'QR-код для входа' %}" width="220" height="220">
+      <ol class="qrl__steps">
+        <li>{% translate "Откройте ilm4 на телефоне, где вы уже вошли" %}</li>
+        <li>{% translate "Настройки → Устройства → «Подключить устройство»" %}</li>
+        <li>{% translate "Наведите камеру на этот код и подтвердите вход" %}</li>
+      </ol>
+      <p class="qrl__state" id="qrl-state"></p>
+    </div>
+  </div>
 </div>
 {% endblock %}
+{% block extra_js %}<script>
+/* Вход по QR-коду: просим код, раз в 2 секунды спрашиваем, подтвердил ли телефон; код живёт 3 минуты. */
+(function () {
+  var root = document.getElementById('qrl'); if (!root) return;
+  var open = document.getElementById('qrl-open'), box = document.getElementById('qrl-box'), img = document.getElementById('qrl-img'), state = document.getElementById('qrl-state');
+  var csrf = root.querySelector('[name=csrfmiddlewaretoken]').value, timer = 0, left = 0;
+  function stop() { clearInterval(timer); timer = 0; }
+  function fresh() {
+    stop(); state.textContent = '';
+    fetch(root.dataset.new, { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRFToken': csrf } })
+      .then(function (r) { return r.json(); }).then(function (j) {
+        if (!j.img) { state.textContent = j.error || ''; return; }
+        img.src = j.img; left = j.ttl;
+        timer = setInterval(function () {
+          left -= 2;
+          if (left <= 0) { fresh(); return; }
+          if (document.hidden) return;
+          fetch(root.dataset.status + (root.dataset.next ? '?next=' + encodeURIComponent(root.dataset.next) : ''), { credentials: 'same-origin' })
+            .then(function (r) { return r.json(); }).then(function (s) {
+              if (s.state === 'ok') { stop(); state.textContent = '{{ _("Вход подтверждён…")|escapejs }}'; location.href = s.next || '/'; }
+              else if (s.state === 'expired') fresh();
+            }).catch(function () { /* нет сети — попробуем на следующем шаге */ });
+        }, 2000);
+      }).catch(function () { state.textContent = '{{ _("Не удалось получить код. Проверьте интернет.")|escapejs }}'; });
+  }
+  open.addEventListener('click', function () { box.hidden = !box.hidden; if (box.hidden) stop(); else fresh(); });
+})();
+</script>{% endblock %}

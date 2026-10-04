@@ -62,6 +62,9 @@ UI_ICONS = {
     'pin': '<path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/>',
     'calendar': '<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/>',
     'clock': '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+    'chart': '<path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/>',
+    'monitor': '<rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7M12 16.500V20"/>',
+    'qr': '<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2.500v2.500H14zM20 14v2M17.500 17.500H20V20M14 19.500V20h1.500"/>',
     'eye': '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
     'chat': '<path d="M20.5 11.5a8 8 0 0 1-11.4 7.2L3.5 20.5l1.8-5.5a8 8 0 1 1 15.2-3.5z"/>',
     'phone': '<path d="M6.5 3.5h3l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.5 5.7 2 2 0 0 1 6.5 3.5z"/>',
@@ -208,3 +211,11 @@ def ru_plural(value, forms: str) -> str:
     if 2 <= n % 10 <= 4 and not 12 <= n % 100 <= 14:
         return few
     return many
+
+
+@register.simple_tag
+def face(user, section='board'):
+    """Как показать автора в разделе (с учётом его «маски»): {% face owner 'board' as seller %} → seller.name / avatar / link."""
+    from apps.accounts import people
+    return people.face(user, section)
+

@@ -30,6 +30,8 @@ export type Msg = {
   comment_of?: number | null; comments?: number; iso?: string; thread?: number;
 };
 
+// «невидимый» цвет для текста-распорки: 'transparent' у вложенного текста Android считает «цвет не задан» и рисует текст цветом родителя
+const HIDDEN = 'rgba(127,127,127,0.01)';
 const NAME_COLORS = ['#e8553d', '#d98a1b', '#665fff', '#3aa94f', '#17a595', '#2a8fdc', '#c453dd'];
 const MONTHS: Record<string, string[]> = {
   ru: ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'],
@@ -153,7 +155,7 @@ export const Bubble = memo(function Bubble({ m, first, last, group, animate, fla
       ) : null}
       {m.body && m.kind !== 'voice' ? (
         <Text selectable style={{ color: fg, fontSize: 16, lineHeight: 22, paddingHorizontal: pad, paddingTop: media ? 6 : 0, paddingBottom: media ? 4 : 0 }}>
-          <Rich text={m.body} color={fg} />{!m.scheduled ? <Text style={{ fontSize: 11.5, color: 'transparent' }}>{tail}</Text> : null}
+          <Rich text={m.body} color={fg} />{!m.scheduled ? <Text style={{ fontSize: 11.5, color: HIDDEN }}>{tail}</Text> : null}
         </Text>
       ) : null}
       {m.scheduled ? (

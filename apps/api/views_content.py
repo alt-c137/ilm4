@@ -208,6 +208,15 @@ def _categories(key, k: Kind) -> list:
     return [{'key': v, 'name': str(label)} for v, label in (f.choices or [])]
 
 
+def _owner_face(key, owner) -> dict:
+    """Автор публикации для карточки: в объявлениях, вакансиях и услугах — с учётом его «маски» (id пуст, если профиль скрыт)."""
+    from apps.accounts import people
+    if key in ('buy', 'jobs', 'services'):
+        f = people.face(owner, people.BOARD)
+        return {'id': f['id'], 'name': f['name']}
+    return {'id': owner.pk, 'name': owner.get_display_name()}
+
+
 @api()
 def pub_detail(request, key, pk):
     _REQ.set(request)
@@ -223,7 +232,7 @@ def pub_detail(request, key, pk):
         'text': getattr(o, k.text, '') or '',
         'fields': [{'label': str(label), 'value': v} for label, fn in k.fields if (v := fn(o))],
         'contact': getattr(o, k.contact, '') if k.contact else '',
-        'owner': {'id': owner.pk, 'name': owner.get_display_name()} if owner else None,
+        'owner': _owner_face(key, owner) if owner else None,
         'mine': bool(owner and request.user.is_authenticated and owner.pk == request.user.pk),
         'can_message': bool(owner and module_on('chat') and not (request.user.is_authenticated and owner.pk == request.user.pk)),
         'url': abs_url(request, k.web.format(pk=o.pk)) if k.web else '',

@@ -9,7 +9,8 @@
       <h1 class="mypubs__h">{% translate "Модерация" %}</h1>
       <p class="mypubs__sub">{% translate "Всё, что ждёт решения: анкеты никяха, публикации и жалобы. Одобрили или отклонили — автор сразу получает уведомление." %}</p>
     </div>
-    <a class="btn btn--s btn--g" href="/admin/">{% ico 'shield' %}{% translate "Админка" %}</a>
+    <span class="modq__links"><a class="btn btn--s btn--p" href="/moderation/stats/">{% ico 'chart' %}{% translate "Статистика" %}</a>
+    <a class="btn btn--s btn--g" href="/admin/">{% ico 'shield' %}{% translate "Админка" %}</a></span>
   </div>
 
   {% if tabs %}

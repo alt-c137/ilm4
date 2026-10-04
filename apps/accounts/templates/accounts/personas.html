@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load i18n icons %}
+{% block title %}{% translate "Мои профили —" %} {{ block.super }}{% endblock %}
+{% block body_class %}page-tp{% endblock %}
+{% block content %}
+<div class="tp prs">
+  <a class="crumb" href="{% url 'core:settings' %}">{% ico 'back' %}{% translate "Настройки" %}</a>
+  <header class="tp__bar"><h1>{% translate "Мои профили" %}</h1></header>
+  <p class="tp__note">{% translate "Аккаунт один — один вход и один номер. Но в разных разделах вас могут видеть по-разному: по одному профилю на раздел." %}</p>
+
+  <section class="tp__card">
+    <div class="tp__row prs__row">
+      {% if user.avatar %}<img class="tava tava--sm" src="{{ user.avatar.url }}" alt="">{% else %}<span class="tava tava--sm tava--h2">{{ user.get_display_name|slice:":1"|upper }}</span>{% endif %}
+      <span><b>{{ user.get_display_name }}</b><small>{% translate "Основной профиль — чаты, лента" %}{% if user.handle %} · @{{ user.handle }}{% endif %}</small></span>
+      <a class="btn btn--s btn--g" href="{% url 'accounts:profile' %}?s=edit">{% translate "Изменить" %}</a>
+    </div>
+  </section>
+
+  {% for sec in sections %}
+  <h2 class="tp__label">{{ sec.title }}</h2>
+  <form class="tp__card tp__form prs__form" method="post" enctype="multipart/form-data">{% csrf_token %}
+    <input type="hidden" name="section" value="{{ sec.key }}">
+    <p class="hint">{{ sec.hint }}</p>
+    <div class="prs__line">
+      {% if sec.p.avatar %}<img class="tava tava--sm" src="{{ sec.p.avatar }}" alt="">{% else %}<span class="tava tava--sm tava--h{{ forloop.counter }}">{{ sec.p.name|default:user.get_display_name|slice:":1"|upper }}</span>{% endif %}
+      <div><label for="prs-name-{{ sec.key }}">{% translate "Имя в этом разделе" %}</label>
+        <input id="prs-name-{{ sec.key }}" type="text" name="name" maxlength="40" value="{{ sec.p.name|default:'' }}" placeholder="{{ user.get_display_name }}" autocomplete="off"></div>
+    </div>
+    <div><label for="prs-ava-{{ sec.key }}">{% translate "Свой аватар (необязательно)" %}</label><input id="prs-ava-{{ sec.key }}" type="file" name="avatar" accept="image/*"></div>
+    {% if sec.key == 'board' %}<label class="fcheck"><input type="checkbox" name="link_main" value="1"{% if not sec.p or sec.p.link_main %} checked{% endif %}> {% translate "Показывать ссылку на основной профиль" %}</label>
+    <span class="hint">{% translate "Выключите — и покупатель увидит только это имя: без @имени, ленты и подписчиков. Отзывы и «номер подтверждён» остаются." %}</span>{% endif %}
+    <div class="prs__act"><button type="submit" class="btn btn--p">{% translate "Сохранить" %}</button>
+      {% if sec.p %}<button type="submit" name="remove" value="1" class="btn btn--g">{% translate "Убрать — использовать основной" %}</button>{% else %}<span class="hint">{% translate "Сейчас здесь виден основной профиль." %}</span>{% endif %}</div>
+  </form>
+  {% endfor %}
+
+  {% if nikah_on %}
+  <h2 class="tp__label">{% translate "Никях" %}</h2>
+  <section class="tp__card">
+    <a class="tp__row prs__row" href="{% url 'nikah:home' %}">
+      <span class="tava tava--sm tava--h5">{% ico 'heart' %}</span>
+      <span><b>{% if nikah %}{{ nikah.name }}{% else %}{% translate "Анкеты пока нет" %}{% endif %}</b><small>{% translate "Отдельная анкета: по профилю и объявлениям о ней не узнать, в чате никяха видно только имя из анкеты" %}</small></span>
+    </a>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

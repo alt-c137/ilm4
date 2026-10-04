@@ -1,0 +1,32 @@
+{% load i18n %}{% load icons %}{% comment %}«Витрина»: каждый сервис — живая плитка своего цвета (apps/core/showcase.py). Порядок и набор плиток человек меняет сам (меню «⋯» у плитки).{% endcomment %}
+<section class="shw" id="showcase">
+  <div class="shw__top">
+    <div>
+      <h1 class="shw__h">{% if user.is_authenticated %}{% translate "Ассаляму алейкум" %}, {{ user.first_name|default:user.get_display_name }}{% else %}{% translate "ilm4 — общение, вера и дела в одном месте" %}{% endif %}</h1>
+      <p class="shw__sub">{% if user.is_authenticated %}{% translate "Все сервисы под рукой. Плитки можно переставить и убрать лишние — меню «⋯»." %}{% else %}{% translate "Мессенджер и сообщества, время намаза, объявления, работа, услуги, попутчики, халяль-места — выберите, с чего начать." %}{% endif %}</p>
+    </div>
+    <nav class="shw__switch" aria-label="{% translate 'Вид главной' %}"><a class="on" href="?home=1&amp;view=showcase">{% translate "Витрина" %}</a><a href="?home=1&amp;view=brief">{% translate "Сводка" %}</a></nav>
+  </div>
+  {% if not user.is_authenticated %}<div class="shw__guest"><a class="btn btn--p" href="{% url 'accounts:register' %}">{% translate "Создать аккаунт" %}</a><a class="btn btn--g" href="{% url 'accounts:login' %}">{% translate "Войти" %}</a></div>{% endif %}
+  <div class="shw__grid">
+    {% for w in showcase.items %}{% if ad and forloop.counter == 4 %}{% include 'includes/ad.html' with kind='tile' %}{% endif %}
+    <article class="wdg" id="w-{{ w.key }}" style="--wc:{{ w.color }}">
+      <header class="wdg__h">
+        <a class="wdg__name" href="{{ w.url }}"><span class="wdg__ic">{% svc_glyph w.key w.icon 'glyph' %}</span><b>{{ w.title }}</b>{% if w.count %}<em>{{ w.count }}</em>{% endif %}</a>
+        {% if user.is_authenticated %}<details class="wdg__menu"><summary aria-label="{% translate 'Настроить плитку' %}">{% ico 'dots' %}</summary>
+          <form method="post" action="{% url 'core:home_widgets' %}">{% csrf_token %}<input type="hidden" name="key" value="{{ w.key }}">
+            <button type="submit" name="action" value="up">{% ico 'back' %}{% translate "Выше" %}</button>
+            <button type="submit" name="action" value="down">{% ico 'back' %}{% translate "Ниже" %}</button>
+            <button type="submit" name="action" value="hide">{% ico 'close' %}{% translate "Убрать с витрины" %}</button>
+          </form></details>{% endif %}
+      </header>
+      {% if w.note %}<p class="wdg__note{% if w.hot %} is-hot{% endif %}">{{ w.note }}</p>{% endif %}
+      {% if w.items %}<div class="wdg__rows">{% for x in w.items %}<a class="wdg__row" href="{{ x.url }}">{% if x.image %}<img src="{{ x.image }}" alt="" loading="lazy">{% else %}<i></i>{% endif %}<span><b>{{ x.title }}</b>{% if x.sub %}<small>{{ x.sub }}</small>{% endif %}</span></a>{% endfor %}</div>
+      {% elif not w.note or w.key == 'prayer' or w.key == 'nikah' %}<p class="wdg__descr">{{ w.descr }}</p>{% endif %}
+      <footer class="wdg__f"><a class="wdg__open" href="{{ w.url }}">{% translate "Открыть" %}</a>{% if w.action %}<a class="wdg__act" href="{{ w.action.url }}">{{ w.action.label }}</a>{% endif %}</footer>
+    </article>
+    {% endfor %}
+  </div>
+  {% if showcase.hidden %}<form class="shw__hidden" method="post" action="{% url 'core:home_widgets' %}">{% csrf_token %}<input type="hidden" name="action" value="show">
+    <span>{% translate "Убраны с витрины:" %}</span>{% for h in showcase.hidden %}<button type="submit" name="key" value="{{ h.key }}">{% ico 'plus' %}{{ h.title }}</button>{% endfor %}</form>{% endif %}
+</section>

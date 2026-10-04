@@ -3,7 +3,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { createContext, useContext, useEffect, type ComponentProps, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ComponentProps, type ReactNode } from 'react';
 import {
   ActivityIndicator, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View,
   type StyleProp, type TextInputProps, type TextStyle, type ViewStyle,
@@ -241,6 +241,46 @@ export function Row({ icon, title, subtitle, onPress, right, danger }: {
   );
 }
 
+/** Строка настроек как в Telegram: цветной значок, название, справа — текущее значение и стрелка. */
+export function SetRow({ tint, icon, title, subtitle, value, onPress, danger }: {
+  tint: string; icon: IconName; title: string; subtitle?: string; value?: string; onPress?: () => void; danger?: boolean;
+}) {
+  const { c } = useApp();
+  return (
+    <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 10, opacity: pressed ? 0.6 : 1 })}>
+      <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: tint, alignItems: 'center', justifyContent: 'center' }}>
+        <Icon name={icon} size={18} color="#fff" />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Txt color={danger ? c.bad : undefined} style={{ fontSize: 16, fontWeight: '600' }} numberOfLines={1}>{title}</Txt>
+        {subtitle ? <Txt kind="small" numberOfLines={1}>{subtitle}</Txt> : null}
+      </View>
+      {value ? <Txt kind="muted" numberOfLines={1} style={{ maxWidth: 150, fontSize: 15 }}>{value}</Txt> : null}
+      {onPress ? <Icon name="chevron-forward" size={17} color={c.inkSoft} /> : null}
+    </Pressable>
+  );
+}
+
+/** Блок строк настроек: карточка, между строками — тонкая линия с отступом под значок. */
+export function SetGroup({ title, hint, children }: { title?: string; hint?: string; children: ReactNode }) {
+  const { c } = useApp();
+  const rows = (Array.isArray(children) ? children.flat() : [children]).filter(Boolean);
+  return (
+    <View style={{ gap: 7 }}>
+      {title ? <Txt kind="label" style={{ paddingHorizontal: 6 }}>{title}</Txt> : null}
+      <Card style={{ paddingVertical: 3 }}>
+        {rows.map((row, i) => (
+          <View key={i}>
+            {i ? <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: c.line, marginLeft: 45 }} /> : null}
+            {row}
+          </View>
+        ))}
+      </Card>
+      {hint ? <Txt kind="small" style={{ paddingHorizontal: 6 }}>{hint}</Txt> : null}
+    </View>
+  );
+}
+
 export function Divider() {
   const { c } = useApp();
   return <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: c.line }} />;
@@ -355,3 +395,59 @@ const s = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 6, minHeight: 48 },
   back: { marginLeft: -6, padding: 2 },
 });
+
+// ---------- короткое сообщение внизу экрана (как в Telegram: «Сохранено · Открыть») ----------
+type ToastData = { id: number; text: string; action?: { label: string; onPress: () => void } };
+let toastListener: ((x: ToastData) => void) | null = null;
+
+export function toast(text: string, action?: ToastData['action']) {
+  toastListener?.({ id: Date.now(), text, action });
+}
+
+/** Ставится один раз в корне приложения. */
+export function ToastHost() {
+  const insets = useSafeAreaInsets();
+  const [item, setItem] = useState<ToastData | null>(null);
+  useEffect(() => {
+    toastListener = setItem;
+    return () => { toastListener = null; };
+  }, []);
+  useEffect(() => {
+    if (!item) return;
+    const timer = setTimeout(() => setItem(null), 3200);
+    return () => clearTimeout(timer);
+  }, [item]);
+  if (!item) return null;
+  return (
+    <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: insets.bottom + 78, alignItems: 'center', paddingHorizontal: 16 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: 'rgba(24,26,40,0.94)', borderRadius: 14, paddingVertical: 11, paddingHorizontal: 16, maxWidth: 420 }}>
+        <Text style={{ color: '#fff', fontSize: 15, flexShrink: 1 }}>{item.text}</Text>
+        {item.action ? (
+          <Pressable hitSlop={10} onPress={() => { const run = item.action!.onPress; setItem(null); run(); }}>
+            <Text style={{ color: '#a5b4fc', fontSize: 15, fontWeight: '700' }}>{item.action.label}</Text>
+          </Pressable>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+// ---------- реклама: короткое объявление с пометкой «Реклама» (apps/core/ads.py) ----------
+export type AdData = { id: number; title: string; text: string; button: string; image: string; url: string };
+
+export function AdCard({ ad, onOpen, style }: { ad: AdData; onOpen: (url: string) => void; style?: StyleProp<ViewStyle> }) {
+  const { c, t } = useApp();
+  return (
+    <Pressable onPress={() => onOpen(ad.url)} style={[{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: c.card, padding: 14 }, style]}>
+      {ad.image ? <Image source={{ uri: ad.image }} style={{ width: 52, height: 52, borderRadius: 13 }} contentFit="cover" /> : null}
+      <View style={{ flex: 1, gap: 1 }}>
+        <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.6, color: c.inkSoft, textTransform: 'uppercase' }}>{t('Реклама')}</Text>
+        <Text style={{ fontSize: 15, fontWeight: '700', color: c.ink }} numberOfLines={1}>{ad.title}</Text>
+        <Text style={{ fontSize: 13.5, color: c.inkSoft }} numberOfLines={3}>{ad.text}</Text>
+      </View>
+      <View style={{ backgroundColor: c.accentSoft, borderRadius: 999, paddingHorizontal: 13, paddingVertical: 7 }}>
+        <Text style={{ color: c.accentD, fontWeight: '700', fontSize: 13.5 }}>{ad.button}</Text>
+      </View>
+    </Pressable>
+  );
+}

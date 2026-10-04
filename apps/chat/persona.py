@@ -3,6 +3,9 @@
 Аккаунт один (один вход, один номер, одна блокировка), но разделы не должны выдавать друг друга:
 * чат никяха — собеседник видит имя из анкеты никяха, без аватара, без «в сети» и без перехода в основной профиль
   (там @имя, лента, объявления, номер). Ссылка ведёт в анкету никяха;
+* чат по объявлению, вакансии, услуге — если человек завёл «профиль для объявлений» (accounts.Persona, раздел board),
+  собеседник видит его имя и аватар; в основной профиль можно перейти, только если человек оставил ссылку;
+* канал сообщества — ник в этом сообществе, иначе общий «профиль для сообществ», иначе обычное имя;
 * остальные чаты — обычный профиль (приватность — в настройках человека).
 
 Новая маска для раздела = ветка в mask(); экраны берут имя только через name_in() / mask().
@@ -11,16 +14,31 @@ from django.urls import reverse
 from django.utils.translation import gettext as _
 
 NIKAH = 'nikah'
+BOARD = ('buy', 'jobs', 'services')          # чаты по объявлениям, вакансиям, услугам — маска «board»
+
+
+def _board(person) -> dict | None:
+    from apps.accounts import people
+    f = people.face(person, people.BOARD)
+    if not f['masked']:
+        return None
+    return {'name': f['name'], 'link': f['link'], 'profile_id': None, 'avatar': f['avatar'], 'user_id': f['id'], 'kind': 'board'}
 
 
 def mask(thread, person) -> dict | None:
-    """Маска человека в этом чате или None, если показываем обычный профиль."""
-    if person is None or thread is None or getattr(thread, 'context_type', '') != NIKAH:
+    """Маска человека в этом чате или None, если показываем обычный профиль.
+    {'name', 'link' — куда ведёт имя ('' — никуда), 'profile_id' — анкета никяха, 'avatar', 'user_id' — основной профиль, если открыт}."""
+    if person is None or thread is None:
+        return None
+    ctx = getattr(thread, 'context_type', '')
+    if ctx in BOARD and not getattr(thread, 'space_id', None):
+        return _board(person)
+    if ctx != NIKAH:
         return None
     profile = getattr(person, 'nikah_profile', None)
     name = (profile.name if profile is not None and profile.name else '') or str(_('Анкета никяха'))
     return {'name': name, 'link': reverse('nikah:detail', args=[profile.pk]) if profile is not None else '',
-            'profile_id': profile.pk if profile is not None else None}
+            'profile_id': profile.pk if profile is not None else None, 'avatar': '', 'user_id': None, 'kind': NIKAH}
 
 
 def name_in(thread, person) -> str:
@@ -51,6 +69,9 @@ def name_by_thread_id(thread_id, person) -> str:
     if space_id:
         from . import spaces
         return spaces.nick_of(int(space_id), person)
+    if ctx in BOARD:
+        m = _board(person)
+        return m['name'] if m else person.get_display_name()
     if ctx != NIKAH:
         return person.get_display_name()
     profile = getattr(person, 'nikah_profile', None)

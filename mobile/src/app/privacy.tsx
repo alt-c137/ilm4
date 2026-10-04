@@ -10,7 +10,7 @@ import { useFetch } from '@/ui/useFetch';
 
 type Person = { id: number; name: string; handle: string; avatar: string };
 
-/** Приватность — как в Telegram: кто видит номер, кто находит по номеру, кто видит время в сети, близкие друзья. */
+/** Конфиденциальность — как в Telegram: кто видит номер, кто находит по номеру, кто видит время в сети, близкие друзья. */
 export default function PrivacyScreen() {
   const { c, t, user, setUser } = useApp();
   const friends = useFetch<{ items: Person[] }>(user ? '/me/close/' : null);
@@ -18,7 +18,7 @@ export default function PrivacyScreen() {
   const reloadFriends = friends.reload;
   useFocusEffect(useCallback(() => { reloadFriends(true); }, [reloadFriends]));
   if (!user) return null;
-  const pr = user.privacy ?? { phone: 'nobody' as Privacy, seen: 'all' as Privacy, find_by_phone: true };
+  const pr: NonNullable<User['privacy']> = user.privacy ?? { phone: 'nobody' as Privacy, seen: 'all' as Privacy, find_by_phone: true };
 
   const patch = async (body: Record<string, unknown>) => {
     try {
@@ -33,7 +33,7 @@ export default function PrivacyScreen() {
     counts_privacy: t('Кто видит мои счётчики') };
 
   return (
-    <Screen title={t('Приватность')} back>
+    <Screen title={t('Конфиденциальность')} back>
       <Section title={t('Номер телефона')}>
         <Card style={{ paddingVertical: 4 }}>
           <Row icon="call-outline" title={t('Кто видит мой номер')} subtitle={privacyName(pr.phone, t)} onPress={() => setPick('phone_privacy')} />
@@ -64,6 +64,15 @@ export default function PrivacyScreen() {
           <Row icon="stats-chart-outline" title={t('Кто видит мои счётчики')} subtitle={`${t('Записи, подписчики, подписки')} · ${privacyName(pr.counts ?? 'all', t)}`} onPress={() => setPick('counts_privacy')} />
         </Card>
         <Txt kind="small" style={{ paddingHorizontal: 4 }}>{t('Когда ваше сообщение пересылают, рядом стоит ваше имя. «Никто» — имя останется, но перейти по нему в ваш профиль будет нельзя.')}</Txt>
+      </Section>
+
+      <Section title={t('Закрытый профиль')}>
+        <Card style={{ paddingVertical: 4 }}>
+          <Row icon="lock-closed-outline" title={t('Закрытый профиль')} subtitle={t('Записи и сторис видят только одобренные подписчики')}
+            right={<Switch value={!!pr.private} onValueChange={(v) => patch({ is_private: v })} trackColor={{ true: c.accent, false: c.line }} />} />
+          <Divider />
+          <Row icon="person-add-outline" title={t('Заявки в подписчики')} onPress={() => router.push('/follow-requests')} />
+        </Card>
       </Section>
 
       <Section title={t('Близкие друзья')}>

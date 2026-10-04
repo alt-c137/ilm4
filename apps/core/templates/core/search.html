@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load i18n icons money %}
+{% block title %}{% translate "Поиск —" %} {{ block.super }}{% endblock %}
+{% block body_class %}page-tp page-search{% endblock %}
+{% block content %}
+<div class="tp srch">
+  <header class="tp__bar"><h1>{% if q %}{% translate "Поиск" %}: {{ q }}{% else %}{% translate "Поиск" %}{% endif %}</h1></header>
+  <form class="srch__form" method="get" action="{% url 'core:search' %}" role="search">
+    {% ico 'search' %}<input type="search" name="q" value="{{ q }}" placeholder="{% translate 'Люди, каналы, сообщества, объявления, сервисы' %}" autocomplete="off" enterkeyhint="search" autofocus>
+  </form>
+  {% if q and not any %}<div class="tg__empty"><div class="empty__plug">{% ico 'search' %}</div><b>{% translate "Ничего не нашлось" %}</b><span>{% translate "Попробуйте другое слово или @имя человека." %}</span></div>{% endif %}
+
+  {% if services %}<h2 class="tp__label">{% translate "Сервисы" %}</h2>
+  <section class="tp__card">{% for m in services %}<a class="tp__row srch__row" href="{% if m.url %}{{ m.url }}{% else %}/{{ m.key }}/{% endif %}">
+    <span class="srch__ic">{% if m.ui_icon %}{% ico m.ui_icon %}{% else %}{% svc_glyph m.key m.icon 'glyph' %}{% endif %}</span><span><b>{{ m.name|tr }}</b>{% if m.descr %}<small>{{ m.descr|tr }}</small>{% endif %}</span></a>{% endfor %}</section>{% endif %}
+
+  {% if people %}<h2 class="tp__label">{% translate "Люди" %}</h2>
+  <section class="tp__card">{% for p in people %}<a class="tp__row srch__row" href="{% url 'accounts:public' p.pk %}">
+    {% if p.avatar %}<img class="tava tava--sm" src="{{ p.avatar.url }}" alt="">{% else %}<span class="tava tava--sm tava--h{{ p.pk|divisibleby:2|yesno:'2,4' }}">{{ p.get_display_name|slice:":1"|upper }}</span>{% endif %}
+    <span><b>{{ p.get_display_name }}</b>{% if p.handle %}<small>@{{ p.handle }}</small>{% endif %}</span></a>{% endfor %}</section>{% endif %}
+
+  {% if rooms %}<h2 class="tp__label">{% translate "Каналы и группы" %}</h2>
+  <section class="tp__card">{% for r in rooms %}<a class="tp__row srch__row" href="{% url 'chat:thread' r.pk %}">
+    {% if r.avatar %}<img class="tava tava--sm" src="{{ r.avatar.url }}" alt="">{% else %}<span class="tava tava--sm tava--h3">{{ r.title|slice:":1"|upper }}</span>{% endif %}
+    <span><b>{{ r.title }}</b><small>{% if r.kind == 'channel' %}{% translate "канал" %}{% else %}{% translate "группа" %}{% endif %} · {{ r.members_count }}</small></span></a>{% endfor %}</section>{% endif %}
+
+  {% if spaces %}<h2 class="tp__label">{% translate "Сообщества" %}</h2>
+  <section class="tp__card">{% for sp in spaces %}<a class="tp__row srch__row" href="{% url 'spaces:space' sp.pk %}">
+    {% if sp.icon %}<img class="tava tava--sm" src="{{ sp.icon.url }}" alt="">{% else %}<span class="tava tava--sm tava--h5">{{ sp.title|slice:":1"|upper }}</span>{% endif %}
+    <span><b>{{ sp.title }}</b><small>{% translate "участников" %}: {{ sp.members_count }}</small></span></a>{% endfor %}</section>{% endif %}
+
+  {% if listings %}<h2 class="tp__label">{% translate "Объявления" %}</h2>
+  <section class="tp__card">{% for l in listings %}<a class="tp__row srch__row" href="/buy/{{ l.pk }}/">
+    {% if l.photo %}<img class="srch__pic" src="{{ l.photo.url }}" alt="" loading="lazy">{% else %}<span class="srch__ic">{% ico 'tag' %}</span>{% endif %}
+    <span><b>{{ l.title }}</b><small>{% if l.price == 0 %}{% translate "Даром" %}{% else %}{% money l.price l.currency %}{% endif %} · {{ l.city }}</small></span></a>{% endfor %}
+    <a class="tp__row srch__more" href="/buy/?q={{ q|urlencode }}">{% translate "Все объявления по запросу" %} →</a></section>{% endif %}
+
+  {% if jobs %}<h2 class="tp__label">{% translate "Работа" %}</h2>
+  <section class="tp__card">{% for v in jobs %}<a class="tp__row srch__row" href="/jobs/{{ v.pk }}/"><span class="srch__ic">{% ico 'briefcase' %}</span>
+    <span><b>{{ v.title }}</b><small>{{ v.city }}{% if v.salary %} · {{ v.salary }}{% endif %}</small></span></a>{% endfor %}</section>{% endif %}
+
+  {% if news %}<h2 class="tp__label">{% translate "Новости" %}</h2>
+  <section class="tp__card">{% for n in news %}<a class="tp__row srch__row" href="/news/{{ n.slug }}/"><span class="srch__ic">{% ico 'news' %}</span>
+    <span><b>{{ n.title }}</b></span></a>{% endfor %}</section>{% endif %}
+</div>
+{% endblock %}

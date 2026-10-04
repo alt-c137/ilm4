@@ -15,22 +15,38 @@
       {% if user.avatar %}<img class="tava tava--lg" src="{{ user.avatar.url }}" alt="">{% else %}<span class="tava tava--lg tava--h2">{{ user.get_display_name|slice:":1"|upper }}</span>{% endif %}
       <span><b>{{ user.get_display_name }}</b>{% if user.phone %}<small>{{ user.phone }}</small>{% endif %}{% if user.handle %}<small class="stg__at">@{{ user.handle }}</small>{% endif %}</span>
     </a>
+    <h2 class="stg__t">{% translate "Аккаунт" %}</h2>
     <nav class="stg__list">
-      <a href="{% url 'accounts:profile' %}?s=edit">{% ico 'user' %}<b>{% translate "Мой аккаунт" %}</b><small>{% translate "Имя, фото, имя пользователя, номер" %}</small></a>
-      <a href="{% url 'notifications:list' %}">{% ico 'bell' %}<b>{% translate "Уведомления и звуки" %}</b><small>{% translate "Что пришло и что вас ждёт" %}</small></a>
-      <a href="{% url 'accounts:profile' %}?s=privacy">{% ico 'lock' %}<b>{% translate "Конфиденциальность" %}</b><small>{% translate "Как вас видят: номер, время в сети, счётчики, группы" %}</small></a>
+      <a href="{% url 'accounts:profile' %}?s=edit">{% ico 'user' %}<b>{% translate "Мой профиль" %}</b><small>{% translate "Имя, фото, имя пользователя, номер" %}</small></a>
+      <a href="{% url 'accounts:personas' %}">{% ico 'users' %}<b>{% translate "Мои профили" %}</b><small>{% translate "Как вас видят в объявлениях, сообществах и никяхе" %}</small></a>
+      <a href="{% url 'accounts:profile' %}?s=links">{% ico 'link' %}<b>{% translate "Ссылки и соцсети" %}</b><small>{% translate "Что показать в профиле и кому" %}</small></a>
+      <a href="{% url 'accounts:accounts' %}">{% ico 'userplus' %}<b>{% translate "Аккаунты" %}</b><small>{% translate "Добавить ещё один и переключаться без выхода" %}</small></a>
+    </nav>
+    <h2 class="stg__t">{% translate "Приватность" %}</h2>
+    <nav class="stg__list">
+      <a href="{% url 'accounts:profile' %}?s=privacy">{% ico 'lock' %}<b>{% translate "Конфиденциальность" %}</b><small>{% translate "Номер, время в сети, счётчики, закрытый профиль" %}</small></a>
+      {% if feed_on %}<a href="{% url 'social:requests' %}">{% ico 'userplus' %}<b>{% translate "Заявки в подписчики" %}</b><small>{% translate "Для закрытого профиля" %}</small></a>{% endif %}
+      <a href="{% url 'accounts:blocked' %}">{% ico 'ban' %}<b>{% translate "Заблокированные" %}</b></a>
+      <a href="{% url 'accounts:devices' %}">{% ico 'monitor' %}<b>{% translate "Устройства" %}</b><small>{% translate "Активные сеансы, вход по QR-коду" %}</small></a>
+      <a href="{% url 'accounts:two_factor_setup' %}">{% ico 'shieldcheck' %}<b>{% translate "Двухшаговая защита" %}</b><small>{% translate "Код из приложения-аутентификатора при входе" %}</small></a>
+    </nav>
+    <h2 class="stg__t">{% translate "Чаты" %}</h2>
+    <nav class="stg__list">
       <a href="?s=chats">{% ico 'chat' %}<b>{% translate "Настройки чатов" %}</b><small>{% translate "Тема, цвет, фон чата" %}</small></a>
       {% if chat_on %}<a href="{% url 'chat:folders' %}">{% ico 'folder' %}<b>{% translate "Папки с чатами" %}</b><small>{% translate "Свои вкладки над списком чатов" %}</small></a>
-      <a href="{% url 'chat:contacts' %}">{% ico 'users' %}<b>{% translate "Контакты" %}</b><small>{% translate "Сохранённые люди" %}</small></a>{% endif %}
-      <a href="?s=tabs">{% ico 'grid' %}<b>{% translate "Нижние кнопки и стартовый экран" %}</b><small>{% translate "Вся платформа — или только чаты, лента, сообщества" %}</small></a>
-      <a href="{% url 'accounts:profile' %}?s=links">{% ico 'link' %}<b>{% translate "Ссылки и соцсети" %}</b><small>{% translate "Что показать в профиле и кому" %}</small></a>
-      <a href="?s=language">{% ico 'globe' %}<b>{% translate "Язык" %}</b><small>{{ LANGUAGE_CODE|upper }}</small></a>
-      <a href="?s=currency">{% ico 'wallet' %}<b>{% translate "Валюта" %}</b></a>
+      <a href="{% url 'chat:contacts' %}">{% ico 'users' %}<b>{% translate "Контакты" %}</b><small>{% translate "Сохранённые люди" %}</small></a>
+      <a href="{% url 'chat:saved' %}">{% ico 'bookmark' %}<b>{% translate "Избранное" %}</b><small>{% translate "Заметки и пересланное — только для вас" %}</small></a>{% endif %}
+      <a href="{% url 'notifications:list' %}">{% ico 'bell' %}<b>{% translate "Уведомления" %}</b></a>
     </nav>
+    <h2 class="stg__t">{% translate "Экран и язык" %}</h2>
     <nav class="stg__list">
-      <a href="{% url 'accounts:accounts' %}">{% ico 'userplus' %}<b>{% translate "Аккаунты" %}</b><small>{% translate "Добавить ещё один и переключаться без выхода" %}</small></a>
-      <a href="{% url 'accounts:blocked' %}">{% ico 'ban' %}<b>{% translate "Заблокированные" %}</b></a>
-      {% if user.is_staff %}<a href="{% url 'accounts:two_factor_setup' %}">{% ico 'shieldcheck' %}<b>{% translate "Двухшаговая защита" %}</b></a>{% endif %}
+      <a href="?s=tabs">{% ico 'grid' %}<b>{% translate "Нижние кнопки и стартовый экран" %}</b><small>{% translate "Вся платформа — или только чаты, лента, сообщества" %}</small></a>
+      <a href="?s=language">{% ico 'globe' %}<b>{% translate "Язык" %}</b><small>{{ LANGUAGE_CODE|upper }}</small></a>
+      <a href="?s=currency">{% ico 'wallet' %}<b>{% translate "Валюта" %}</b>{% if currency_now %}<small>{{ currency_now }}</small>{% endif %}</a>
+    </nav>
+    <h2 class="stg__t">{% translate "Моё" %}</h2>
+    <nav class="stg__list">
+      {% if feed_on %}<a href="{% url 'social:saved' %}">{% ico 'bookmark' %}<b>{% translate "Сохранённое" %}</b><small>{% translate "Записи и объявления, которые вы отложили" %}</small></a>{% endif %}
       <a href="{% url 'core:my' %}">{% ico 'tag' %}<b>{% translate "Мои публикации" %}</b></a>
       <a href="{% url 'wallet:index' %}">{% ico 'coins' %}<b>{% translate "Кошелёк" %}</b></a>
     </nav>

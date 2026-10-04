@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
@@ -71,7 +72,24 @@ def space(request, pk):
     me, perms = data['me'], data['perms']
     manage = 'manage_space' in perms
     base = request.build_absolute_uri('/communities/join/')
+    # разделы страницы — как «настройки сервера» в Discord; человек видит только то, на что у него есть права
+    sections = [('overview', _('Обзор'), 'grid')]
+    if me:
+        sections.append(('members', _('Участники'), 'users'))
+        if 'manage_roles' in perms:
+            sections.append(('roles', _('Роли'), 'shieldcheck'))
+        if 'manage_channels' in perms:
+            sections.append(('channels', _('Каналы'), 'chat'))
+        if manage:
+            sections += [('invites', _('Приглашения'), 'link'), ('look', _('Оформление'), 'edit')]
+        if 'kick' in perms:
+            sections.append(('bans', _('Удалённые'), 'ban'))
+        if manage:
+            sections.append(('log', _('Журнал'), 'clock'))
+    s_given = request.GET.get('s', '')
+    section = s_given if s_given in {k for k, _n, _i in sections} else 'overview'
     return render(request, 'chat/space.html', {
+        'sections': sections, 's': section, 's_given': bool(s_given),
         **data, 'pic': space_pic(obj), 'people': spaces.people(obj, 80) if me else [],
         'invite': f'{base}{obj.invite_code}/' if manage else '',
         'invites': [{'obj': i, 'link': f'{base}{i.code}/'} for i in obj.invites.all()[:20]] if manage else [],
@@ -198,4 +216,10 @@ def act(request, pk):
             messages.success(request, _('Сохранено.'))
     except ChatError as exc:
         messages.error(request, exc.message)
-    return redirect('spaces:space', pk=obj.pk)
+    # возвращаем в тот же раздел настроек, откуда пришло действие
+    section = {'nick': 'overview', 'join': 'overview', 'update': 'look', 'invite': 'invites', 'invite_new': 'invites', 'invite_delete': 'invites',
+               'category': 'channels', 'channel': 'channels', 'rename': 'channels', 'drop_channel': 'channels', 'drop_category': 'channels',
+               'channel_set': 'channels', 'role': 'members', 'kick': 'members', 'timeout': 'members', 'member_roles': 'members',
+               'unban': 'bans', 'role_save': 'roles', 'role_delete': 'roles'}.get(a, '')
+    url = reverse('spaces:space', args=[obj.pk])
+    return redirect(f'{url}?s={section}' if section and a != 'join' else url)

@@ -1,13 +1,14 @@
-"""2FA обязательна для всех админов (PASSPORT §3).
+"""Двухшаговая защита: админам обязательна (PASSPORT §3), остальным — по желанию (apps/accounts/twofa.py).
 
-Без подтверждённого OTP-кода staff-пользователь не проходит дальше
-страниц 2FA — включая всю админку Django.
+Без подтверждённого кода человек с включённой защитой не проходит дальше страницы ввода кода:
+пароль (или вход через Telegram, Google, QR) открывает только её.
 """
 from django.shortcuts import redirect
 
 SETUP_URL = '/accounts/2fa/'
 VERIFY_URL = '/accounts/2fa/verify/'
-ALLOWED_PREFIXES = ('/accounts/2fa', '/accounts/logout', '/admin/jsi18n')
+ALLOWED_PREFIXES = ('/accounts/2fa', '/accounts/logout', '/admin/jsi18n', '/static/', '/healthz', '/m/', '/sw.js',
+                    '/api/')          # API входит по токену, сессию сайта не использует
 
 
 class Staff2FARequired:
@@ -16,11 +17,12 @@ class Staff2FARequired:
 
     def __call__(self, request):
         user = request.user
-        if (user.is_authenticated and user.is_staff
-                and not user.is_verified()
-                and not request.path.startswith(ALLOWED_PREFIXES)):
-            has_device = user.totpdevice_set.filter(confirmed=True).exists()
-            return redirect(VERIFY_URL if has_device else SETUP_URL)
+        if user.is_authenticated and not user.is_verified() and not request.path.startswith(ALLOWED_PREFIXES):
+            from . import twofa
+            if user.is_staff:
+                return redirect(VERIFY_URL if twofa.enabled(user) else SETUP_URL)
+            if twofa.enabled(user):                    # обычный человек сам включил защиту — код обязателен
+                return redirect(VERIFY_URL)
         return self.get_response(request)
 
 

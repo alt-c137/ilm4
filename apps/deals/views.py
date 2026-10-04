@@ -34,6 +34,16 @@ def new(request):
     User = get_user_model()
     to = request.GET.get('to') or request.POST.get('to')
     provider = get_object_or_404(User, pk=to, is_active=True) if (to or '').isdigit() else None
+    chat_id = request.GET.get('thread') or request.POST.get('thread') or ''
+    shown_as = ''                         # имя «маски», если сделку открыли из чата, где собеседник под ней
+    if provider is None and chat_id.isdigit():
+        # сделка из чата под «маской»: в ссылке нет номера аккаунта собеседника — берём его из самого чата
+        from apps.chat.models import Thread
+        chat = Thread.objects.filter(pk=int(chat_id), participants=request.user).first()
+        provider = chat.other_participant(request.user) if chat is not None and not chat.is_room else None
+        if provider is not None:
+            from apps.chat import persona
+            shown_as = persona.name_in(chat, provider)
     if request.method == 'POST' and provider:
         try:
             deadline = date.fromisoformat(request.POST['deadline']) if request.POST.get('deadline') else None
@@ -50,8 +60,8 @@ def new(request):
             messages.success(request, _('Заказ отправлен исполнителю. Когда он примет условия — оплатите.'))
             return redirect('deals:detail', pk=order.pk)
     return render(request, 'deals/new.html', {
-        'provider': provider, 'enabled': st.escrow_enabled, 'fee_percent': st.escrow_fee_percent,
-        'kinds': Order.KINDS, 'thread': request.GET.get('thread', ''), 'title': request.GET.get('title', ''),
+        'provider': provider, 'shown_as': shown_as, 'enabled': st.escrow_enabled, 'fee_percent': st.escrow_fee_percent,
+        'kinds': Order.KINDS, 'thread': chat_id, 'title': request.GET.get('title', ''),
         'post': request.POST})
 
 

@@ -47,7 +47,7 @@ export default function NikahMe() {
           [t('Баланс'), `${data.balance.toLocaleString('ru-RU')} ${t('сум')}`], [t('Анкет сегодня'), data.left === null ? '∞' : `${data.left} / ${data.limit}`]]} />
       </Card>
       <Card style={{ paddingVertical: 4 }}>
-        <Row icon="create-outline" title={t('Изменить анкету')} subtitle={t('Тексты и фото снова проверит модератор')} onPress={() => router.push('/nikah/form')} />
+        <Row icon="pencil-outline" title={t('Изменить анкету')} subtitle={t('Тексты и фото снова проверит модератор')} onPress={() => router.push('/nikah/form')} />
         <Divider />
         <Row icon="pause-circle-outline" title={t('Анкета видна другим')} right={<Switch value={p.active} onValueChange={pause} trackColor={{ true: c.accent, false: c.line }} />} />
         <Divider />

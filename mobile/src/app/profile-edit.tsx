@@ -1,10 +1,10 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, TextInput, View } from 'react-native';
 
 import { api, ApiError } from '@/lib/api';
 import { useApp, type Privacy, type SocialLink, type User } from '@/state/app';
-import { Avatar, Button, Card, Field, Icon, Screen, Section, Sheet, Txt } from '@/ui/kit';
+import { Avatar, Button, Field, Icon, Screen, Section, Segmented, Sheet, Txt } from '@/ui/kit';
 import { useAvatarPick } from '@/ui/photo-editor';
 import { privacyName, SOCIAL } from '@/ui/profile';
 
@@ -20,6 +20,7 @@ export default function ProfileEdit() {
   const [city, setCity] = useState(user?.city ?? '');
   const [links, setLinks] = useState<Link[]>((user?.links ?? []).map((l) => ({ kind: l.kind, value: l.value, privacy: l.privacy ?? 'all' })));
   const [photo, setPhoto] = useState<{ uri: string } | null>(null);
+  const [view, setView] = useState(user?.links_mode ?? 'auto');
   const avatarPick = useAvatarPick((uri) => setPhoto({ uri }));
   const [busy, setBusy] = useState(false);
   const [pick, setPick] = useState<{ row: number; what: 'kind' | 'privacy' } | null>(null);
@@ -40,8 +41,8 @@ export default function ProfileEdit() {
       form.append('city', city);
       if (photo) form.append('avatar', { uri: photo.uri, name: 'avatar.jpg', type: 'image/jpeg' } as any);
       const me = await api<User>('/me/', { form });
-      const r = await api<{ links: SocialLink[] }>('/me/links/', { body: { links: links.filter((l) => l.value.trim()) } });
-      setUser({ ...me, links: r.links });
+      const r = await api<{ links: SocialLink[]; links_view: string; links_mode: string }>('/me/links/', { body: { links: links.filter((l) => l.value.trim()), view } });
+      setUser({ ...me, links: r.links, links_view: r.links_view, links_mode: r.links_mode });
       router.back();
     } catch (e) {
       Alert.alert((e as ApiError).message);
@@ -71,27 +72,35 @@ export default function ProfileEdit() {
         <Section title={t('Соцсети и ссылки')}>
           <Txt kind="small">{t('Instagram, Telegram, YouTube, GitHub, Discord — что хотите. Для каждой ссылки выберите, кто её видит.')}</Txt>
           {links.map((l, i) => (
-            <Card key={i} soft style={{ gap: 8, padding: 12 }}>
-              <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-                <Pressable onPress={() => setPick({ row: i, what: 'kind' })} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: c.card, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9, borderWidth: 1, borderColor: c.line }}>
-                  <Icon name={SOCIAL.find((x) => x.key === l.kind)?.icon ?? 'link-outline'} size={17} color={c.accent} />
-                  <Txt style={{ fontWeight: '700' }}>{kindName(l.kind)}</Txt>
-                  <Icon name="chevron-down" size={14} color={c.inkSoft} />
+            // одна строка на ссылку: слева значок сети (нажать — сменить сеть), рядом поле, справа — убрать
+            <View key={i} style={{ gap: 5 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: c.card2, borderRadius: 14, borderWidth: 1, borderColor: c.line }}>
+                <Pressable onPress={() => setPick({ row: i, what: 'kind' })} accessibilityLabel={`${t('Сеть')}: ${kindName(l.kind)}`}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 3, paddingLeft: 12, paddingRight: 8, paddingVertical: 12, borderRightWidth: 1, borderRightColor: c.line }}>
+                  <Icon name={SOCIAL.find((x) => x.key === l.kind)?.icon ?? 'link-outline'} size={21} color={c.accent} />
+                  <Icon name="chevron-down" size={13} color={c.inkSoft} />
                 </Pressable>
-                <View style={{ flex: 1 }} />
-                <Pressable onPress={() => setLinks((old) => old.filter((_x, n) => n !== i))} hitSlop={10} accessibilityLabel={t('Убрать')}>
-                  <Icon name="trash-outline" size={20} color={c.bad} />
+                <TextInput value={l.value} onChangeText={(x) => setLink(i, { value: x })} maxLength={120} autoCapitalize="none" autoCorrect={false}
+                  placeholder={`${kindName(l.kind)}: ${SOCIAL.find((x) => x.key === l.kind)?.hint || t('имя или ссылка')}`} placeholderTextColor={c.inkSoft}
+                  style={{ flex: 1, fontSize: 16, color: c.ink, paddingHorizontal: 12, paddingVertical: 12 }} />
+                <Pressable onPress={() => setLinks((old) => old.filter((_x, n) => n !== i))} hitSlop={8} accessibilityLabel={t('Убрать')} style={{ padding: 10 }}>
+                  <Icon name="close-circle" size={20} color={c.inkSoft} />
                 </Pressable>
               </View>
-              <Field value={l.value} onChangeText={(x) => setLink(i, { value: x })} maxLength={120} autoCapitalize="none" autoCorrect={false}
-                placeholder={SOCIAL.find((x) => x.key === l.kind)?.hint || t('имя или ссылка')} />
-              <Pressable onPress={() => setPick({ row: i, what: 'privacy' })} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Icon name="eye-outline" size={16} color={c.inkSoft} />
-                <Txt kind="small">{t('Кто видит')}: </Txt>
+              <Pressable onPress={() => setPick({ row: i, what: 'privacy' })} hitSlop={6} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 6 }}>
+                <Icon name="eye-outline" size={15} color={c.inkSoft} />
+                <Txt kind="small">{t('Кто видит')}:</Txt>
                 <Txt kind="small" color={c.accent} style={{ fontWeight: '700' }}>{privacyName(l.privacy, t)}</Txt>
               </Pressable>
-            </Card>
+            </View>
           ))}
+          {links.length ? (
+            <View style={{ gap: 6 }}>
+              <Txt kind="small" style={{ fontWeight: '600', color: c.ink }}>{t('Как показывать ссылки в профиле')}</Txt>
+              <Segmented value={view} onChange={setView} options={[{ key: 'auto', label: t('Авто') }, { key: 'icons', label: t('Значками') }, { key: 'list', label: t('Списком') }]} />
+              <Txt kind="small">{t('«Авто» — значками в ряд, если ссылок больше двух: профиль не растягивается.')}</Txt>
+            </View>
+          ) : null}
           {links.length < 12 ? <Button kind="soft" small icon="add" title={t('Добавить ссылку')} onPress={() => { setLinks((old) => [...old, { kind: 'telegram', value: '', privacy: 'all' }]); setPick({ row: links.length, what: 'kind' }); }} /> : null}
         </Section>
         <Button title={t('Сохранить')} onPress={save} loading={busy} />

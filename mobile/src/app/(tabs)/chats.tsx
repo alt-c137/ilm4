@@ -6,7 +6,7 @@
 import * as Haptics from 'expo-haptics';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, FlatList, Pressable, RefreshControl, ScrollView, TextInput, View } from 'react-native';
+import { Alert, FlatList, Keyboard, Pressable, RefreshControl, ScrollView, TextInput, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
@@ -110,6 +110,9 @@ type Found = { people: { id: number; name: string; handle: string; avatar: strin
   rooms: { id: number; kind: string; title: string; avatar: string; members: number }[];
   spaces: { id: number; title: string; icon: string; members: number }[];
   messages: { id: number; thread: number; title: string | null; who: string; text: string; time: string }[] };
+// поиск ещё пуст: кому пишу чаще всего и что недавно открывал из поиска (как в Telegram)
+type Idle = { top: { thread: number; id: number; name: string; avatar: string }[];
+  recent: { kind: 'u' | 't' | 's'; id: number; title: string; sub: string; avatar: string; saved?: boolean }[] };
 
 export default function Chats() {
   const { c, t, user } = useApp();
@@ -127,6 +130,14 @@ export default function Chats() {
     }, 300);
     return () => clearTimeout(timer);
   }, [q]);
+  const [searching, setSearching] = useState(false);
+  const [idle, setIdle] = useState<Idle | null>(null);
+  useEffect(() => {
+    if (!searching || q.trim() || !user) return;
+    api<Idle>('/chat/find/').then(setIdle).catch(() => {});
+  }, [searching, q, user]);
+  const remember = (kind: 'u' | 't' | 's', id: number) => { api('/chat/find/', { body: { kind, id } }).catch(() => {}); };
+  const stopSearch = () => { setSearching(false); setQ(''); Keyboard.dismiss(); };
   const [menu, setMenu] = useState(false);
   const [rowMenu, setRowMenu] = useState<Th | null>(null);
   const [tabMenu, setTabMenu] = useState<Tab | null>(null);
@@ -151,7 +162,8 @@ export default function Chats() {
   const allow = new Set(current === 'all' ? tabs?.all.ids ?? all.filter((x) => !x.archived).map((x) => x.id)
     : current === 'archive' ? tabs?.archive.ids ?? [] : tab?.ids ?? []);
   const pins = tab ? tab.pins : [];
-  let items = needle ? all.filter((th) => th.title.toLowerCase().includes(needle) || th.subject.toLowerCase().includes(needle)) : all.filter((th) => allow.has(th.id));
+  const showIdle = searching && !needle && !!idle && idle.top.length + idle.recent.length > 0;
+  let items = showIdle ? [] : needle ? all.filter((th) => th.title.toLowerCase().includes(needle) || th.subject.toLowerCase().includes(needle)) : all.filter((th) => allow.has(th.id));
   if (pins.length && !needle) {
     items = [...items].sort((a, b) => {
       const pa = pins.indexOf(a.id), pb = pins.indexOf(b.id);
@@ -300,10 +312,37 @@ export default function Chats() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, height: 42, borderRadius: 21, backgroundColor: c.card, borderWidth: 1, borderColor: c.line, paddingHorizontal: 14 }}>
               <Icon name="search" size={17} color={c.inkSoft} />
               <TextInput value={q} onChangeText={setQ} placeholder={t('Поиск')} placeholderTextColor={c.inkSoft} returnKeyType="search"
-                style={{ flex: 1, fontSize: 16, color: c.ink, paddingVertical: 0 }} />
+                onFocus={() => setSearching(true)} style={{ flex: 1, fontSize: 16, color: c.ink, paddingVertical: 0 }} />
               {q ? <Pressable onPress={() => setQ('')} hitSlop={10}><Icon name="close-circle" size={17} color={c.inkSoft} /></Pressable> : null}
+              {searching ? <Pressable onPress={stopSearch} hitSlop={8}><Txt color={c.accent} style={{ fontWeight: '600', fontSize: 14 }}>{t('Отмена')}</Txt></Pressable> : null}
             </View>
-            {current !== 'archive' ? (
+            {showIdle && idle ? (
+              <View>
+                {idle.top.length ? (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 4, paddingVertical: 6 }}>
+                    {idle.top.map((p) => (
+                      <Pressable key={p.id} onPress={() => { stopSearch(); router.push(`/chat/${p.thread}`); }} style={{ width: 70, alignItems: 'center', gap: 5 }}>
+                        <Avatar uri={p.avatar} name={p.name} size={52} hue={p.id} />
+                        <Txt kind="small" numberOfLines={1} style={{ color: c.ink, fontSize: 12 }}>{p.name}</Txt>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                ) : null}
+                {idle.recent.length ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4, paddingTop: 8 }}>
+                    <Txt kind="label">{t('Недавние')}</Txt>
+                    <Pressable hitSlop={8} onPress={() => { setIdle({ ...idle, recent: [] }); api('/chat/find/', { body: { clear: true } }).catch(() => {}); }}>
+                      <Txt kind="small" color={c.accent} style={{ fontWeight: '600' }}>{t('Очистить')}</Txt>
+                    </Pressable>
+                  </View>
+                ) : null}
+                {idle.recent.map((r) => foundRow(`${r.kind}${r.id}`, r.saved ? t('Избранное') : r.title, r.sub, r.avatar, r.id, () => {
+                  stopSearch();
+                  router.push(r.kind === 'u' ? `/user/${r.id}` : r.kind === 's' ? `/space/${r.id}` : `/chat/${r.id}`);
+                }))}
+              </View>
+            ) : null}
+            {showIdle ? null : current !== 'archive' ? (
               tabs?.folders.length ? (
                 <View style={{ borderBottomWidth: 0.5, borderBottomColor: c.line, marginHorizontal: -12 }}>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 6 }}>
@@ -313,20 +352,20 @@ export default function Chats() {
                 </View>
               ) : null
             ) : <Txt kind="small" style={{ paddingHorizontal: 4 }}>{t('Чат вернётся из архива сам, когда придёт новое сообщение (если у него не выключен звук).')}</Txt>}
-            {archiveRow}
+            {showIdle ? null : archiveRow}
           </View>}
         ListFooterComponent={needle.length >= 2 && found ? (
           <View style={{ paddingBottom: 30 }}>
             {found.people.length + found.rooms.length + found.spaces.length ? <Txt kind="label" style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4 }}>{t('Глобальный поиск')}</Txt> : null}
-            {found.people.map((p) => foundRow(`p${p.id}`, p.name, p.handle ? `@${p.handle}` : '', p.avatar, p.id, () => router.push(`/user/${p.id}`)))}
-            {found.rooms.map((r) => foundRow(`r${r.id}`, r.title, `${r.kind === 'channel' ? t('канал') : t('группа')} · ${r.members}`, r.avatar, r.id, () => router.push(`/chat/${r.id}`)))}
-            {found.spaces.map((x) => foundRow(`s${x.id}`, x.title, `${t('сообщество')} · ${x.members}`, x.icon, x.id, () => router.push(`/space/${x.id}`)))}
+            {found.people.map((p) => foundRow(`p${p.id}`, p.name, p.handle ? `@${p.handle}` : '', p.avatar, p.id, () => { remember('u', p.id); router.push(`/user/${p.id}`); }))}
+            {found.rooms.map((r) => foundRow(`r${r.id}`, r.title, `${r.kind === 'channel' ? t('канал') : t('группа')} · ${r.members}`, r.avatar, r.id, () => { remember('t', r.id); router.push(`/chat/${r.id}`); }))}
+            {found.spaces.map((x) => foundRow(`s${x.id}`, x.title, `${t('сообщество')} · ${x.members}`, x.icon, x.id, () => { remember('s', x.id); router.push(`/space/${x.id}`); }))}
             {found.messages.length ? <Txt kind="label" style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4 }}>{t('Сообщения')}</Txt> : null}
             {found.messages.map((m) => foundRow(`m${m.id}`, m.title ?? t('Избранное'), (m.who ? `${m.who}: ` : '') + m.text, '', m.thread,
               () => router.push({ pathname: '/chat/[id]', params: { id: String(m.thread), at: String(m.id) } }), m.time))}
           </View>
         ) : null}
-        ListEmptyComponent={!data ? (loading ? <Skeleton rows={8} /> : <ErrorBox error={error?.message ?? ''} onRetry={reload} />) : current !== 'all' && !needle ? (
+        ListEmptyComponent={showIdle ? null : !data ? (loading ? <Skeleton rows={8} /> : <ErrorBox error={error?.message ?? ''} onRetry={reload} />) : current !== 'all' && !needle ? (
           <Empty icon="folder-open-outline" title={t('В этой папке пока пусто')} text={t('Чаты попадают сюда по правилам папки. Изменить правила — «Настроить папки».')} />
         ) : (
           <Empty icon="chatbubbles-outline" title={q ? t('Ничего не нашлось') : t('Пока нет диалогов')}
@@ -334,7 +373,7 @@ export default function Chats() {
             action={<Button small kind="soft" title={t('Найти человека')} onPress={() => router.push('/chat/people')} />} />
         )}
         renderItem={({ item: th }) => (
-          <Row th={th} pinned={isPinned(th)} archiveMode={!!th.archived} onOpen={() => router.push(`/chat/${th.id}`)}
+          <Row th={th} pinned={isPinned(th)} archiveMode={!!th.archived} onOpen={() => { if (needle) remember('t', th.id); router.push(`/chat/${th.id}`); }}
             onMenu={() => setRowMenu(th)} onSwipe={() => archive(th)} />
         )}
       />
@@ -359,7 +398,7 @@ export default function Chats() {
         { icon: 'add' as const, title: t('Новая папка'), onPress: () => router.push('/chat/folder/new') },
       ]} />
       <Sheet open={!!tabMenu} onClose={() => setTabMenu(null)} title={tabMenu?.title} items={tabMenu ? [
-        { icon: 'create-outline', title: t('Изменить папку'), onPress: () => router.push(`/chat/folder/${tabMenu.id}`) },
+        { icon: 'pencil-outline', title: t('Изменить папку'), onPress: () => router.push(`/chat/folder/${tabMenu.id}`) },
         { icon: 'reorder-three-outline', title: t('Порядок папок'), onPress: () => router.push('/chat/folders') },
         { icon: 'trash-outline', danger: true, title: t('Удалить папку'), onPress: () => Alert.alert(t('Удалить папку?'), t('Сами чаты останутся.'), [
           { text: t('Отмена'), style: 'cancel' },

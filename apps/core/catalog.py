@@ -14,7 +14,7 @@ GROUPS = [
     ('shop', _lazy('Покупки и деньги'), ['buy', 'services', 'finance', 'invest', 'digital', 'wallet']),
     ('life', _lazy('Жизнь и семья'), ['tracker', 'map', 'health', 'nikah', 'realestate', 'sport', 'fun']),
     ('move', _lazy('Работа, переезд и право'), ['jobs', 'migration', 'transport', 'refugee', 'lawyers']),
-    ('talk', _lazy('Общение'), ['assistant', 'chat', 'communities', 'feed', 'stories', 'shorts', 'gifts']),
+    ('talk', _lazy('Общение'), ['chat', 'communities', 'feed', 'stories', 'shorts', 'gifts', 'assistant']),
 ]
 OTHER = ('more', _lazy('Ещё'))
 

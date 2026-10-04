@@ -537,7 +537,20 @@ def nick_of(space_id, user) -> str:
     if nick is None:
         nick = SpaceMember.objects.filter(space_id=space_id, user=user).values_list('nick', flat=True).first() or ''
         cache.set(key, nick, 3600)
-    return nick or user.get_display_name()
+    if nick:
+        return nick
+    from apps.accounts import people as accounts_people  # общий «профиль для сообществ» (маска), если человек его завёл
+    common = accounts_people.persona_of(user, accounts_people.SPACES)
+    return common['name'] if common else user.get_display_name()
+
+
+def avatar_of(user) -> str:
+    """Аватар человека в сообществах: из общего «профиля для сообществ» (маска), иначе — основной."""
+    from apps.accounts import people as accounts_people
+    common = accounts_people.persona_of(user, accounts_people.SPACES)
+    if common and common['avatar']:
+        return common['avatar']
+    return user.avatar.url if user.avatar else ''
 
 
 def people(space, limit: int = 300) -> list:
@@ -569,7 +582,7 @@ def roster(space, viewer, limit: int = 200) -> list:
             g = bucket('members', str(_('Участники')))
         u = m.user
         name = m.nick or u.get_display_name()
-        g['people'].append({'id': u.pk, 'name': name, 'avatar': u.avatar.url if u.avatar else '', 'online': ppl.quick_online(u, viewer),
+        g['people'].append({'id': u.pk, 'name': name, 'avatar': avatar_of(u), 'online': ppl.quick_online(u, viewer),
                             'color': own[0].color if own else '', 'letter': (name or '?')[:1].upper(), 'hue': u.pk % 7})
     for g in groups:
         g['people'].sort(key=lambda p: (not p['online'], p['name'].casefold()))

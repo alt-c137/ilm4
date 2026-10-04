@@ -24,13 +24,13 @@ export type Config = {
   currencies?: { code: string; name: string; sign: string }[]; currency?: string;
 };
 export type Privacy = 'all' | 'close' | 'nobody';
-export type SocialLink = { kind: string; title?: string; value: string; url?: string; privacy?: Privacy };
+export type SocialLink = { kind: string; title?: string; value: string; show?: string; url?: string; privacy?: Privacy };
 export type User = {
   id: number; name: string; nickname: string; first_name: string; email: string; city: string; phone: string;
   language: string; currency?: string; currency_now?: string; avatar: string; telegram: boolean; verified: boolean; balance: number | null;
   phone_verified?: boolean; needs_phone?: { publish: boolean; nikah: boolean };
   last_name?: string; ui?: { tabs_app?: string[] };
-  handle?: string; bio?: string; privacy?: { phone: Privacy; seen: Privacy; find_by_phone: boolean; forward?: Privacy; invite?: Privacy; counts?: Privacy }; links?: SocialLink[];
+  handle?: string; bio?: string; privacy?: { phone: Privacy; seen: Privacy; find_by_phone: boolean; forward?: Privacy; invite?: Privacy; counts?: Privacy; private?: boolean }; links?: SocialLink[]; links_view?: string; links_mode?: string;
   nikah: { id: number; status: string; active: boolean; gender: 'M' | 'F' } | null;
 };
 /** Фон переписки: узор, цвет или своё фото (хранится на телефоне, как обои в Telegram). */
@@ -63,6 +63,7 @@ type Ctx = {
   online: boolean; langTick: number;
   currency: string; setCurrency: (code: string) => void;
   tabs: TabKey[]; setTabs: (keys: TabKey[]) => void;
+  introSeen: boolean; finishIntro: () => void;
   wall: Wall; setWall: (w: Wall) => void;
 };
 
@@ -81,6 +82,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [prayer, setPrayerState] = useState<PrayerSettings>(DEFAULT_PRAYER);
   const [online, setOnline] = useState(true);
   const [tabs, setTabsState] = useState<TabKey[]>(DEFAULT_TABS);
+  const [introSeen, setIntroSeen] = useState(true);
   const [wall, setWallState] = useState<Wall>({});
   const prayerRef = useRef(prayer);
 
@@ -178,6 +180,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const savedCur = await load<string>('currency', '');
       setCurrencyState(savedCur);
       setApiCurrency(savedCur);
+      setIntroSeen(await load<boolean>('intro_seen', false));
       const savedTabs = await load<TabKey[] | null>('tabs', null);
       if (savedTabs?.length) setTabsState(savedTabs.filter((k) => TAB_KEYS.includes(k)));
       setWallState(await load<Wall>('wall', {}));
@@ -235,6 +238,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (user) api('/me/', { method: 'PATCH', body: { currency: code || 'auto' } }).catch(() => {});
   }, [refreshConfig, user]);
 
+  const finishIntro = useCallback(() => { setIntroSeen(true); save('intro_seen', true); }, []);
   const setTabs = useCallback((keys: TabKey[]) => {
     const clean = keys.filter((k, i) => TAB_KEYS.includes(k) && keys.indexOf(k) === i).slice(0, TAB_SLOTS);
     const next = clean.length >= 2 ? clean : DEFAULT_TABS;
@@ -287,8 +291,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ready, lang, setLang, t: translate, themeMode, setThemeMode, dark, c: dark ? palettes.dark : palettes.light,
     config, refreshConfig, moduleOn, user, signIn, signOut, refreshMe, setUser: (u: User) => { setUserState(u); save('user', u); },
     accounts, switchAccount, canAddAccount: accounts.length < MAX_ACCOUNTS,
-    prayer, setPrayer, online, langTick, currency, setCurrency, tabs, setTabs, wall, setWall,
-  }), [tabs, setTabs, wall, setWall, ready, lang, setLang, themeMode, setThemeMode, dark, config, refreshConfig, moduleOn, user, signIn, signOut, accounts, switchAccount,
+    prayer, setPrayer, online, langTick, currency, setCurrency, tabs, setTabs, wall, setWall, introSeen, finishIntro,
+  }), [introSeen, finishIntro, tabs, setTabs, wall, setWall, ready, lang, setLang, themeMode, setThemeMode, dark, config, refreshConfig, moduleOn, user, signIn, signOut, accounts, switchAccount,
     refreshMe, prayer, setPrayer, online, langTick, currency, setCurrency]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

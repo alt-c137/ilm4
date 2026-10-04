@@ -51,6 +51,8 @@ class User(AbstractUser):
                                        choices=PRIVACY, default=ALL)
     invite_privacy = models.CharField('кто может добавлять меня в группы', max_length=6, choices=PRIVACY, default=ALL)
     counts_privacy = models.CharField('кто видит мои счётчики (записи, подписчики, подписки)', max_length=6, choices=PRIVACY, default=ALL)
+    is_private = models.BooleanField('закрытый профиль', default=False,
+                                     help_text='Записи и сторис видят только подписчики, которых человек одобрил.')
     birthday = models.DateField('день рождения', null=True, blank=True)
     # свои настройки интерфейса: какие кнопки внизу экрана (сайт и приложение — отдельно)
     ui = models.JSONField('настройки интерфейса', default=dict, blank=True)
@@ -158,6 +160,47 @@ class Contact(models.Model):
     @property
     def name(self) -> str:
         return ' '.join(x for x in (self.first_name, self.last_name) if x) or self.friend.get_display_name()
+
+
+class DeviceSession(models.Model):
+    """Активный сеанс сайта — строка в «Устройствах» (как «Активные сеансы» в Telegram). Сам вход хранит Django
+    (таблица сессий); здесь — что это за устройство и когда им пользовались, чтобы человек мог завершить чужой сеанс.
+    Входы приложения — отдельно, в api.ApiToken."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='device_sessions')
+    session_key = models.CharField(max_length=40, unique=True)
+    ua = models.CharField('браузер', max_length=300, blank=True)
+    ip = models.GenericIPAddressField('IP', null=True, blank=True)
+    created_at = models.DateTimeField('вход', auto_now_add=True)
+    last_seen_at = models.DateTimeField('был активен', auto_now_add=True)
+
+    class Meta:
+        ordering = ['-last_seen_at']
+        verbose_name = 'сеанс сайта'
+        verbose_name_plural = 'сеансы сайта'
+
+
+class Persona(models.Model):
+    """«Маска» — как человека видят в разделе: один аккаунт, но в объявлениях и в сообществах можно выступать под
+    другим именем. По одной на раздел (никях — отдельная анкета в apps/nikah). Правила показа — people.face()."""
+
+    BOARD, SPACES = 'board', 'spaces'
+    SECTIONS = [(BOARD, 'Объявления, работа, услуги'), (SPACES, 'Сообщества')]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='personas')
+    section = models.CharField('раздел', max_length=10, choices=SECTIONS)
+    name = models.CharField('имя в разделе', max_length=40)
+    avatar = models.ImageField('аватар в разделе', upload_to='personas/', blank=True)
+    link_main = models.BooleanField('показывать ссылку на основной профиль', default=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['user', 'section'], name='one_persona_per_section')]
+        verbose_name = 'профиль раздела (маска)'
+        verbose_name_plural = 'профили разделов (маски)'
+
+    def __str__(self):
+        return f'{self.get_section_display()}: {self.name}'
 
 
 class DeviceAccount(models.Model):

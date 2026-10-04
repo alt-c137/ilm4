@@ -28,6 +28,7 @@
 <link rel="stylesheet" href="{% static 'css/people.css' %}?v={{ asset_v }}">
 <link rel="stylesheet" href="{% static 'css/tg.css' %}?v={{ asset_v }}">
 <link rel="stylesheet" href="{% static 'css/feed.css' %}?v={{ asset_v }}">
+<link rel="stylesheet" href="{% static 'css/shell.css' %}?v={{ asset_v }}">
 {# Мгновенные переходы: браузер заранее подгружает страницу, на ссылку которой навели или нажали. Только разделы без побочных действий при открытии. #}
 <script type="speculationrules">{"prefetch":[{"where":{"and":[{"href_matches":["/","/buy/*","/jobs/*","/news/*","/forum/*","/services/*","/transport/*","/health/*","/map/*","/library/*","/prayer/*","/migration/*","/refugee/*","/catalog/"]},{"not":{"href_matches":["/*/add/*","/*/ask/*","/*/request/*","/*/download/*","/*/boost/*","/*/respond/*","/*/reply/*","/*/confirm/*","/*\\?*"]}}]},"eagerness":"moderate"}]}</script>
 {{ js_i18n|json_script:"i18n-js" }}
@@ -39,13 +40,34 @@ window._t = (function () { var d = {}; try { d = JSON.parse(document.getElementB
 </head>
 <body class="{% block body_class %}{% endblock %}{% if is_home %} page-home{% endif %}{% if nikah_mode %} mode-nikah{% endif %}" data-sec="{{ active_section|default:'' }}"{% if user.is_authenticated and calls_on %} data-calls="1"{% endif %}>
 {% include 'includes/messages.html' %}
+{# боковое меню — только на широком экране (ПК): как у ВК и X. На телефоне его заменяет нижняя панель. #}
+<script>/* боковое меню можно убрать и вернуть (выбор запоминается) — класс ставим до отрисовки, чтобы страница не «прыгала» */
+try { if (localStorage.getItem('ilm4.side') === 'off') document.documentElement.classList.add('side-off'); } catch (e) {}</script>
+<button type="button" class="side__show" id="side-show" aria-label="{% translate 'Показать меню' %}" title="{% translate 'Показать меню' %}"><svg viewBox="0 0 24 24"><path d="M4 6.500h16M4 12h16M4 17.500h16"/></svg></button>
+<aside class="side" id="side" aria-label="{% translate 'Разделы' %}">
+  <button type="button" class="side__hide" id="side-hide" aria-label="{% translate 'Убрать меню' %}" title="{% translate 'Убрать меню' %}"><svg viewBox="0 0 24 24"><path d="M14.500 6l-6 6 6 6"/></svg></button>
+  <a class="side__logo logo logo--text" href="{% url 'core:home' %}?home=1" aria-label="{% translate 'ilm4 — на главную' %}"><b>ilm<i>4</i></b></a>
+  <nav class="side__nav">
+    {% for t in side_nav.main %}<a class="side__i{% if t.on %} on{% endif %}" href="{{ t.url }}{% if t.key == 'home' %}?home=1{% endif %}" title="{{ t.label }}"><svg viewBox="0 0 24 24">{{ t.icon|safe }}</svg><span>{{ t.label }}</span>{% if t.key == 'chats' and unread_chats %}<em>{{ unread_chats }}</em>{% endif %}</a>{% endfor %}
+    {% if user.is_authenticated %}<a class="side__i{% if request.resolver_match.namespace == 'notifications' %} on{% endif %}" href="{% url 'notifications:list' %}" title="{% translate 'Уведомления' %}"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span>{% translate "Уведомления" %}</span>{% if unread_notifications %}<em>{{ unread_notifications }}</em>{% endif %}</a>{% endif %}
+    <a class="side__i{% if request.resolver_match.url_name == 'catalog' %} on{% endif %}" href="{% url 'core:catalog' %}" title="{% translate 'Все сервисы' %}"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="3.25"/></svg><span>{% translate "Все сервисы" %}</span></a>
+  </nav>
+  {% if side_nav.rest %}<div class="side__t">{% translate "Ещё" %}</div>
+  <nav class="side__nav side__nav--rest">{% for m in side_nav.rest %}<a class="side__i side__i--s{% if m.on %} on{% endif %}" href="{{ m.url }}" title="{{ m.label|tr }}">{% svc_icon m.icon_key m.icon 'navic' %}<span>{{ m.label|tr }}</span></a>{% endfor %}</nav>{% endif %}
+  <div class="side__foot">
+    {% if user.is_authenticated %}
+    <a class="side__me" href="{% url 'accounts:profile' %}" title="{% translate 'Профиль' %}">{% if user.avatar %}<img src="{{ user.avatar.url }}" alt="">{% else %}<i>{{ user.get_display_name|slice:":1"|upper }}</i>{% endif %}<span><b>{{ user.get_display_name }}</b>{% if user.handle %}<small>@{{ user.handle }}</small>{% endif %}</span></a>
+    <a class="side__gear" href="{% url 'core:settings' %}" title="{% translate 'Настройки' %}" aria-label="{% translate 'Настройки' %}"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></a>
+    {% else %}<a class="btn btn--p side__login" href="{% url 'accounts:login' %}">{% translate "Войти" %}</a>{% endif %}
+  </div>
+</aside>
 <div class="wrap">
   <header class="top" id="top"><div class="top__row">
     <a class="logo logo--text" href="{% url 'core:home' %}" aria-label="{% translate 'ilm4 — на главную' %}"><b>ilm<i>4</i></b></a>
     <button type="button" class="darktoggle" id="darktoggle" aria-label="{% translate 'Светлая или тёмная тема' %}" title="{% translate 'Светлая / тёмная тема' %}"><svg class="dt-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg><svg class="dt-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg></button>
     {% include 'includes/lang_menu.html' %}
-    <form class="search" id="search" method="get" action="/buy/" role="search">
-      <input name="q" type="search" placeholder="{% translate 'Поиск объявлений: телефон, финики, коврик…' %}" aria-label="{% translate 'Поиск' %}" enterkeyhint="search" autocomplete="off">
+    <form class="search" id="search" method="get" action="{% url 'core:search' %}" role="search">
+      <input name="q" type="search" placeholder="{% translate 'Поиск: люди, каналы, объявления, сервисы' %}" aria-label="{% translate 'Поиск' %}" enterkeyhint="search" autocomplete="off">
       <button type="submit">{% translate "Найти" %}</button>
     </form>
     <div class="top__act">
@@ -93,6 +115,7 @@ window._t = (function () { var d = {}; try { d = JSON.parse(document.getElementB
           <a href="{% url 'core:settings' %}"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>{% translate "Настройки" %}</a>
           <div class="umenu__sep"></div>
           {% if user.is_staff %}<a href="{% url 'core:moderation' %}"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg>{% translate "Модерация" %}{% if mod_pending %} <span class="umenu__badge">{{ mod_pending }}</span>{% endif %}</a>
+          <a href="/moderation/stats/"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></svg>{% translate "Статистика" %}</a>
           <a href="/admin/"><svg viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></svg>{% translate "Админка" %}</a>{% endif %}
           <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
             <button type="submit" class="umenu__exit"><svg viewBox="0 0 24 24"><path d="M14 4h4a1.5 1.5 0 0 1 1.5 1.5v13A1.5 1.5 0 0 1 18 20h-4"/><path d="M9 8l-4 4 4 4M5 12h10"/></svg>{% translate "Выйти" %}</button>
@@ -175,6 +198,13 @@ window._t = (function () { var d = {}; try { d = JSON.parse(document.getElementB
 {% if user.is_authenticated %}<script>/* «в сети»: открытая вкладка раз в минуту сообщает об этом */
 setInterval(function(){ if (!document.hidden) fetch('/accounts/ping/', {credentials: 'same-origin'}).catch(function(){}); }, 60000);</script>{% endif %}
 {% include 'includes/cookie_banner.html' %}
+<script>/* кнопки «убрать меню» / «показать меню» на широком экране */
+(function () {
+  function set(off) { document.documentElement.classList.toggle('side-off', off); try { localStorage.setItem('ilm4.side', off ? 'off' : 'on'); } catch (e) {} }
+  var h = document.getElementById('side-hide'), s = document.getElementById('side-show');
+  if (h) h.addEventListener('click', function () { set(true); });
+  if (s) s.addEventListener('click', function () { set(false); });
+})();</script>
 <script src="{% static 'js/theme.js' %}?v={{ asset_v }}"></script>
 <script src="{% static 'js/app.js' %}?v={{ asset_v }}"></script>
 <script src="{% static 'js/photoedit.js' %}?v={{ asset_v }}" defer></script>

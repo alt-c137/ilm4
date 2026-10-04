@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% load i18n icons %}
+{% block title %}{% translate "Заявки в подписчики —" %} {{ block.super }}{% endblock %}
+{% block body_class %}page-tp{% endblock %}
+{% block content %}
+<div class="tp">
+  <a class="crumb" href="{% url 'core:settings' %}">{% ico 'back' %}{% translate "Настройки" %}</a>
+  <header class="tp__bar"><h1>{% translate "Заявки в подписчики" %}</h1></header>
+  {% if not user.is_private %}<p class="tp__note">{% translate "Профиль открыт: подписаться может любой, заявок не бывает. Закрыть профиль — Настройки → Конфиденциальность." %}</p>{% endif %}
+  <section class="tp__card">
+    {% for p in people %}<div class="tp__row acc__row">
+      {% if p.avatar %}<img class="tava tava--sm" src="{{ p.avatar.url }}" alt="">{% else %}<span class="tava tava--sm tava--h2">{{ p.get_display_name|slice:":1"|upper }}</span>{% endif %}
+      <a href="{% url 'accounts:public' p.pk %}"><b>{{ p.get_display_name }}</b>{% if p.handle %}<small>@{{ p.handle }}</small>{% endif %}</a>
+      <form method="post">{% csrf_token %}<input type="hidden" name="user" value="{{ p.pk }}"><input type="hidden" name="ok" value="1"><button type="submit" class="btn btn--s btn--p">{% translate "Одобрить" %}</button></form>
+      <form method="post">{% csrf_token %}<input type="hidden" name="user" value="{{ p.pk }}"><button type="submit" class="btn btn--s btn--g">{% translate "Отклонить" %}</button></form>
+    </div>{% empty %}<div class="tg__empty"><div class="empty__plug">{% ico 'userplus' %}</div><b>{% translate "Заявок нет" %}</b></div>{% endfor %}
+  </section>
+</div>
+{% endblock %}

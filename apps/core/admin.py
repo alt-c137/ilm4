@@ -2,6 +2,7 @@ from django.contrib import admin
 from solo.admin import SingletonModelAdmin
 
 from .models import (
+    Ad,
     AIReview,
     Banner,
     Moderation,
@@ -33,6 +34,23 @@ class ThemeAdmin(admin.ModelAdmin):
 class NotificationAdmin(admin.ModelAdmin):
     list_display = ('user', 'text', 'read', 'created_at')
     list_filter = ('read',)
+
+
+@admin.register(Ad)
+class AdAdmin(admin.ModelAdmin):
+    list_display = ('title', 'is_active', 'in_channels', 'in_feed', 'in_home', 'impressions', 'clicks', 'ctr', 'ends_at')
+    list_filter = ('is_active', 'in_channels', 'in_feed', 'in_home')
+    search_fields = ('title', 'text')
+    readonly_fields = ('impressions', 'clicks', 'created_at')
+
+    @admin.display(description='переходов на 100 показов')
+    def ctr(self, obj):
+        return f'{100 * obj.clicks / obj.impressions:.1f}' if obj.impressions else '—'
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        from django.core.cache import cache
+        cache.delete('ads:active')              # новое объявление видно сразу
 
 
 @admin.register(Banner)

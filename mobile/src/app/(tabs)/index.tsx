@@ -1,14 +1,16 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { gregText, hijriText } from '@/lib/hijri';
 import { MODULE_ICON, openModule } from '@/lib/modules';
 import { PRAYER_NAMES } from '@/lib/notify';
 import { useApp } from '@/state/app';
-import { Badge, Card, Icon, Screen, Section, Txt } from '@/ui/kit';
+import { load, save } from '@/lib/storage';
+import { Badge, Card, Icon, Screen, Section, Segmented, Txt, type IconName } from '@/ui/kit';
+import { Showcase } from '@/ui/showcase';
 import { useFetch } from '@/ui/useFetch';
 import { fmtLeft, usePrayerNow } from '@/ui/usePrayer';
 
@@ -16,8 +18,25 @@ type Home = {
   hadith: { text: string; source: string; details: string; image: string } | null;
   rates: { code: string; rate: number }[];
   news: { id: number; title: string; summary: string; image: string; created_at: string }[];
-  unread: number;
+  unread: number; chats_unread?: number; tracker?: { done: number; total: number };
 };
+
+/** Плитка «что вас ждёт»: раздел, которым пользуются каждый день, и что в нём нового. */
+function NowTile({ icon, title, note, hot, onPress }: { icon: IconName; title: string; note: string; hot?: boolean; onPress: () => void }) {
+  const { c } = useApp();
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => ({ flex: 1, minWidth: '46%', gap: 8, backgroundColor: c.card,
+      borderRadius: 20, padding: 14, opacity: pressed ? 0.7 : 1 })}>
+      <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: c.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
+        <Icon name={icon} size={19} color={c.accentD} />
+      </View>
+      <View>
+        <Txt style={{ fontWeight: '700', fontSize: 15.5 }} numberOfLines={1}>{title}</Txt>
+        <Txt kind="small" numberOfLines={1} color={hot ? c.accent : undefined} style={hot ? { fontWeight: '700' } : undefined}>{note}</Txt>
+      </View>
+    </Pressable>
+  );
+}
 
 /** Главная — всегда главная. Лента — отдельный раздел (нижняя кнопка или «Сервисы»), стартовый экран человек выбирает сам. */
 export default function HomeScreen() {
@@ -29,8 +48,13 @@ function HomeMain({ switcher }: { switcher: ReactNode }) {
   const { data, reload, loading } = useFetch<Home>('/home/');
   const p = usePrayerNow();
   const [more, setMore] = useState(false);
+  const [view, setView] = useState<'showcase' | 'brief'>('showcase');
+  useEffect(() => { load<'showcase' | 'brief'>('home_view', 'showcase').then(setView); }, []);
   const today = new Date();
-  const modules = (config?.modules ?? []).filter((m) => m.status === 'on' && m.key !== 'chat');
+  const modules = (config?.modules ?? []).filter((m) => m.status === 'on' && m.key !== 'wallet');
+  // разделы по смыслу; «Общение» — первым: с него начинают чаще всего
+  const groups = [...(config?.groups ?? []), { key: 'more', name: t('Ещё') }].sort((a, b) => Number(a.key !== 'talk') - Number(b.key !== 'talk'));
+  const tr = data?.tracker;
 
   return (
     <Screen onRefresh={() => reload()} refreshing={loading && !!data}>
@@ -52,6 +76,8 @@ function HomeMain({ switcher }: { switcher: ReactNode }) {
         )}
       </View>
 
+      <Segmented value={view} onChange={(v) => { setView(v); save('home_view', v); }}
+        options={[{ key: 'showcase', label: t('Витрина') }, { key: 'brief', label: t('Сводка') }]} />
       {config?.notice ? (
         <Card soft style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
           <Icon name="information-circle" color={c.accent} />
@@ -100,35 +126,44 @@ function HomeMain({ switcher }: { switcher: ReactNode }) {
         </Card>
       ) : null}
 
-      {moduleOn('nikah') ? (
-        <Card onPress={() => router.push('/nikah')} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-          <View style={{ width: 52, height: 52, borderRadius: 18, backgroundColor: '#fde8f0', alignItems: 'center', justifyContent: 'center' }}>
-            <Icon name="heart" size={26} color="#e0457b" />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Txt kind="h3">{t('Никях')}</Txt>
-            <Txt kind="small">{t('Знакомство для брака по Корану и Сунне')}</Txt>
-          </View>
-          <Icon name="chevron-forward" size={18} color={c.inkSoft} />
-        </Card>
-      ) : null}
+      {/* вид главной: «Витрина» — сервисы живыми плитками; «Сводка» — что ждёт + разделы по группам. Выбор запоминается. */}
+      {view === 'showcase' ? <Showcase skip={['prayer']} /> : (
+      <>
+      {/* что вас ждёт — главное, ради чего открывают приложение каждый день */}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+        {moduleOn('chat') ? <NowTile icon="chatbubbles" title={t('Чаты')} hot={!!data?.chats_unread}
+          note={!user ? t('личные, группы, каналы') : data?.chats_unread ? t('новых: {n}', { n: data.chats_unread }) : t('нет новых')} onPress={() => router.push('/chats')} /> : null}
+        {moduleOn('feed') ? <NowTile icon="albums" title={t('Лента')} note={t('записи людей')} onPress={() => router.push('/tab-feed')} /> : null}
+        {moduleOn('communities') ? <NowTile icon="people" title={t('Сообщества')} note={t('клубы по интересам')} onPress={() => router.push('/space')} /> : null}
+        {moduleOn('tracker') ? <NowTile icon="checkmark-circle" title={t('Трекер')} hot={!!tr && tr.total > 0 && tr.done < tr.total}
+          note={tr && tr.total ? t('{done} из {total}', { done: tr.done, total: tr.total }) : t('привычки и дела')} onPress={() => router.push('/tracker')} /> : null}
+      </View>
 
-      <Section title={t('Сервисы')} action={<Pressable onPress={() => router.push('/services')}><Txt kind="small" color={c.accent}>{t('Все')}</Txt></Pressable>}>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-          {modules.slice(0, 8).map((m) => (
-            <Pressable key={m.key} onPress={() => openModule(m.key, m.status, m.name)}
-              style={({ pressed }) => ({ width: '22.8%', alignItems: 'center', gap: 6, opacity: pressed ? 0.6 : 1 })}>
-              <View style={{ width: 58, height: 58, borderRadius: 19, backgroundColor: c.card, alignItems: 'center', justifyContent: 'center' }}>
-                {m.icon && m.icon.endsWith('.png') ? <Image source={{ uri: m.icon }} style={{ width: 30, height: 30 }} />
-                  : <Icon name={MODULE_ICON[m.key] ?? 'apps'} size={26} color={c.accent} />}
-              </View>
-              <Txt kind="small" numberOfLines={2} style={{ textAlign: 'center', color: c.ink, fontSize: 12 }}>{m.name}</Txt>
-            </Pressable>
-          ))}
-        </View>
-      </Section>
+      {groups.map((g) => {
+        const items = modules.filter((m) => m.group === g.key);
+        if (!items.length) return null;
+        return (
+          <Section key={g.key} title={g.name} action={g.key === 'talk' ? <Pressable onPress={() => router.push('/services')}><Txt kind="small" color={c.accent}>{t('Все сервисы')}</Txt></Pressable> : undefined}>
+            <Card style={{ flexDirection: 'row', flexWrap: 'wrap', paddingVertical: 14, paddingHorizontal: 6, rowGap: 14 }}>
+              {items.map((m) => (
+                <Pressable key={m.key} onPress={() => openModule(m.key, m.status, m.name)}
+                  style={({ pressed }) => ({ width: '25%', alignItems: 'center', gap: 6, opacity: pressed ? 0.6 : 1 })}>
+                  <View style={{ width: 52, height: 52, borderRadius: 17, backgroundColor: c.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
+                    {m.icon && m.icon.endsWith('.png') ? <Image source={{ uri: m.icon }} style={{ width: 27, height: 27 }} />
+                      : <Icon name={MODULE_ICON[m.key] ?? 'apps'} size={24} color={c.accentD} />}
+                  </View>
+                  <Txt kind="small" numberOfLines={2} style={{ textAlign: 'center', color: c.ink, fontSize: 12, paddingHorizontal: 2 }}>{m.name}</Txt>
+                </Pressable>
+              ))}
+            </Card>
+          </Section>
+        );
+      })}
 
-      {data?.news?.length ? (
+      </>
+      )}
+
+      {view === 'brief' && data?.news?.length ? (
         <Section title={t('Новости')} action={<Pressable onPress={() => router.push('/news')}><Txt kind="small" color={c.accent}>{t('Все')}</Txt></Pressable>}>
           {data.news.slice(0, 3).map((n) => (
             <Card key={n.id} onPress={() => router.push(`/news/${n.id}`)} style={{ flexDirection: 'row', gap: 12, padding: 12 }}>
@@ -142,7 +177,7 @@ function HomeMain({ switcher }: { switcher: ReactNode }) {
         </Section>
       ) : null}
 
-      {data?.rates?.length ? (
+      {view === 'brief' && data?.rates?.length ? (
         <Section title={t('Курсы к суму')}>
           <Card style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16 }}>
             {data.rates.slice(0, 6).map((r) => (

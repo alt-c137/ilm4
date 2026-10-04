@@ -48,7 +48,10 @@
       });
     }
     sorted.forEach(function (r) {
-      var ok = needle ? r.dataset.q.indexOf(needle) !== -1 : !!allow[r.dataset.id];
+      // вкладок нет (у человека нет своих папок) — показываем все чаты, кроме архива; раньше список оставался пустым
+      var ok = needle ? r.dataset.q.indexOf(needle) !== -1
+        : tab ? !!allow[r.dataset.id]
+          : (current === 'archive' ? r.dataset.arch === '1' : r.dataset.arch !== '1');
       r.hidden = !ok;
       if (ok) shown++;
       var isPin = current && current !== 'archive' ? !!pinned[r.dataset.id] : r.dataset.pin === '1';
@@ -88,12 +91,36 @@
   function esc(x) { var d = document.createElement('div'); d.textContent = x == null ? '' : x; return d.innerHTML; }
   function face(p) { return p && p.url ? '<img class="tava" src="' + esc(p.url) + '" alt="" loading="lazy">' : '<span class="tava tava--h' + ((p && p.hue) || 0) + '">' + esc((p && p.letter) || '#') + '</span>'; }
   function rowHtml(r) {
-    return '<a class="tgrow" href="' + esc(r.href) + '">' + (r.pic ? face(r.pic) : '<span class="tava tava--h2">' + (IC.search || '') + '</span>') +
+    return '<a class="tgrow" href="' + esc(r.href) + '"' + (r.kind ? ' data-rk="' + esc(r.kind) + '" data-rid="' + esc(r.id) + '"' : '') + '>' + (r.pic ? face(r.pic) : '<span class="tava tava--h2">' + (IC.search || '') + '</span>') +
       '<span class="tgrow__b"><span class="tgrow__top"><b>' + esc(r.name) + '</b>' + (r.time ? '<time>' + esc(r.time) + '</time>' : '') + '</span>' +
       '<span class="tgrow__bot"><span class="tgrow__msg">' + esc(r.sub) + '</span></span></span></a>';
   }
+  /* Пока ничего не набрано — «частые» (кому пишешь чаще всего) и «недавние» (что открывал из поиска), как в Telegram. */
+  function idle() {
+    var n = ++findN;
+    fetch('/chat/find/', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (j) {
+      if (n !== findN || q.value.trim()) return;
+      var html = '';
+      if (j.top && j.top.length) {
+        html += '<div class="tgtop">' + j.top.map(function (p) {
+          return '<a class="tgtop__i" href="' + esc(p.href) + '">' + face(p.pic) + '<span>' + esc(p.name) + '</span></a>';
+        }).join('') + '</div>';
+      }
+      if (j.recent && j.recent.length) {
+        html += '<h3 class="tgfound__h">' + _t('Недавние') + '<button type="button" id="tg-recent-clear">' + _t('Очистить') + '</button></h3>' + j.recent.map(rowHtml).join('');
+      }
+      found.innerHTML = html; found.hidden = !html;
+      side.classList.toggle('is-idle', !!html);
+    }).catch(function () { /* нет сети — просто список чатов */ });
+  }
+  function remember(kind, id) {
+    var fd = new FormData(); fd.append('kind', kind); fd.append('id', id); fd.append('csrfmiddlewaretoken', csrf);
+    if (navigator.sendBeacon) navigator.sendBeacon('/chat/find/', fd);
+  }
   function findRemote() {
     var text = q.value.trim(), n = ++findN;
+    side.classList.remove('is-idle');
+    if (!text && document.activeElement === q) { idle(); return; }
     if (text.length < 2) { found.hidden = true; found.innerHTML = ''; return; }
     fetch('/chat/find/?q=' + encodeURIComponent(text), { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (j) {
       if (n !== findN) return;
@@ -103,7 +130,26 @@
       found.innerHTML = html; found.hidden = !html;
     }).catch(function () { /* нет сети — остаётся поиск по своим чатам */ });
   }
-  if (q) q.addEventListener('input', function () { clearTimeout(findT); findT = setTimeout(findRemote, 280); });
+  if (q) {
+    q.addEventListener('input', function () { clearTimeout(findT); findT = setTimeout(findRemote, 280); });
+    q.addEventListener('focus', function () { if (!q.value.trim()) idle(); });
+    q.addEventListener('blur', function () {                 // ушли из поиска, ничего не набрав — возвращаем обычный список
+      setTimeout(function () { if (!q.value.trim() && document.activeElement !== q) { findN++; found.hidden = true; found.innerHTML = ''; side.classList.remove('is-idle'); } }, 220);
+    });
+  }
+  // открыл что-то из поиска (свой чат или найденное) — оно попадает в «Недавние»
+  side.addEventListener('click', function (e) {
+    if (e.target.id === 'tg-recent-clear') {
+      e.preventDefault();
+      var fd = new FormData(); fd.append('clear', '1');
+      fetch('/chat/find/', { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRFToken': csrf }, body: fd }).then(function () { found.hidden = true; found.innerHTML = ''; side.classList.remove('is-idle'); });
+      return;
+    }
+    var row = e.target.closest('a.tgrow, a.tgtop__i');
+    if (!row || !q || (!q.value.trim() && !side.classList.contains('is-idle'))) return;
+    if (row.dataset.rk) remember(row.dataset.rk, row.dataset.rid);
+    else if (row.dataset.id && q.value.trim()) remember('t', row.dataset.id);
+  });
   apply();
 
   /* ---------- меню ---------- */

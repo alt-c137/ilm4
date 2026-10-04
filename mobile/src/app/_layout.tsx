@@ -13,7 +13,8 @@ import { startMetrics, trackScreen } from '@/lib/metrics';
 import { Notifications } from '@/lib/notify';
 import { AppProvider, useApp } from '@/state/app';
 import { IncomingCalls } from '@/ui/incoming';
-import { Button, Icon, Txt } from '@/ui/kit';
+import { Intro } from '@/ui/intro';
+import { Button, Icon, ToastHost, Txt } from '@/ui/kit';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -42,7 +43,7 @@ function NotificationRouter() {
 }
 
 function Root() {
-  const { ready, c, dark, config, t } = useApp();
+  const { ready, c, dark, config, t, introSeen, user } = useApp();
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync().catch(() => {});
@@ -72,6 +73,9 @@ function Root() {
     );
   }
 
+  // первый запуск: коротко — что это за приложение и с чего начать (тем, кто уже вошёл, не показываем)
+  if (!introSeen && !user) return <><StatusBar style={dark ? 'light' : 'dark'} /><Intro /></>;
+
   return (
     <>
       <StatusBar style={dark ? 'light' : 'dark'} />
@@ -84,6 +88,7 @@ function Root() {
         <Stack.Screen name="report" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="verify-phone" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
       </Stack>
+      <ToastHost />
     </>
   );
 }

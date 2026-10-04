@@ -228,6 +228,8 @@ def thread_detail(request, pk):
             'rx': m._rx, 'my': m._my,
         })
         prev = m
+    from apps.core import ads as core_ads
+
     from .views_rooms import pic
     other = None if thread.is_room or thread.is_saved else thread.other_participant(request.user)
     info = services.thread_info(thread, request.user)
@@ -265,6 +267,7 @@ def thread_detail(request, pk):
         'can_post': room['can_post'] if room else True,
         'blocked': blocked,
         'witnesses': [u.get_display_name() for u in thread.observers.exclude(pk=request.user.pk)],
+        'ad': core_ads.for_thread(thread),
         'chat_cfg': {'me': request.user.id, 'thread': thread.pk, 'other': who['name'], 'features': _flags(thread),
                      'room': thread.kind if thread.is_room else '', 'admin': bool(room and room['admin']),
                      'warn_text': contexts.warn_text() if risky else '',
@@ -283,6 +286,13 @@ def thread_start(request):
     email = request.POST.get('email', '').strip().lower() if request.method == 'POST' \
         else request.GET.get('email', '').strip().lower()
     uid = request.GET.get('user', '')
+    if not uid and request.GET.get('ctx') and request.GET.get('ctx_id', '').isdigit():
+        # автор под «маской»: в ссылке нет номера его аккаунта — находим автора по самому объявлению
+        from apps.core.publications import BY_KEY
+        pub = BY_KEY.get(request.GET['ctx'])
+        obj = pub.get_model().objects.filter(pk=int(request.GET['ctx_id'])).first() if pub else None
+        owner_id = getattr(obj, f'{pub.owner}_id', None) if obj is not None else None
+        uid = str(owner_id) if owner_id else ''
     if uid.isdigit() and int(uid) != request.user.pk:
         # по id — не раскрываем email собеседника в ссылках
         email = User.objects.filter(pk=int(uid), is_active=True).values_list('email', flat=True).first() or ''

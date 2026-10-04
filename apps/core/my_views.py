@@ -104,11 +104,18 @@ REPORTABLE = {p.model.lower() for p in PUBLICATIONS} | {'nikah.nikahprofile', 'a
 @login_required
 @require_POST
 def report(request):
-    ct = get_object_or_404(ContentType, pk=request.POST.get('ct') or 0)
-    if f'{ct.app_label}.{ct.model}' not in REPORTABLE:
-        raise Http404
-    model = ct.model_class()
-    obj = get_object_or_404(model, pk=request.POST.get('id') or 0)
+    if request.POST.get('who') == 'thread':
+        # жалоба на собеседника из чата под «маской»: в форме нет номера его аккаунта — находим его по самому чату
+        chat = report_thread(request.user, request.POST.get('thread'))
+        obj = chat.other_participant(request.user) if chat is not None and not chat.is_room else None
+        if obj is None:
+            raise Http404
+        ct = ContentType.objects.get_for_model(obj)
+    else:
+        ct = get_object_or_404(ContentType, pk=request.POST.get('ct') or 0)
+        if f'{ct.app_label}.{ct.model}' not in REPORTABLE:
+            raise Http404
+        obj = get_object_or_404(ct.model_class(), pk=request.POST.get('id') or 0)
     reason = request.POST.get('reason', '')
     back = request.POST.get('next', '')
     back = back if url_has_allowed_host_and_scheme(back, allowed_hosts={request.get_host()}) else '/'

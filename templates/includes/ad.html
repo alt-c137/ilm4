@@ -1,0 +1,6 @@
+{% load i18n %}{# Рекламное объявление (apps/core/ads.py). Пометка «Реклама» — всегда. kind: card (лента) | bubble (канал) | tile (витрина) #}
+{% if ad %}<a class="adx adx--{{ kind|default:'card' }}" href="{{ ad.url }}" rel="sponsored noopener">
+  {% if ad.image %}<img class="adx__img" src="{{ ad.image }}" alt="" loading="lazy">{% endif %}
+  <span class="adx__b"><span class="adx__k">{% translate "Реклама" %}</span><b>{{ ad.title }}</b><span class="adx__t">{{ ad.text }}</span></span>
+  <span class="adx__go">{{ ad.button }}</span>
+</a>{% endif %}

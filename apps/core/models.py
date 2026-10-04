@@ -252,6 +252,37 @@ class SiteSettings(SingletonModel):
         return _('Настройки сайта')
 
 
+class Ad(models.Model):
+    """Рекламное объявление — как «спонсорские сообщения» Telegram: короткий текст и ссылка, всегда с пометкой «Реклама».
+
+    Где показывается (apps/core/ads.py): внизу открытых каналов, карточкой в ленте, плиткой на главной.
+    В личных чатах, группах, сообществах и никяхе рекламы нет. Объявления создаёт владелец площадки в админке;
+    считаются показы и переходы."""
+
+    title = models.CharField('заголовок', max_length=60)
+    text = models.CharField('текст (до 160 знаков)', max_length=160)
+    url = models.CharField('ссылка', max_length=300, help_text='Адрес на ilm4 (/buy/12/, /c/kanal/) или https://…')
+    button = models.CharField('надпись кнопки', max_length=24, default='Перейти')
+    image = models.ImageField('картинка (необязательно)', upload_to='ads/', blank=True)
+    in_channels = models.BooleanField('показывать в открытых каналах', default=True)
+    in_feed = models.BooleanField('показывать в ленте', default=True)
+    in_home = models.BooleanField('показывать на главной', default=True)
+    starts_at = models.DateTimeField('показывать с', null=True, blank=True)
+    ends_at = models.DateTimeField('показывать до', null=True, blank=True)
+    is_active = models.BooleanField('включено', default=True)
+    impressions = models.PositiveIntegerField('показов', default=0, editable=False)
+    clicks = models.PositiveIntegerField('переходов', default=0, editable=False)
+    created_at = models.DateTimeField('создано', auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'реклама'
+        verbose_name_plural = 'реклама'
+
+    def __str__(self):
+        return self.title
+
+
 class Banner(models.Model):
     """Слайд рекламной карусели на главной. Управляется из админки.
 

@@ -95,7 +95,7 @@ export function HabitRow({ h, canMark, onToggle, onStep, onEdit, onMore, hideBoa
           </Txt>
         ) : null}
         {h.note ? <Txt kind="small" style={{ fontSize: 12.5 }} numberOfLines={1}>{h.note}</Txt> : null}
-        {h.log_note ? <Txt kind="small" color={c.accentD} style={{ fontSize: 12.5 }} numberOfLines={2}><Icon name="create-outline" size={12.5} color={c.accentD} /> {h.log_note}</Txt> : null}
+        {h.log_note ? <Txt kind="small" color={c.accentD} style={{ fontSize: 12.5 }} numberOfLines={2}><Icon name="pencil-outline" size={12.5} color={c.accentD} /> {h.log_note}</Txt> : null}
         {h.who ? (
           <View style={{ flexDirection: 'row', gap: 4, marginTop: 5, flexWrap: 'wrap' }}>
             {h.who.map((p) => (
@@ -106,7 +106,7 @@ export function HabitRow({ h, canMark, onToggle, onStep, onEdit, onMore, hideBoa
           </View>
         ) : null}
       </View>
-      {onEdit && h.can_edit ? <Pressable onPress={() => onEdit(h)} hitSlop={8} style={{ padding: 4, opacity: 0.5 }} accessibilityLabel={t('Изменить')}><Icon name="create-outline" size={17} color={c.inkSoft} /></Pressable> : null}
+      {onEdit && h.can_edit ? <Pressable onPress={() => onEdit(h)} hitSlop={8} style={{ padding: 4, opacity: 0.5 }} accessibilityLabel={t('Изменить')}><Icon name="pencil-outline" size={17} color={c.inkSoft} /></Pressable> : null}
       {canMark && h.kind === 'count' ? (
         <Pressable onPress={press(() => onStep(h, -1))} hitSlop={6} style={{ width: 34, height: 34, borderRadius: 17, borderWidth: 2, borderColor: c.line, alignItems: 'center', justifyContent: 'center' }}>
           <Icon name="remove" size={18} color={c.inkSoft} />

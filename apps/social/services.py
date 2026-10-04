@@ -60,9 +60,12 @@ def _close_of(viewer) -> set:
 def visible_posts(viewer):
     """Записи, которые видит человек: открытые всем, «близким» — если он в близких у автора, и свои."""
     qs = Post.objects.filter(hidden=False).select_related('author', 'repost_of__author').prefetch_related('photos')
+    # закрытый профиль: записи видят только одобренные подписчики (и сам автор)
     if not getattr(viewer, 'pk', None):
-        return qs.filter(privacy=ALL)
+        return qs.filter(privacy=ALL, author__is_private=False)
+    approved = Follow.objects.filter(follower=viewer, approved=True).values('author_id')
     return (qs.filter(Q(privacy=ALL) | Q(author=viewer) | Q(privacy=CLOSE, author__in=_close_of(viewer)))
+            .filter(Q(author__is_private=False) | Q(author=viewer) | Q(author__in=approved))
             .exclude(author__in=_blocked_ids(viewer)))
 
 
@@ -139,14 +142,66 @@ def follow(user, author, on: bool = True) -> bool:
     if on:
         if author.pk in _blocked_ids(user):
             raise SocialError(_('Недоступно: один из вас заблокировал другого.'), 403)
-        Follow.objects.get_or_create(follower=user, author=author)
+        # закрытый профиль: подписка становится заявкой, пока автор её не одобрит (как в Instagram и ВК)
+        row, created = Follow.objects.get_or_create(follower=user, author=author, defaults={'approved': not author.is_private})
+        if created and not row.approved:
+            _notify_request(author, user)
     else:
         Follow.objects.filter(follower=user, author=author).delete()
     return on
 
 
+def _notify_request(author, follower) -> None:
+    from django.conf import settings
+    from django.utils import translation
+
+    from apps.core.models import Notification
+    with translation.override(author.language or settings.LANGUAGE_CODE):      # на языке получателя
+        text = str(_('{name} хочет подписаться на вас').format(name=follower.get_display_name()))
+    Notification.objects.create(user=author, text=text, url='/feed/requests/')
+
+
 def is_following(user, author) -> bool:
-    return bool(getattr(user, 'pk', None)) and Follow.objects.filter(follower=user, author=author).exists()
+    return bool(getattr(user, 'pk', None)) and Follow.objects.filter(follower=user, author=author, approved=True).exists()
+
+
+def follow_state(user, author) -> str:
+    """'on' — подписан, 'requested' — заявка ждёт ответа, '' — нет."""
+    if not getattr(user, 'pk', None):
+        return ''
+    row = Follow.objects.filter(follower=user, author=author).values_list('approved', flat=True).first()
+    return '' if row is None else ('on' if row else 'requested')
+
+
+def can_see_wall(author, viewer) -> bool:
+    """Открыта ли стена этому человеку: закрытый профиль показывает записи только одобренным подписчикам."""
+    if not author.is_private or getattr(viewer, 'pk', None) == author.pk:
+        return True
+    return is_following(viewer, author)
+
+
+def follow_requests(user) -> list:
+    """Заявки в подписчики закрытого профиля: [человек, …], новые сверху."""
+    rows = Follow.objects.filter(author=user, approved=False).select_related('follower').order_by('-created_at')[:200]
+    return [r.follower for r in rows if r.follower.is_active]
+
+
+def answer_request(user, follower_id, ok: bool) -> None:
+    qs = Follow.objects.filter(author=user, follower_id=follower_id, approved=False)
+    if ok:
+        qs.update(approved=True)
+    else:
+        qs.delete()
+
+
+def set_private(user, on: bool) -> None:
+    """Закрыть или открыть профиль. Открыл — все ждавшие заявки становятся подписками."""
+    on = bool(on)
+    if user.is_private != on:
+        user.is_private = on
+        user.save(update_fields=['is_private'])
+    if not on:
+        Follow.objects.filter(author=user, approved=False).update(approved=True)
 
 
 def counts(author, viewer=None) -> dict:
@@ -154,7 +209,8 @@ def counts(author, viewer=None) -> dict:
     from apps.accounts import people
     if not people.can_see_counts(author, viewer):
         return {'counts_hidden': True}
-    return {'followers': Follow.objects.filter(author=author).count(), 'follows': Follow.objects.filter(follower=author).count(),
+    return {'followers': Follow.objects.filter(author=author, approved=True).count(),
+            'follows': Follow.objects.filter(follower=author, approved=True).count(),
             'posts': Post.objects.filter(author=author, hidden=False).count(), 'counts_hidden': False}
 
 
@@ -308,6 +364,16 @@ def _person(u) -> dict:
             'verified': u.platform_verified, 'url': reverse('accounts:public', args=[u.pk]), 'hue': u.pk % 7}
 
 
+def _seller(u) -> dict:
+    """Автор объявления или вакансии в ленте — с учётом его «маски» (профиля для объявлений)."""
+    from apps.accounts import people
+    f = people.face(u, people.BOARD)
+    if not f['masked']:
+        return _person(u)
+    return {'id': f['id'], 'name': f['name'], 'avatar': f['avatar'], 'handle': '', 'verified': f['verified'],
+            'url': f['link'], 'hue': len(f['name']) % 7}
+
+
 def post_item(p: Post, viewer=None) -> dict:
     item = {'key': p.key, 'kind': 'post', 'label': '', 'id': p.pk, 'author': _person(p.author), 'title': '', 'text': p.text,
             'images': [{'url': ph.image.url} for ph in p.photos.all()], 'price': '', 'url': f'/feed/post/{p.pk}/',
@@ -364,14 +430,14 @@ def _pub_items(viewer, before, limit: int) -> list:
     if module_on('buy'):
         from apps.market.models import Listing
         for x in take(Listing.objects.filter(status=Moderation.APPROVED, is_active=True).select_related('owner')):
-            items.append({'key': f'buy:{x.pk}', 'kind': 'buy', 'label': _('Маркет'), 'id': x.pk, 'author': _person(x.owner),
+            items.append({'key': f'buy:{x.pk}', 'kind': 'buy', 'label': _('Маркет'), 'id': x.pk, 'author': _seller(x.owner),
                           'title': x.title, 'text': x.description[:300], 'images': [{'url': x.photo.url}] if x.photo else [],
                           'price': money.fmt(x.price, x.currency) if x.price else _('Даром'), 'url': reverse('market:detail', args=[x.pk]),
                           'created': x.created_at, 'city': x.city})
     if module_on('jobs'):
         from apps.jobs.models import Vacancy
         for v in take(Vacancy.objects.filter(status=Moderation.APPROVED).select_related('owner')):
-            items.append({'key': f'jobs:{v.pk}', 'kind': 'jobs', 'label': _('Работа'), 'id': v.pk, 'author': _person(v.owner),
+            items.append({'key': f'jobs:{v.pk}', 'kind': 'jobs', 'label': _('Работа'), 'id': v.pk, 'author': _seller(v.owner),
                           'title': v.title, 'text': f'{v.company} · {v.city}', 'images': [], 'price': v.salary or '',
                           'url': reverse('jobs:detail', args=[v.pk]), 'created': v.created_at})
     if module_on('map'):
@@ -404,7 +470,7 @@ def feed(viewer, tab: str = 'for_you', before=None, limit: int = PAGE) -> dict:
     blocked = _blocked_ids(viewer)
     posts = visible_posts(viewer)
     if tab == 'following':
-        followed = list(Follow.objects.filter(follower=viewer).values_list('author_id', flat=True)) if getattr(viewer, 'pk', None) else []
+        followed = list(Follow.objects.filter(follower=viewer, approved=True).values_list('author_id', flat=True)) if getattr(viewer, 'pk', None) else []
         posts = posts.filter(Q(author__in=followed) | Q(author=viewer))
     if before:
         posts = posts.filter(created_at__lt=before)
@@ -428,7 +494,7 @@ def affinity(viewer) -> dict:
     from collections import Counter
     if not getattr(viewer, 'pk', None):
         return {'follows': set(), 'authors': Counter(), 'kinds': Counter()}
-    follows = set(Follow.objects.filter(follower=viewer).values_list('author_id', flat=True))
+    follows = set(Follow.objects.filter(follower=viewer, approved=True).values_list('author_id', flat=True))
     targets = list(Like.objects.filter(user=viewer).order_by('-pk').values_list('target', flat=True)[:300])
     targets += list(Saved.objects.filter(user=viewer).order_by('-pk').values_list('target', flat=True)[:100]) * 2      # сохранил — сильнее лайка
     kinds = Counter(t.split(':', 1)[0] for t in targets)
@@ -479,7 +545,7 @@ def stories_for(viewer) -> list:
         return []
     from apps.accounts import people
     now = timezone.now()
-    authors = [viewer.pk] + list(Follow.objects.filter(follower=viewer).values_list('author_id', flat=True)) \
+    authors = [viewer.pk] + list(Follow.objects.filter(follower=viewer, approved=True).values_list('author_id', flat=True)) \
         + [u.pk for u in people.contacts(viewer, limit=60)]
     close = _close_of(viewer)
     qs = (Story.objects.filter(author__in=set(authors), expires_at__gt=now).exclude(author__in=_blocked_ids(viewer))

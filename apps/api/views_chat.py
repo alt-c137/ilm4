@@ -39,9 +39,10 @@ def _face(request, thread, other) -> dict:
     from apps.chat import persona
     masked = persona.mask(thread, other)
     if masked:                                   # чат никяха: имя из анкеты, основной профиль не раскрываем
-        return {'title': masked['name'], 'avatar': '', 'other_id': None, 'room': '', 'members': 0, 'verified': False,
+        return {'title': masked['name'], 'avatar': abs_url(request, masked['avatar']) if masked.get('avatar') else '',
+                'other_id': masked.get('user_id'), 'room': '', 'members': 0, 'verified': False,
                 'online': False, 'saved': False, 'masked': True, 'nikah_profile': masked['profile_id']}
-    return {'title': other.get_display_name() if other else (thread.title or thread.subject or _('Диалог')),
+    return {'title': people.shown_name(other, request.user) if other else (thread.title or thread.subject or _('Диалог')),
             'avatar': file_url(request, other.avatar) if other else '', 'other_id': other.pk if other else None,
             'room': '', 'members': 0, 'verified': bool(other and other.platform_verified),
             'online': bool(other and people.quick_online(other, request.user)), 'saved': False}
@@ -149,9 +150,13 @@ def messages(request, pk):
     room = info.get('room')
     pins = services.pinned_messages(thread, user)
     decorate(pins, user)
+    from apps.core import ads
+    ad = ads.for_thread(thread) if not before and not after and not around else None
+    if ad:
+        ad = {**ad, 'image': abs_url(request, ad['image']) if ad['image'] else '', 'url': abs_url(request, ad['url'])}
     return {
         'items': [_msg(request, m) for m in rows],
-        'more': more, 'more_after': more_after,
+        'more': more, 'more_after': more_after, 'ad': ad,
         'thread': {'id': thread.pk, 'subject': thread.subject, **_face(request, thread, other),
                    'blocked': services.blocked(thread, user), 'features': {
                        k: v for k, v in services.flags(thread).items() if k != 'turn'},
@@ -308,6 +313,10 @@ def state(request, pk, action):
             services.clear_history(thread, user)
         elif action == 'hide':
             services.hide_chat(thread, user)
+        elif action == 'support_call':
+            services.call_support(thread, user)
+        elif action == 'support_drop':
+            services.drop_support(thread, user)
         elif action in ('folder_add', 'folder_remove') and folder is not None:
             services.set_folder_chat(user, folder.pk, thread, action == 'folder_add')
         else:
@@ -565,12 +574,35 @@ def room_handle(request, handle):
 
 
 
-@api(auth=True, module='chat')
+@api(methods=('GET', 'POST'), auth=True, module='chat')
 def find(request):
     """Единый поиск: ?q= → люди (@имя, номер), каналы и группы, сообщества, сообщения во всех моих чатах."""
     from apps.chat import finder
 
     from .views_people import person_card
+    if request.method == 'POST':                       # открыл что-то из поиска — в «Недавние»; {clear: true} — очистить
+        if request.data.get('clear'):
+            finder.forget_recent(request.user)
+        else:
+            finder.remember(request.user, str(request.data.get('kind', '')), request.data.get('id'))
+        return {'ok': True}
+    if not request.GET.get('q', '').strip():
+        # поиск ещё пуст: «частые» (кому пишет чаще всего) и «недавние» (что открывал из поиска) — как в Telegram
+        from apps.accounts import people
+        top = [{'thread': t.pk, 'id': o.pk, 'name': people.shown_name(o, request.user), 'avatar': file_url(request, o.avatar)}
+               for t, o in finder.top_people(request.user)]
+        rec = []
+        for kind, obj in finder.recent(request.user):
+            if kind == 'u':
+                rec.append({'kind': 'u', 'id': obj.pk, 'title': people.shown_name(obj, request.user), 'sub': f'@{obj.handle}' if obj.handle else '',
+                            'avatar': file_url(request, obj.avatar)})
+            elif kind == 's':
+                rec.append({'kind': 's', 'id': obj.pk, 'title': obj.title, 'sub': str(_('сообщество')), 'avatar': file_url(request, obj.icon)})
+            else:
+                face = _face(request, obj, None if obj.is_room or obj.is_saved else obj.other_participant(request.user))
+                rec.append({'kind': 't', 'id': obj.pk, 'title': str(face['title']), 'avatar': face['avatar'], 'saved': face.get('saved', False),
+                            'sub': str(_('канал')) if obj.is_channel else str(_('группа')) if obj.is_room else ''})
+        return {'top': top, 'recent': rec}
     data = finder.find(request.user, request.GET.get('q', ''))
     mine = set(Thread.objects.filter(participants=request.user).exclude(kind=Thread.DIRECT).values_list('pk', flat=True))
     return {'people': [person_card(request, u) for u in data['people']],

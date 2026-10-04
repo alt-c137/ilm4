@@ -4,7 +4,7 @@ from django.contrib.auth import authenticate, get_user_model
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext as _
 
-from apps.accounts import phone_verify
+from apps.accounts import people, phone_verify
 from apps.accounts.views import LOGIN_MAX_PER_IP, LOGIN_MAX_PER_LOGIN, LOGIN_WINDOW, client_ip
 from apps.core import money
 
@@ -43,6 +43,8 @@ def config(request):
         modules.append({'key': m.key, 'name': tr(m.name), 'status': m.status, 'emoji': m.icon,
                         'icon': _icon(request, m.key), 'descr': str(DESCR.get(m.key, '')),
                         'group': group_of.get(m.key, 'more'), 'native': m.key in APP_KEYS})
+    place = {k: i for _g, _label, keys in GROUPS for i, k in enumerate(keys)}       # порядок внутри группы — как в каталоге
+    modules.sort(key=lambda x: (x['status'] != 'on', place.get(x['key'], 99)))
     return {
         'site_name': st.site_name,
         'site_url': abs_url(request, '/'),
@@ -95,8 +97,10 @@ def me_json(request, user) -> dict:
         'phone_verified': user.phone_verified,
         'handle': user.handle or '', 'bio': user.bio,
         'privacy': {'phone': user.phone_privacy, 'seen': user.seen_privacy, 'find_by_phone': user.findable_by_phone,
-                    'forward': user.forward_privacy, 'invite': user.invite_privacy, 'counts': user.counts_privacy},
-        'links': people.links_for(user, user),
+                    'forward': user.forward_privacy, 'invite': user.invite_privacy, 'counts': user.counts_privacy,
+                    'private': user.is_private},
+        'links': (my_links := people.links_for(user, user)), 'links_view': people.links_view(user, len(my_links)),
+        'links_mode': (user.ui or {}).get('links_view', 'auto'),
         'needs_phone': {w: phone_verify.needed(user, w) for w in ('publish', 'nikah')},
         'balance': int(balance_of(user)) if module_on('wallet') else None,
         'nikah': {'id': nk.pk, 'status': nk.status, 'active': nk.is_active, 'gender': nk.gender} if nk else None,
@@ -106,6 +110,18 @@ def me_json(request, user) -> dict:
 def _issue(request, user) -> dict:
     name = str(request.data.get('device', '') or request.headers.get('User-Agent', ''))[:80]
     return {'token': ApiToken.issue(user, name), 'user': me_json(request, user)}
+
+
+def _otp_gate(request, user) -> None:
+    """Двухшаговая защита при входе из приложения: без верного кода токен не выдаётся (apps/accounts/twofa.py)."""
+    from apps.accounts import twofa
+    if not twofa.enabled(user):
+        return
+    code = str(request.data.get('otp', '')).strip()
+    if not code:
+        raise ApiError(_('Введите код из приложения-аутентификатора.'), 400, 'otp_required')
+    if twofa.check(user, code) is None:
+        raise ApiError(_('Слишком много неверных кодов. Подождите 15 минут.') if twofa.blocked(user) else _('Код неверный.'), 400, 'otp_invalid')
 
 
 @api(methods=('POST',))
@@ -127,6 +143,7 @@ def login(request):
                 cache.set(k, 1, LOGIN_WINDOW)
         raise ApiError(_('Неверный email или пароль.'), 400, 'credentials')
     cache.delete(keys[0][0])
+    _otp_gate(request, user)
     return _issue(request, user)
 
 
@@ -170,9 +187,18 @@ def telegram_poll(request):
     nonce = str(request.data.get('nonce', ''))
     if not tglogin.valid_nonce(nonce):
         raise ApiError(_('Ссылка для входа устарела. Попробуйте ещё раз.'), 410, 'expired')
-    user = tglogin.poll(nonce)
+    from django.core.cache import cache
+    held = cache.get(f'tglogin:otp:{nonce}')              # вход в Telegram подтверждён, ждём код двухшаговой защиты
+    user = get_user_model().objects.filter(pk=held, is_active=True).first() if held else tglogin.poll(nonce)
     if user is None:
         return {'status': 'pending'}
+    from apps.accounts import twofa
+    if twofa.enabled(user):
+        cache.set(f'tglogin:otp:{nonce}', user.pk, 300)
+        if not str(request.data.get('otp', '')).strip():
+            return {'status': 'otp'}
+        _otp_gate(request, user)
+        cache.delete(f'tglogin:otp:{nonce}')
     return {'status': 'ok', **_issue(request, user)}
 
 
@@ -245,6 +271,9 @@ def me(request):
             if d.get(key) in levels:
                 setattr(user, f, d[key])
                 fields.append(f)
+        if 'is_private' in d:
+            from apps.social import services as social
+            social.set_private(user, str(d['is_private']).lower() in ('1', 'true', 'on'))
         if 'find_by_phone' in d:
             user.findable_by_phone = str(d['find_by_phone']).lower() in ('1', 'true', 'on')
             fields.append('findable_by_phone')
@@ -308,6 +337,16 @@ def home(request):
         data['news'] = [news_card(request, n) for n in NewsPost.objects.order_by('-is_pinned', '-created_at')[:5]]
     if request.user.is_authenticated:
         data['unread'] = request.user.notifications.filter(read=False).count()
+        # «что вас ждёт»: непрочитанные чаты и дела на сегодня — для плиток на главной
+        if module_on('chat'):
+            from apps.chat.services import unread_total
+            data['chats_unread'] = unread_total(request.user)
+        if module_on('tracker'):
+            from django.utils import timezone
+
+            from apps.tracker import services as tracker
+            day = tracker.day_view(request.user, timezone.localdate())
+            data['tracker'] = {'done': day['done'], 'total': day['total']}
     return data
 
 
@@ -438,4 +477,91 @@ def web_enter(request, code):
         return redirect('/accounts/login/')
     if not user.is_staff:   # админам — только обычный вход с 2FA
         auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+        device = user.totpdevice_set.filter(confirmed=True).first()
+        if device is not None:                      # приложение уже прошло двухшаговую защиту при своём входе
+            import django_otp
+            django_otp.login(request, device)
     return redirect(data['next'])
+
+
+def _personas_json(request, user) -> dict:
+    out = {}
+    for section, p in people.personas(user).items():
+        out[section] = {'name': p['name'], 'avatar': abs_url(request, p['avatar']) if p['avatar'] else '', 'link_main': p['link_main']} if p else None
+    nikah = getattr(user, 'nikah_profile', None)
+    return {'items': out, 'nikah': {'name': nikah.name, 'published': nikah.is_published} if nikah is not None else None,
+            'main': {'name': user.get_display_name(), 'handle': user.handle or '', 'avatar': file_url(request, user.avatar)}}
+
+
+@api(methods=('GET', 'POST'), auth=True)
+def personas(request):
+    """«Мои профили» (маски). POST {section, name, link_main, clear_avatar} + файл avatar; пустое имя — убрать маску."""
+    if request.method == 'POST':
+        d = request.data
+        try:
+            people.save_persona(request.user, str(d.get('section', '')), str(d.get('name', '')),
+                                link_main=str(d.get('link_main', '1')).lower() in ('1', 'true', 'on'),
+                                avatar=request.FILES.get('avatar'), clear_avatar=str(d.get('clear_avatar', '')).lower() in ('1', 'true', 'on'))
+        except people.PeopleError as exc:
+            raise ApiError(exc.message, exc.status) from exc
+    return _personas_json(request, request.user)
+
+
+# ---------- устройства: активные сеансы и подтверждение входа по QR-коду ----------
+
+def _sessions_json(request) -> dict:
+    from apps.accounts import devices, twofa
+    rows = devices.sessions(request.user, '', request.api_token)
+    return {'items': [{'kind': r['kind'], 'id': r['id'], 'title': r['title'], 'ip': r['ip'], 'current': r['current'],
+                       'last': r['last'].isoformat()} for r in rows], 'twofa': twofa.enabled(request.user)}
+
+
+@api(methods=('GET', 'POST'), auth=True)
+def sessions(request):
+    """«Устройства». POST {kind, id} — завершить сеанс; {others: true} — завершить все, кроме этого телефона."""
+    from apps.accounts import devices
+    if request.method == 'POST':
+        d = request.data
+        if d.get('others'):
+            devices.terminate_others(request.user, '', request.api_token)
+        elif d.get('kind') in ('web', 'app'):
+            if d['kind'] == 'app' and request.api_token is not None and as_int(d.get('id')) == request.api_token.pk:
+                raise ApiError(_('Это текущее устройство — для него есть «Выйти».'), 400)
+            devices.terminate(request.user, d['kind'], as_int(d.get('id')))
+    return _sessions_json(request)
+
+
+@api(methods=('GET', 'POST'), auth=True)
+def qr_login(request, token):
+    """Телефон отсканировал QR-код входа. GET — что за устройство просит вход; POST — подтвердить."""
+    from apps.accounts import devices
+    info = devices.qr_info(token)
+    if info is None or info.get('uid'):
+        raise ApiError(_('Код устарел. Обновите страницу входа на компьютере и отсканируйте новый.'), 410, 'expired')
+    if request.method == 'POST':
+        limit(f'api_qr:{request.user.pk}', 20, 3600)
+        if not devices.qr_approve(token, request.user):
+            raise ApiError(_('Код устарел. Обновите страницу входа на компьютере и отсканируйте новый.'), 410, 'expired')
+        return {'ok': True}
+    return {'device': info.get('ua', ''), 'ip': info.get('ip', '')}
+
+
+@api(methods=('GET', 'POST'))
+def showcase(request):
+    """«Витрина» главной: плитки сервисов с живым содержимым. POST {key, action: up | down | hide | show} — настроить под себя."""
+    from apps.core import showcase as sc
+    if request.method == 'POST':
+        if not request.user.is_authenticated:
+            raise ApiError(_('Войдите в аккаунт'), 401, 'auth')
+        sc.arrange(request.user, str(request.data.get('key', '')), str(request.data.get('action', '')))
+    data = sc.widgets(request.user)
+    for w in data['items']:
+        w['icon'] = _icon(request, w['key'])
+        w['web'] = abs_url(request, w['url'])
+        for x in w['items']:
+            x['image'] = abs_url(request, x['image']) if x['image'] else ''
+            x['web'] = abs_url(request, x['url'])
+        if w['action']:
+            w['action'] = {**w['action'], 'web': abs_url(request, w['action']['url'])}
+    return data
+

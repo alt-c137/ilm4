@@ -16,7 +16,7 @@ import { api, ApiError, authHeaders } from '@/lib/api';
 import { openSiteUrl } from '@/lib/links';
 import { useApp } from '@/state/app';
 
-import { Avatar, Empty, Icon, Sheet, Skeleton, Txt } from './kit';
+import { AdCard, Avatar, Empty, Icon, Sheet, Skeleton, toast, Txt, type AdData } from './kit';
 import { PhotoViewer } from './photo-viewer';
 
 export type Who = { id?: number; room?: number; name: string; avatar: string; handle: string; verified: boolean; hue: number };
@@ -109,6 +109,8 @@ export const FeedCard = memo(function FeedCard({ x, onChange, onRemove }: {
     try {
       const r = await api<{ saved: boolean }>('/feed/save/', { body: { target: x.key } });
       onChange({ ...x, saved: r.saved });
+      // как в Telegram: коротко говорим, куда это легло, и даём туда перейти
+      if (r.saved) toast(t('Сохранено'), { label: t('Открыть'), onPress: () => router.push('/feed/saved') });
     } catch (e) {
       onChange(x);
       Alert.alert((e as ApiError).message);
@@ -325,8 +327,26 @@ function StoryViewer({ groups, start, onClose, onSeen }: { groups: StoryGroup[];
   );
 }
 
+/** Сохранённое не из записей (объявление, новость, пост канала): заголовок, пара строк и переход. */
+function BriefCard({ x, onRemove }: { x: Item; onRemove: (key: string) => void }) {
+  const { c, t } = useApp();
+  const drop = async () => {
+    onRemove(x.key);
+    try { await api('/feed/save/', { body: { target: x.key } }); } catch { /* останется в списке до обновления */ }
+  };
+  return (
+    <Pressable onPress={() => openSiteUrl(x.web)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: c.card, padding: 14, marginBottom: 8 }}>
+      <View style={{ flex: 1, gap: 3 }}>
+        <Txt style={{ fontWeight: '700', fontSize: 16 }} numberOfLines={2}>{x.title}</Txt>
+        {x.text ? <Txt kind="muted" numberOfLines={2}>{x.text}</Txt> : null}
+      </View>
+      <Pressable onPress={drop} hitSlop={10} accessibilityLabel={t('Убрать из сохранённого')}><Icon name="bookmark" size={22} color={c.accent} /></Pressable>
+    </Pressable>
+  );
+}
+
 /** Лента целиком: header — то, что выше (например, переключатель «Главная · Лента»). */
-export function Feed({ header, wallOf }: { header?: ReactNode; wallOf?: number }) {
+export function Feed({ header, wallOf, saved }: { header?: ReactNode; wallOf?: number; saved?: boolean }) {
   const { c, t, user } = useApp();
   const [items, setItems] = useState<Item[] | null>(null);
   const [next, setNext] = useState('');
@@ -335,17 +355,19 @@ export function Feed({ header, wallOf }: { header?: ReactNode; wallOf?: number }
   const [stories, setStories] = useState<StoryGroup[]>([]);
   const [storyAt, setStoryAt] = useState<number | null>(null);
   const [storiesOn, setStoriesOn] = useState(false);
+  const [ad, setAd] = useState<AdData | null>(null);
   const loadingMore = useRef(false);
 
-  const url = useCallback((before = '') => (wallOf ? `/feed/wall/${wallOf}/` : '/feed/') + (before ? `?before=${encodeURIComponent(before)}` : ''), [wallOf]);
+  const url = useCallback((before = '') => (saved ? '/feed/saved/' : wallOf ? `/feed/wall/${wallOf}/` : '/feed/') + (before ? `?before=${encodeURIComponent(before)}` : ''), [wallOf, saved]);
   const load = useCallback(async () => {
     setBusy(true);
     try {
-      const r = await api<{ items: Item[]; next?: string; stories?: boolean }>(url());
+      const r = await api<{ items: Item[]; next?: string; stories?: boolean; ad?: AdData | null }>(url());
       setItems(r.items);
+      setAd(r.ad ?? null);
       setNext(r.next ?? '');
       setError('');
-      if (!wallOf && r.stories && user) {
+      if (!wallOf && !saved && r.stories && user) {
         setStoriesOn(true);
         api<{ items: StoryGroup[] }>('/feed/stories/').then((s) => setStories(s.items)).catch(() => {});
       }
@@ -354,13 +376,13 @@ export function Feed({ header, wallOf }: { header?: ReactNode; wallOf?: number }
     } finally {
       setBusy(false);
     }
-  }, [url, wallOf, user]);
+  }, [url, wallOf, saved, user]);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- загрузка ленты при открытии и смене вкладки
     load();
   }, [load]);
   const more = async () => {
-    if (!next || loadingMore.current || wallOf) return;
+    if (!next || loadingMore.current || wallOf || saved) return;
     loadingMore.current = true;
     try {
       const r = await api<{ items: Item[]; next: string }>(url(next));
@@ -394,8 +416,8 @@ export function Feed({ header, wallOf }: { header?: ReactNode; wallOf?: number }
   const top = (
     <View style={{ backgroundColor: c.bg }}>
       {header}
-      {!wallOf && storiesOn ? <StoriesRow groups={stories} onOpen={setStoryAt} onAdd={addStory} /> : null}
-      {!wallOf && user ? (
+      {!wallOf && !saved && storiesOn ? <StoriesRow groups={stories} onOpen={setStoryAt} onAdd={addStory} /> : null}
+      {!wallOf && !saved && user ? (
         <Pressable onPress={() => router.push('/feed/new')} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: c.card, padding: 12, marginBottom: 8 }}>
           <Avatar uri={user.avatar} name={user.name} size={40} hue={user.id} />
           <Txt kind="muted" style={{ flex: 1, fontSize: 16 }}>{t('Что у вас нового?')}</Txt>
@@ -409,7 +431,8 @@ export function Feed({ header, wallOf }: { header?: ReactNode; wallOf?: number }
       <FlatList
         data={items ?? []}
         keyExtractor={(x) => x.key}
-        renderItem={({ item }) => <FeedCard x={item} onChange={change} onRemove={remove} />}
+        renderItem={({ item, index }) => ((item as Item & { brief?: boolean }).brief ? <BriefCard x={item} onRemove={remove} /> : <><FeedCard x={item} onChange={saved ? (x) => (x.saved === false ? remove(x.key) : change(x)) : change} onRemove={remove} />
+          {ad && index === 2 ? <AdCard ad={ad} onOpen={openSiteUrl} style={{ marginBottom: 8 }} /> : null}</>)}
         ListHeaderComponent={top}
         onEndReached={more}
         onEndReachedThreshold={0.6}
@@ -418,7 +441,8 @@ export function Feed({ header, wallOf }: { header?: ReactNode; wallOf?: number }
         contentContainerStyle={{ paddingBottom: 40 }}
         refreshControl={<RefreshControl refreshing={busy && !!items} onRefresh={load} tintColor={c.accent} />}
         ListEmptyComponent={items === null ? (busy ? <View style={{ padding: 12 }}><Skeleton rows={4} image /></View> : <Empty icon="alert-circle-outline" title={error} />) : (
-          <Empty icon="newspaper-outline" title={wallOf ? t('Записей пока нет.') : t('Лента пока пустая')} />
+          saved ? <Empty icon="bookmark-outline" title={t('Здесь будет сохранённое')} text={t('Нажмите на флажок под записью или объявлением — и оно появится здесь.')} />
+            : <Empty icon="newspaper-outline" title={wallOf ? t('Записей пока нет.') : t('Лента пока пустая')} />
         )}
         ListFooterComponent={next && !wallOf ? <Txt kind="small" style={{ textAlign: 'center', padding: 16 }}>{t('Загрузка…')}</Txt> : null}
       />

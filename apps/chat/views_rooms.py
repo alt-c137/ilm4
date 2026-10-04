@@ -31,9 +31,9 @@ def pic(thread, other=None, viewer=None) -> dict:
     from . import persona
     masked = persona.mask(thread, other)
     if masked:                                   # чат никяха: имя из анкеты, без аватара, «в сети» и ссылки на основной профиль
-        return {'url': '', 'letter': masked['name'][:1].upper(), 'hue': thread.pk % 7, 'name': masked['name'], 'room': '',
-                'verified': False, 'online': False, 'masked': True, 'link': masked['link']}
-    name = other.get_display_name() if other else str(_('Удалённый аккаунт'))
+        return {'url': masked.get('avatar', ''), 'letter': masked['name'][:1].upper(), 'hue': thread.pk % 7, 'name': masked['name'],
+                'room': '', 'verified': False, 'online': False, 'masked': True, 'link': masked['link'], 'board': masked.get('kind') == 'board'}
+    name = people.shown_name(other, viewer)                # как человек записан у меня в контактах — как в Telegram
     return {'url': other.avatar.url if other and other.avatar else '', 'letter': name[:1].upper(),
             'hue': (other.pk if other else 0) % 7, 'name': name, 'room': '',
             'verified': bool(other and other.platform_verified),

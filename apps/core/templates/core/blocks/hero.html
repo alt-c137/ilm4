@@ -1,39 +1,45 @@
 {% load i18n %}{% load icons %}{% load prayer_tags %}{% load weather %}{% load humanize %}{% comment %}Главная: герой + ИНФОПАНЕЛЬ (хадис дня, ближайшая молитва, погода, курс валют). Картинки героя/хадиса — из админки (SiteSettings: hero_image, hadis_image). Погода — Open-Meteo с кешем; при недоступности панель просто без погоды.{% endcomment %}
 <section class="sec">
   <div class="hero2">
-    <div class="hero2__card">
-      <div class="hero__l">
-        <span class="hero__k">{% translate "Знания · Жизнь · Дело" %}</span>
-        <h1>{% translate "Одна платформа для всей уммы" %}</h1>
-        <p>{% translate "Учись, покупай и продавай, находи работу и жильё, читай новости и получай ответы — быстро и удобно." %}</p>
-        <div class="hero__cta">
-          <a class="btn btn--p" href="{% url 'core:catalog' %}">{% translate "Все сервисы" %} <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-          <a class="btn btn--g" href="/buy/add/">{% translate "Подать объявление" %}</a>
-        </div>
+    {% if brief %}
+    {# вошедшему — не реклама, а «что вас ждёт»: кто написал, уведомления, дела на сегодня #}
+    <div class="hero2__card mynow">
+      <nav class="shw__switch mynow__switch" aria-label="{% translate 'Вид главной' %}"><a href="?home=1&amp;view=showcase">{% translate "Витрина" %}</a><a class="on" href="?home=1&amp;view=brief">{% translate "Сводка" %}</a></nav>
+      <h1>{{ brief.hello }}, {{ brief.name }}</h1>
+      <p class="mynow__sub">{% translate "Вот что ждёт вас сейчас." %}</p>
+      <div class="mynow__tiles">
+        {% if 'chat' in brief.on %}<a class="mynow__tile{% if brief.unread %} is-hot{% endif %}" href="{% url 'chat:inbox' %}">{% ico 'chat' %}<b>{% translate "Чаты" %}</b><small>{% if brief.unread %}{% translate "новых" %}: {{ brief.unread }}{% else %}{% translate "нет новых" %}{% endif %}</small></a>{% endif %}
+        <a class="mynow__tile{% if brief.notifications %} is-hot{% endif %}" href="{% url 'notifications:list' %}">{% ico 'bell' %}<b>{% translate "Уведомления" %}</b><small>{% if brief.notifications %}{% translate "новых" %}: {{ brief.notifications }}{% else %}{% translate "нет новых" %}{% endif %}</small></a>
+        {% if brief.tracker %}<a class="mynow__tile{% if brief.tracker.total and brief.tracker.done < brief.tracker.total %} is-hot{% endif %}" href="/tracker/">{% ico 'check' %}<b>{% translate "Трекер" %}</b><small>{% if brief.tracker.total %}{{ brief.tracker.done }} {% translate "из" %} {{ brief.tracker.total }}{% else %}{% translate "добавить" %}{% endif %}</small></a>{% endif %}
+        {% if 'feed' in brief.on %}<a class="mynow__tile" href="/feed/">{% ico 'news' %}<b>{% translate "Лента" %}</b><small>{% translate "записи людей" %}</small></a>{% endif %}
       </div>
-      {% if site_settings.hero_image %}
-      <img class="hero2__img" src="{{ site_settings.hero_image.url }}" alt="">
-      <div class="hero2__fade"></div>
-      {% else %}
-      <svg class="hero2__art" viewBox="0 0 400 400" aria-hidden="true">
-        <defs><linearGradient id="h2g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--accent)"/><stop offset="1" stop-color="var(--accent-d)"/></linearGradient></defs>
-        <g transform="translate(200 200)" fill="none" stroke="url(#h2g)">
-          <g stroke-width="1.4" opacity=".35">
-            <rect x="-150" y="-150" width="300" height="300" rx="10"/><rect x="-150" y="-150" width="300" height="300" rx="10" transform="rotate(45)"/>
-          </g>
-          <g stroke-width="2.2" opacity=".75">
-            <rect x="-104" y="-104" width="208" height="208" rx="8"/><rect x="-104" y="-104" width="208" height="208" rx="8" transform="rotate(45)"/>
-          </g>
-          <circle r="62" stroke-width="2" opacity=".5"/>
-          <g stroke-width="3">
-            <rect x="-42" y="-42" width="84" height="84" rx="5"/><rect x="-42" y="-42" width="84" height="84" rx="5" transform="rotate(45)"/>
-          </g>
-          <circle r="186" stroke-width="1" opacity=".2" stroke-dasharray="3 9"/>
-        </g>
-        <circle cx="200" cy="200" r="16" fill="url(#h2g)"/>
-      </svg>
-      {% endif %}
+      <div><div class="mynow__h">{% translate "Сделать" %}</div>
+        <div class="mynow__do">
+          {% if 'chat' in brief.on %}<a href="{% url 'chat:contacts' %}">{% ico 'edit' %}{% translate "Написать" %}</a>{% endif %}
+          {% if 'feed' in brief.on %}<a href="/feed/#new">{% ico 'plus' %}{% translate "Новая запись" %}</a>{% endif %}
+          {% if 'buy' in brief.on %}<a href="/buy/add/">{% ico 'tag' %}{% translate "Подать объявление" %}</a>{% endif %}
+          {% if 'communities' in brief.on %}<a href="/communities/">{% ico 'users' %}{% translate "Сообщества" %}</a>{% endif %}
+          {% if 'map' in brief.on %}<a href="/map/">{% ico 'pin' %}{% translate "Халяль рядом" %}</a>{% endif %}
+        </div></div>
+      {% if brief.chats %}<div><div class="mynow__h">{% translate "Вам написали" %}</div>
+        <div class="mynow__wrote">{% for c in brief.chats|slice:":3" %}<a href="{% url 'chat:thread' c.id %}">{% ico 'chat' %}<span>{{ c.name }}</span><em>{{ c.unread }}</em></a>{% endfor %}</div></div>{% endif %}
     </div>
+    {% else %}
+    <div class="hero2__card mynow">
+      <nav class="shw__switch mynow__switch" aria-label="{% translate 'Вид главной' %}"><a href="?view=showcase">{% translate "Витрина" %}</a><a class="on" href="?view=brief">{% translate "Сводка" %}</a></nav>
+      <span class="hero__k">ilm4</span>
+      <h1>{% translate "Общение, вера и дела — в одном приложении" %}</h1>
+      <ul class="intro__list">
+        <li>{% ico 'chat' %}<div><b>{% translate "Общайтесь" %}</b><span>{% translate "Чаты, звонки, группы и каналы, лента и сообщества по интересам." %}</span></div></li>
+        <li>{% ico 'clock' %}<div><b>{% translate "Не пропускайте намаз" %}</b><span>{% translate "Точное время по вашему городу, кибла, трекер привычек." %}</span></div></li>
+        <li>{% ico 'tag' %}<div><b>{% translate "Решайте дела" %}</b><span>{% translate "Объявления, работа, услуги, попутчики и халяль-места рядом." %}</span></div></li>
+      </ul>
+      <div class="hero__cta">
+        <a class="btn btn--p" href="{% url 'accounts:register' %}">{% translate "Создать аккаунт" %}</a>
+        <a class="btn btn--g" href="{% url 'accounts:login' %}">{% translate "Войти" %}</a>
+      </div>
+    </div>
+    {% endif %}
 
     {% include 'core/includes/today.html' %}
   </div>

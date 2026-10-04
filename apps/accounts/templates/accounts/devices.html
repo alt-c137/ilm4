@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load i18n icons %}
+{% block title %}{% translate "Устройства —" %} {{ block.super }}{% endblock %}
+{% block body_class %}page-tp{% endblock %}
+{% block content %}
+<div class="tp">
+  <a class="crumb" href="{% url 'core:settings' %}">{% ico 'back' %}{% translate "Настройки" %}</a>
+  <header class="tp__bar"><h1>{% translate "Устройства" %}</h1></header>
+  <p class="tp__note">{% translate "Здесь видно, где открыт ваш аккаунт. Не узнаёте устройство — завершите его сеанс и смените пароль." %}</p>
+
+  {% for r in rows %}{% if r.current %}
+  <h2 class="tp__label">{% translate "Это устройство" %}</h2>
+  <section class="tp__card"><div class="tp__row acc__row">
+    <span class="tava tava--sm tava--h4">{% if r.kind == 'app' %}{% ico 'smartphone' %}{% else %}{% ico 'monitor' %}{% endif %}</span>
+    <span><b>{{ r.title }}</b><small>{% if r.ip %}{{ r.ip }} · {% endif %}{% translate "сейчас" %}</small></span>
+  </div></section>
+  {% endif %}{% endfor %}
+
+  {% if others %}
+  <form method="post" class="dev__all" onsubmit="return confirm('{% translate "Завершить все сеансы, кроме этого?" %}')">{% csrf_token %}<input type="hidden" name="others" value="1">
+    <button type="submit" class="tp__row is-bad">{% ico 'exit' %}<span><b>{% translate "Завершить все другие сеансы" %}</b></span></button></form>
+  <h2 class="tp__label">{% translate "Активные сеансы" %}</h2>
+  <section class="tp__card">
+    {% for r in rows %}{% if not r.current %}<div class="tp__row acc__row">
+      <span class="tava tava--sm tava--h{{ forloop.counter|divisibleby:2|yesno:'2,5' }}">{% if r.kind == 'app' %}{% ico 'smartphone' %}{% else %}{% ico 'monitor' %}{% endif %}</span>
+      <span><b>{{ r.title }}</b><small>{% if r.kind == 'app' %}{% translate "приложение" %}{% else %}{% translate "сайт" %}{% endif %}{% if r.ip %} · {{ r.ip }}{% endif %} · {{ r.last|date:"d.m H:i" }}</small></span>
+      <form method="post">{% csrf_token %}<input type="hidden" name="kind" value="{{ r.kind }}"><input type="hidden" name="id" value="{{ r.id }}"><button type="submit" class="btn btn--s btn--g">{% translate "Завершить" %}</button></form>
+    </div>{% endif %}{% endfor %}
+  </section>
+  {% else %}<p class="tp__note">{% translate "Других сеансов нет." %}</p>{% endif %}
+
+  <h2 class="tp__label">{% translate "Защита входа" %}</h2>
+  <section class="tp__card">
+    <a class="tp__row prs__row" href="{% url 'accounts:two_factor_setup' %}">{% ico 'shieldcheck' %}<span><b>{% translate "Двухшаговая защита" %}</b><small>{% if twofa %}{% translate "включена — при входе нужен код из приложения" %}{% else %}{% translate "выключена — включить код из Google Authenticator" %}{% endif %}</small></span></a>
+  </section>
+  <p class="tp__note">{% translate "Чтобы войти на компьютере без пароля: на странице входа выберите «Войти по QR-коду» и наведите на него камеру телефона, где вы уже вошли." %}</p>
+</div>
+{% endblock %}

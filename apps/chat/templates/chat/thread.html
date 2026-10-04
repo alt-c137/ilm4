@@ -10,7 +10,7 @@
   <section class="tg__main" id="chat-main">
     <header class="tg__head">
       <a class="tg__back" href="{% if space_side %}{% url 'spaces:space' space_side.space.pk %}{% else %}{% url 'chat:inbox' %}{% endif %}" aria-label="{% translate 'Назад' %}">{% ico 'back' %}</a>
-      {% if saved %}<span class="tg__roomlink">{% elif room %}<a class="tg__roomlink" href="{% if space_side %}{% url 'spaces:space' space_side.space.pk %}{% else %}{% url 'chat:room_info' thread.pk %}{% endif %}">{% elif pic.masked %}{% if pic.link %}<a class="tg__roomlink" href="{{ pic.link }}" title="{% translate 'Открыть анкету' %}">{% else %}<span class="tg__roomlink">{% endif %}{% elif other %}<a class="tg__roomlink" href="{% url 'accounts:public' other.pk %}" title="{% translate 'Открыть профиль' %}">{% endif %}
+      {% if saved %}<span class="tg__roomlink">{% elif room %}<a class="tg__roomlink" href="{% if space_side %}{% url 'spaces:space' space_side.space.pk %}?s=overview{% else %}{% url 'chat:room_info' thread.pk %}{% endif %}">{% elif pic.masked %}{% if pic.link %}<a class="tg__roomlink" href="{{ pic.link }}" title="{% if pic.board %}{% translate 'Открыть профиль' %}{% else %}{% translate 'Открыть анкету' %}{% endif %}">{% else %}<span class="tg__roomlink">{% endif %}{% elif other %}<a class="tg__roomlink" href="{% url 'accounts:public' other.pk %}" title="{% translate 'Открыть профиль' %}">{% endif %}
       {% include 'chat/_pic.html' with p=pic size='sm' %}
       <div class="tg__who">
         <b>{{ pic.name }}{% if pic.verified %}<i class="tgver" title="{% translate 'Официальный' %}">{% ico 'check' %}</i>{% endif %}</b>
@@ -28,12 +28,14 @@
             <button type="button" id="srch-open2">{% ico 'search' %}{% translate "Поиск" %}</button>
             {% if chat_cfg.features.video_calls %}<button type="button" data-call="video" class="tg__only-m">{% ico 'video' %}{% translate "Видеозвонок" %}</button>{% endif %}
             {% if room %}<a href="{% url 'chat:room_info' thread.pk %}">{% ico 'info' %}{% translate "Сведения и участники" %}</a>
-            {% elif pic.masked %}{% if pic.link %}<a href="{{ pic.link }}">{% ico 'user' %}{% translate "Анкета" %}</a>{% endif %}{% elif other %}<a href="{% url 'accounts:public' other.pk %}">{% ico 'user' %}{% translate "Профиль" %}</a>{% endif %}
+            {% elif pic.masked %}{% if pic.link %}<a href="{{ pic.link }}">{% ico 'user' %}{% if pic.board %}{% translate "Профиль" %}{% else %}{% translate "Анкета" %}{% endif %}</a>{% endif %}{% elif other %}<a href="{% url 'accounts:public' other.pk %}">{% ico 'user' %}{% translate "Профиль" %}</a>{% endif %}
             {% if not saved %}<form method="post" action="{% url 'chat:state' thread.pk muted|yesno:'unmute,mute' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button type="submit">{% if muted %}{% ico 'bell' %}{% translate "Включить звук" %}{% else %}{% ico 'belloff' %}{% translate "Без звука" %}{% endif %}</button></form>{% endif %}
-            {% if escrow_on and other %}<a href="{% url 'deals:new' %}?to={{ other.pk }}&amp;thread={{ thread.pk }}&amp;title={{ thread.subject|urlencode }}">{% ico 'shield' %}{% translate "Безопасная сделка" %}</a>{% endif %}
+            {% if escrow_on and other %}<a href="{% url 'deals:new' %}?{% if not pic.masked %}to={{ other.pk }}&amp;{% endif %}thread={{ thread.pk }}&amp;title={{ thread.subject|urlencode }}">{% ico 'shield' %}{% translate "Безопасная сделка" %}</a>{% endif %}
+            {% if info.support == 'call' %}<form method="post" action="{% url 'chat:state' thread.pk 'support_call' %}" onsubmit="return confirm('{% translate "Позвать поддержку ilm4 в этот чат? Она увидит сообщения, написанные после этого." %}')">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button type="submit">{% ico 'shieldcheck' %}{% translate "Позвать поддержку" %}</button></form>
+            {% elif info.support == 'drop' %}<form method="post" action="{% url 'chat:state' thread.pk 'support_drop' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button type="submit">{% ico 'shieldcheck' %}{% translate "Отключить поддержку" %}</button></form>{% endif %}
             <a href="{% url 'core:settings' %}?s=chats#chat-look">{% ico 'image' %}{% translate "Фон чата" %}</a>
             {% if not room or room.member %}<form method="post" action="{% url 'chat:state' thread.pk 'clear' %}" onsubmit="return confirm('{% translate 'Очистить историю? Сообщения пропадут только у вас.' %}')">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button type="submit">{% ico 'broom' %}{% translate "Очистить историю" %}</button></form>{% endif %}
-            {% if other %}<div class="tp__pop-report">{% report_button other _('Пожаловаться') thread.pk %}</div>{% endif %}
+            {% if other %}<div class="tp__pop-report">{% report_button other _('Пожаловаться') thread.pk pic.masked %}</div>{% endif %}
             {% if not room and not saved %}<form method="post" action="{% url 'chat:state' thread.pk 'hide' %}" onsubmit="return confirm('{% translate 'Удалить чат? Он пропадёт из вашего списка; у собеседника переписка останется.' %}')">{% csrf_token %}<button type="submit" class="bad">{% ico 'trash' %}{% translate "Удалить чат" %}</button></form>{% endif %}
           </div>
         </details>
@@ -67,6 +69,7 @@
     {% if info.notice %}<p class="ctxnote">{% ico 'info' %}{{ info.notice }}</p>{% endif %}
 
     <div class="tg__log" id="chat-log">
+      {% if ad %}{% include 'includes/ad.html' with kind='bubble' %}{% endif %}
       {% for it in items %}
         {% if it.day %}<div class="tg__day" data-day="{{ it.m.created_at|date:'Y-m-d' }}"><span>{{ it.day }}</span></div>{% endif %}
         {% include 'chat/_msg.html' with m=it.m mine=it.mine read=it.read tail=it.tail time=it.time dur=it.dur warn=it.warn meta=it.meta warn_text=info.warn_text who=it.who whue=it.hue channel=thread.is_channel reply=it.reply fwd=it.fwd rx=it.rx my=it.my comments=chat_cfg.comments %}

@@ -8,7 +8,7 @@
   <div class="dcard">
     <div class="fpage__h">
       <span class="fpage__ic">{% ico 'shield' %}</span>
-      <div><h1>{% translate "Безопасная сделка" %}</h1><div class="fpage__sub">{% if provider %}{% translate "Исполнитель:" %} <b>{{ provider.get_display_name }}</b>{% else %}{% translate "Откройте сделку из чата или со страницы исполнителя" %}{% endif %}</div></div>
+      <div><h1>{% translate "Безопасная сделка" %}</h1><div class="fpage__sub">{% if provider %}{% translate "Исполнитель:" %} <b>{{ shown_as|default:provider.get_display_name }}</b>{% else %}{% translate "Откройте сделку из чата или со страницы исполнителя" %}{% endif %}</div></div>
     </div>
     {% if not enabled %}{% include 'deals/_off.html' %}
     {% elif provider %}
@@ -18,7 +18,7 @@
       <li>{% translate "Вы принимаете — деньги уходят исполнителю" %}</li>
     </ol>
     <form method="post" class="form fgrid">{% csrf_token %}
-      <input type="hidden" name="to" value="{{ provider.pk }}"><input type="hidden" name="thread" value="{{ thread }}">
+      {% if not shown_as %}<input type="hidden" name="to" value="{{ provider.pk }}">{% endif %}<input type="hidden" name="thread" value="{{ thread }}">
       <div class="field field--wide"><label>{% translate "Что нужно сделать" %} <span class="req">*</span></label><input name="title" maxlength="160" required value="{{ post.title|default:title }}" placeholder="{% translate 'Например: логотип для магазина' %}"></div>
       <div class="field field--wide"><label>{% translate "Условия и результат" %} <span class="req">*</span></label><textarea name="terms" rows="5" required placeholder="{% translate 'Что именно сдаётся, объём, формат, сколько правок. Чем точнее — тем проще решить спор.' %}">{{ post.terms }}</textarea></div>
       <div class="field"><label>{% translate "Сумма, сум" %} <span class="req">*</span></label><input name="amount" inputmode="numeric" required value="{{ post.amount }}" placeholder="500000"></div>

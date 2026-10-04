@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { api, ApiError, authHeaders, chatFileUrl } from '@/lib/api';
 import { statusText, type Presence } from '@/lib/presence';
 import { useApp, type SocialLink } from '@/state/app';
-import { ErrorBox, Icon, Loading, OfflineBar, Press, Segmented, Sheet, Txt } from '@/ui/kit';
+import { Button, ErrorBox, Field, Icon, Loading, OfflineBar, Press, Segmented, Sheet, Txt } from '@/ui/kit';
 import { ChatFile } from '@/ui/media';
 import { ProfileActions, ProfileHead, ProfileInfo, type Action } from '@/ui/profile';
 import { FeedCard, type Item } from '@/ui/feed';
@@ -16,11 +16,11 @@ import { useFetch } from '@/ui/useFetch';
 
 type Pub = { id: number; type: string; title: string; subtitle: string; image: string };
 type Profile = { id: number; me: boolean; name: string; handle: string; bio: string; city: string; avatar: string; verified: boolean; joined: string;
-  presence: Presence; phone: string; links: SocialLink[]; close: boolean; contact?: boolean; blocked: boolean; blocked_any: boolean; thread: number | null; muted: boolean;
+  presence: Presence; phone: string; links: SocialLink[]; links_view?: string; close: boolean; contact?: boolean; blocked: boolean; blocked_any: boolean; thread: number | null; muted: boolean;
   chat: boolean; features: { calls?: boolean; video_calls?: boolean }; pubs: Pub[]; photos?: { id: number; url: string; date: string }[] };
 type Media = { id: number; kind: string; file_name?: string; file_size?: number; mine?: boolean };
 type Tab = 'wall' | 'pubs' | 'media' | 'files';
-type Wall = { items: Item[]; following: boolean; followers?: number; follows?: number; posts?: number; counts_hidden?: boolean };
+type Wall = { items: Item[]; following: boolean; requested?: boolean; locked?: boolean; followers?: number; follows?: number; posts?: number; counts_hidden?: boolean };
 
 /** Профиль человека — как в Telegram: аватар, «в сети», Чат · Звук · Звонок · Видео, сведения, вкладки. */
 export default function UserProfile() {
@@ -33,6 +33,7 @@ export default function UserProfile() {
   const wall = useFetch<Wall>(feedOn ? `/feed/wall/${id}/` : null);
   const [menu, setMenu] = useState(false);
   const [photo, setPhoto] = useState<number | null>(null);
+  const [contactName, setContactName] = useState<string | null>(null);
   const tabNow: Tab = tab ?? (feedOn ? 'wall' : 'pubs');
   const media = useFetch<{ items: Media[] }>(data?.thread && tabNow === 'media' ? `/chat/${data.thread}/media/?what=media` : null);
   const files = useFetch<{ items: Media[] }>(data?.thread && tabNow === 'files' ? `/chat/${data.thread}/media/?what=files` : null);
@@ -84,7 +85,7 @@ export default function UserProfile() {
   };
 
   const actions: Action[] = data.me ? [
-    { icon: 'create-outline', label: t('Изменить'), onPress: () => router.push('/profile-edit') },
+    { icon: 'pencil-outline', label: t('Изменить'), onPress: () => router.push('/profile-edit') },
     { icon: 'lock-closed-outline', label: t('Приватность'), onPress: () => router.push('/privacy') },
     { icon: 'document-text-outline', label: t('Публикации'), onPress: () => router.push('/my') },
   ] : data.chat && !data.blocked_any ? [
@@ -97,8 +98,8 @@ export default function UserProfile() {
   const follow = async () => {
     if (!wall.data) return;
     try {
-      const r = await api<{ following: boolean; followers: number }>(`/users/${data.id}/follow/`, { body: { on: !wall.data.following } });
-      wall.setData({ ...wall.data, following: r.following, followers: r.followers });
+      const r = await api<{ following: boolean; requested?: boolean; followers: number }>(`/users/${data.id}/follow/`, { body: { on: !(wall.data.following || wall.data.requested) } });
+      wall.setData({ ...wall.data, following: r.following, requested: r.requested, followers: r.followers });
     } catch (e) {
       fail(e);
     }
@@ -129,12 +130,12 @@ export default function UserProfile() {
           </View>
         ) : null}
         {wall.data && !data.me ? (
-          <Press onPress={follow} haptic style={{ alignSelf: 'stretch', alignItems: 'center', paddingVertical: 11, borderRadius: 14, backgroundColor: wall.data.following ? c.card : c.accent }}>
-            <Txt style={{ fontWeight: '800' }} color={wall.data.following ? c.ink : '#fff'}>{wall.data.following ? t('Вы подписаны') : t('Подписаться')}</Txt>
+          <Press onPress={follow} haptic style={{ alignSelf: 'stretch', alignItems: 'center', paddingVertical: 11, borderRadius: 14, backgroundColor: wall.data.following || wall.data.requested ? c.card : c.accent }}>
+            <Txt style={{ fontWeight: '800' }} color={wall.data.following || wall.data.requested ? c.ink : '#fff'}>{wall.data.following ? t('Вы подписаны') : wall.data.requested ? t('Заявка отправлена') : t('Подписаться')}</Txt>
           </Press>
         ) : null}
         {actions.length ? <ProfileActions items={actions} /> : null}
-        <ProfileInfo phone={data.phone} handle={data.handle} bio={data.bio} city={data.city} links={data.links} joined={joined} mine={data.me} />
+        <ProfileInfo phone={data.phone} handle={data.handle} bio={data.bio} city={data.city} links={data.links} linksView={data.links_view} joined={joined} mine={data.me} />
 
         {tabs.length > 1 ? <Segmented value={tabNow} onChange={setTab} options={tabs} /> : <Txt kind="label" style={{ paddingHorizontal: 4 }}>{t('Публикации')}</Txt>}
         {tabNow === 'wall' ? (
@@ -145,7 +146,13 @@ export default function UserProfile() {
                   onRemove={(k) => wall.setData({ ...wall.data!, items: wall.data!.items.filter((y) => y.key !== k) })} />
               ))}
             </View>
-          ) : wall.loading ? <Loading /> : none(t('Записей пока нет.'))
+          ) : wall.loading ? <Loading /> : wall.data?.locked ? (
+            <View style={{ alignItems: 'center', gap: 6, padding: 26 }}>
+              <Icon name="lock-closed-outline" size={30} color={c.inkSoft} />
+              <Txt style={{ fontWeight: '700' }}>{t('Закрытый профиль')}</Txt>
+              <Txt kind="muted" style={{ textAlign: 'center' }}>{t('Записи видят только подписчики, которых человек одобрил. Подпишитесь — он получит заявку.')}</Txt>
+            </View>
+          ) : none(t('Записей пока нет.'))
         ) : null}
         {tabNow === 'pubs' ? (
           data.pubs.length ? (
@@ -186,12 +193,29 @@ export default function UserProfile() {
         ) : null}
       </ScrollView>
       <PhotoViewer photos={(data.photos ?? []).map((p) => ({ ...p, name: data.name }))} index={photo} onClose={() => setPhoto(null)} />
+      <Sheet open={contactName !== null} onClose={() => setContactName(null)} title={t('Добавить в контакты')} items={[]} header={contactName !== null ? (
+        <View style={{ paddingHorizontal: 20, paddingBottom: 10, gap: 10 }}>
+          <Txt kind="small">{t('Под этим именем человек будет в ваших чатах и контактах. Видите его только вы.')}</Txt>
+          <Field value={contactName} onChangeText={setContactName} autoFocus maxLength={60} placeholder={data.name} />
+          <Button title={t('Добавить')} onPress={async () => {
+            const name = contactName.trim();
+            setContactName(null);
+            try {
+              await api('/contacts/', { body: { user: data.id, first_name: name === data.name ? '' : name } });
+              setData({ ...data, contact: true });
+            } catch (e) {
+              fail(e);
+            }
+          }} />
+        </View>
+      ) : null} />
       <Sheet open={menu} onClose={() => setMenu(false)} title={data.name} items={[
         { icon: data.contact ? 'person-remove-outline' : 'person-add-outline', title: data.contact ? t('Удалить из контактов') : t('Добавить в контакты'),
           onPress: async () => {
+            if (!data.contact) return setTimeout(() => setContactName(data.name), 250);     // как в Telegram: сначала — под каким именем записать
             try {
-              await api('/contacts/', { body: data.contact ? { remove: data.id } : { user: data.id } });
-              setData({ ...data, contact: !data.contact });
+              await api('/contacts/', { body: { remove: data.id } });
+              setData({ ...data, contact: false });
             } catch (e) {
               fail(e);
             }

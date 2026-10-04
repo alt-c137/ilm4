@@ -13,6 +13,8 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
+  const [otpFor, setOtpFor] = useState<{ nonce?: string } | null>(null);     // ждём код двухшаговой защиты
+  const [otp, setOtp] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [tgWaiting, setTgWaiting] = useState(false);
   const poll = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -28,13 +30,17 @@ export default function Login() {
     setBusy(true);
     setErrors({});
     try {
-      const r = mode === 'login'
-        ? await api('/auth/login/', { body: { login: email.trim(), password, device: Platform.OS } })
-        : await api('/auth/register/', { body: { email: email.trim(), password, name: name.trim(), language: lang, device: Platform.OS } });
+      const r = otpFor?.nonce
+        ? await api('/auth/telegram/poll/', { body: { nonce: otpFor.nonce, otp: otp.trim(), device: Platform.OS } })
+        : mode === 'login'
+          ? await api('/auth/login/', { body: { login: email.trim(), password, device: Platform.OS, ...(otpFor ? { otp: otp.trim() } : {}) } })
+          : await api('/auth/register/', { body: { email: email.trim(), password, name: name.trim(), language: lang, device: Platform.OS } });
       await done(r);
     } catch (e) {
       const err = e as ApiError;
-      if (err.fields && Object.keys(err.fields).length) setErrors(err.fields);
+      // включена двухшаговая защита — просим код из приложения-аутентификатора и повторяем вход уже с ним
+      if (err.code === 'otp_required') setOtpFor({});
+      else if (err.fields && Object.keys(err.fields).length) setErrors(err.fields);
       else setErrors({ all: err.message });
     } finally {
       setBusy(false);
@@ -60,6 +66,10 @@ export default function Login() {
             clearInterval(poll.current!);
             setTgWaiting(false);
             await done(p);
+          } else if (p.status === 'otp') {           // Telegram подтвердил вход, осталась двухшаговая защита
+            clearInterval(poll.current!);
+            setTgWaiting(false);
+            setOtpFor({ nonce: r.nonce });
           }
         } catch (e) {
           if ((e as ApiError).status === 410) {
@@ -86,6 +96,16 @@ export default function Login() {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <Screen title={mode === 'login' ? t('Вход') : t('Регистрация')} right={
         <Pressable onPress={() => router.back()} hitSlop={10}><Icon name="close" size={26} color={c.inkSoft} /></Pressable>}>
+        {otpFor ? (
+          <>
+            <Txt kind="muted">{t('У этого аккаунта включена двухшаговая защита. Введите шестизначный код из приложения-аутентификатора.')}</Txt>
+            <Field label={t('Код')} value={otp} onChangeText={setOtp} keyboardType="number-pad" maxLength={6} autoFocus placeholder="000000" onSubmitEditing={submit} />
+            {errors.all ? <Txt color={c.bad}>{errors.all}</Txt> : null}
+            <Button title={t('Подтвердить')} onPress={submit} loading={busy} disabled={otp.trim().length < 6} />
+            <Button kind="ghost" title={t('Назад')} onPress={() => { setOtpFor(null); setOtp(''); setErrors({}); }} style={{ borderWidth: 0 }} />
+          </>
+        ) : (
+        <>
         <Txt kind="muted">{t('Один аккаунт для приложения, сайта и Telegram-бота ilm4.')}</Txt>
         {config?.features.telegram_login !== false ? (
           <>
@@ -108,6 +128,8 @@ export default function Login() {
         <Button title={mode === 'login' ? t('Войти') : t('Создать аккаунт')} onPress={submit} loading={busy} disabled={!email || !password} />
         {mode === 'login' ? <Button kind="ghost" title={t('Забыли пароль?')} onPress={reset} style={{ borderWidth: 0 }} /> : (
           <Txt kind="small" style={{ textAlign: 'center' }}>{t('Регистрируясь, вы принимаете правила ilm4 и политику конфиденциальности.')}</Txt>
+        )}
+        </>
         )}
       </Screen>
     </KeyboardAvoidingView>

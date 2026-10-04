@@ -25,8 +25,8 @@
   </div>
   {% elif user.is_authenticated %}
   <div class="tp__acts">
-    {% if follow %}<form method="post" action="{% url 'social:follow' person.pk %}" id="follow-form">{% csrf_token %}<input type="hidden" name="on" value="{{ follow.on|yesno:'0,1' }}">
-      <button class="tp__act{% if not follow.on %} tp__act--main{% endif %}" type="submit">{% if follow.on %}{% ico 'check' %}<span>{% translate "Вы подписаны" %}</span>{% else %}{% ico 'plus' %}<span>{% translate "Подписаться" %}</span>{% endif %}</button></form>{% endif %}
+    {% if follow %}<form method="post" action="{% url 'social:follow' person.pk %}" id="follow-form">{% csrf_token %}<input type="hidden" name="on" value="{% if follow.state %}0{% else %}1{% endif %}">
+      <button class="tp__act{% if not follow.state %} tp__act--main{% endif %}" type="submit">{% if follow.state == 'on' %}{% ico 'check' %}<span>{% translate "Вы подписаны" %}</span>{% elif follow.state == 'requested' %}{% ico 'clock' %}<span>{% translate "Заявка отправлена" %}</span>{% else %}{% ico 'plus' %}<span>{% translate "Подписаться" %}</span>{% endif %}</button></form>{% endif %}
     <a class="tp__act" href="{% url 'chat:start' %}?user={{ person.pk }}">{% ico 'chat' %}<span>{% translate "Чат" %}</span></a>
     {% if thread %}<form method="post" action="{% url 'chat:mute' thread.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}">
       <button class="tp__act" type="submit">{% if shared.muted %}{% ico 'belloff' %}{% else %}{% ico 'bell' %}{% endif %}<span>{% if shared.muted %}{% translate "Без звука" %}{% else %}{% translate "Звук" %}{% endif %}</span></button></form>{% endif %}
@@ -52,7 +52,8 @@
 
   {% if follow %}<div class="tp__pane feed" id="feed" data-pane="wall">
     {% if mine %}<a class="btn btn--p btn--s tp__wallnew" href="{% url 'social:feed' %}">{% ico 'edit' %}{% translate "Новая запись" %}</a>{% endif %}
-    {% for x in wall %}{% include 'social/_item.html' %}{% empty %}<p class="tp__none">{% translate "Записей пока нет." %}</p>{% endfor %}
+    {% if follow.locked %}<div class="tg__empty"><div class="empty__plug">{% ico 'lock' %}</div><b>{% translate "Закрытый профиль" %}</b><span>{% translate "Записи видят только подписчики, которых человек одобрил. Подпишитесь — он получит заявку." %}</span></div>
+    {% else %}{% for x in wall %}{% include 'social/_item.html' %}{% empty %}<p class="tp__none">{% translate "Записей пока нет." %}</p>{% endfor %}{% endif %}
   </div>{% endif %}
   {% if gifts %}<div class="tp__pane" data-pane="gifts" hidden><div class="tp__gifts">{% for g in gifts %}<div class="tp__gift"><span>{{ g.emoji }}</span><b>{{ g.title }}</b>{% if g.from %}<small>{{ g.from.name }}</small>{% endif %}</div>{% endfor %}</div></div>{% endif %}
   <div class="tp__pane" data-pane="pubs"{% if follow %} hidden{% endif %}>
@@ -81,7 +82,8 @@
   {% if user.is_authenticated and not mine %}
   <section class="tp__card tp__more">
     <form method="post" action="{% url 'chat:contacts' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}">
-      {% if is_contact %}<input type="hidden" name="remove" value="{{ person.pk }}">{% else %}<input type="hidden" name="user" value="{{ person.pk }}">{% endif %}
+      {% if is_contact %}<input type="hidden" name="remove" value="{{ person.pk }}">{% else %}<input type="hidden" name="user" value="{{ person.pk }}">
+      <input class="tp__alias" type="text" name="first_name" maxlength="60" placeholder="{% translate 'Как записать у себя (необязательно)' %}" aria-label="{% translate 'Имя контакта' %}">{% endif %}
       <button class="tp__row" type="submit">{% ico 'userplus' %}<span><b>{% if is_contact %}{% translate "Удалить из контактов" %}{% else %}{% translate "Добавить в контакты" %}{% endif %}</b></span></button></form>
     <form method="post" action="{% url 'accounts:close' person.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}">
       <button class="tp__row" type="submit">{% ico 'heart' %}<span><b>{% if is_close %}{% translate "Убрать из близких друзей" %}{% else %}{% translate "Добавить в близкие друзья" %}{% endif %}</b><small>{% translate "Близким видно то, что вы скрыли от остальных: номер, соцсети, время в сети" %}</small></span></button></form>

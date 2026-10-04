@@ -107,7 +107,7 @@ class ProfileForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'handle', 'bio', 'city', 'avatar', 'phone', 'findable_by_phone',
-                  'phone_privacy', 'seen_privacy', 'forward_privacy', 'invite_privacy', 'counts_privacy']
+                  'phone_privacy', 'seen_privacy', 'forward_privacy', 'invite_privacy', 'counts_privacy', 'is_private']
         labels = {
             'first_name': 'Имя', 'last_name': 'Фамилия', 'city': 'Город',
             'avatar': 'Аватар', 'phone': 'Телефон', 'handle': 'Имя пользователя', 'bio': 'О себе',
@@ -116,6 +116,7 @@ class ProfileForm(forms.ModelForm):
             'forward_privacy': 'Кто может перейти в мой профиль из пересланного сообщения',
             'invite_privacy': 'Кто может добавлять меня в группы',
             'counts_privacy': 'Кто видит мои счётчики: записи, подписчики, подписки',
+            'is_private': 'Закрытый профиль',
         }
         widgets = {
             # аву меняем кликом по фото в карточке — стандартная кнопка не нужна

@@ -6,7 +6,8 @@
 {% block content %}
 <div class="feedwrap2">
 <div class="feed" id="feed" data-tab="{{ tab }}" data-next="{{ next }}">
-  <header class="tp__bar feed__bar"><h1>{% translate "Лента" %}</h1></header>
+  <header class="tp__bar feed__bar"><h1>{% translate "Лента" %}</h1>
+    {% if user.is_authenticated %}<a class="feed__saved" href="{% url 'social:saved' %}" title="{% translate 'Сохранённое' %}">{% ico 'bookmark' %}<span>{% translate "Сохранённое" %}</span></a>{% endif %}</header>
   <form id="feed-csrf" hidden>{% csrf_token %}</form>
 
   {% if stories_on and user.is_authenticated %}

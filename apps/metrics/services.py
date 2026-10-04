@@ -2,7 +2,7 @@
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
-from django.db.models import Count, F, Sum
+from django.db.models import Count, F, Min, Sum
 from django.utils import timezone
 
 from .models import Use
@@ -72,7 +72,10 @@ def summary(days: int = 30) -> dict:
     peak = max((x['users'] for x in daily), default=0) or 1
     for x in daily:
         x['bar'] = round(100 * x['users'] / peak)
-    return {'days': days, 'dau': _active(today), 'wau': _active(today - timedelta(days=6)), 'mau': _active(today - timedelta(days=29)),
+    dau, mau = _active(today), _active(today - timedelta(days=29))
+    return {'days': days, 'dau': dau, 'wau': _active(today - timedelta(days=6)), 'mau': mau,
+            'stickiness': round(100 * dau / mau) if mau else 0,       # «липкость»: какая доля месячной аудитории заходит каждый день
+            'funnel': funnel(since), 'sleeping': sleeping(), 'content': content(since),
             'users_total': User.objects.filter(is_active=True).count(), 'active': active,
             'minutes_per_user_day': round(total_sec / 60 / max(1, uses.filter(user__isnull=False).values('user', 'day').distinct().count()), 1),
             'sections': rows, 'unused': unused, 'daily': daily, 'retention': retention(), 'interests': interests(since),
@@ -111,3 +114,47 @@ def interests(since) -> dict:
             'saves': Saved.objects.filter(created_at__date__gte=since).count(),
             'reposts': Post.objects.filter(created_at__date__gte=since, repost_of__isnull=False).count(),
             'posts': Post.objects.filter(created_at__date__gte=since, repost_of__isnull=True).count()}
+
+
+def funnel(since) -> list:
+    """Воронка новичков за период: зарегистрировался → подтвердил номер → заходил ещё раз → написал сообщение → что-то опубликовал."""
+    new = User.objects.filter(date_joined__date__gte=since, is_active=True)
+    ids = list(new.values_list('pk', flat=True))
+    total = len(ids)
+    steps = [('Зарегистрировались', total)]
+    if not total:
+        return [{'name': n, 'n': v, 'rate': None} for n, v in steps]
+    steps.append(('Подтвердили номер', new.filter(phone_verified_at__isnull=False).count()))
+    came_back = Use.objects.filter(user__in=ids).values('user').annotate(d=Count('day', distinct=True)).filter(d__gte=2).count()
+    steps.append(('Заходили в другой день', came_back))
+    from apps.chat.models import Message
+    from apps.market.models import Listing
+    from apps.social.models import Post
+    steps.append(('Написали сообщение', Message.objects.filter(sender__in=ids).values('sender').distinct().count()))
+    authors = set(Post.objects.filter(author__in=ids).values_list('author_id', flat=True)) | \
+        set(Listing.objects.filter(owner__in=ids).values_list('owner_id', flat=True))
+    steps.append(('Опубликовали запись или объявление', len(authors)))
+    return [{'name': n, 'n': v, 'rate': round(100 * v / total)} for n, v in steps]
+
+
+def sleeping(days: int = 14) -> dict:
+    """«Уснувшие»: были раньше, но не заходили последние две недели — те, кого теряем."""
+    today = timezone.localdate()
+    ever = set(Use.objects.filter(user__isnull=False).values_list('user', flat=True).distinct())
+    recent = set(Use.objects.filter(user__isnull=False, day__gte=today - timedelta(days=days - 1)).values_list('user', flat=True).distinct())
+    gone = len(ever - recent)
+    return {'days': days, 'n': gone, 'rate': round(100 * gone / len(ever)) if ever else 0}
+
+
+def content(since) -> dict:
+    """Сколько всего создают: сообщения, записи, объявления, новые чаты — за период."""
+    from apps.chat.models import Message, Thread
+    from apps.market.models import Listing
+    from apps.social.models import Comment, Post
+    return {'messages': Message.objects.filter(created_at__date__gte=since).count(),
+            # у чата нет даты создания — считаем по первому сообщению
+            'chats': Thread.objects.annotate(first=Min('messages__created_at')).filter(first__date__gte=since).count(),
+            'posts': Post.objects.filter(created_at__date__gte=since).count(),
+            'comments': Comment.objects.filter(created_at__date__gte=since).count(),
+            'listings': Listing.objects.filter(created_at__date__gte=since).count()}
+
