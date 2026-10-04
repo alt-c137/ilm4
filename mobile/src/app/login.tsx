@@ -99,7 +99,7 @@ export default function Login() {
         {otpFor ? (
           <>
             <Txt kind="muted">{t('У этого аккаунта включена двухшаговая защита. Введите шестизначный код из приложения-аутентификатора.')}</Txt>
-            <Field label={t('Код')} value={otp} onChangeText={setOtp} keyboardType="number-pad" maxLength={6} autoFocus placeholder="000000" onSubmitEditing={submit} />
+            <Field label={t('Код')} value={otp} onChangeText={setOtp} autoCapitalize="none" autoCorrect={false} maxLength={9} autoFocus placeholder="000000" onSubmitEditing={submit} />
             {errors.all ? <Txt color={c.bad}>{errors.all}</Txt> : null}
             <Button title={t('Подтвердить')} onPress={submit} loading={busy} disabled={otp.trim().length < 6} />
             <Button kind="ghost" title={t('Назад')} onPress={() => { setOtpFor(null); setOtp(''); setErrors({}); }} style={{ borderWidth: 0 }} />

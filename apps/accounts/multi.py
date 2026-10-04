@@ -1,4 +1,4 @@
-"""Несколько аккаунтов на одном устройстве — как в Telegram: «Добавить аккаунт», переключение без пароля (до трёх).
+"""Несколько аккаунтов на одном устройстве — как в Telegram: «Добавить аккаунт», переключение без пароля (до MAX штук).
 
 Как устроено:
 * человек сам нажимает «Добавить аккаунт» — только тогда текущий аккаунт запоминается на этом устройстве;
@@ -19,7 +19,7 @@ from django.utils.crypto import constant_time_compare
 from .models import DeviceAccount
 
 COOKIE = 'ilm4_accts'
-MAX = 3
+MAX = 5
 AGE = 60 * 86400
 SALT = 'ilm4.multi-account'
 User = get_user_model()
@@ -83,6 +83,8 @@ def resolve(pairs: list, user_id):
 def accounts(request) -> list:
     """Аккаунты на этом устройстве для показа: [{user, current, ok}] (ok=False — нужно войти заново)."""
     pairs = read(request)
+    if not pairs:
+        return []
     users = {u.pk: u for u in User.objects.filter(pk__in=[u for u, _t in pairs])}
     out = []
     for uid, token in pairs:
@@ -93,3 +95,10 @@ def accounts(request) -> list:
         ok = bool(row and user.is_active and constant_time_compare(row.auth_hash, user.get_session_auth_hash()))
         out.append({'user': user, 'current': request.user.is_authenticated and request.user.pk == uid, 'ok': ok})
     return out
+
+
+def others(request) -> list:
+    """Остальные аккаунты на этом устройстве — для меню (переключение одним нажатием, как в Telegram)."""
+    if COOKIE not in request.COOKIES:
+        return []
+    return [r['user'] for r in accounts(request) if r['ok'] and not r['current']]

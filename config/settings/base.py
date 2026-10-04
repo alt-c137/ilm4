@@ -64,6 +64,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'apps.core.middleware.ContentPolicyMiddleware',  # запрет кода в атрибутах разметки (вторая линия защиты от XSS)
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',   # язык: кука → Accept-Language браузера

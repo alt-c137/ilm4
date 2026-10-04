@@ -50,7 +50,8 @@
       <div><label for="{{ form.handle.id_for_label }}">{{ form.handle.label }}</label>
         <div class="tp__at"><i>@</i>{{ form.handle }}</div>
         {% for err in form.handle.errors %}<span class="err">{{ err }}</span>{% endfor %}
-        <span class="hint">{% translate "Латинские буквы, цифры и «_», от 4 знаков, первая — буква. Например: ali_2024" %}</span></div>
+        <span class="hstate" id="handle-state" aria-live="polite"></span>
+        <span class="hint">{% translate "По имени вас находят в поиске и упоминают в чатах. Латинские буквы (a–z), цифры и «_», от 3 знаков." %}</span></div>
       <div><label for="{{ form.bio.id_for_label }}">{{ form.bio.label }}</label>{{ form.bio }}
         <span class="hint">{% translate "Пара слов о себе — до 160 знаков" %}</span></div>
       <div><label for="{{ form.city.id_for_label }}">{{ form.city.label }}</label>{{ form.city }}</div>
@@ -60,29 +61,33 @@
     </div>
   </details>
 
-  <details class="tp__card tp__fold" id="privacy"{% if section == 'privacy' %} open{% else %} hidden{% endif %}>
-    <summary>{% ico 'lock' %}<b>{% translate "Приватность" %}</b></summary>
-    <div class="tp__form">
-      <div><label for="{{ form.phone_privacy.id_for_label }}">{{ form.phone_privacy.label }}</label>{{ form.phone_privacy }}</div>
-      <label class="fcheck">{{ form.findable_by_phone }} {{ form.findable_by_phone.label }}</label>
-      <span class="hint">{% translate "Кто знает ваш номер, найдёт вас в поиске чатов. Сам номер при этом не показывается." %}</span>
-      <div><label for="{{ form.seen_privacy.id_for_label }}">{{ form.seen_privacy.label }}</label>{{ form.seen_privacy }}
-        <span class="hint">{% translate "Если скрыть своё время, вы тоже не увидите, когда в сети были другие — вместо этого «был(а) недавно»." %}</span></div>
-      <div><label for="{{ form.forward_privacy.id_for_label }}">{{ form.forward_privacy.label }}</label>{{ form.forward_privacy }}
-        <span class="hint">{% translate "Когда ваше сообщение пересылают, рядом стоит ваше имя. «Никто» — имя останется, но перейти по нему в ваш профиль будет нельзя." %}</span></div>
-      <div><label for="{{ form.invite_privacy.id_for_label }}">{{ form.invite_privacy.label }}</label>{{ form.invite_privacy }}
-        <span class="hint">{% translate "По ссылке-приглашению вы вступаете сами — это ограничение только на добавление вас кем-то другим." %}</span></div>
-      <div><label for="{{ form.counts_privacy.id_for_label }}">{{ form.counts_privacy.label }}</label>{{ form.counts_privacy }}
-        <span class="hint">{% translate "«Никто» — в вашем профиле не будет чисел «записей / подписчиков / подписок». Вы сами их видите всегда." %}</span></div>
-      <label class="fcheck">{{ form.is_private }} {{ form.is_private.label }}</label>
-      <span class="hint">{% translate "Ваши записи и сторис увидят только подписчики, которых вы одобрили. Новая подписка приходит заявкой." %} <a class="link" href="{% url 'social:requests' %}">{% translate "Заявки в подписчики" %}</a></span>
-      {% if close_friends %}
-      <div><label>{% translate "Близкие друзья" %}</label>
-        <div class="tp__chips">{% for f in close_friends %}<a class="chip" href="{% url 'accounts:public' f.pk %}">{{ f.get_display_name }}</a>{% endfor %}</div>
-        <span class="hint">{% translate "Добавить или убрать — на странице человека." %}</span></div>
-      {% else %}<span class="hint">{% translate "Близкие друзья: добавьте человека на его странице — и сможете показывать номер и соцсети только близким." %}</span>{% endif %}
-    </div>
-  </details>
+  {# конфиденциальность — как в Telegram: строка «что — кому», нажал — список вариантов; сохраняется сразу #}
+  <div class="tgs-stack" id="privacy" data-autosave{% if section != 'privacy' %} hidden{% endif %}>
+    <section class="tgs">
+      <h2 class="tgs__h">{% translate "Кто видит мои данные" %}</h2>
+      <div class="tgs__row"><span><b>{{ form.phone_privacy.label }}</b></span>{{ form.phone_privacy }}</div>
+      <div class="tgs__row"><span><b>{{ form.seen_privacy.label }}</b></span>{{ form.seen_privacy }}</div>
+      <div class="tgs__row"><span><b>{{ form.counts_privacy.label }}</b></span>{{ form.counts_privacy }}</div>
+    </section>
+    <p class="tgs__note">{% translate "Если скрыть своё время, вы тоже не увидите, когда в сети были другие — вместо этого «был(а) недавно». Счётчики — это числа «записей / подписчиков / подписок» в профиле; вы сами их видите всегда." %}</p>
+    <section class="tgs">
+      <h2 class="tgs__h">{% translate "Сообщения и группы" %}</h2>
+      <div class="tgs__row"><span><b>{{ form.forward_privacy.label }}</b></span>{{ form.forward_privacy }}</div>
+      <div class="tgs__row"><span><b>{{ form.invite_privacy.label }}</b></span>{{ form.invite_privacy }}</div>
+    </section>
+    <p class="tgs__note">{% translate "Когда ваше сообщение пересылают, рядом стоит ваше имя. «Никто» — имя останется, но перейти по нему в ваш профиль будет нельзя. По ссылке-приглашению вы вступаете в группу сами — ограничение только на добавление вас кем-то другим." %}</p>
+    <section class="tgs">
+      <label class="tgs__row"><span><b>{{ form.findable_by_phone.label }}</b><small>{% translate "Кто знает ваш номер, найдёт вас в поиске. Сам номер не показывается" %}</small></span>{{ form.findable_by_phone }}</label>
+      <label class="tgs__row"><span><b>{{ form.is_private.label }}</b><small>{% translate "Записи и сторис — только одобренным подписчикам" %}</small></span>{{ form.is_private }}</label>
+      <a class="tgs__row tgs__row--go" href="{% url 'social:requests' %}"><span><b>{% translate "Заявки в подписчики" %}</b></span></a>
+      <a class="tgs__row tgs__row--go" href="{% url 'accounts:blocked' %}"><span><b>{% translate "Заблокированные" %}</b></span></a>
+    </section>
+    <section class="tgs">
+      <h2 class="tgs__h">{% translate "Близкие друзья" %}</h2>
+      {% for f in close_friends %}<a class="tgs__row tgs__row--go" href="{% url 'accounts:public' f.pk %}"><span><b>{{ f.get_display_name }}</b></span></a>{% endfor %}
+    </section>
+    <p class="tgs__note">{% translate "Близким друзьям можно показывать номер и соцсети, скрытые от остальных. Добавить или убрать — на странице человека." %}</p>
+  </div>
 
   <details class="tp__card tp__fold" id="links"{% if section == 'links' or link_error %} open{% else %} hidden{% endif %}>
     <summary>{% ico 'link' %}<b>{% translate "Соцсети и ссылки" %}</b></summary>
@@ -91,8 +96,9 @@
       {% if link_error %}<span class="err">{{ link_error }}</span>{% endif %}
       <div><label for="links-view">{% translate "Как показывать ссылки в профиле" %}</label>
         <select name="links_view" id="links-view">
-          <option value="auto"{% if links_mode == 'auto' %} selected{% endif %}>{% translate "Авто: значками, если ссылок больше двух" %}</option>
-          <option value="icons"{% if links_mode == 'icons' %} selected{% endif %}>{% translate "Значками в ряд" %}</option>
+          <option value="auto"{% if links_mode == 'auto' %} selected{% endif %}>{% translate "Авто: пилюлями, если ссылок больше двух" %}</option>
+          <option value="pills"{% if links_mode == 'pills' %} selected{% endif %}>{% translate "Пилюлями: значок и имя, лишние — за «ещё»" %}</option>
+          <option value="icons"{% if links_mode == 'icons' %} selected{% endif %}>{% translate "Одними значками в ряд" %}</option>
           <option value="list"{% if links_mode == 'list' %} selected{% endif %}>{% translate "Списком — каждая ссылка отдельной строкой" %}</option>
         </select></div>
       <div id="link-rows">
@@ -116,7 +122,7 @@
   </details>
 
   {% for err in form.non_field_errors %}<span class="err">{{ err }}</span>{% endfor %}
-  <button type="submit" class="btn btn--p tp__save"{% if not section %} hidden{% endif %}>{% translate "Сохранить изменения" %}</button>
+  <button type="submit" class="btn btn--p tp__save"{% if not section or section == 'privacy' %} hidden{% endif %}>{% translate "Сохранить изменения" %}</button>
 </form>
 
 {% if not section %}<nav class="profnav tp__nav">

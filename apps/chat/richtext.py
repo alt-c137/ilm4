@@ -14,15 +14,30 @@ _PAIRS = [(re.compile(r'\*\*(?=\S)(.+?)(?<=\S)\*\*', re.DOTALL), '<b>{}</b>'),
           (re.compile(r'~~(?=\S)(.+?)(?<=\S)~~', re.DOTALL), '<s>{}</s>'),
           (re.compile(r'\|\|(?=\S)(.+?)(?<=\S)\|\|', re.DOTALL),
            '<span class="spoiler" role="button" tabindex="0">{}</span>')]
-_URL = re.compile(r'(?<![\w"=>/])(https?://[^\s<]+[^\s<.,:;!?)\]»"\'])')
-_MENTION = re.compile(r'(?<![\w@/.])@([A-Za-z][A-Za-z0-9_]{3,31})(?![\w.])')
+_URL = re.compile(r'(?<![\w"=>/])(https?://[^\s<]+)')
+_URL_QUOTE = re.compile(r'(&quot;|&#x27;|&#39;)$')              # кавычки после escape() записаны так
+_URL_PUNCT = re.compile(r'(?<!&amp)(?<!&lt)(?<!&gt)[.,:;!?)\]»]$')
+_MENTION = re.compile(r'(?<![\w@/.])@([A-Za-z][A-Za-z0-9_]{2,31})(?![\w.])')
 _SPOILER = re.compile(r'\|\|(?=\S)(.+?)(?<=\S)\|\|', re.DOTALL)
 _MARKS = re.compile(r'\*\*|__|~~|`')
 
 
+def _link(m) -> str:
+    """Ссылка без хвостовых знаков препинания и кавычек — они не часть адреса."""
+    url, tail = m.group(1), ''
+    while True:
+        cut = _URL_QUOTE.search(url) or _URL_PUNCT.search(url)
+        if not cut:
+            break
+        tail, url = cut.group(0) + tail, url[:cut.start()]
+    if not re.match(r'https?://[^\s<]', url):
+        return url + tail
+    return f'<a href="{url}" target="_blank" rel="noopener nofollow ugc">{url}</a>{tail}'
+
+
 def to_html(text: str):
     """Безопасный HTML: сначала экранируем всё, потом расставляем разрешённые теги."""
-    out = escape(text or '')
+    out = escape((text or '').replace('\x00', ''))      # \x00 — наш служебный знак для `кода`; в тексте ему не место
     codes = []
 
     def keep(m):
@@ -32,11 +47,11 @@ def to_html(text: str):
     out = _CODE.sub(keep, out)                         # внутри `кода` ничего не оформляем
     for rx, tpl in _PAIRS:
         out = rx.sub(lambda m, t=tpl: t.format(m.group(1)), out)
-    out = _URL.sub(r'<a href="\1" target="_blank" rel="noopener nofollow ugc">\1</a>', out)
+    out = _URL.sub(_link, out)
     # @имя — ссылка на человека, группу или канал (как упоминание в Telegram); внутри уже готовых ссылок не трогаем
     out = re.sub(r'(<a [^>]*>.*?</a>)|' + _MENTION.pattern,
                  lambda m: m.group(1) or f'<a class="mention" href="/@{m.group(2).lower()}/">@{m.group(2)}</a>', out)
-    out = re.sub(r'\x00(\d+)\x00', lambda m: f'<code>{codes[int(m.group(1))]}</code>', out)
+    out = re.sub(r'\x00(\d+)\x00', lambda m: f'<code>{codes[int(m.group(1))]}</code>' if int(m.group(1)) < len(codes) else '', out)
     return mark_safe(out.replace('\n', '<br>'))
 
 

@@ -98,6 +98,14 @@ def check_post(thread, user) -> None:
 
 # ---------- создание и настройки ----------
 
+def _not_space(thread) -> None:
+    """Канал сообщества живёт по правилам сообщества (свои роли и права — spaces.py).
+    Рычаги обычной группы на него не действуют: иначе модератор, которому дали только «удалять сообщения»,
+    мог бы открыть закрытый канал всем, переименовать его или добавить посторонних."""
+    if thread.space_id:
+        raise ChatError(_('Это канал сообщества — он настраивается в самом сообществе.'), 409)
+
+
 def clean_handle(value, thread=None, user=None) -> str | None:
     """Публичное имя группы / канала. Имена общие с людьми (@имя); «ilm4», «support» и подобные — только сотрудникам."""
     from apps.accounts import people
@@ -120,8 +128,6 @@ def _avatar(upload):
 
 
 def create(user, kind: str, title: str, about: str = '', is_public: bool = False, handle: str = '', avatar=None) -> Thread:
-    from django.core.cache import cache
-
     from apps.accounts import phone_verify
     if kind not in (Thread.GROUP, Thread.CHANNEL):
         raise ChatError(_('Неизвестный вид чата'))
@@ -132,25 +138,25 @@ def create(user, kind: str, title: str, about: str = '', is_public: bool = False
     title = (title or '').strip()[:120]
     if len(title) < 2:
         raise ChatError(_('Дайте название — хотя бы два знака.'))
-    key = f'rooms:new:{user.pk}'
-    if cache.get(key, 0) >= CREATE_PER_DAY and not user.is_staff:
-        raise ChatError(_('Сегодня вы уже создали много групп и каналов. Попробуйте завтра.'), 429)
     handle = clean_handle(handle, user=user) if is_public else None
     if is_public and not handle and kind == Thread.CHANNEL:
         raise ChatError(_('Публичному каналу нужно имя — по нему его находят.'))
+    from apps.core.limits import hits
+    if hits(f'rooms:new:{user.pk}', 86400) > CREATE_PER_DAY and not user.is_staff:
+        raise ChatError(_('Сегодня вы уже создали много групп и каналов. Попробуйте завтра.'), 429)
     with transaction.atomic():
         thread = Thread.objects.create(kind=kind, title=title, about=(about or '').strip()[:500], owner=user,
                                        is_public=bool(is_public), handle=handle, invite_code=secrets.token_urlsafe(12),
                                        avatar=_avatar(avatar), members_count=1)
         thread.participants.add(user)
         Member.objects.create(thread=thread, user=user, role=Member.OWNER, last_read_at=timezone.now())
-    cache.set(key, cache.get(key, 0) + 1, 86400)
     return thread
 
 
 def update(thread, user, data, avatar=None) -> Thread:
     if not is_admin(thread, user):
         raise ChatError(_('Менять настройки могут владелец и админы.'), 403)
+    _not_space(thread)
     fields = []
     if 'title' in data:
         title = str(data['title']).strip()[:120]
@@ -194,14 +200,17 @@ def reset_invite(thread, user) -> str:
     """Новая ссылка-приглашение: старая перестаёт работать."""
     if not is_admin(thread, user):
         raise ChatError(_('Нет доступа'), 403)
+    _not_space(thread)
     thread.invite_code = secrets.token_urlsafe(12)
     thread.save(update_fields=['invite_code'])
     return thread.invite_code
 
 
-def delete(thread, user) -> None:
+def delete(thread, user, from_space: bool = False) -> None:
     if role_of(thread, user) != Member.OWNER and not user.is_staff:
         raise ChatError(_('Удалить может только владелец.'), 403)
+    if not from_space and not user.is_staff:          # канал сообщества удаляют в сообществе (там журнал и свои права)
+        _not_space(thread)
     for m in thread.messages.exclude(attachment='').exclude(attachment__isnull=True):
         m.attachment.delete(save=False)
     thread.delete()
@@ -252,6 +261,7 @@ def add_members(thread, by, users) -> int:
     """Админ добавляет людей — только тех, с кем у него уже есть личный диалог (иначе это рассылка спама)."""
     if not is_admin(thread, by):
         raise ChatError(_('Добавлять участников могут владелец и админы.'), 403)
+    _not_space(thread)                                # в канал сообщества попадают через сообщество и его роли
     from django.contrib.auth import get_user_model
     known = set(get_user_model().objects.filter(chat_threads__in=Thread.objects.filter(kind=Thread.DIRECT, participants=by))
                 .values_list('pk', flat=True))
@@ -302,6 +312,7 @@ def remove_member(thread, by, user) -> None:
     mine, target = membership(thread, by), Member.objects.filter(thread=thread, user=user).first()
     if mine is None or not mine.is_admin or target is None:
         raise ChatError(_('Нет доступа'), 403)
+    _not_space(thread)
     if target.role == Member.OWNER or (target.role == Member.ADMIN and mine.role != Member.OWNER):
         raise ChatError(_('Этого участника удалить нельзя.'), 403)
     target.role = Member.BANNED
@@ -314,6 +325,7 @@ def remove_member(thread, by, user) -> None:
 def set_admin(thread, by, user, admin: bool) -> None:
     if role_of(thread, by) != Member.OWNER:
         raise ChatError(_('Назначать админов может только владелец.'), 403)
+    _not_space(thread)
     target = membership(thread, user)
     if target is None or target.role == Member.OWNER:
         raise ChatError(_('Нет такого участника.'), 404)

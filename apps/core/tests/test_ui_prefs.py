@@ -28,7 +28,7 @@ def test_site_tabs_are_customizable(ali, client):
     r = client.post('/settings/', {'what': 'tabs', 'tab': ['chats', 'tracker', 'nikah', 'map']})
     assert r.status_code == 302
     ali.refresh_from_db()
-    assert ali.ui == {'tabs_site': ['chats', 'tracker', 'nikah', 'map']}
+    assert ali.ui == {'tabs_site': ['chats', 'tracker', 'nikah', 'map'], 'desk': 'custom'}     # подправил кнопки — стол «свой»
     bar = client.get('/').content.decode().split('<nav class="tabbar"')[1].split('</nav>')[0]
     assert [bar.index(u) for u in ('/chat/', '/tracker/', '/nikah/', '/map/')] == sorted(bar.index(u) for u in ('/chat/', '/tracker/', '/nikah/', '/map/'))
     assert 'tabbar__add' not in bar and '/accounts/profile/' in bar                    # «Профиль» всегда на месте
@@ -46,7 +46,7 @@ def test_app_tabs_saved_in_profile(ali, client):
     tok = ApiToken.issue(ali, 't')
     r = client.post('/api/v1/me/', json.dumps({'ui': {'tabs_app': ['home', 'tracker', 'chats', 'add', 'zzz']}}), content_type='application/json',
                     HTTP_AUTHORIZATION=f'Bearer {tok}')
-    assert r.status_code == 200 and r.json()['ui'] == {'tabs_app': ['home', 'tracker', 'chats']}     # «Подать» в приложении нет
+    assert r.status_code == 200 and r.json()['ui'] == {'tabs_app': ['home', 'tracker', 'chats'], 'desk': 'custom'}     # «Подать» в приложении нет; стол — «свой»
 
 
 def test_rich_text_and_spoilers(ali):
@@ -89,9 +89,15 @@ def test_room_info_like_telegram(ali, client):
     g = rooms.create(ali, 'group', 'Соседи', 'О районе')
     client.force_login(ali)
     html = client.get(f'/chat/{g.pk}/info/').content.decode()
-    assert 'tp__menu' in html and 'Удалить группу' in html and 'Ссылка-приглашение' in html and 'Сделать публичную ссылку' in html
+    assert 'tp__menu' in html and 'Удалить группу' in html and 'Ссылка-приглашение' in html
     assert 'Удалить навсегда' not in html.split('tp__pop')[0]                           # опасная кнопка — только в меню «⋮»
-    client.post(f'/chat/{g.pk}/info/', {'title': 'Соседи', 'about': '', 'is_public': 'on', 'handle': 'sosedi_1'})
+    assert 'tp__tabs' in html and 'Медиа' in html and 'Голосовые' in html and 'владелец' in html and 'в сети' in html
+    edit = client.get(f'/chat/{g.pk}/info/?s=edit').content.decode()                     # «Изменить» — отдельный экран, как в Telegram
+    assert 'Тип группы' in edit and 'Медленный режим' in edit and 'data-handle-check' in edit and '<select name="is_public"' in edit
+    r = client.post(f'/chat/{g.pk}/info/', {'title': 'Соседи', 'about': '', 'is_public': 'on', 'handle': 'sosedi_1', 'only_admins_post': ''})
+    assert r.url == f'/chat/{g.pk}/info/'
     html = client.get(f'/chat/{g.pk}/info/').content.decode()
-    assert '/c/sosedi_1/' in html and 'Публичная ссылка' in html and 'Ссылка-приглашение' in html
+    assert '/c/sosedi_1/' in html and 'Ссылка' in html
+    r = client.post(f'/chat/{g.pk}/info/', {'title': 'Соседи', 'is_public': 'on', 'handle': '1bad'})
+    assert r.url == f'/chat/{g.pk}/info/?s=edit'                                        # ошибка — остаёмся на экране правки
     assert 'Создать группу' in client.get('/chat/').content.decode()                    # меню «⋮» в списке чатов

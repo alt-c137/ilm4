@@ -78,7 +78,7 @@
     {% ico 'lock' %}
     <span><b>{% translate "Помощник может читать мои новые сообщения" %}</b>
       <small>{% translate "Нужно для отчёта «кто написал и о чём». Тексты непрочитанных сообщений уйдут поставщику ИИ. Чаты никяха не передаются никогда. Выключено — помощник видит только названия чатов и число новых." %}</small></span>
-    <label class="tgl"><input type="checkbox" name="read_chats" value="1"{% if st.read_chats %} checked{% endif %} onchange="this.form.submit()"><i></i></label>
+    <label class="tgl"><input type="checkbox" name="read_chats" value="1"{% if st.read_chats %} checked{% endif %} data-auto-submit><i></i></label>
   </form>
 
   {% if chats %}<h2 class="ppl__h">{% translate "Прошлые разговоры" %}</h2>
@@ -101,7 +101,7 @@
   var form = document.getElementById('ai-form'), log = document.getElementById('ai-log'), orb = document.getElementById('ai-orb');
   if (!form) return;
   var ta = form.querySelector('textarea'), csrf = form.querySelector('[name=csrfmiddlewaretoken]').value;
-  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML.replace(/\n/g, '<br>'); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]; }).replace(/\n/g, '<br>'); }
   function add(role, text) { var el = document.createElement('div'); el.className = 'ai__m ai__m--' + role; el.innerHTML = esc(text); log.appendChild(el); el.scrollIntoView({ block: 'end' }); return el; }
   document.querySelectorAll('[data-say]').forEach(function (b) { b.addEventListener('click', function () { ta.value = b.dataset.say; form.requestSubmit(); }); });
   ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey && !('ontouchstart' in window)) { e.preventDefault(); form.requestSubmit(); } });

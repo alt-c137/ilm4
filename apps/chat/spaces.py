@@ -23,6 +23,7 @@ from datetime import date, timedelta
 
 from django.core.cache import cache
 from django.db import transaction
+from django.db.models import F, Q
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
@@ -221,7 +222,7 @@ def delete(space, user) -> None:
         raise ChatError(_('Удалить может только владелец.'), 403)
     from . import rooms
     for thread in list(space.threads.all()):
-        rooms.delete(thread, space.owner or user)
+        rooms.delete(thread, space.owner or user, from_space=True)
     space.delete()
 
 
@@ -305,7 +306,7 @@ def delete_channel(space, user, thread_id=None, voice_id=None) -> None:
         raise ChatError(_('В сообществе должен остаться хотя бы один канал.'))
     _log(space, user, 'channel', f'− {thread.title}')
     from . import rooms
-    rooms.delete(thread, space.owner or user)
+    rooms.delete(thread, space.owner or user, from_space=True)
 
 
 def delete_category(space, user, category_id) -> None:
@@ -422,7 +423,11 @@ def join(space, user, code: str = '') -> SpaceMember:
     with transaction.atomic():
         m = SpaceMember.objects.create(space=space, user=user)
         if inv is not None:
-            SpaceInvite.objects.filter(pk=inv.pk).update(uses=inv.uses + 1)
+            # счётчик приглашения — одной операцией в базе: двое с последним «местом» не войдут оба
+            took = (SpaceInvite.objects.filter(pk=inv.pk).filter(Q(max_uses=0) | Q(uses__lt=F('max_uses')))
+                    .update(uses=F('uses') + 1))
+            if not took:
+                raise ChatError(_('Это приглашение больше не действует.'), 403)
         _sync_member(space, m)
         _recount(space)
     return m

@@ -25,7 +25,7 @@
       <a class="trk__man-b" href="{% url 'accounts:public' p.id %}"><b>{{ p.name }}{% if p.owner %} <small>· {% translate "владелец" %}</small>{% endif %}</b>
         <span class="trk__line"><i style="width:{{ p.rate }}%"></i></span></a>
       <em>{{ p.points }}<small>/{{ p.total }}</small></em>
-      {% if owner and not p.me %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="remove"><input type="hidden" name="user" value="{{ p.id }}"><button class="lrow__del" title="{% translate 'Убрать из трекера' %}" onclick="return confirm('{% translate 'Убрать из трекера?' %}')">×</button></form>{% endif %}
+      {% if owner and not p.me %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="remove"><input type="hidden" name="user" value="{{ p.id }}"><button class="lrow__del" title="{% translate 'Убрать из трекера' %}" data-confirm="{{ _('Убрать из трекера?')|force_escape }}">×</button></form>{% endif %}
     </div>
     {% endfor %}
   </section>
@@ -35,7 +35,7 @@
 
   <h2 class="trk__h">{% translate "Позвать людей" %}</h2>
   <section class="tp__card trk__form">
-    <input type="text" readonly value="{{ invite_link }}" onclick="this.select()" aria-label="{% translate 'Ссылка-приглашение' %}">
+    <input type="text" readonly value="{{ invite_link }}" data-select-all aria-label="{% translate 'Ссылка-приглашение' %}">
     <div class="trk__adds"><button type="button" class="btn btn--g btn--s" data-copy-link="{{ invite_link }}">{% ico 'copy' %}{% translate "Копировать ссылку" %}</button></div>
   </section>
 
@@ -43,11 +43,11 @@
     {% if owner %}
     <form method="post">{% csrf_token %}<button class="tp__row" name="action" value="compete">{% ico 'trophy' %}<span><b>{% if compete %}{% translate "Выключить соревнование" %}{% else %}{% translate "Включить соревнование" %}{% endif %}</b><small>{% translate "Таблица: кто сколько выполнил за период" %}</small></span></button></form>
     <form method="post" class="tp__row trk__ends">{% csrf_token %}<input type="hidden" name="action" value="ends_on">{% ico 'calendar' %}<span><b>{% translate "Соревнование до" %}</b><small>{% translate "После этой даты будет виден победитель. Пусто — без срока" %}</small></span>
-      <input type="date" name="ends_on" value="{{ ends_on }}" onchange="this.form.submit()"></form>
-    <form method="post">{% csrf_token %}<button class="tp__row" name="action" value="link" onclick="return confirm('{% translate 'Старая ссылка перестанет работать. Продолжить?' %}')">{% ico 'link' %}<span><b>{% translate "Сделать новую ссылку" %}</b><small>{% translate "Старая перестанет работать" %}</small></span></button></form>
-    <form method="post">{% csrf_token %}<button class="tp__row tp__row--bad" name="action" value="delete" onclick="return confirm('{% translate 'Удалить трекер у всех участников?' %}')">{% ico 'trash' %}<span><b>{% translate "Удалить трекер" %}</b><small>{% translate "У всех участников, вместе с отметками" %}</small></span></button></form>
+      <input type="date" name="ends_on" value="{{ ends_on }}" data-auto-submit></form>
+    <form method="post">{% csrf_token %}<button class="tp__row" name="action" value="link" data-confirm="{{ _('Старая ссылка перестанет работать. Продолжить?')|force_escape }}">{% ico 'link' %}<span><b>{% translate "Сделать новую ссылку" %}</b><small>{% translate "Старая перестанет работать" %}</small></span></button></form>
+    <form method="post">{% csrf_token %}<button class="tp__row tp__row--bad" name="action" value="delete" data-confirm="{{ _('Удалить трекер у всех участников?')|force_escape }}">{% ico 'trash' %}<span><b>{% translate "Удалить трекер" %}</b><small>{% translate "У всех участников, вместе с отметками" %}</small></span></button></form>
     {% else %}
-    <form method="post">{% csrf_token %}<button class="tp__row tp__row--bad" name="action" value="leave" onclick="return confirm('{% translate 'Выйти из трекера?' %}')">{% ico 'back' %}<span><b>{% translate "Выйти из трекера" %}</b><small>{% translate "Ваши отметки здесь удалятся" %}</small></span></button></form>
+    <form method="post">{% csrf_token %}<button class="tp__row tp__row--bad" name="action" value="leave" data-confirm="{{ _('Выйти из трекера?')|force_escape }}">{% ico 'back' %}<span><b>{% translate "Выйти из трекера" %}</b><small>{% translate "Ваши отметки здесь удалятся" %}</small></span></button></form>
     {% endif %}
   </section>
 </div>

@@ -29,6 +29,7 @@
 <link rel="stylesheet" href="{% static 'css/tg.css' %}?v={{ asset_v }}">
 <link rel="stylesheet" href="{% static 'css/feed.css' %}?v={{ asset_v }}">
 <link rel="stylesheet" href="{% static 'css/shell.css' %}?v={{ asset_v }}">
+<link rel="stylesheet" href="{% static 'css/tgui.css' %}?v={{ asset_v }}">
 {# Мгновенные переходы: браузер заранее подгружает страницу, на ссылку которой навели или нажали. Только разделы без побочных действий при открытии. #}
 <script type="speculationrules">{"prefetch":[{"where":{"and":[{"href_matches":["/","/buy/*","/jobs/*","/news/*","/forum/*","/services/*","/transport/*","/health/*","/map/*","/library/*","/prayer/*","/migration/*","/refugee/*","/catalog/"]},{"not":{"href_matches":["/*/add/*","/*/ask/*","/*/request/*","/*/download/*","/*/boost/*","/*/respond/*","/*/reply/*","/*/confirm/*","/*\\?*"]}}]},"eagerness":"moderate"}]}</script>
 {{ js_i18n|json_script:"i18n-js" }}
@@ -38,7 +39,7 @@ window._t = (function () { var d = {}; try { d = JSON.parse(document.getElementB
 {% block extra_head %}{% endblock %}
 {% if current_theme %}<style>:root{--accent:{{ current_theme.accent }};--accent-d:{{ current_theme.accent_d }};--accent-soft:{{ current_theme.accent_soft }}}</style>{% endif %}
 </head>
-<body class="{% block body_class %}{% endblock %}{% if is_home %} page-home{% endif %}{% if nikah_mode %} mode-nikah{% endif %}" data-sec="{{ active_section|default:'' }}"{% if user.is_authenticated and calls_on %} data-calls="1"{% endif %}>
+<body class="{% block body_class %}{% endblock %}{% if is_home %} page-home{% endif %}{% if nikah_mode %} mode-nikah{% endif %}" data-sec="{{ active_section|default:'' }}" data-design="{{ design|default:'classic' }}"{% if user.is_authenticated and calls_on %} data-calls="1"{% endif %}>
 {% include 'includes/messages.html' %}
 {# боковое меню — только на широком экране (ПК): как у ВК и X. На телефоне его заменяет нижняя панель. #}
 <script>/* боковое меню можно убрать и вернуть (выбор запоминается) — класс ставим до отрисовки, чтобы страница не «прыгала» */
@@ -96,13 +97,21 @@ try { if (localStorage.getItem('ilm4.side') === 'off') document.documentElement.
           <span class="uchip__c">▾</span>{% if mod_pending %}<span class="uchip__dot" title="{% translate 'Ждут модерации' %}: {{ mod_pending }}"></span>{% endif %}
         </button>
         <div class="umenu" role="menu">
-          <div class="umenu__head">
+          {# как в Telegram: сверху — аккаунты на этом устройстве; нажал на другой — он открылся #}
+          <a class="umenu__head" href="{% url 'accounts:profile' %}">
             {% if user.avatar %}<img class="umenu__ava" src="{{ user.avatar.url }}" alt="">{% else %}<span class="umenu__ava umenu__ava--txt">{{ user.get_display_name|slice:":1"|upper }}</span>{% endif %}
-            <div>
-              <div class="umenu__name">{{ user.get_display_name }}</div>
-              <div class="umenu__mail">{{ user.email }}</div>
-            </div>
-          </div>
+            <span>
+              <span class="umenu__name">{{ user.get_display_name }}</span>
+              {% if user.tag %}<span class="umenu__mail">{{ user.tag }}</span>{% endif %}
+            </span>
+            <i class="umenu__now" aria-hidden="true"></i>
+          </a>
+          {% for acc in other_accounts %}<form method="post" action="{% url 'accounts:accounts_switch' %}">{% csrf_token %}<input type="hidden" name="user" value="{{ acc.pk }}">
+            <button type="submit" class="umenu__acc">{% if acc.avatar %}<img class="umenu__ava" src="{{ acc.avatar.url }}" alt="">{% else %}<span class="umenu__ava umenu__ava--txt">{{ acc.get_display_name|slice:":1"|upper }}</span>{% endif %}
+              <span><span class="umenu__name">{{ acc.get_display_name }}</span>{% if acc.tag %}<span class="umenu__mail">{{ acc.tag }}</span>{% endif %}</span></button></form>{% endfor %}
+          <form method="post" action="{% url 'accounts:accounts' %}">{% csrf_token %}<input type="hidden" name="action" value="add">
+            <button type="submit" class="umenu__acc umenu__acc--add"><span class="umenu__plus"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span><span><span class="umenu__name">{% translate "Добавить аккаунт" %}</span></span></button></form>
+          <div class="umenu__sep"></div>
           <a href="{% url 'accounts:profile' %}"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1.2-3.6 4.1-5.5 7.5-5.5s6.3 1.9 7.5 5.5"/></svg>{% translate "Профиль" %}</a>
           <a href="{% url 'core:my' %}"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>{% translate "Мои публикации" %}</a>
           <a href="{% url 'market:my' %}"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M9 4v16"/></svg>{% translate "Мои объявления" %}</a>
@@ -208,7 +217,9 @@ setInterval(function(){ if (!document.hidden) fetch('/accounts/ping/', {credenti
 <script src="{% static 'js/theme.js' %}?v={{ asset_v }}"></script>
 <script src="{% static 'js/app.js' %}?v={{ asset_v }}"></script>
 <script src="{% static 'js/photoedit.js' %}?v={{ asset_v }}" defer></script>
+<script src="{% static 'js/avatarcrop.js' %}?v={{ asset_v }}" defer></script>
 <script src="{% static 'js/select.js' %}?v={{ asset_v }}" defer></script>
+<script src="{% static 'js/datepick.js' %}?v={{ asset_v }}" defer></script>
 <script>
 /* Сколько времени человек проводит в разделе (только секунды и название раздела; при «Do Not Track» — ничего не шлём).
    Нужно, чтобы видеть, какие разделы живые, а какие лишние: /moderation/stats/ */

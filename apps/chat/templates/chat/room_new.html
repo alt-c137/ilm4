@@ -16,7 +16,7 @@
       </div>
     </div>
     <div class="seg seg--tabs roomkind">
-      <a class="seg__i" href="{% url 'chat:start' %}">{% translate "Личный чат" %}</a>
+      <a class="seg__i" href="{% url 'chat:people' %}">{% translate "Личный чат" %}</a>
       {% if allowed.group %}<a class="seg__i{% if kind == 'group' %} on{% endif %}" href="?kind=group">{% translate "Группа" %}</a>{% endif %}
       {% if allowed.channel %}<a class="seg__i{% if kind == 'channel' %} on{% endif %}" href="?kind=channel">{% translate "Канал" %}</a>{% endif %}
     </div>
@@ -40,8 +40,9 @@
       </div>
       <div class="field field--wide" id="r-handle-box">
         <label for="r-handle">{% translate "Публичное имя" %}</label>
-        <div class="handle"><span>ilm4.com/c/</span><input type="text" id="r-handle" name="handle" maxlength="32" value="{{ data.handle }}" placeholder="masjid_nur" autocapitalize="none" spellcheck="false"></div>
-        <span class="hint">{% translate "Латинские буквы, цифры и «_», от 4 знаков. По этому адресу канал находят и делятся им." %}</span>
+        <div class="handle"><span>ilm4.com/c/</span><input type="text" id="r-handle" name="handle" maxlength="32" value="{{ data.handle }}" placeholder="masjid_nur" autocapitalize="none" spellcheck="false" data-handle-check data-room=""></div>
+        <span class="hstate" aria-live="polite"></span>
+        <span class="hint">{% translate "Латинские буквы (a–z), цифры и «_», от 3 знаков. По этому адресу канал находят и делятся им." %}</span>
       </div>
       <button type="submit" class="btn btn--p">{% ico 'plus' %}{% translate "Создать" %}</button>
     </form>

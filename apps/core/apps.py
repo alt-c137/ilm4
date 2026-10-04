@@ -7,6 +7,16 @@ class CoreConfig(AppConfig):
     verbose_name = 'Ядро ilm4'
 
     def ready(self):
+        # «Бомба» из картинки: файл в пару мегабайт, а при раскрытии — сотни мегабайт памяти. Pillow отказывает сам,
+        # когда точек больше двух MAX_IMAGE_PIXELS (по умолчанию это ~180 Мп — слишком щедро). Ставим предел 50 Мп:
+        # хватает снимкам с камер на 48–50 Мп; больше — отказ ещё при открытии файла, до раскрытия.
+        # Действует на все загрузки картинок на сайте. Предупреждение «больше половины предела» нам не нужно.
+        import warnings
+
+        from PIL import Image
+        Image.MAX_IMAGE_PIXELS = 25_000_000
+        warnings.simplefilter('ignore', Image.DecompressionBombWarning)
+
         # Блоки главной ядра. Разделы зарегистрируют свои блоки
         # в собственных AppConfig.ready() (ARCHITECTURE.md §3.2).
         from . import signals

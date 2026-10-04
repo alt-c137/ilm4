@@ -22,7 +22,7 @@
       <div class="mypub__act">
         {% if g.pub.form %}<a class="btn btn--s btn--g" href="{% url 'core:my_edit' g.pub.key it.obj.pk %}">{% ico 'edit' %}{% translate "Изменить" %}</a>{% endif %}
         {% if g.pub.active %}<form method="post" action="{% url 'core:my_toggle' g.pub.key it.obj.pk %}">{% csrf_token %}<button class="btn btn--s btn--g" type="submit">{% if it.css == 'off' %}{% translate "Показать" %}{% else %}{% translate "Скрыть" %}{% endif %}</button></form>{% endif %}
-        <form method="post" action="{% url 'core:my_delete' g.pub.key it.obj.pk %}" onsubmit="return confirm('{{ _("Удалить насовсем?")|escapejs }} «{{ it.title|escapejs }}»')">{% csrf_token %}<button class="btn btn--s btn--g mypub__del" type="submit">{% translate "Удалить" %}</button></form>
+        <form method="post" action="{% url 'core:my_delete' g.pub.key it.obj.pk %}" data-confirm="{{ _("Удалить насовсем?")|force_escape }} «{{ it.title }}»">{% csrf_token %}<button class="btn btn--s btn--g mypub__del" type="submit">{% translate "Удалить" %}</button></form>
       </div>
     </div>
     {% endfor %}

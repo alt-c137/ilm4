@@ -10,7 +10,7 @@
   <section class="tp__card">
     {% for r in rows %}<div class="tp__row acc__row">
       {% if r.user.avatar %}<img class="tava tava--sm" src="{{ r.user.avatar.url }}" alt="">{% else %}<span class="tava tava--sm tava--h2">{{ r.user.get_display_name|slice:":1"|upper }}</span>{% endif %}
-      <span><b>{{ r.user.get_display_name }}</b><small>{% if r.current %}{% translate "сейчас открыт" %}{% elif not r.ok %}{% translate "нужно войти заново" %}{% elif r.user.handle %}@{{ r.user.handle }}{% else %}{{ r.user.email }}{% endif %}</small></span>
+      <span><b>{{ r.user.get_display_name }}</b><small>{% if r.current %}{% translate "сейчас открыт" %}{% elif not r.ok %}{% translate "нужно войти заново" %}{% else %}{{ r.user.tag }}{% endif %}</small></span>
       {% if not r.current %}
       {% if r.ok %}<form method="post" action="{% url 'accounts:accounts_switch' %}">{% csrf_token %}<input type="hidden" name="user" value="{{ r.user.pk }}"><button type="submit" class="btn btn--s btn--p">{% translate "Открыть" %}</button></form>{% endif %}
       <form method="post">{% csrf_token %}<input type="hidden" name="action" value="forget"><input type="hidden" name="user" value="{{ r.user.pk }}"><button type="submit" class="btn btn--s btn--g" aria-label="{% translate 'Убрать с устройства' %}">{% ico 'close' %}</button></form>

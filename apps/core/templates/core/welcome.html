@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% load i18n icons %}
+{% block title %}{% translate "Добро пожаловать —" %} {{ block.super }}{% endblock %}
+{% block body_class %}page-tp page-welcome{% endblock %}
+{% block content %}
+<div class="tp welcome">
+  <header class="welcome__head">
+    <h1>{% translate "Как вам будет удобнее?" %}</h1>
+    <p>{% translate "ilm4 — это чаты, объявления, работа, намаз, лента и ещё десяток сервисов в одном месте. Выберите привычный вид и чем будете пользоваться чаще — всё это потом меняется в настройках." %}</p>
+  </header>
+  {% include 'core/includes/look.html' with next='/' submit=_("Продолжить") %}
+  <form method="post" class="welcome__skip">{% csrf_token %}<button type="submit" class="btn btn--g">{% translate "Пропустить — оставить как есть" %}</button></form>
+</div>
+{% endblock %}

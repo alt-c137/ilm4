@@ -1,0 +1,38 @@
+{% load i18n icons %}{# Выбор «дизайна» и «рабочего стола» — в настройках и при первом входе. next — куда вернуться после сохранения. #}
+<form method="post" action="{% url 'core:settings' %}" class="look tgs-stack" id="look-form">{% csrf_token %}
+  <input type="hidden" name="what" value="look"><input type="hidden" name="next" value="{{ next|default:'' }}">
+  <section>
+    <h2 class="look__h">{% translate "Дизайн" %}</h2>
+    <p class="look__p">{% translate "Привычный вид оболочки. Содержимое ilm4 то же самое — меняется только рамка вокруг." %}</p>
+    <div class="look__designs">
+      {% for d in look.designs %}<label class="look__d">
+        <input type="radio" name="design" value="{{ d.key }}" data-desk="{{ d.desk }}"{% if d.on %} checked{% endif %}>
+        <span class="look__ph look__ph--{{ d.key }}" aria-hidden="true"><i class="look__top"></i><i class="look__rows"><b></b><b></b><b></b></i><i class="look__bar"><b></b><b></b><b></b><b></b><b></b></i><i class="look__fab"></i></span>
+        <b>{{ d.name }}</b><small>{{ d.about }}</small>
+      </label>{% endfor %}
+    </div>
+  </section>
+  <section>
+    <h2 class="look__h">{% translate "Рабочий стол" %}</h2>
+    <p class="look__p">{% translate "Готовый набор под задачу: какие кнопки внизу и с чего открывается ilm4. Любой набор потом можно подправить под себя." %}</p>
+    <div class="tgs">
+      {% for d in look.desks %}<label class="tgs__row look__desk"><span><b>{{ d.name }}</b><small>{{ d.about }}</small><small class="look__tabs">{{ d.tabs|join:" · " }}</small></span>
+        <input type="radio" name="desk" value="{{ d.key }}"{% if d.on %} checked{% endif %}></label>{% endfor %}
+      {% if look.custom %}<label class="tgs__row look__desk"><span><b>{% translate "Свой" %}</b><small>{% translate "Вы настроили кнопки сами" %}</small></span><input type="radio" name="desk" value="" checked></label>{% endif %}
+      <a class="tgs__row tgs__row--go tgs__row--accent" href="{% url 'core:settings' %}?s=tabs"><span><b>{% translate "Собрать свой набор" %}</b><small>{% translate "Выбрать кнопки по одной, порядок и стартовый экран" %}</small></span></a>
+    </div>
+  </section>
+  <button type="submit" class="btn btn--p tp__save">{{ submit|default:_("Применить") }}</button>
+</form>
+<script>
+(function () {
+  var form = document.getElementById('look-form'), touched = false;
+  if (!form) return;
+  form.addEventListener('change', function (e) {
+    if (e.target.name === 'desk') { touched = true; return; }
+    if (e.target.name !== 'design' || touched) return;            // выбрал дизайн — подставляем подходящий ему стол (если стол не трогали)
+    var desk = form.querySelector('input[name=desk][value="' + e.target.dataset.desk + '"]');
+    if (desk) desk.checked = true;
+  });
+})();
+</script>

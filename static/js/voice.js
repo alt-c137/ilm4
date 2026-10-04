@@ -8,7 +8,8 @@
   var bJoin = document.getElementById('vc-join'), bMute = document.getElementById('vc-mute'), bLeave = document.getElementById('vc-leave');
   var ws = null, stream = null, me = null, ice = [], peers = {}, muted = false, pingT = 0, levelT = 0, ctxAudio = null;
 
-  function esc(x) { var d = document.createElement('div'); d.textContent = x == null ? '' : x; return d.innerHTML; }
+  var ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  function esc(x) { return String(x == null ? '' : x).replace(/[&<>"']/g, function (c) { return ESC[c]; }); }   // и кавычки: значения стоят и внутри атрибутов
   function tile(p) {
     var el = document.createElement('div'); el.className = 'vc__tile'; el.dataset.peer = p.peer;
     el.innerHTML = (p.avatar ? '<img src="' + esc(p.avatar) + '" alt="">' : '<span>' + esc((p.name || '?').slice(0, 1).toUpperCase()) + '</span>') +

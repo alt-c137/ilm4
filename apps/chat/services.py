@@ -12,6 +12,8 @@ from django.db.models import F
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
+from apps.core.limits import hits
+
 from .models import Message, Thread
 
 MAX_TEXT = 2000
@@ -315,6 +317,21 @@ def mark_read(thread, user) -> int:
 
 # ---------- отправка ----------
 
+FLOOD_MAX, FLOOD_WINDOW = 30, 10           # сообщений и файлов за 10 секунд с одного аккаунта
+SEARCH_MAX, SEARCH_WINDOW = 90, 60         # поисков по тексту в минуту: каждый расшифровывает сотни сообщений
+
+
+def _flood(user) -> None:
+    """Защита от флуда на сервере: общий счётчик на аккаунт — сайт, приложение и WebSocket, все устройства разом.
+    (Счётчик в самом WebSocket живёт, пока открыто соединение: переподключился — и он пуст.)"""
+    if hits(f'chat:flood:{user.pk}', FLOOD_WINDOW) > FLOOD_MAX:
+        raise ChatError(_('Слишком часто — подождите несколько секунд.'), 429)
+
+
+def search_allowed(user) -> bool:
+    return hits(f'chat:search:{user.pk}', SEARCH_WINDOW) <= SEARCH_MAX
+
+
 def _check_can_write(thread, user):
     if thread.is_room:
         from . import rooms
@@ -392,7 +409,7 @@ def _must_notify(thread, msg) -> set:
     ids = set()
     if msg.reply_to_id and msg.reply_to and msg.reply_to.sender_id != msg.sender_id:
         ids.add(msg.reply_to.sender_id)
-    handles = set(re.findall(r'(?<![\w@])@([a-z][a-z0-9_]{3,31})', (msg.body or '').lower()))
+    handles = set(re.findall(r'(?<![\w@])@([a-z][a-z0-9_]{2,31})', (msg.body or '').lower()))
     if handles:
         ids.update(thread.participants.filter(handle__in=handles).values_list('pk', flat=True))
     if thread.space_id:                                    # канал сообщества: @everyone и @роль
@@ -433,6 +450,7 @@ def send_text(thread, user, body: str, silent: bool = False, schedule=None, broa
     if not body or len(body) > MAX_TEXT:
         raise ChatError(_('Сообщение пустое или слишком длинное'))
     _check_can_write(thread, user)
+    _flood(user)
     if nikah_contacts_forbidden(thread.pk, body):
         raise ChatError(_('В чате никяха нельзя передавать телефоны, ники и ссылки — общение внутри ilm4, при махраме.'))
     when = parse_schedule(schedule)
@@ -460,6 +478,7 @@ def store_upload(thread, user, kind, upload_file, duration=None, caption='', sil
         raise ChatError(_('Эта функция сейчас отключена'), 403)
     if not upload_file:
         raise ChatError(_('Файл не получен'))
+    _flood(user)                                   # считаем попытку, а не успех: «плохие» файлы тоже грузят сервер
     _check_room(user, upload_file.size)
     original = clean_name(getattr(upload_file, 'name', ''))
     try:
@@ -516,7 +535,11 @@ def _check_room(user, size: int) -> None:
 def _count_upload(user, size: int) -> None:
     from django.core.cache import cache
     key = _quota_key(user)
-    cache.set(key, cache.get(key, 0) + size, 26 * 3600)
+    cache.add(key, 0, 26 * 3600)
+    try:
+        cache.incr(key, size)                      # одной операцией: две загрузки сразу не «потеряют» друг друга
+    except ValueError:
+        cache.set(key, size, 26 * 3600)
 
 
 def _upload_path(name: str) -> str:
@@ -544,6 +567,7 @@ def upload_begin(thread, user, kind, name, size, duration=None, caption='', sile
     _check_can_write(thread, user)
     if kind not in ('file', 'video') or not flags(thread).get(kind):
         raise ChatError(_('Эта функция сейчас отключена'), 403)
+    _flood(user)
     try:
         size = int(size)
     except (TypeError, ValueError):
@@ -724,11 +748,8 @@ def call_support(thread, user) -> None:
     from .models import ChatState
     if support_state(thread, user) != 'call':
         raise ChatError(_('В этом чате поддержку позвать нельзя.'), 400)
-    from django.core.cache import cache
-    key = f'support_call:{user.pk}'
-    if cache.get(key, 0) >= 5:
+    if hits(f'support_call:{user.pk}', 86400) > 5:
         raise ChatError(_('Вы уже несколько раз звали поддержку сегодня. Напишите в чат поддержки.'), 429)
-    cache.set(key, cache.get(key, 0) + 1, 86400)
     support = SiteSettings.get_solo().support_user
     thread.participants.add(support)
     thread.observers.add(support)

@@ -71,7 +71,11 @@ def prepare(kind: str, upload, duration) -> tuple[ContentFile, int | None]:
             img = Image.open(upload)
             img.verify()
             upload.seek(0)
-            img = ImageOps.exif_transpose(Image.open(upload))
+            img = Image.open(upload)
+            img.draft('RGB', (2048, 2048))         # большой JPEG раскрываем сразу уменьшенным — в разы меньше памяти
+            img = ImageOps.exif_transpose(img)
+        except Image.DecompressionBombError as exc:      # больше 50 Мп — предел задан в apps/core/apps.py
+            raise MediaError(_('Слишком большое изображение. Уменьшите его или отправьте файлом.')) from exc
         except Exception as exc:
             raise MediaError(_('Это не изображение')) from exc
         img = img.convert('RGB')

@@ -123,7 +123,7 @@ class ProfileForm(forms.ModelForm):
             'avatar': forms.FileInput(attrs={'data-skip': '1', 'hidden': True, 'accept': 'image/*'}),
             'phone': forms.TextInput(attrs={'placeholder': '+998 90 123 45 67', 'inputmode': 'tel',
                                             'autocomplete': 'tel'}),
-            'handle': forms.TextInput(attrs={'placeholder': 'ali_2024', 'autocapitalize': 'none', 'autocomplete': 'off',
+            'handle': forms.TextInput(attrs={'placeholder': 'username', 'autocapitalize': 'none', 'autocomplete': 'off', 'data-handle-check': '',
                                              'spellcheck': 'false', 'maxlength': 32}),
             'bio': forms.TextInput(attrs={'maxlength': 160}),
         }

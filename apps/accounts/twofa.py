@@ -30,12 +30,58 @@ def forget(user) -> None:
     cache.delete(_flag(user.pk))
 
 
+BACKUP_CODES = 10
+ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789'          # без похожих знаков: 0/o, 1/l/i
+
+
+def _hash(code: str) -> str:
+    import hashlib
+    return hashlib.sha256(code.encode()).hexdigest()
+
+
+def _plain(code) -> str:
+    return ''.join(ch for ch in str(code or '').lower() if ch.isalnum())
+
+
+def new_backup_codes(user) -> list:
+    """Выдать десять новых запасных кодов (прежние перестают работать). Показываются один раз — в базе только хеши."""
+    import secrets
+
+    from .models import BackupCode
+    codes = [''.join(secrets.choice(ALPHABET) for _i in range(8)) for _n in range(BACKUP_CODES)]
+    BackupCode.objects.filter(user=user).delete()
+    BackupCode.objects.bulk_create([BackupCode(user=user, code_hash=_hash(c)) for c in codes])
+    return [f'{c[:4]}-{c[4:]}' for c in codes]
+
+
+def backup_left(user) -> int:
+    from .models import BackupCode
+    return BackupCode.objects.filter(user=user, used_at__isnull=True).count()
+
+
+def _use_backup(user, code: str):
+    """Запасной код подошёл — гасим его и возвращаем устройство человека (сессия помечается «код введён»)."""
+    from django.utils import timezone
+
+    from .models import BackupCode
+    taken = BackupCode.objects.filter(user=user, code_hash=_hash(code), used_at__isnull=True).update(used_at=timezone.now())
+    return user.totpdevice_set.filter(confirmed=True).first() if taken else None
+
+
 def check(user, code: str):
-    """Проверить код. Возвращает устройство или None; после TRIES неверных попыток — пауза на 15 минут."""
+    """Проверить код: шесть цифр из приложения или запасной (восемь знаков). Возвращает устройство или None;
+    после TRIES неверных попыток — пауза на 15 минут."""
+    raw = _plain(code)
     code = ''.join(ch for ch in str(code or '') if ch.isdigit())[:8]
     key = f'otp:fail:{user.pk}'
     if cache.get(key, 0) >= TRIES:
         return None
+    if len(raw) == 8 and not raw.isdigit():
+        device = _use_backup(user, raw)
+        if device is not None:
+            cache.delete(key)
+            return device
+        code = ''
     if code:
         for device in user.totpdevice_set.filter(confirmed=True):
             if device.verify_token(code):
@@ -58,6 +104,7 @@ def disable(user) -> None:
     if user.is_staff:
         raise ValueError(_('Сотрудникам двухшаговая защита обязательна.'))
     user.totpdevice_set.all().delete()
+    user.backup_codes.all().delete()
     forget(user)
 
 

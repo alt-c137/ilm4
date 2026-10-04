@@ -36,33 +36,50 @@ export const TAB_INFO: Record<TabKey, { file: string; title: string; icon: IconN
  */
 type BottomTabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>['tabBar']>>[0];
 
-/** Нижняя панель: до пяти кнопок — поровну на ширину экрана; больше — листается пальцем (как человеку удобно). */
+/** Нижняя панель: до пяти кнопок — поровну на ширину экрана; больше — листается пальцем (как человеку удобно).
+ *  Вид зависит от выбранного дизайна: classic — подписи и цвет; telegram — плавающая «пилюля»; avito — плоская;
+ *  insta и x — только значки. */
 function Bar({ state, descriptors, navigation, files }: BottomTabBarProps & { files: string[] }) {
-  const { c } = useApp();
+  const { c, user, dark } = useApp();
   const insets = useSafeAreaInsets();
   const win = useWindowDimensions();
+  const design = user?.look?.design ?? 'classic';
+  const pill = design === 'telegram', icons = design === 'insta' || design === 'x', flat = design === 'avito';
   const routes = state.routes.filter((r) => files.includes(r.name));
-  const width = routes.length > 5 ? Math.max(68, win.width / 5.4) : win.width / Math.max(1, routes.length);
+  const space = win.width - (pill ? 36 : 0);
+  const width = routes.length > 5 ? Math.max(pill ? 62 : 68, space / 5.4) : space / Math.max(1, routes.length);
   const items = routes.map((route) => {
     const focused = state.routes[state.index]?.key === route.key;
     const { options } = descriptors[route.key];
-    const color = focused ? c.accent : c.inkSoft;
+    const color = focused ? (icons || flat ? c.ink : c.accent) : (icons ? c.ink : c.inkSoft);
     const press = () => {
       Haptics.selectionAsync().catch(() => {});
       const e = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
       if (!focused && !e.defaultPrevented) navigation.navigate(route.name);
     };
     return (
-      <Pressable key={route.key} onPress={press} accessibilityRole="button" accessibilityState={focused ? { selected: true } : {}}
-        style={{ width, alignItems: 'center', justifyContent: 'center', gap: 2, paddingTop: 6 }}>
-        {options.tabBarIcon?.({ focused, color, size: 24 })}
-        <Text numberOfLines={1} style={{ color, fontSize: routes.length > 4 ? 10 : 11, fontWeight: '600', lineHeight: 14 }}>{options.title}</Text>
+      <Pressable key={route.key} onPress={press} accessibilityRole="button" accessibilityLabel={String(options.title ?? '')} accessibilityState={focused ? { selected: true } : {}}
+        style={{ width, alignItems: 'center', justifyContent: 'center', paddingTop: pill || icons ? 0 : 6 }}>
+        <View style={[{ alignItems: 'center', justifyContent: 'center', gap: 2 },
+          pill ? { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 22, minWidth: Math.min(width - 6, 74), backgroundColor: focused ? c.accentSoft : 'transparent' } : null]}>
+          {options.tabBarIcon?.({ focused, color, size: icons ? 27 : 24 })}
+          {icons ? null : <Text numberOfLines={1} style={{ color, fontSize: routes.length > 4 ? 10 : 11, fontWeight: focused && flat ? '800' : '600', lineHeight: 14 }}>{options.title}</Text>}
+        </View>
       </Pressable>
     );
   });
-  const style = { backgroundColor: c.card, borderTopWidth: 0.5, borderTopColor: c.line, height: 62 + insets.bottom, paddingBottom: 6 + insets.bottom };
-  if (routes.length <= 5) return <View style={[style, { flexDirection: 'row' }]}>{items}</View>;
-  return <View style={style}><ScrollView horizontal showsHorizontalScrollIndicator={false}>{items}</ScrollView></View>;
+  const row = routes.length <= 5 ? <View style={{ flexDirection: 'row', flex: 1 }}>{items}</View>
+    : <ScrollView horizontal showsHorizontalScrollIndicator={false}>{items}</ScrollView>;
+  if (pill) {
+    return (
+      <View style={{ backgroundColor: c.bg, paddingHorizontal: 12, paddingTop: 4, paddingBottom: 8 + insets.bottom }}>
+        <View style={{ height: 60, borderRadius: 30, backgroundColor: c.card, borderWidth: 0.5, borderColor: c.line, paddingHorizontal: 6, overflow: 'hidden',
+          ...(dark ? {} : { shadowColor: '#15172a', shadowOpacity: 0.14, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 6 }) }}>{row}</View>
+      </View>
+    );
+  }
+  const height = icons ? 50 : 62;
+  return <View style={{ backgroundColor: c.card, borderTopWidth: 0.5, borderTopColor: c.line, height: height + insets.bottom, paddingBottom: (icons ? 0 : 6) + insets.bottom }}>{row}</View>;
 }
 
 export default function TabsLayout() {

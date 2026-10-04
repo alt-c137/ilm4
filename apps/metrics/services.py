@@ -18,7 +18,10 @@ def sections() -> set:
     return set(ModuleConfig.objects.values_list('key', flat=True)) | set(EXTRA)
 
 
-def record(user, anon: str, section: str, seconds, opens, platform: str = Use.WEB) -> None:
+GUEST_ROWS_PER_HOUR = 200     # новых строк «гостя» с одного адреса в час: без этого таблицу можно забить запросами
+
+
+def record(user, anon: str, section: str, seconds, opens, platform: str = Use.WEB, ip: str = '') -> None:
     """Засчитать время в разделе. Неизвестный раздел → 'other'; гость считается по случайному номеру из куки."""
     section = section if section in sections() else 'other'
     try:
@@ -32,6 +35,16 @@ def record(user, anon: str, section: str, seconds, opens, platform: str = Use.WE
            'platform': platform if platform in (Use.WEB, Use.APP) else Use.WEB}
     if uid is None and not key['anon']:
         return
+    if uid is None and not Use.objects.filter(**key).exists():
+        # номер гостя приходит из куки, то есть от самого посетителя: каждый запрос с новой кукой завёл бы новую строку
+        from django.core.cache import cache
+        hit = f'beat:rows:{ip or "?"}'
+        cache.add(hit, 0, 3600)
+        try:
+            if cache.incr(hit) > GUEST_ROWS_PER_HOUR:
+                return
+        except ValueError:
+            cache.set(hit, 1, 3600)
     row, _new = Use.objects.get_or_create(**key)
     if row.seconds < MAX_DAY:
         Use.objects.filter(pk=row.pk).update(seconds=F('seconds') + seconds, opens=F('opens') + opens)

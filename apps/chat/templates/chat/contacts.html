@@ -32,7 +32,7 @@
         <span class="tgrow__b"><span class="tgrow__top"><b>{{ p.name }}{% if p.verified %}<i class="tgver">{% ico 'check' %}</i>{% endif %}</b></span>
           <span class="tgrow__bot"><span class="tgrow__msg">{% if p.online %}<i>{% translate "в сети" %}</i>{% else %}{{ p.status }}{% endif %}</span></span></span>
       </a>
-      <form method="post" onsubmit="return confirm('{% translate "Удалить контакт?" %}')">{% csrf_token %}<input type="hidden" name="remove" value="{{ p.id }}"><button type="submit" class="ct__rm" aria-label="{% translate 'Удалить контакт' %}">{% ico 'close' %}</button></form>
+      <form method="post" data-confirm="{{ _("Удалить контакт?")|force_escape }}">{% csrf_token %}<input type="hidden" name="remove" value="{{ p.id }}"><button type="submit" class="ct__rm" aria-label="{% translate 'Удалить контакт' %}">{% ico 'close' %}</button></form>
     </div>
     {% empty %}<div class="tg__empty"><div class="empty__plug">{% ico 'users' %}</div><b>{% translate "Контактов пока нет" %}</b>
       <span>{% translate "Добавьте человека по номеру — или нажмите «Добавить в контакты» в его профиле." %}</span></div>{% endfor %}

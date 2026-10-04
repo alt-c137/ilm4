@@ -90,6 +90,7 @@ def me_json(request, user) -> dict:
     return {
         'id': user.pk, 'name': user.get_display_name(), 'nickname': user.nickname,
         'first_name': user.first_name or user.nickname, 'last_name': user.last_name, 'ui': user.ui or {},
+        'look': _look(user), 'tag': user.tag,
         'email': '' if user.email.endswith('.ilm4.local') else user.email,
         'city': user.city, 'phone': user.phone, 'language': user.language, 'avatar': file_url(request, user.avatar),
         'currency': user.currency, 'currency_now': money.viewer_currency(request),
@@ -105,6 +106,28 @@ def me_json(request, user) -> dict:
         'balance': int(balance_of(user)) if module_on('wallet') else None,
         'nikah': {'id': nk.pk, 'status': nk.status, 'active': nk.is_active, 'gender': nk.gender} if nk else None,
     }
+
+
+def _look(user) -> dict:
+    """Дизайн и рабочий стол человека (или те, что владелец поставил по умолчанию) — приложение рисует по ним нижнюю панель."""
+    from apps.core import desks
+    return {'design': desks.design_of(user), 'desk': desks.desk_of(user), 'tabs': (user.ui or {}).get('tabs_app') or desks.preset(user)['tabs_app'],
+            'welcomed': bool((user.ui or {}).get('welcomed'))}
+
+
+@api(methods=('GET', 'POST'), auth=True)
+def look(request):
+    """«Вид и рабочий стол»: GET — что можно выбрать, POST {design, desk} — применить (пустой POST — «пропустить»)."""
+    from apps.core import desks
+    from apps.core.models import ModuleConfig
+    user = request.user
+    if request.method == 'POST':
+        desks.apply(user, str(request.data.get('design', '')), str(request.data.get('desk', '')))
+    on = set(ModuleConfig.objects.filter(status=ModuleConfig.ON).values_list('key', flat=True))
+    data = desks.choices(user, on)
+    for d in data['desks']:
+        d['tabs_app'] = desks.DESKS[d['key']]['tabs_app']
+    return {**data, 'me': me_json(request, user)}
 
 
 def _issue(request, user) -> dict:
@@ -255,7 +278,11 @@ def me(request):
             fields.append('nickname')
         if isinstance(d.get('ui'), dict):
             from apps.core.tabs import clean_ui
-            user.ui = {**(user.ui or {}), **clean_ui(d['ui'])}
+            picked = clean_ui(d['ui'])
+            user.ui = {**(user.ui or {}), **picked}
+            if 'tabs_app' in picked or 'start' in picked:           # подправил кнопки сам — рабочий стол теперь «свой»
+                from apps.core import desks
+                desks.touched(user.ui)
             fields.append('ui')
         if 'handle' in d:
             from apps.accounts import people

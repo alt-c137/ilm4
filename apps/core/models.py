@@ -158,6 +158,15 @@ class SiteSettings(SingletonModel):
                                                                  (1080, '1080p — высокое')],
         help_text='Видео, отправленное как видео, пережимается на сервере до этого качества (исходник больше не '
                   'хранится). Чтобы отправить без сжатия — «Отправить файлом»')
+    # вид по умолчанию для новых людей (каждый потом меняет под себя: Настройки → «Вид и рабочий стол»)
+    default_design = models.CharField('дизайн по умолчанию', max_length=12, default='classic',
+                                      choices=[('classic', 'ilm4 — как сейчас'), ('telegram', 'Как Telegram'), ('avito', 'Как Авито'),
+                                               ('insta', 'Как Instagram'), ('x', 'Как X')],
+                                      help_text='Оболочка (нижняя панель, шапка), которую видит новый человек и гость.')
+    default_desk = models.CharField('рабочий стол по умолчанию', max_length=12, default='all',
+                                    choices=[('all', 'Всё сразу'), ('talk', 'Общение'), ('market', 'Покупки и работа'),
+                                             ('faith', 'Вера и привычки'), ('social', 'Лента и люди')],
+                                    help_text='Готовый набор: какие кнопки внизу и с чего открывается ilm4.')
     support_user = models.ForeignKey(
         settings.AUTH_USER_MODEL, verbose_name='аккаунт поддержки', null=True, blank=True, on_delete=models.SET_NULL,
         related_name='+', help_text='С ним открывается чат «Поддержка ilm4». Пусто — кнопки поддержки в чатах нет')

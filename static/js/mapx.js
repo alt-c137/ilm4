@@ -5,7 +5,8 @@
   var box = document.getElementById('mapx');
   if (!box || !window.ilmMap) return;
   function T(s) { return window._t ? window._t(s) : s; }
-  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+  var ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ESC[c]; }); }   // и кавычки: значения стоят и внутри атрибутов
   var map = ilmMap('map', { center: [41.3111, 69.2797], zoom: 12, zoomControl: false });
   L.control.zoom({ position: 'bottomleft' }).addTo(map);
   var layer = L.layerGroup().addTo(map), meMarker = null, me = null;

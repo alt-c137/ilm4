@@ -122,6 +122,34 @@ def crypto_ipn(request):
     if body.get('payment_status') == 'finished':
         t = TopUp.objects.filter(pk=body.get('order_id') if str(body.get('order_id', '')).isdigit() else 0,
                                  provider='crypto').first()
-        if t:
+        if t and _crypto_full(t, body):
             mark_paid(t)
     return HttpResponse('ok')
+
+
+def _num(value):
+    try:
+        return Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError):
+        return None
+
+
+def _crypto_full(topup, body) -> bool:
+    """Оплачено ли пополнение целиком. Подпись говорит лишь, что письмо от NOWPayments; здесь сверяем, что оно
+    про НАШ счёт на ЭТУ сумму и что прислали не меньше запрошенного. Недоплата обычно приходит со статусом
+    partially_paid, но на один статус не полагаемся — зачисляем деньги, только когда сошлось всё."""
+    import logging
+
+    from .providers import usd_amount
+    invoice = str(body.get('invoice_id') or '')
+    price, want, got = _num(body.get('price_amount')), _num(body.get('pay_amount')), _num(body.get('actually_paid'))
+    ok = not (topup.external_id and invoice and invoice != topup.external_id)        # платёж по другому счёту
+    ok = ok and price is not None and str(body.get('price_currency', '')).lower() == 'usd'
+    # счёт выставлен в долларах по курсу на момент создания; пока человек платил, курс мог чуть сдвинуться — но не на 10%
+    ok = ok and price >= usd_amount(topup.amount) * Decimal('0.9')
+    ok = ok and not (want is not None and got is not None and got < want * Decimal('0.99'))   # прислали меньше запрошенного
+    if not ok:
+        logging.getLogger(__name__).warning('NOWPayments: пополнение #%s не зачислено — сумма или счёт не сходятся: %s',
+                                            topup.pk, {k: body.get(k) for k in ('invoice_id', 'price_amount', 'price_currency',
+                                                                               'pay_amount', 'actually_paid')})
+    return bool(ok)

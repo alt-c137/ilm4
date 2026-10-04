@@ -116,14 +116,41 @@ def preview(m) -> str:
 
 
 def notify_recipients(thread, sender, text, silent: bool = False):
-    """Колокольчик и пуш получателю (кроме отправителя). «Без звука» — пуш без звука."""
-    from apps.core.models import Notification
+    """Колокольчик и пуш получателю (кроме отправителя). «Без звука» — пуш без звука.
 
+    Переписка в базе зашифрована, а таблица уведомлений — нет. Поэтому текст сообщения в неё не кладём:
+    в базе остаётся только «Имя: новое сообщение», а сам текст уходит пушем на телефон и нигде не хранится
+    (см. quiet_note ниже). Иначе копия базы раскрывала бы начало каждого личного сообщения."""
     from .models import Member
 
-    msg = f'{persona.name_in(thread, sender)}: {text[:80]}'
+    name = persona.name_in(thread, sender)
     # «без звука» у этого диалога (кнопка «Звук» в профиле собеседника) — уведомление придёт тихо
     muted = set(Member.objects.filter(thread=thread, muted=True).values_list('user_id', flat=True))
     for participant in thread.participants.exclude(pk=sender.pk):
-        Notification.objects.create(user=participant, text=msg, url=f'/chat/{thread.pk}/',
-                                    silent=silent or participant.pk in muted)
+        quiet_note(participant, name, f'/chat/{thread.pk}/', _lazy('новое сообщение'), text,
+                   silent=silent or participant.pk in muted)
+
+
+def quiet_note(user, name: str, url: str, what, text: str, silent: bool = False) -> None:
+    """Уведомление о сообщении без его текста в базе: «Имя: новое сообщение». Текст — только в пуше.
+    Пока прежнее уведомление об этом чате не прочитано, новую строку не заводим — обновляем её (как счётчик
+    непрочитанного в списке чатов), а пуш отправляем всё равно."""
+    from django.conf import settings
+    from django.db import transaction
+    from django.utils import translation
+
+    from apps.core.models import Notification
+    uid = user if isinstance(user, int) else user.pk
+    lang = '' if isinstance(user, int) else getattr(user, 'language', '')
+    with translation.override(lang or settings.LANGUAGE_CODE):
+        stored = f'{name}: {what}'
+    push = f'{name}: {text[:80]}'
+    old = Notification.objects.filter(user_id=uid, url=url, read=False).order_by('-pk').first()
+    if old is None:
+        note = Notification(user_id=uid, text=stored, url=url, silent=silent)
+        note.push_text = push                     # в базу не пишется: apps/api/push.py берёт его для пуша
+        note.save()
+        return
+    Notification.objects.filter(pk=old.pk).update(text=stored, created_at=timezone.now(), silent=silent)
+    from apps.api.push import send_to_user
+    transaction.on_commit(lambda: send_to_user(uid, push, url, silent=silent))

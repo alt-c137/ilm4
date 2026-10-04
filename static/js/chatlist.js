@@ -88,7 +88,8 @@
   /* ---------- единый поиск (как в Telegram): под своими чатами — «Глобальный поиск» и «Сообщения» ---------- */
   var found = document.createElement('div'); found.id = 'tg-found'; found.hidden = true; list.parentNode.insertBefore(found, list.nextSibling);
   var findT = 0, findN = 0;
-  function esc(x) { var d = document.createElement('div'); d.textContent = x == null ? '' : x; return d.innerHTML; }
+  var ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  function esc(x) { return String(x == null ? '' : x).replace(/[&<>"']/g, function (c) { return ESC[c]; }); }   // и кавычки: значения стоят и внутри атрибутов
   function face(p) { return p && p.url ? '<img class="tava" src="' + esc(p.url) + '" alt="" loading="lazy">' : '<span class="tava tava--h' + ((p && p.hue) || 0) + '">' + esc((p && p.letter) || '#') + '</span>'; }
   function rowHtml(r) {
     return '<a class="tgrow" href="' + esc(r.href) + '"' + (r.kind ? ' data-rk="' + esc(r.kind) + '" data-rid="' + esc(r.id) + '"' : '') + '>' + (r.pic ? face(r.pic) : '<span class="tava tava--h2">' + (IC.search || '') + '</span>') +

@@ -51,6 +51,7 @@ export default function Settings() {
       <SetGroup title={t('Чаты и экран')}>
         <SetRow tint="#14b8a6" icon="image" title={t('Фон чата')} subtitle={t('Узор, цвет или своё фото')} onPress={() => router.push('/chat-look')} />
         {user && moduleOn('chat') ? <SetRow tint="#f59e0b" icon="folder-open" title={t('Папки с чатами')} subtitle={t('Свои вкладки над списком чатов')} onPress={() => router.push('/chat/folders')} /> : null}
+        <SetRow tint="#16b3c4" icon="phone-portrait" title={t('Вид и рабочий стол')} subtitle={t('Дизайн как у Telegram, Авито, Instagram — и готовые наборы под задачи')} onPress={() => router.push('/look')} />
         <SetRow tint="#6d5efc" icon="apps" title={t('Нижние кнопки')} subtitle={t('Разделы внизу и стартовый экран')} onPress={() => router.push('/tabs-setup')} />
         <SetRow tint="#0ea5e9" icon="moon" title={t('Намаз и азан')} subtitle={t('Город, расчёт, напоминания')} onPress={() => router.push('/prayer-settings')} />
       </SetGroup>

@@ -15,11 +15,17 @@ COOKIE = 'ilm4_v'
 @csrf_exempt                       # sendBeacon не умеет слать заголовок CSRF; запрос только прибавляет секунды самому отправителю
 @require_POST
 def beat(request):
+    import re
+
+    from apps.accounts.views import client_ip
     anon = request.COOKIES.get(COOKIE, '')
+    if not re.fullmatch(r'[0-9a-f]{16}', anon):          # кука — от посетителя: принимаем только наш формат
+        anon = ''
     fresh = ''
     if not request.user.is_authenticated and not anon:
         anon = fresh = secrets.token_hex(8)
-    services.record(request.user, anon, request.POST.get('s', ''), request.POST.get('t'), request.POST.get('o'))
+    services.record(request.user, anon, request.POST.get('s', ''), request.POST.get('t'), request.POST.get('o'),
+                    ip=client_ip(request))
     response = HttpResponse(status=204)
     if fresh:
         response.set_cookie(COOKIE, fresh, max_age=365 * 86400, httponly=True, samesite='Lax', secure=request.is_secure())

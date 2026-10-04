@@ -207,4 +207,7 @@ def home_view(request) -> str:
         return want
     if user.is_authenticated and (user.ui or {}).get('home_view') in ('showcase', 'brief'):
         return user.ui['home_view']
-    return request.COOKIES.get('ilm4_home') if request.COOKIES.get('ilm4_home') in ('showcase', 'brief') else 'showcase'
+    if request.COOKIES.get('ilm4_home') in ('showcase', 'brief'):
+        return request.COOKIES['ilm4_home']
+    from . import desks
+    return desks.preset(user)['home']                   # не выбирал — вид из рабочего стола

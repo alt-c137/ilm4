@@ -1,5 +1,13 @@
 {% load i18n icons %}{# Соцсети профиля. view='icons' — значками в ряд (много ссылок не растягивают профиль), 'list' — строками. Вид выбирает хозяин профиля. #}
-{% if links %}{% if view == 'icons' %}
+{% if links %}{% if view == 'pills' %}
+<div class="tp__row tp__socrow"><div class="tp__pills">
+  {% for l in links|slice:":4" %}{% if l.url %}<a class="tp__pill tp__soc--{{ l.kind }}{% if l.privacy == 'nobody' %} is-off{% endif %}" href="{{ l.url }}" target="_blank" rel="noopener nofollow ugc" title="{{ l.title }}">{% include 'includes/social_icon.html' with key=l.kind %}<span>{{ l.show }}</span></a>
+  {% else %}<button type="button" class="tp__pill tp__soc--{{ l.kind }}{% if l.privacy == 'nobody' %} is-off{% endif %}" data-copy="{{ l.value }}" title="{{ l.title }}">{% include 'includes/social_icon.html' with key=l.kind %}<span>{{ l.show }}</span></button>{% endif %}{% endfor %}
+  {% if links|length > 4 %}<button type="button" class="tp__pill tp__pill--more" data-links-more>{% blocktranslate with n=links|length|add:"-4" %}ещё {{ n }}{% endblocktranslate %}</button>
+  <template data-links-all>{% for l in links %}{% if l.url %}<a class="sxs__i sxs__i--link" href="{{ l.url }}" target="_blank" rel="noopener nofollow ugc"><span class="tp__brand tp__soc--{{ l.kind }}">{% include 'includes/social_icon.html' with key=l.kind %}</span><span><b>{{ l.show }}</b><small>{{ l.title }}</small></span></a>
+  {% else %}<button type="button" class="sxs__i sxs__i--link" data-copy="{{ l.value }}"><span class="tp__brand tp__soc--{{ l.kind }}">{% include 'includes/social_icon.html' with key=l.kind %}</span><span><b>{{ l.show }}</b><small>{{ l.title }}</small></span></button>{% endif %}{% endfor %}</template>{% endif %}
+</div></div>
+{% elif view == 'icons' %}
 <div class="tp__row tp__socrow"><div class="tp__socs">
   {% for l in links %}{% if l.url %}<a class="tp__soc tp__soc--{{ l.kind }}{% if l.privacy == 'nobody' %} is-off{% endif %}" href="{{ l.url }}" target="_blank" rel="noopener nofollow ugc" title="{{ l.title }}: {{ l.show }}{% if l.privacy == 'close' %} · {% translate 'видят близкие друзья' %}{% elif l.privacy == 'nobody' %} · {% translate 'скрыто ото всех' %}{% endif %}" aria-label="{{ l.title }}: {{ l.show }}">{% include 'includes/social_icon.html' with key=l.kind %}</a>
   {% else %}<button type="button" class="tp__soc tp__soc--{{ l.kind }}{% if l.privacy == 'nobody' %} is-off{% endif %}" data-copy="{{ l.value }}" title="{{ l.title }}: {{ l.show }}" aria-label="{{ l.title }}: {{ l.show }}">{% include 'includes/social_icon.html' with key=l.kind %}</button>{% endif %}{% endfor %}

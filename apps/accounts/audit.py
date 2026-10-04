@@ -10,13 +10,13 @@ def log_action(request, action: str, target: str = '') -> None:
 
     Устойчиво к «голым» request'ам от сигналов (request.user может отсутствовать).
     """
+    from apps.core.limits import client_ip
     user = getattr(request, 'user', None)
-    meta = getattr(request, 'META', {}) if request is not None else {}
     AuditLog.objects.create(
         user=user if (user is not None and user.is_authenticated) else None,
         action=action,
         target=target,
-        ip=meta.get('REMOTE_ADDR') or None,
+        ip=client_ip(request) or None,         # тот же адрес, что и в лимитах входа (не адрес nginx)
     )
 
 

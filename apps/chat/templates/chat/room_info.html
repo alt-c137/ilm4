@@ -5,107 +5,187 @@
 {% block body_class %}s-chat page-tp{% endblock %}
 
 {% block content %}
-<div class="tp">
+{# Сведения о группе / канале — по образцу Telegram: шапка, кнопки, описание и ссылка, вкладки; «Изменить» и «Добавить» — отдельные экраны #}
+<div class="tp tgroom">
+{% if section == 'edit' %}
+  <header class="tgroom__bar">
+    <a class="tgroom__ib" href="{% url 'chat:room_info' room.pk %}" aria-label="{% translate 'Назад' %}">{% ico 'back' %}</a>
+    <h1>{% translate "Изменить" %}</h1>
+  </header>
+  <form method="post" enctype="multipart/form-data" class="tgs-stack" id="room-edit" action="{% url 'chat:room_info' room.pk %}">{% csrf_token %}
+    <section class="tgs tgroom__id">
+      <label class="tgroom__pick" for="r-avatar" title="{% translate 'Новое фото' %}">
+        {% if pic.url %}<img src="{{ pic.url }}" alt="">{% else %}<span>{{ pic.letter }}</span>{% endif %}<i>{% ico 'image' %}</i>
+      </label>
+      <input type="file" id="r-avatar" name="avatar" accept="image/*" data-crop="1" data-skip="1" hidden>
+      <div class="tgroom__fields">
+        <input type="text" id="r-title" name="title" maxlength="120" required value="{{ room.title }}" placeholder="{% if room.kind == 'channel' %}{% translate 'Название канала' %}{% else %}{% translate 'Название группы' %}{% endif %}" aria-label="{% translate 'Название' %}">
+        <textarea id="r-about" name="about" maxlength="500" rows="2" placeholder="{% translate 'Описание (необязательно)' %}" aria-label="{% translate 'Описание' %}">{{ room.about }}</textarea>
+      </div>
+    </section>
+
+    <section class="tgs">
+      <div class="tgs__row tgs__row--ic">{% ico 'lock' 'ic-blue' %}<span><b>{% if room.kind == 'channel' %}{% translate "Тип канала" %}{% else %}{% translate "Тип группы" %}{% endif %}</b></span>
+        <select name="is_public" id="r-public" aria-label="{% translate 'Тип' %}">
+          <option value=""{% if not room.is_public %} selected{% endif %}>{% if room.kind == 'channel' %}{% translate "Частный" %}{% else %}{% translate "Частная" %}{% endif %}</option>
+          <option value="on"{% if room.is_public %} selected{% endif %}>{% if room.kind == 'channel' %}{% translate "Публичный" %}{% else %}{% translate "Публичная" %}{% endif %}</option>
+        </select></div>
+      <div class="tgs__row tgs__row--ic tgroom__handle" id="r-handle-box"{% if not room.is_public %} hidden{% endif %}>{% ico 'at' 'ic-teal' %}
+        <span><b>{% translate "Публичное имя" %}</b>
+          <span class="tgroom__at"><i>ilm4.com/c/</i><input type="text" id="r-handle" name="handle" maxlength="32" value="{{ room.handle|default:'' }}" autocapitalize="none" spellcheck="false" placeholder="masjid_nur" data-handle-check data-room="{{ room.pk }}"></span>
+          <span class="hstate" aria-live="polite"></span></span></div>
+      {% if room.kind == 'group' %}
+      <div class="tgs__row tgs__row--ic">{% ico 'edit' 'ic-green' %}<span><b>{% translate "Кто может писать" %}</b></span>
+        <select name="only_admins_post" aria-label="{% translate 'Кто может писать' %}">
+          <option value=""{% if not room.only_admins_post %} selected{% endif %}>{% translate "Все участники" %}</option>
+          <option value="on"{% if room.only_admins_post %} selected{% endif %}>{% translate "Только админы" %}</option>
+        </select></div>
+      <div class="tgs__row tgs__row--ic">{% ico 'clock' 'ic-orange' %}<span><b>{% translate "Медленный режим" %}</b></span>
+        <select id="r-slow" name="slow_seconds" aria-label="{% translate 'Медленный режим' %}">
+          <option value="0"{% if not room.slow_seconds %} selected{% endif %}>{% translate "Выключен" %}</option>
+          <option value="10"{% if room.slow_seconds == 10 %} selected{% endif %}>{% translate "10 секунд" %}</option>
+          <option value="30"{% if room.slow_seconds == 30 %} selected{% endif %}>{% translate "30 секунд" %}</option>
+          <option value="60"{% if room.slow_seconds == 60 %} selected{% endif %}>{% translate "1 минута" %}</option>
+          <option value="300"{% if room.slow_seconds == 300 %} selected{% endif %}>{% translate "5 минут" %}</option>
+          <option value="900"{% if room.slow_seconds == 900 %} selected{% endif %}>{% translate "15 минут" %}</option>
+          <option value="3600"{% if room.slow_seconds == 3600 %} selected{% endif %}>{% translate "1 час" %}</option>
+        </select></div>
+      {% endif %}
+    </section>
+    <p class="tgs__note">{% translate "Публичный чат виден в каталоге, вступить может любой; адрес — ilm4.com/c/имя. В частный попадают только по ссылке-приглашению. Медленный режим: участник пишет не чаще, чем раз в выбранное время; на админов не действует." %}</p>
+
+    <section class="tgs">
+      {% if room.kind == 'channel' %}<label class="tgs__row tgs__row--ic">{% ico 'comment' 'ic-indigo' %}<span><b>{% translate "Комментарии под постами" %}</b></span><input type="checkbox" name="comments_on"{% if room.comments_on %} checked{% endif %}></label>{% endif %}
+      <label class="tgs__row tgs__row--ic">{% ico 'heart' 'ic-pink' %}<span><b>{% translate "Реакции на сообщения" %}</b></span><input type="checkbox" name="reactions_on"{% if room.reactions_on %} checked{% endif %}></label>
+      <label class="tgs__row tgs__row--ic">{% ico 'shield' 'ic-violet' %}<span><b>{% translate "Запретить пересылку и копирование" %}</b></span><input type="checkbox" name="protected"{% if room.protected %} checked{% endif %}></label>
+    </section>
+    <button type="submit" class="btn btn--p tp__save">{% translate "Сохранить" %}</button>
+  </form>
+
+  <section class="tgs">
+    {% if invite_link %}<button type="button" class="tgs__row tgs__row--ic" data-copy="{{ invite_link }}">{% ico 'link' %}<span><b>{% translate "Ссылка-приглашение" %}</b><small>{{ invite_link|cut:"https://"|cut:"http://" }}</small></span></button>{% endif %}
+    <form method="post" action="{% url 'chat:room_act' room.pk 'invite' %}" data-confirm="{{ _('Старая ссылка перестанет работать. Продолжить?')|force_escape }}">{% csrf_token %}<button type="submit" class="tgs__row tgs__row--ic tgs__row--accent">{% ico 'refresh' 'ic-green' %}<span><b>{% translate "Сделать новую ссылку" %}</b></span></button></form>
+    {% if addable %}<a class="tgs__row tgs__row--ic tgs__row--go" href="?s=add">{% ico 'userplus' 'ic-orange' %}<span><b>{% translate "Добавить участников" %}</b></span></a>{% endif %}
+  </section>
+  {% if me_owner or can_moderate %}
+  <section class="tgs">
+    <form method="post" action="{% url 'chat:room_act' room.pk 'delete' %}" data-confirm="{{ _('Удалить навсегда вместе со всеми сообщениями?')|force_escape }}">{% csrf_token %}<button type="submit" class="tgs__row tgs__row--ic tgs__row--bad">{% ico 'trash' %}<span><b>{% if room.kind == 'channel' %}{% translate "Удалить канал" %}{% else %}{% translate "Удалить группу" %}{% endif %}</b></span></button></form>
+  </section>{% endif %}
+
+{% elif section == 'add' %}
+  <header class="tgroom__bar">
+    <a class="tgroom__ib" href="{% url 'chat:room_info' room.pk %}" aria-label="{% translate 'Назад' %}">{% ico 'back' %}</a>
+    <h1>{% translate "Добавить участников" %}</h1>
+  </header>
+  <form method="post" action="{% url 'chat:room_act' room.pk 'add' %}" class="tgs-stack">{% csrf_token %}
+    <section class="tgs">
+      {% for u in addable %}<label class="tgs__row tgroom__pickrow">
+        {% if u.avatar %}<img class="tava tava--sm" src="{{ u.avatar.url }}" alt="">{% else %}<span class="tava tava--sm tava--h{{ u.pk|divisibleby:2|yesno:'2,4' }}">{{ u.get_display_name|slice:":1"|upper }}</span>{% endif %}
+        <span><b>{{ u.get_display_name }}</b>{% if u.handle %}<small>@{{ u.handle }}</small>{% endif %}</span><input type="checkbox" class="tgroom__round" name="users" value="{{ u.pk }}"></label>
+      {% empty %}<p class="tp__none">{% translate "Некого добавить: здесь только те, с кем у вас уже есть переписка." %}</p>{% endfor %}
+    </section>
+    <p class="tgs__note">{% translate "Добавить можно тех, с кем у вас уже есть переписка. Остальным отправьте ссылку-приглашение." %}</p>
+    {% if addable %}<button type="submit" class="btn btn--p tp__save">{% translate "Добавить выбранных" %}</button>{% endif %}
+  </form>
+
+{% else %}
   <header class="tp__head">
     <a class="tp__back" href="{% url 'chat:thread' room.pk %}" aria-label="{% translate 'Назад' %}">{% ico 'back' %}</a>
-    {# меню «⋮» — как в Telegram: редкие и опасные действия спрятаны сюда, а не висят большой кнопкой #}
-    <details class="tp__menu">
-      <summary aria-label="{% translate 'Ещё' %}">{% ico 'dots' %}</summary>
-      <div class="tp__pop">
-        {% if info.admin %}<a href="#edit" data-open="edit">{% ico 'edit' %}{% translate "Изменить" %}</a>
-        <form method="post" action="{% url 'chat:room_act' room.pk 'invite' %}" onsubmit="return confirm('{% translate 'Старая ссылка перестанет работать. Продолжить?' %}')">{% csrf_token %}<button type="submit">{% ico 'link' %}{% translate "Сделать новую ссылку" %}</button></form>{% endif %}
-        {% if can_moderate %}
-        <form method="post" action="{% url 'chat:room_act' room.pk room.platform_verified|yesno:'unverify,verify' %}">{% csrf_token %}<button type="submit">{% ico 'check' %}{% if room.platform_verified %}{% translate "Снять галочку «официальный»" %}{% else %}{% translate "Отметить как официальный" %}{% endif %}</button></form>
-        <form method="post" action="{% url 'chat:room_act' room.pk room.closed|yesno:'open,close' %}">{% csrf_token %}<button type="submit">{% ico 'shield' %}{% if room.closed %}{% translate "Открыть снова" %}{% else %}{% translate "Закрыть за нарушения" %}{% endif %}</button></form>
-        {% endif %}
-        {% if not info.admin %}<div class="tp__pop-report">{% report_button room _('Пожаловаться') room.pk %}</div>{% endif %}
-        {% if info.member and not me_owner %}<form method="post" action="{% url 'chat:room_act' room.pk 'leave' %}" onsubmit="return confirm('{% translate 'Выйти?' %}')">{% csrf_token %}<button type="submit" class="bad">{% ico 'back' %}{% if room.kind == 'channel' %}{% translate "Отписаться" %}{% else %}{% translate "Выйти из группы" %}{% endif %}</button></form>{% endif %}
-        {% if me_owner or can_moderate %}<form method="post" action="{% url 'chat:room_act' room.pk 'delete' %}" onsubmit="return confirm('{% translate 'Удалить навсегда вместе со всеми сообщениями?' %}')">{% csrf_token %}<button type="submit" class="bad">{% ico 'trash' %}{% if room.kind == 'channel' %}{% translate "Удалить канал" %}{% else %}{% translate "Удалить группу" %}{% endif %}</button></form>{% endif %}
-      </div>
-    </details>
+    <div class="tgroom__tr">
+      {% if info.admin %}<a class="tgroom__ib" href="?s=edit" aria-label="{% translate 'Изменить' %}" title="{% translate 'Изменить' %}">{% ico 'edit' %}</a>{% endif %}
+      <details class="tp__menu tp__menu--in">
+        <summary aria-label="{% translate 'Ещё' %}">{% ico 'dots' %}</summary>
+        <div class="tp__pop">
+          {% if can_moderate %}
+          <form method="post" action="{% url 'chat:room_act' room.pk room.platform_verified|yesno:'unverify,verify' %}">{% csrf_token %}<button type="submit">{% ico 'check' %}{% if room.platform_verified %}{% translate "Снять галочку «официальный»" %}{% else %}{% translate "Отметить как официальный" %}{% endif %}</button></form>
+          <form method="post" action="{% url 'chat:room_act' room.pk room.closed|yesno:'open,close' %}">{% csrf_token %}<button type="submit">{% ico 'shield' %}{% if room.closed %}{% translate "Открыть снова" %}{% else %}{% translate "Закрыть за нарушения" %}{% endif %}</button></form>
+          {% endif %}
+          {% if not info.admin %}<div class="tp__pop-report">{% report_button room _('Пожаловаться') room.pk %}</div>{% endif %}
+          {% if info.member and not me_owner %}<form method="post" action="{% url 'chat:room_act' room.pk 'leave' %}" data-confirm="{{ _('Выйти?')|force_escape }}">{% csrf_token %}<button type="submit" class="bad">{% ico 'exit' %}{% if room.kind == 'channel' %}{% translate "Отписаться" %}{% else %}{% translate "Выйти из группы" %}{% endif %}</button></form>{% endif %}
+          {% if me_owner or can_moderate %}<form method="post" action="{% url 'chat:room_act' room.pk 'delete' %}" data-confirm="{{ _('Удалить навсегда вместе со всеми сообщениями?')|force_escape }}">{% csrf_token %}<button type="submit" class="bad">{% ico 'trash' %}{% if room.kind == 'channel' %}{% translate "Удалить канал" %}{% else %}{% translate "Удалить группу" %}{% endif %}</button></form>{% endif %}
+        </div>
+      </details>
+    </div>
     {% if pic.url %}<button type="button" class="tp__ava tp__ava--view" data-photos="room-photos" aria-label="{% translate 'Смотреть фото' %}"><img src="{{ pic.url }}" alt=""></button>{{ room_photos|json_script:"room-photos" }}
-    {% else %}<div class="tp__ava"><span>{{ pic.letter }}</span></div>{% endif %}
+    {% else %}<div class="tp__ava tp__ava--h{{ pic.hue }}"><span>{{ pic.letter }}</span></div>{% endif %}
     <h1 class="tp__name">{{ room.title }}{% if room.platform_verified %}<i class="tgver" title="{% translate 'Официальный' %}">{% ico 'check' %}</i>{% endif %}</h1>
-    <div class="tp__status">{% if room.kind == 'channel' %}{% translate "канал" %}{% else %}{% translate "группа" %}{% endif %} · {{ room.members_count }} {% if room.kind == 'channel' %}{% translate "подписчиков" %}{% else %}{% translate "участников" %}{% endif %}{% if room.closed %} · {% translate "закрыт модератором" %}{% endif %}</div>
+    <div class="tp__status">{{ room.members_count }} {% if room.kind == 'channel' %}{{ room.members_count|ru_plural:_("подписчик,подписчика,подписчиков") }}{% else %}{{ room.members_count|ru_plural:_("участник,участника,участников") }}{% if online %}, {{ online }} {% translate "в сети" %}{% endif %}{% endif %}{% if room.closed %} · {% translate "закрыт модератором" %}{% endif %}</div>
   </header>
 
   <div class="tp__acts">
     {% if not info.member %}
-    <form method="post" action="{% url 'chat:room_act' room.pk 'join' %}">{% csrf_token %}<button class="tp__act tp__act--wide" type="submit">{% ico 'plus' %}<span>{% if room.kind == 'channel' %}{% translate "Подписаться" %}{% else %}{% translate "Вступить" %}{% endif %}</span></button></form>
+    <form method="post" action="{% url 'chat:room_act' room.pk 'join' %}">{% csrf_token %}<button class="tp__act tp__act--wide tp__act--main" type="submit">{% ico 'plus' %}<span>{% if room.kind == 'channel' %}{% translate "Подписаться" %}{% else %}{% translate "Вступить" %}{% endif %}</span></button></form>
     {% else %}
-    <a class="tp__act" href="{% url 'chat:thread' room.pk %}">{% ico 'chat' %}<span>{% translate "Чат" %}</span></a>
-    <form method="post" action="{% url 'chat:room_act' room.pk info.muted|yesno:'unmute,mute' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button class="tp__act" type="submit">{% if info.muted %}{% ico 'belloff' %}<span>{% translate "Без звука" %}</span>{% else %}{% ico 'bell' %}<span>{% translate "Звук" %}</span>{% endif %}</button></form>
-    {% if public_link or invite_link %}<button type="button" class="tp__act" data-copy="{{ public_link|default:invite_link }}">{% ico 'link' %}<span>{% translate "Ссылка" %}</span></button>{% endif %}
-    {% if info.admin and addable %}<a class="tp__act" href="#add" data-open="add">{% ico 'plus' %}<span>{% translate "Добавить" %}</span></a>{% endif %}
+    <a class="tp__act" href="{% url 'chat:thread' room.pk %}">{% ico 'chat' %}<span>{% translate "Сообщения" %}</span></a>
+    <form method="post" action="{% url 'chat:room_act' room.pk info.muted|yesno:'unmute,mute' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button class="tp__act" type="submit">{% if info.muted %}{% ico 'belloff' %}<span>{% translate "Вкл. звук" %}</span>{% else %}{% ico 'bell' %}<span>{% translate "Звук" %}</span>{% endif %}</button></form>
+    <a class="tp__act" href="{% url 'chat:thread' room.pk %}?find=1">{% ico 'search' %}<span>{% translate "Поиск" %}</span></a>
+    {% if info.admin and addable %}<a class="tp__act" href="?s=add">{% ico 'userplus' %}<span>{% translate "Добавить" %}</span></a>
+    {% elif public_link or invite_link %}<button type="button" class="tp__act" data-copy="{{ public_link|default:invite_link }}">{% ico 'link' %}<span>{% translate "Ссылка" %}</span></button>{% endif %}
     {% endif %}
   </div>
 
+  {% if room.about or public_link or invite_link %}
   <section class="tp__card">
-    {% if room.about %}<div class="tp__row">{% ico 'info' %}<span><b style="font-weight:500">{{ room.about|linebreaksbr }}</b><small>{% translate "Описание" %}</small></span></div>{% endif %}
-    {% if public_link %}<button type="button" class="tp__row" data-copy="{{ public_link }}">{% ico 'at' %}<span><b>{{ public_link|cut:"https://"|cut:"http://" }}</b><small>{% translate "Публичная ссылка — открыта всем" %}</small></span></button>{% endif %}
-    {% if invite_link %}<button type="button" class="tp__row" data-copy="{{ invite_link }}">{% ico 'link' %}<span><b>{{ invite_link|cut:"https://"|cut:"http://" }}</b><small>{% translate "Ссылка-приглашение — только для тех, кому вы её дали" %}</small></span></button>{% endif %}
-    {% if info.admin and not public_link %}<a class="tp__row tp__row--todo" href="#edit" data-open="edit" data-focus="r-handle">{% ico 'at' %}<span><b>{% translate "Сделать публичную ссылку" %}</b><small>{% translate "Короткий адрес вида ilm4.com/c/имя — чат появится в каталоге" %}</small></span></a>{% endif %}
-  </section>
+    {% if room.about %}<div class="tp__row"><span><b class="tgroom__about">{{ room.about|linebreaksbr }}</b><small>{% translate "Описание" %}</small></span></div>{% endif %}
+    {% if public_link %}<button type="button" class="tp__row" data-copy="{{ public_link }}"><span><b class="tgroom__link">{{ public_link|cut:"https://"|cut:"http://" }}</b><small>{% translate "Ссылка" %}</small></span></button>
+    {% elif invite_link %}<button type="button" class="tp__row" data-copy="{{ invite_link }}"><span><b class="tgroom__link">{{ invite_link|cut:"https://"|cut:"http://" }}</b><small>{% translate "Ссылка-приглашение" %}</small></span></button>{% endif %}
+  </section>{% endif %}
 
-  {% if info.admin %}
-  <details class="tp__card tp__fold" id="edit">
-    <summary>{% ico 'edit' %}<b>{% translate "Изменить" %}</b></summary>
-    <form method="post" enctype="multipart/form-data" class="tp__form">{% csrf_token %}
-      <div><label for="r-title">{% translate "Название" %}</label><input type="text" id="r-title" name="title" maxlength="120" required value="{{ room.title }}"></div>
-      <div><label for="r-about">{% translate "Описание" %}</label><input type="text" id="r-about" name="about" maxlength="500" value="{{ room.about }}"></div>
-      <div><label for="r-avatar">{% translate "Новая картинка" %}</label><input type="file" id="r-avatar" name="avatar" accept="image/*" data-crop="1"></div>
-      <label class="fcheck"><input type="checkbox" name="is_public"{% if room.is_public %} checked{% endif %}> {% translate "Виден в каталоге, вступить может любой" %}</label>
-      <div><label for="r-handle">{% translate "Публичное имя" %}</label><div class="tp__at"><i>@</i><input type="text" id="r-handle" name="handle" maxlength="32" value="{{ room.handle|default:'' }}" autocapitalize="none" spellcheck="false" placeholder="masjid_nur"></div>
-        <span class="hint">{% translate "Латинские буквы, цифры и «_», от 4 знаков, первая — буква. Адрес будет ilm4.com/c/имя" %}</span></div>
-      {% if room.kind == 'group' %}<label class="fcheck"><input type="checkbox" name="only_admins_post"{% if room.only_admins_post %} checked{% endif %}> {% translate "Писать могут только админы" %}</label>
-      <div><label for="r-slow">{% translate "Медленный режим" %}</label><select id="r-slow" name="slow_seconds">
-        <option value="0"{% if not room.slow_seconds %} selected{% endif %}>{% translate "Выключен" %}</option>
-        <option value="10"{% if room.slow_seconds == 10 %} selected{% endif %}>{% translate "10 секунд" %}</option>
-        <option value="30"{% if room.slow_seconds == 30 %} selected{% endif %}>{% translate "30 секунд" %}</option>
-        <option value="60"{% if room.slow_seconds == 60 %} selected{% endif %}>{% translate "1 минута" %}</option>
-        <option value="300"{% if room.slow_seconds == 300 %} selected{% endif %}>{% translate "5 минут" %}</option>
-        <option value="900"{% if room.slow_seconds == 900 %} selected{% endif %}>{% translate "15 минут" %}</option>
-        <option value="3600"{% if room.slow_seconds == 3600 %} selected{% endif %}>{% translate "1 час" %}</option></select>
-        <span class="hint">{% translate "Участник пишет не чаще, чем раз в выбранное время. На админов не действует." %}</span></div>{% endif %}
-      {% if room.kind == 'channel' %}<label class="fcheck"><input type="checkbox" name="comments_on"{% if room.comments_on %} checked{% endif %}> {% translate "Комментарии под постами" %}</label>{% endif %}
-      <label class="fcheck"><input type="checkbox" name="reactions_on"{% if room.reactions_on %} checked{% endif %}> {% translate "Реакции на сообщения" %}</label>
-      <label class="fcheck"><input type="checkbox" name="protected"{% if room.protected %} checked{% endif %}> {% translate "Запретить пересылку и копирование" %}</label>
-      <button type="submit" class="btn btn--p tp__save">{% translate "Сохранить" %}</button>
-    </form>
-  </details>
-
-  {% if addable %}
-  <details class="tp__card tp__fold" id="add">
-    <summary>{% ico 'plus' %}<b>{% translate "Добавить людей" %}</b></summary>
-    <form method="post" action="{% url 'chat:room_act' room.pk 'add' %}" class="tp__form">{% csrf_token %}
-      <span class="hint">{% translate "Добавить можно тех, с кем у вас уже есть переписка. Остальным отправьте ссылку-приглашение." %}</span>
-      {% for u in addable %}<label class="fcheck"><input type="checkbox" name="users" value="{{ u.pk }}"> {{ u.get_display_name }}</label>{% endfor %}
-      <button type="submit" class="btn btn--p tp__save">{% translate "Добавить выбранных" %}</button>
-    </form>
-  </details>
-  {% endif %}
-  {% endif %}
+  <nav class="tp__tabs" role="tablist">
+    {% if people %}<button type="button" class="tp__tab on" data-tab="members" role="tab">{% if room.kind == 'channel' %}{% translate "Подписчики" %}{% else %}{% translate "Участники" %}{% endif %}</button>{% endif %}
+    <button type="button" class="tp__tab{% if not people %} on{% endif %}" data-tab="media" role="tab">{% translate "Медиа" %}</button>
+    <button type="button" class="tp__tab" data-tab="files" role="tab">{% translate "Файлы" %}</button>
+    <button type="button" class="tp__tab" data-tab="voice" role="tab">{% translate "Голосовые" %}</button>
+  </nav>
 
   {% if people %}
-  <h2 class="ppl__h">{% if room.kind == 'channel' %}{% translate "Подписчики" %}{% else %}{% translate "Участники" %}{% endif %} · {{ room.members_count }}</h2>
-  <section class="tp__card">
-    {% for m in people %}
-    <div class="tp__row tp__man">
-      <a class="tp__man-a" href="{% url 'accounts:public' m.user_id %}">
-        {% if m.user.avatar %}<img class="tava tava--sm" src="{{ m.user.avatar.url }}" alt="">{% else %}<span class="tava tava--sm tava--h{{ m.hue }}">{{ m.user.get_display_name|slice:":1"|upper }}</span>{% endif %}
-        <span><b>{{ m.user.get_display_name }}</b><small>{% if m.role != 'member' %}{{ m.get_role_display }}{% elif m.user.handle %}@{{ m.user.handle }}{% else %}{% translate "участник" %}{% endif %}</small></span></a>
-      {% if m.user_id != user.pk and info.admin and m.role != 'owner' %}
-      <details class="tp__menu tp__menu--row"><summary aria-label="{% translate 'Ещё' %}">{% ico 'dots' %}</summary><div class="tp__pop">
-        {% if me_owner and m.role == 'member' %}<form method="post" action="{% url 'chat:room_member' room.pk m.user_id 'admin' %}">{% csrf_token %}<button type="submit">{% ico 'star' %}{% translate "Сделать админом" %}</button></form>{% endif %}
-        {% if me_owner and m.role == 'admin' %}<form method="post" action="{% url 'chat:room_member' room.pk m.user_id 'unadmin' %}">{% csrf_token %}<button type="submit">{% ico 'star' %}{% translate "Снять админа" %}</button></form>{% endif %}
-        {% if m.role == 'member' or me_owner %}<form method="post" action="{% url 'chat:room_member' room.pk m.user_id 'remove' %}" onsubmit="return confirm('{% translate 'Удалить участника? Вернуться по ссылке он не сможет.' %}')">{% csrf_token %}<button type="submit" class="bad">{% ico 'trash' %}{% translate "Удалить из чата" %}</button></form>{% endif %}
-      </div></details>
-      {% endif %}
-    </div>
-    {% endfor %}
-  </section>
+  <div class="tp__pane" data-pane="members">
+    <section class="tp__card">
+      {% if info.admin and addable %}<a class="tp__row tp__row--todo" href="?s=add">{% ico 'userplus' %}<span><b>{% translate "Добавить участников" %}</b></span></a>{% endif %}
+      {% for m in people %}
+      <div class="tp__row tp__man">
+        <a class="tp__man-a" href="{% url 'accounts:public' m.user_id %}">
+          {% if m.user.avatar %}<img class="tava tava--sm" src="{{ m.user.avatar.url }}" alt="">{% else %}<span class="tava tava--sm tava--h{{ m.hue }}">{{ m.user.get_display_name|slice:":1"|upper }}</span>{% endif %}
+          <span><b>{{ m.user.get_display_name }}</b><small{% if m.online %} class="is-on"{% endif %}>{{ m.status }}</small></span></a>
+        {% if m.role == 'owner' %}<em class="tgroom__role">{% translate "владелец" %}</em>{% elif m.role == 'admin' %}<em class="tgroom__role">{% translate "админ" %}</em>{% endif %}
+        {% if m.user_id != user.pk and info.admin and m.role != 'owner' %}
+        <details class="tp__menu tp__menu--row"><summary aria-label="{% translate 'Ещё' %}">{% ico 'dots' %}</summary><div class="tp__pop">
+          {% if me_owner and m.role == 'member' %}<form method="post" action="{% url 'chat:room_member' room.pk m.user_id 'admin' %}">{% csrf_token %}<button type="submit">{% ico 'star' %}{% translate "Сделать админом" %}</button></form>{% endif %}
+          {% if me_owner and m.role == 'admin' %}<form method="post" action="{% url 'chat:room_member' room.pk m.user_id 'unadmin' %}">{% csrf_token %}<button type="submit">{% ico 'star' %}{% translate "Снять админа" %}</button></form>{% endif %}
+          {% if m.role == 'member' or me_owner %}<form method="post" action="{% url 'chat:room_member' room.pk m.user_id 'remove' %}" data-confirm="{{ _('Удалить участника? Вернуться по ссылке он не сможет.')|force_escape }}">{% csrf_token %}<button type="submit" class="bad">{% ico 'trash' %}{% translate "Удалить из чата" %}</button></form>{% endif %}
+        </div></details>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </section>
+  </div>
   {% endif %}
+  <div class="tp__pane" data-pane="media"{% if people %} hidden{% endif %}>
+    {% if shared.media %}<div class="tp__grid">{% for m in shared.media %}<a href="{% url 'chat:thread' room.pk %}?at={{ m.pk }}" class="tp__cell">{% if m.kind == 'photo' %}<img src="{% url 'chat:file' m.pk %}" alt="" loading="lazy">{% else %}<span class="tp__vid">{% ico 'play' %}</span>{% endif %}</a>{% endfor %}</div>
+    {% else %}<p class="tp__none">{% translate "Фото и видео из этого чата появятся здесь." %}</p>{% endif %}
+  </div>
+  <div class="tp__pane" data-pane="files" hidden>
+    {% if shared.files %}<section class="tp__card">{% for m in shared.files %}<a class="tp__row" href="{% url 'chat:file' m.pk %}" download>{% ico 'file' %}<span><b>{{ m.meta.name|default:_("Файл") }}</b><small>{{ m.meta.size|filesizeformat }} · {{ m.created_at|date:"d.m.Y" }}</small></span></a>{% endfor %}</section>
+    {% else %}<p class="tp__none">{% translate "Файлы из этого чата появятся здесь." %}</p>{% endif %}
+  </div>
+  <div class="tp__pane" data-pane="voice" hidden>
+    {% if shared.voice %}<section class="tp__card">{% for m in shared.voice %}<a class="tp__row" href="{% url 'chat:thread' room.pk %}?at={{ m.pk }}">{% ico 'mic' %}<span><b>{{ m.sender.get_display_name }}</b><small>{{ m.created_at|date:"d.m.Y H:i" }}</small></span></a>{% endfor %}</section>
+    {% else %}<p class="tp__none">{% translate "Голосовые и кружки из этого чата появятся здесь." %}</p>{% endif %}
+  </div>
+{% endif %}
 </div>
 {% endblock %}
 
-{% block extra_js %}<script src="{% static 'js/people.js' %}?v={{ asset_v }}" defer></script><script src="{% static 'js/photoview.js' %}?v={{ asset_v }}" defer></script>{% endblock %}
+{% block extra_js %}<script src="{% static 'js/people.js' %}?v={{ asset_v }}" defer></script><script src="{% static 'js/photoview.js' %}?v={{ asset_v }}" defer></script>
+{% if section == 'edit' %}<script>
+(function () {
+  var pub = document.getElementById('r-public'), box = document.getElementById('r-handle-box');
+  if (pub && box) pub.addEventListener('change', function () { box.hidden = !pub.value; if (pub.value) document.getElementById('r-handle').focus(); });
+  var ava = document.getElementById('r-avatar');           // выбрал картинку — сразу видно, какая будет
+  if (ava) ava.addEventListener('change', function () {
+    var f = ava.files && ava.files[0], lab = document.querySelector('.tgroom__pick'); if (!f || !lab) return;
+    var img = lab.querySelector('img'); if (!img) { img = document.createElement('img'); var sp = lab.querySelector('span'); if (sp) sp.replaceWith(img); else lab.prepend(img); }
+    img.src = URL.createObjectURL(f);
+  });
+})();
+</script>{% endif %}{% endblock %}

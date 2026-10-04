@@ -4,12 +4,12 @@
  */
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Alert, Linking, Pressable, View } from 'react-native';
 
 import { useApp, type Privacy, type SocialLink } from '@/state/app';
 
-import { Avatar, Icon, Press, Txt, type IconName } from './kit';
+import { Avatar, Icon, Press, Sheet, Txt, type IconName } from './kit';
 
 export const SOCIAL: { key: string; name: string; icon: IconName; hint: string }[] = [
   { key: 'telegram', name: 'Telegram', icon: 'paper-plane-outline', hint: 'username' },
@@ -96,6 +96,35 @@ function InfoRow({ icon, value, label, onPress, first, accent }: { icon: IconNam
   );
 }
 
+function LinkPills({ first, links, open, copy }: { first: boolean; links: SocialLink[]; open: (l: SocialLink) => void; copy: (text: string) => void }) {
+  const { c, t } = useApp();
+  const [all, setAll] = useState(false);
+  const MAX = 4;
+  const pill = (l: SocialLink, i: number) => (
+    <Pressable key={i} onPress={() => open(l)} onLongPress={() => copy(l.show || l.value)} accessibilityLabel={`${l.title}: ${l.show || l.value}`}
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 7, height: 34, paddingLeft: 10, paddingRight: 13, borderRadius: 17, backgroundColor: c.card2,
+        borderWidth: 0.5, borderColor: c.line, maxWidth: '100%', opacity: l.privacy === 'nobody' ? 0.45 : 1 }}>
+      <Icon name={SOCIAL_BY[l.kind]?.icon ?? 'link-outline'} size={17} color={c.accent} />
+      <Txt numberOfLines={1} style={{ fontSize: 14, fontWeight: '600', maxWidth: 150 }}>{l.show || l.value}</Txt>
+    </Pressable>
+  );
+  return (
+    <View style={{ paddingVertical: 12, paddingHorizontal: 16, borderTopWidth: first ? 0 : 0.5, borderTopColor: c.line }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        {links.slice(0, MAX).map(pill)}
+        {links.length > MAX ? (
+          <Pressable onPress={() => setAll(true)} style={{ height: 34, paddingHorizontal: 13, borderRadius: 17, backgroundColor: c.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
+            <Txt style={{ fontSize: 14, fontWeight: '700', color: c.accent }}>{t('ещё {n}', { n: links.length - MAX })}</Txt>
+          </Pressable>
+        ) : null}
+      </View>
+      <Sheet open={all} onClose={() => setAll(false)} title={t('Соцсети и ссылки')}
+        items={links.map((l) => ({ title: l.show || l.value, subtitle: l.title || SOCIAL_BY[l.kind]?.name || '', icon: SOCIAL_BY[l.kind]?.icon ?? 'link-outline',
+          onPress: () => { setAll(false); open(l); } }))} />
+    </View>
+  );
+}
+
 /** Карточка сведений. mine — свой профиль: рядом с подписью видно, кому это показывается. */
 export function ProfileInfo({ phone, handle, bio, city, links, linksView, joined, mine, phonePrivacy, onSetHandle }: {
   phone?: string; handle?: string; bio?: string; city?: string; links?: SocialLink[]; linksView?: string; joined?: string; mine?: boolean;
@@ -116,7 +145,10 @@ export function ProfileInfo({ phone, handle, bio, city, links, linksView, joined
   if (bio) add('bio', (f) => <InfoRow first={f} icon="information-circle-outline" value={bio} label={t('О себе')} />);
   if (city) add('city', (f) => <InfoRow first={f} icon="location-outline" value={city} label={t('Город')} />);
   const openLink = (l: SocialLink) => (l.url ? Linking.openURL(l.url).catch(() => copy(l.value)) : copy(l.value));
-  if (linksView === 'icons' && links?.length) {
+  if (linksView === 'pills' && links?.length) {
+    // пилюли «значок + имя»: видны первые четыре, остальные — за «ещё N» (так делает Instagram)
+    add('links', (f) => <LinkPills first={f} links={links} open={openLink} copy={copy} />);
+  } else if (linksView === 'icons' && links?.length) {
     // много ссылок не растягивают профиль: значки сетей в ряд, нажатие открывает, долгое — копирует
     add('links', (f) => (
       <View style={{ paddingVertical: 12, paddingHorizontal: 16, gap: 8, borderTopWidth: f ? 0 : 0.5, borderTopColor: c.line }}>

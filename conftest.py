@@ -14,6 +14,7 @@ def _isolated_settings(settings, tmp_path):
     settings.GOOGLE_OAUTH_CLIENT_ID = ''
     settings.GOOGLE_OAUTH_CLIENT_SECRET = ''
     settings.FX_AUTO_REFRESH = False      # курсы валют: в тестах в сеть не ходим
+    settings.WELCOME_SCREEN = False       # экран первого входа («дизайн и рабочий стол») — отдельный тест включает его сам
     from django.core.cache import cache
 
     from apps.chat import keyring

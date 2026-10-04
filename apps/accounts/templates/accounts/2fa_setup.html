@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n icons %}
 {% block title %}{% translate "Двухшаговая защита —" %} {{ block.super }}{% endblock %}
+{% block extra_js %}{% load static %}<script src="{% static 'js/people.js' %}?v={{ asset_v }}" defer></script>{% endblock %}
 {% block body_class %}page-tp{% endblock %}
 {% block content %}
 <div class="tp">
@@ -16,7 +17,22 @@
       <button type="submit" class="btn btn--g is-bad">{% translate "Отключить защиту" %}</button>
     </form>{% endif %}
   </section>
-  <p class="tp__note">{% translate "Потеряли телефон с приложением-аутентификатором? Напишите в поддержку — после проверки защиту снимут." %}</p>
+  <section class="tp__card tp__pad">
+    <p><b>{% translate "Запасные коды" %}</b> — {% translate "на случай, если телефон с приложением потерян или сломан. Каждый код срабатывает один раз." %}</p>
+    {% if codes %}
+    <div class="bcodes">{% for c in codes %}<code>{{ c }}</code>{% endfor %}</div>
+    <p class="hint"><b>{% translate "Сохраните их сейчас" %}</b> — {% translate "запишите на бумаге или в менеджере паролей. Больше мы их не покажем: в базе хранятся только их отпечатки." %}</p>
+    <button type="button" class="btn btn--g btn--s" data-copy="{{ codes|join:' ' }}">{% ico 'copy' %}{% translate "Скопировать все" %}</button>
+    {% else %}
+    <p class="hint">{% if left %}{% blocktranslate %}Осталось неиспользованных: {{ left }}.{% endblocktranslate %}{% else %}{% translate "Сейчас запасных кодов нет." %}{% endif %}</p>
+    <form method="post" class="tp__form">{% csrf_token %}<input type="hidden" name="action" value="codes">
+      <label for="otp-codes">{% translate "Чтобы получить новые коды, введите текущий код из приложения" %}</label>
+      <input id="otp-codes" class="form__code" type="text" name="code" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" maxlength="6" required>
+      <button type="submit" class="btn btn--p">{% if left %}{% translate "Получить новые (старые перестанут работать)" %}{% else %}{% translate "Получить запасные коды" %}{% endif %}</button>
+    </form>
+    {% endif %}
+  </section>
+  <p class="tp__note">{% translate "Потеряли телефон и запасных кодов нет? Напишите в поддержку — после проверки защиту снимут." %}</p>
   {% else %}
   <p class="tp__note">{% translate "Даже если кто-то узнает ваш пароль, без кода с вашего телефона он не войдёт. Подойдёт любое приложение-аутентификатор: Google Authenticator, Aegis, 1Password, Яндекс Ключ." %}</p>
   <section class="tp__card tp__pad">

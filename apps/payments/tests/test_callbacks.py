@@ -68,16 +68,46 @@ def test_stripe_webhook_signature(client, settings, user):
 
 
 # ---------- NOWPayments ----------
+def _ipn(client, body):
+    sig = hmac.new(b'ipn', json.dumps(body, sort_keys=True, separators=(',', ':')).encode(), hashlib.sha512).hexdigest()
+    return client.post('/payments/crypto/ipn/', json.dumps(body), content_type='application/json', HTTP_X_NOWPAYMENTS_SIG=sig)
+
+
+def _crypto_body(t, **over):
+    from apps.payments.providers import usd_amount
+    return {'payment_status': 'finished', 'order_id': str(t.pk), 'invoice_id': t.external_id or None,
+            'price_amount': float(usd_amount(t.amount)), 'price_currency': 'usd',
+            'pay_amount': 23.5, 'actually_paid': 23.5, 'pay_currency': 'usdttrc20', **over}
+
+
 def test_crypto_ipn_signature(client, settings, user):
     settings.NOWPAYMENTS_IPN_SECRET = 'ipn'
-    t = TopUp.objects.create(user=user, amount=300_000, provider='crypto')
-    body = {'payment_status': 'finished', 'order_id': str(t.pk), 'pay_amount': 23.5}
-    sig = hmac.new(b'ipn', json.dumps(body, sort_keys=True, separators=(',', ':')).encode(), hashlib.sha512).hexdigest()
+    t = TopUp.objects.create(user=user, amount=300_000, provider='crypto', external_id='777')
+    body = _crypto_body(t)
     assert client.post('/payments/crypto/ipn/', json.dumps(body), content_type='application/json',
                        HTTP_X_NOWPAYMENTS_SIG='bad').status_code == 400
-    assert client.post('/payments/crypto/ipn/', json.dumps(body), content_type='application/json',
-                       HTTP_X_NOWPAYMENTS_SIG=sig).status_code == 200
+    assert wallet.balance_of(user) == 0
+    assert _ipn(client, body).status_code == 200
     assert wallet.balance_of(user) == 300_000
+    assert _ipn(client, body).status_code == 200            # повторное письмо — второй раз не зачисляем
+    assert wallet.balance_of(user) == 300_000
+
+
+def test_crypto_ipn_needs_full_payment(client, settings, user):
+    """Подпись верная, статус «finished» — но деньги зачисляются, только когда сошлись счёт, сумма и оплата целиком."""
+    settings.NOWPAYMENTS_IPN_SECRET = 'ipn'
+    t = TopUp.objects.create(user=user, amount=300_000, provider='crypto', external_id='777')
+    for wrong in ({'actually_paid': 2.0},                    # прислали меньше запрошенного
+                  {'price_amount': 1.0},                     # счёт на другую, маленькую сумму
+                  {'price_currency': 'uzs'},                 # счёт не в долларах
+                  {'invoice_id': '999'},                     # платёж по другому счёту
+                  {'price_amount': None}):                   # суммы нет вовсе
+        assert _ipn(client, _crypto_body(t, **wrong)).status_code == 200
+        assert wallet.balance_of(user) == 0, wrong
+    t.refresh_from_db()
+    assert t.status == TopUp.PENDING
+    assert _ipn(client, _crypto_body(t, payment_status='partially_paid')).status_code == 200
+    assert wallet.balance_of(user) == 0
 
 
 # ---------- Telegram Stars ----------

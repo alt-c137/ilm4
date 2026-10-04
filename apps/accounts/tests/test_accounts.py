@@ -145,7 +145,8 @@ def test_profile_page_modern(client):
     html = client.get('/accounts/profile/').content.decode()
     assert 'tp__head' in html and 'tp__acts' in html   # аватар с именем и ряд кнопок
     assert 'usermenu' in html                    # меню-⋯ в шапке
-    assert 'Изменить профиль' in html and 'Приватность' in html and 'Соцсети и ссылки' in html
+    assert 'Изменить профиль' in html and 'Кто видит мои данные' in html and 'Соцсети и ссылки' in html
+    assert 'tgs__row' in html and 'data-autosave' in html     # конфиденциальность — строками, сохраняется сразу
     assert 'Тема оформления</label>' not in html  # выбор темы ушёл в меню
 
 

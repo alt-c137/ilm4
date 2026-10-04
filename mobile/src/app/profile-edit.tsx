@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, TextInput, View } from 'react-native';
 
 import { api, ApiError } from '@/lib/api';
@@ -16,6 +16,18 @@ export default function ProfileEdit() {
   const [first, setFirst] = useState(user?.first_name ?? '');
   const [last, setLast] = useState(user?.last_name ?? '');
   const [handle, setHandle] = useState(user?.handle ?? '');
+  // как в Telegram: пока печатаешь имя — сразу видно, свободно ли оно
+  const [checked, setChecked] = useState<{ ok: boolean | null; text: string; of: string }>({ ok: null, text: '', of: '' });
+  useEffect(() => {
+    if (!handle.trim() || handle === (user?.handle ?? '')) return;
+    let alive = true;
+    const timer = setTimeout(() => {
+      api<{ ok: boolean | null; text: string }>(`/handle/check/?v=${encodeURIComponent(handle)}`)
+        .then((r) => { if (alive) setChecked({ ...r, of: handle }); }).catch(() => {});
+    }, 350);
+    return () => { alive = false; clearTimeout(timer); };
+  }, [handle, user?.handle]);
+  const state = checked.of === handle ? checked : { ok: null, text: '' };     // ответ относится к тому, что сейчас в поле
   const [bio, setBio] = useState(user?.bio ?? '');
   const [city, setCity] = useState(user?.city ?? '');
   const [links, setLinks] = useState<Link[]>((user?.links ?? []).map((l) => ({ kind: l.kind, value: l.value, privacy: l.privacy ?? 'all' })));
@@ -63,8 +75,9 @@ export default function ProfileEdit() {
         <Field label={t('Фамилия (необязательно)')} value={last} onChangeText={setLast} maxLength={150} />
         <View style={{ gap: 4 }}>
           <Field label={t('Имя пользователя')} value={handle} onChangeText={(x) => setHandle(x.replace(/^@/, '').toLowerCase())} maxLength={32}
-            autoCapitalize="none" autoCorrect={false} placeholder="ali_2024" />
-          <Txt kind="small">{t('По нему вас находят в поиске: @имя. Латинские буквы, цифры и «_», от 4 знаков, первая — буква.')}</Txt>
+            autoCapitalize="none" autoCorrect={false} placeholder="username" />
+          {state.text ? <Txt kind="small" color={state.ok === true ? c.ok : state.ok === false ? c.bad : c.inkSoft}>{state.text}</Txt> : null}
+          <Txt kind="small">{t('По имени вас находят в поиске и упоминают в чатах. Латинские буквы (a–z), цифры и «_», от 3 знаков.')}</Txt>
         </View>
         <Field label={t('О себе')} value={bio} onChangeText={setBio} maxLength={160} placeholder={t('Пара слов о себе')} />
         <Field label={t('Город')} value={city} onChangeText={setCity} maxLength={80} />
@@ -97,7 +110,7 @@ export default function ProfileEdit() {
           {links.length ? (
             <View style={{ gap: 6 }}>
               <Txt kind="small" style={{ fontWeight: '600', color: c.ink }}>{t('Как показывать ссылки в профиле')}</Txt>
-              <Segmented value={view} onChange={setView} options={[{ key: 'auto', label: t('Авто') }, { key: 'icons', label: t('Значками') }, { key: 'list', label: t('Списком') }]} />
+              <Segmented value={view} onChange={setView} options={[{ key: 'auto', label: t('Авто') }, { key: 'pills', label: t('Пилюлями') }, { key: 'icons', label: t('Значками') }, { key: 'list', label: t('Списком') }]} />
               <Txt kind="small">{t('«Авто» — значками в ряд, если ссылок больше двух: профиль не растягивается.')}</Txt>
             </View>
           ) : null}

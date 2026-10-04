@@ -189,3 +189,16 @@ def contacts(request):
         card['status'] = str(people.status_text(people.presence(person, me)))
         items.append(card)
     return {'items': items}
+
+
+@api(auth=True)
+def handle_check(request):
+    """Имя пользователя (или адрес группы / канала: ?room=) свободно? — проверка, пока человек печатает."""
+    from apps.core.limits import hits
+    if hits(f'handle_check:{request.user.pk}', 60) > 90:
+        return {'ok': None, 'text': ''}
+    if request.GET.get('room') is not None:
+        from apps.chat.models import Thread
+        room = Thread.objects.filter(pk=request.GET['room']).first() if request.GET['room'].isdigit() else None
+        return people.handle_state(request.GET.get('v', ''), user=request.user, room=room or False)
+    return people.handle_state(request.GET.get('v', ''), user=request.user)

@@ -98,6 +98,6 @@
     e.preventDefault();
     var csrf = (document.querySelector('[name=csrfmiddlewaretoken]') || {}).value || '';
     var picker = a.dataset.picker && document.getElementById(a.dataset.picker);
-    window.ilm4Photos(list, 0, { mine: a.dataset.mine === '1', csrf: csrf, onAdd: picker ? function () { picker.click(); } : null });
+    window.ilm4Photos(list, 0, { mine: a.dataset.mine === '1', csrf: csrf, onAdd: picker ? function () { if (window.ilm4PhotoSource) window.ilm4PhotoSource(picker); else picker.click(); } : null });
   });
 })();

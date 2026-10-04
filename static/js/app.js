@@ -7,6 +7,57 @@ if (ckbar) {
   });
 }
 
+// Подтверждения и мелкие действия — через data-атрибуты, а не onclick="…" в разметке: страницам запрещено исполнять
+// код из атрибутов (заголовок Content-Security-Policy: script-src-attr 'none'), поэтому вписанный кем-то в имя или
+// ссылку «onmouseover=…» не сработает, даже если где-то пропустили экранирование.
+//   data-confirm="Текст?"  — на форме (перед отправкой) или на кнопке/ссылке (перед нажатием)
+//   data-auto-submit       — список или галочка: отправить форму сразу при выборе
+//   data-select-all        — поле со ссылкой: выделить всё по нажатию
+//   data-no-menu           — без контекстного меню (фото анкеты)
+document.addEventListener('submit', function (e) {
+  var text = e.target.getAttribute && e.target.getAttribute('data-confirm');
+  if (text && !window.confirm(text)) { e.preventDefault(); e.stopImmediatePropagation(); }
+}, true);
+document.addEventListener('click', function (e) {
+  var el = e.target.closest ? e.target.closest('[data-confirm]:not(form)') : null;
+  if (el && !window.confirm(el.getAttribute('data-confirm'))) { e.preventDefault(); e.stopImmediatePropagation(); return; }
+  var sel = e.target.closest ? e.target.closest('[data-select-all]') : null;
+  if (sel && sel.select) sel.select();
+  var back = e.target.closest ? e.target.closest('a[data-back]') : null;      // «Назад»: туда, откуда пришли
+  if (back && history.length > 1) { e.preventDefault(); history.back(); }
+}, true);
+document.addEventListener('change', function (e) {
+  if (e.target.hasAttribute && e.target.hasAttribute('data-auto-submit') && e.target.form) e.target.form.submit();
+});
+document.addEventListener('contextmenu', function (e) {                      // data-no-menu: без меню «Сохранить картинку»
+  if (e.target.closest && e.target.closest('[data-no-menu]')) e.preventDefault();
+});
+
+// короткое сообщение внизу экрана («Сохранено», «Скопировано») — как в Telegram
+window.tgToast = function (text) {
+  var old = document.querySelector('.tgtoast'); if (old) old.remove();
+  var t = document.createElement('div'); t.className = 'tgtoast'; t.setAttribute('role', 'status'); t.textContent = text;
+  document.body.appendChild(t); setTimeout(function () { t.remove(); }, 1800);
+};
+
+// @имя: пока печатаешь — сразу видно, свободно ли оно (как в Telegram). Поле: data-handle-check, для группы/канала ещё data-room="id"
+(function () {
+  var timer = 0, n = 0;
+  document.addEventListener('input', function (e) {
+    var el = e.target; if (!el.hasAttribute || !el.hasAttribute('data-handle-check')) return;
+    var state = el.parentNode.parentNode.querySelector('.hstate'); if (!state) return;
+    clearTimeout(timer); var my = ++n;
+    if (!el.value.trim()) { state.textContent = ''; state.className = 'hstate'; return; }
+    timer = setTimeout(function () {
+      var url = '/accounts/handle/check/?v=' + encodeURIComponent(el.value) + (el.hasAttribute('data-room') ? '&room=' + encodeURIComponent(el.getAttribute('data-room')) : '');
+      fetch(url, { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (j) {
+        if (my !== n) return;
+        state.textContent = j.text || ''; state.className = 'hstate' + (j.ok === true ? ' is-ok' : j.ok === false ? ' is-bad' : '');
+      }).catch(function () { /* нет сети — проверит сервер при сохранении */ });
+    }, 350);
+  });
+})();
+
 // input[type=file] -> кнопка «📎 Выбрать файл» (кроме авы профиля — там клик по фото)
 document.querySelectorAll('input[type=file]').forEach(function (input) {
   if (input.dataset.skip) return;

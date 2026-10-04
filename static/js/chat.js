@@ -13,7 +13,9 @@
   log.querySelectorAll('[data-id]').forEach(function (el) { seen[el.dataset.id] = 1; });
 
   /* ---------- утилиты ---------- */
-  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML.replace(/\n/g, '<br>'); }
+  /* экранируем и кавычки: текст попадает и внутрь атрибутов (href="…", data-name="…") — без этого имя или ссылка могли «выйти» из атрибута */
+  var ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ESC[c]; }).replace(/\n/g, '<br>'); }
   function mmss(s) { s = Math.max(0, Math.round(s || 0)); return Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); }
   function fsize(n) {
     n = n || 0;
@@ -90,16 +92,24 @@
   /* оформление текста, как в Telegram: **жирный**, __курсив__, ~~зачёркнутый~~, `код`, ||скрытый||, ссылки.
      Тот же разбор — на сервере (apps/chat/richtext.py): сначала экранируем, потом расставляем свои теги. */
   function rich(text) {
-    var codes = [], out = esc(text);
+    var codes = [], out = esc(String(text == null ? '' : text).replace(/\u0000/g, ''));   // \u0000 — наш служебный знак для `кода`, в тексте ему не место
     out = out.replace(/`([^`\n]+)`/g, function (_m, c) { codes.push(c); return '\u0000' + (codes.length - 1) + '\u0000'; });
     out = out.replace(/\*\*(?=\S)([\s\S]+?)\*\*/g, '<b>$1</b>').replace(/__(?=\S)([\s\S]+?)__/g, '<i>$1</i>')
       .replace(/~~(?=\S)([\s\S]+?)~~/g, '<s>$1</s>')
       .replace(/\|\|(?=\S)([\s\S]+?)\|\|/g, '<span class="spoiler" role="button" tabindex="0">$1</span>')
-      .replace(/(^|[\s(])(https?:\/\/[^\s<]+[^\s<.,:;!?)\]»"'])/g, '$1<a href="$2" target="_blank" rel="noopener nofollow ugc">$2</a>');
-    out = out.replace(/(<a [^>]*>[\s\S]*?<\/a>)|(^|[^\w@\/.])@([A-Za-z][A-Za-z0-9_]{3,31})(?![\w.])/g, function (m, link, pre, name) {
+      .replace(/(^|[\s(]|&quot;|&#39;)(https?:\/\/[^\s<]+)/g, function (_m, pre, url) {
+        // знаки препинания и кавычки в конце — не часть ссылки (кавычки после esc() уже записаны как &quot; и &#39;)
+        var tail = '', m;
+        while ((m = url.match(/(&quot;|&#39;)$/) || (/&(amp|lt|gt);$/.test(url) ? null : url.match(/[.,:;!?)\]»]$/)))) {
+          tail = m[0] + tail; url = url.slice(0, -m[0].length);
+        }
+        if (!/^https?:\/\/[^\s<]/.test(url)) return pre + url + tail;
+        return pre + '<a href="' + url + '" target="_blank" rel="noopener nofollow ugc">' + url + '</a>' + tail;
+      });
+    out = out.replace(/(<a [^>]*>[\s\S]*?<\/a>)|(^|[^\w@\/.])@([A-Za-z][A-Za-z0-9_]{2,31})(?![\w.])/g, function (m, link, pre, name) {
       return link || pre + '<a class="mention" href="/@' + name.toLowerCase() + '/">@' + name + '</a>';
     });
-    out = out.replace(/\u0000(\d+)\u0000/g, function (_m, i) { return '<code>' + codes[+i] + '</code>'; });
+    out = out.replace(/\u0000(\d+)\u0000/g, function (_m, i) { return codes[+i] == null ? '' : '<code>' + codes[+i] + '</code>'; });
     return out.replace(/\n/g, '<br>');
   }
   // скрытый текст открывается по нажатию

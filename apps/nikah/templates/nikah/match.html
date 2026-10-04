@@ -21,7 +21,7 @@
   {% if m.stage == 'photos' %}
     {% if turn == side %}
       {% if opened %}
-      <div class="nkphoto" oncontextmenu="return false" id="nkphoto">
+      <div class="nkphoto" data-no-menu id="nkphoto">
         <canvas class="nkphoto__img" id="nkphoto-c" data-src="{% url 'nikah:match_photo' m.pk %}" aria-label="{% translate 'Фото собеседника' %}"></canvas>
         <div class="nkphoto__shield"></div>
         <button type="button" class="nkphoto__veil" id="nkphoto-veil" hidden>{% nk_icon 'eye_off' %}<b>{% translate "Фото скрыто" %}</b><span>{% translate "Окно теряло фокус — возможно, делали снимок экрана. Нажмите, чтобы показать снова." %}</span></button>

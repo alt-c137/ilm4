@@ -40,6 +40,7 @@
     </nav>
     <h2 class="stg__t">{% translate "Экран и язык" %}</h2>
     <nav class="stg__list">
+      <a href="?s=look">{% ico 'monitor' %}<b>{% translate "Вид и рабочий стол" %}</b><small>{% translate "Дизайн как у Telegram, Авито, Instagram — и готовые наборы под задачи" %}</small></a>
       <a href="?s=tabs">{% ico 'grid' %}<b>{% translate "Нижние кнопки и стартовый экран" %}</b><small>{% translate "Вся платформа — или только чаты, лента, сообщества" %}</small></a>
       <a href="?s=language">{% ico 'globe' %}<b>{% translate "Язык" %}</b><small>{{ LANGUAGE_CODE|upper }}</small></a>
       <a href="?s=currency">{% ico 'wallet' %}<b>{% translate "Валюта" %}</b>{% if currency_now %}<small>{{ currency_now }}</small>{% endif %}</a>
@@ -100,7 +101,7 @@
     {% my_currency as cur %}{% currencies as cur_list %}
     <form method="post" action="{% url 'core:set_currency' %}" class="set__cur">{% csrf_token %}
       <input type="hidden" name="next" value="{{ request.path }}">
-      <select name="currency" onchange="this.form.submit()" aria-label="{% translate 'Валюта' %}">
+      <select name="currency" data-auto-submit aria-label="{% translate 'Валюта' %}">
         <option value="auto"{% if not user.currency and not request.COOKIES.ilm4_cur %} selected{% endif %}>{% translate "Определять автоматически" %} ({{ cur }})</option>
         {% for c in cur_list %}<option value="{{ c.code }}"{% if c.code == user.currency or c.code == request.COOKIES.ilm4_cur and not user.currency %} selected{% endif %}>{{ c.code }} — {{ c.name }}</option>{% endfor %}
       </select>
@@ -109,6 +110,10 @@
 
     </div>
     {% if user.is_authenticated %}
+    <div class="setsec"{% if s != 'look' %} hidden{% endif %}>
+    <h1 class="stg__h1">{% translate "Вид и рабочий стол" %}</h1>
+    {% include 'core/includes/look.html' with next='' %}
+    </div>
     <div class="setsec"{% if s != 'tabs' %} hidden{% endif %}>
     <h1 class="stg__h1" id="tabs">{% translate "Нижние кнопки и стартовый экран" %}</h1>
     <p class="tnote" style="margin:0 0 4px;text-align:left">{% translate "Какие разделы держать под рукой внизу экрана на телефоне и в каком порядке. Сколько угодно: если кнопок больше пяти, панель листается. «Профиль» всегда на месте." %}</p>

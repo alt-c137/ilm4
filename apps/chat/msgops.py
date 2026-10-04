@@ -283,7 +283,7 @@ def search_messages(thread, user, q: str, limit: int = 50) -> list:
     (до SEARCH_SCAN штук) — этого хватает для обычной переписки."""
     s = _svc()
     q = (q or '').strip().casefold()[:80]
-    if len(q) < 2:
+    if len(q) < 2 or not s.search_allowed(user):
         return []
     found = []
     qs = (s.visible_messages(thread, user).filter(scheduled_at__isnull=True).exclude(body_enc='')
@@ -351,9 +351,11 @@ def add_comment(user, post_id, body: str, reply_to=None) -> dict:
         Message.objects.filter(pk=post.pk).update(comments_count=F('comments_count') + 1)
     payload = s._broadcast(msg)
     if target is not None and target.sender_id != user.pk:      # ответили на мой комментарий — уведомить
-        from apps.core.models import Notification
-        Notification.objects.create(user_id=target.sender_id, url=f'/chat/{thread.pk}/post/{post.pk}/',
-                                    text=f'{user.get_display_name()}: {body[:80]}')
+        from django.utils.translation import gettext_lazy as _lazy
+
+        from .events import quiet_note
+        quiet_note(target.sender, user.get_display_name(), f'/chat/{thread.pk}/post/{post.pk}/',
+                   _lazy('ответ на ваш комментарий'), body)
     return payload
 
 

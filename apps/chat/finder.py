@@ -27,6 +27,9 @@ def find(user, q: str) -> dict:
     out['rooms'] = list(rooms.catalog(name)[:8])
     if spaces.enabled():
         out['spaces'] = list(spaces.catalog(name)[:6])
+    from . import services
+    if not services.search_allowed(user):                  # слишком частый поиск — без поиска по текстам (он самый тяжёлый)
+        return out
     needle = q.casefold()
     cleared = dict(ChatState.objects.filter(user=user, cleared_at__isnull=False).values_list('thread_id', 'cleared_at'))
     hidden = set(ChatState.objects.filter(user=user, hidden=True).values_list('thread_id', flat=True))

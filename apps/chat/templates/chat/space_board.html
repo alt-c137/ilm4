@@ -21,7 +21,7 @@
         <div class="kb__acts">
           {% if col.key != 'todo' %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="move"><input type="hidden" name="task" value="{{ t.pk }}"><input type="hidden" name="status" value="{% if col.key == 'done' %}doing{% else %}todo{% endif %}"><button type="submit" aria-label="{% translate 'Назад' %}">{% ico 'back' %}</button></form>{% endif %}
           {% if col.key != 'done' %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="move"><input type="hidden" name="task" value="{{ t.pk }}"><input type="hidden" name="status" value="{% if col.key == 'todo' %}doing{% else %}done{% endif %}"><button type="submit" class="kb__go">{% if col.key == 'todo' %}{% translate "Взять в работу" %}{% else %}{% translate "Готово" %}{% endif %}{% ico 'arrow' %}</button></form>{% endif %}
-          {% if manage or t.creator_id == user.pk or t.assignee_id == user.pk %}<form method="post" onsubmit="return confirm('{% translate "Удалить задачу?" %}')">{% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="task" value="{{ t.pk }}"><button type="submit" aria-label="{% translate 'Удалить' %}">{% ico 'trash' %}</button></form>{% endif %}
+          {% if manage or t.creator_id == user.pk or t.assignee_id == user.pk %}<form method="post" data-confirm="{{ _("Удалить задачу?")|force_escape }}">{% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="task" value="{{ t.pk }}"><button type="submit" aria-label="{% translate 'Удалить' %}">{% ico 'trash' %}</button></form>{% endif %}
         </div>
       </article>{% empty %}<p class="kb__empty">{% translate "Пусто" %}</p>{% endfor %}
     </section>{% endfor %}

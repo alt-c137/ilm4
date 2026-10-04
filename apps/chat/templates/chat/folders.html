@@ -23,7 +23,7 @@
         <button type="submit" name="by" value="-1" {% if forloop.first %}disabled{% endif %} aria-label="{% translate 'Выше' %}">{% ico 'up' %}</button>
         <button type="submit" name="by" value="1" {% if forloop.last %}disabled{% endif %} aria-label="{% translate 'Ниже' %}">{% ico 'down' %}</button>
       </form>
-      <form method="post" class="fold__btns" onsubmit="return confirm('{% translate 'Удалить папку? Сами чаты останутся.' %}')">{% csrf_token %}<input type="hidden" name="what" value="delete"><input type="hidden" name="id" value="{{ f.pk }}">
+      <form method="post" class="fold__btns" data-confirm="{{ _('Удалить папку? Сами чаты останутся.')|force_escape }}">{% csrf_token %}<input type="hidden" name="what" value="delete"><input type="hidden" name="id" value="{{ f.pk }}">
         <button type="submit" class="bad" aria-label="{% translate 'Удалить' %}">{% ico 'trash' %}</button></form>
     </div>
     {% endfor %}

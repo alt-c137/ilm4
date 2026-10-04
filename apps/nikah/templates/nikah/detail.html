@@ -54,7 +54,7 @@
 
   {% if p.pk != me.pk and not moderating %}
   <div class="personact">{% report_button p _('Пожаловаться на анкету') %}
-    <form method="post" action="{% url 'accounts:block' p.user_id %}" onsubmit="return confirm('{{ _("Заблокировать? Вы перестанете видеть друг друга в никяхе и не сможете писать.")|escapejs }}')">{% csrf_token %}<input type="hidden" name="next" value="{% url 'nikah:home' %}">
+    <form method="post" action="{% url 'accounts:block' p.user_id %}" data-confirm="{{ _("Заблокировать? Вы перестанете видеть друг друга в никяхе и не сможете писать.")|force_escape }}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'nikah:home' %}">
       <button class="linkbtn" type="submit">{% translate "Заблокировать" %}</button></form></div>
   <div class="nkdock">
     <form method="post" action="{% url 'nikah:save' p.pk %}">{% csrf_token %}<input type="hidden" name="back" value="{{ request.path }}">

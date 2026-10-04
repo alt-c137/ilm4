@@ -282,9 +282,10 @@ def thread_detail(request, pk):
 @login_required
 @module_required('chat')
 def thread_start(request):
-    """Начать диалог по email участника (например, с карточки объявления)."""
-    email = request.POST.get('email', '').strip().lower() if request.method == 'POST' \
-        else request.GET.get('email', '').strip().lower()
+    """Начать личный диалог: из профиля человека (?user=) или с карточки объявления (?ctx=&ctx_id=).
+
+    По email собеседника найти нельзя: иначе любой мог бы проверить, чей это адрес и есть ли он на ilm4.
+    Людей ищут по @имени и по номеру (кто это разрешил) — страница «Люди»."""
     uid = request.GET.get('user', '')
     if not uid and request.GET.get('ctx') and request.GET.get('ctx_id', '').isdigit():
         # автор под «маской»: в ссылке нет номера его аккаунта — находим автора по самому объявлению
@@ -293,31 +294,26 @@ def thread_start(request):
         obj = pub.get_model().objects.filter(pk=int(request.GET['ctx_id'])).first() if pub else None
         owner_id = getattr(obj, f'{pub.owner}_id', None) if obj is not None else None
         uid = str(owner_id) if owner_id else ''
-    if uid.isdigit() and int(uid) != request.user.pk:
-        # по id — не раскрываем email собеседника в ссылках
-        email = User.objects.filter(pk=int(uid), is_active=True).values_list('email', flat=True).first() or ''
-    if email and email != request.user.email.lower():
-        other = User.objects.filter(email__iexact=email).first()
-        from apps.accounts.models import UserBlock
-        if other and UserBlock.between(request.user, other):
-            messages.error(request, _('Переписка недоступна: один из вас заблокировал другого.'))
-            return redirect('chat:inbox')
-        if other:
-            from apps.accounts import people
-            subject = request.POST.get('subject') or request.GET.get('subject') or ''
-            ctx = (request.GET.get('ctx', ''), request.GET.get('ctx_id', ''))      # чат по объявлению
-            try:
-                if not ctx[0] and services.direct_between(request.user, other) is None:
-                    people.check_new_chat(request.user, other)                     # против рассылок незнакомым
-                thread = services.open_direct(request.user, other, subject, context=ctx if ctx[0] else None)
-            except (ChatError, people.PeopleError) as exc:
-                messages.error(request, exc.message)
-                return redirect('chat:inbox')
-            call = request.GET.get('call', '')                 # кнопки «Звонок» / «Видео» в профиле человека
-            url = reverse('chat:thread', args=[thread.pk])
-            return redirect(f'{url}?call={call}' if call in ('audio', 'video') else url)
-        messages.error(request, _('Пользователь с таким email не найден.'))
-    return render(request, 'chat/start.html', {'email': email})
+    other = User.objects.filter(pk=int(uid), is_active=True).first() if uid.isdigit() and int(uid) != request.user.pk else None
+    if other is None:
+        return redirect('chat:people')
+    from apps.accounts import people
+    from apps.accounts.models import UserBlock
+    if UserBlock.between(request.user, other):
+        messages.error(request, _('Переписка недоступна: один из вас заблокировал другого.'))
+        return redirect('chat:inbox')
+    subject = request.POST.get('subject') or request.GET.get('subject') or ''
+    ctx = (request.GET.get('ctx', ''), request.GET.get('ctx_id', ''))      # чат по объявлению
+    try:
+        if not ctx[0] and services.direct_between(request.user, other) is None:
+            people.check_new_chat(request.user, other)                     # против рассылок незнакомым
+        thread = services.open_direct(request.user, other, subject, context=ctx if ctx[0] else None)
+    except (ChatError, people.PeopleError) as exc:
+        messages.error(request, exc.message)
+        return redirect('chat:inbox')
+    call = request.GET.get('call', '')                 # кнопки «Звонок» / «Видео» в профиле человека
+    url = reverse('chat:thread', args=[thread.pk])
+    return redirect(f'{url}?call={call}' if call in ('audio', 'video') else url)
 
 
 @login_required

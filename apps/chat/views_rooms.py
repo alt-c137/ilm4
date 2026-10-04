@@ -5,6 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
@@ -115,6 +117,8 @@ def room_info(request, pk):
     thread = _room(pk)
     if not services.can_read(thread, request.user):
         return redirect('chat:inbox')
+    if thread.space_id:                               # канал сообщества: участники, роли и настройки — на странице сообщества
+        return redirect('spaces:space', pk=thread.space_id)
     info = rooms.info(thread, request.user)
     if request.method == 'POST':
         try:
@@ -128,21 +132,33 @@ def room_info(request, pk):
             messages.success(request, _('Сохранено.'))
         except ChatError as exc:
             messages.error(request, exc.message)
+            return redirect(reverse('chat:room_info', args=[pk]) + '?s=edit')      # не сохранилось — остаёмся в «Изменить»
         return redirect('chat:room_info', pk=pk)
+    from apps.accounts import people as ppl
     people = rooms.members(thread) if info['member'] and (thread.kind == Thread.GROUP or info['admin']) else []
-    for m in people:
+    online = 0
+    for m in people:                                  # под именем — «в сети / был(а) в 14:05», как в Telegram
         m.hue = m.user_id % 7
+        pr = ppl.presence(m.user, request.user)
+        m.online, m.status = pr['online'], ppl.status_text(pr)
+        online += 1 if pr['online'] and m.user_id != request.user.pk else 0
     addable = []
     if info['admin']:
         inside = set(thread.participants.values_list('pk', flat=True))
         known = (User.objects.filter(chat_threads__kind=Thread.DIRECT, chat_threads__participants=request.user, is_active=True)
                  .exclude(pk__in=inside).distinct()[:100])
         addable = list(known)
+    section = request.GET.get('s', '')
+    section = section if section in ('edit', 'add') and info['admin'] else ''
+    shared = {}
+    if not section:                                   # вкладки «Медиа / Файлы / Голосовые» — что прислали в этот чат
+        shared = {k: services.shared_media(thread, request.user, k, limit=30) for k in ('media', 'files', 'voice')}
     link = request.build_absolute_uri(f'/chat/join/{thread.invite_code}/') if info['invite'] else ''
     public_link = request.build_absolute_uri(f'/c/{thread.handle}/') if thread.is_public and thread.handle else ''
     return render(request, 'chat/room_info.html', {
         'room_photos': [{'url': thread.avatar.url, 'name': thread.title}] if thread.avatar else [],
         'thread': thread, 'room': thread, 'info': info, 'pic': pic(thread), 'people': people, 'addable': addable,
+        'online': online, 'section': section, 'shared': shared,
         'invite_link': link, 'public_link': public_link, 'me_owner': info['role'] == Member.OWNER,
         'can_moderate': request.user.is_staff and request.user.has_perm('chat.change_thread'), **_side(request)})
 
@@ -210,7 +226,10 @@ def room_act(request, pk, action):
             raise Http404
     except ChatError as exc:
         return _fail(request, exc)
-    return redirect(request.POST.get('next') or 'chat:thread', **({} if request.POST.get('next') else {'pk': pk}))
+    back = request.POST.get('next', '')
+    if back and url_has_allowed_host_and_scheme(back, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+        return redirect(back)                         # только на свои страницы — не на чужой сайт
+    return redirect('chat:thread', pk=pk)
 
 
 @login_required

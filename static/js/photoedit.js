@@ -156,11 +156,13 @@
               '<button type="button" class="pedit__ib" data-a="flip" aria-label="' + T('Отразить') + '">' + svg('flip') + '</button>' +
               '<button type="button" class="pedit__tb" data-a="reset">' + T('Сбросить') + '</button></div>';
           }
-          if (st.mode === 'adjust') {
-            var cur = ADJ.filter(function (a) { return a[0] === st.param; })[0], min = (st.param === 'f' || st.param === 'v') ? 0 : -100;
-            return '<div class="pedit__chips">' + ADJ.map(function (a) { return '<button type="button" data-param="' + a[0] + '"' + (a[0] === st.param ? ' class="on"' : '') + (st.adj[a[0]] ? ' data-set="1"' : '') + '>' + svg(a[2]) + a[1] + '</button>'; }).join('') + '</div>' +
-              '<div class="pedit__row"><input type="range" min="' + min + '" max="100" value="' + Math.round(st.adj[st.param] * 100) + '" data-range="adj" aria-label="' + cur[1] + '"><output>' + Math.round(st.adj[st.param] * 100) + '</output>' +
-              '<button type="button" class="pedit__tb" data-a="enhance">' + svg('wand') + T('Улучшить') + '</button></div>';
+          if (st.mode === 'adjust') {                    // как в Telegram: все настройки списком, у каждой свой ползунок и число
+            return '<div class="pedit__sliders">' + ADJ.map(function (a) {
+              var min = (a[0] === 'f' || a[0] === 'v') ? 0 : -100, v = Math.round(st.adj[a[0]] * 100);
+              return '<label class="pedit__sl"><span><b>' + a[1] + '</b><output' + (v ? ' class="on"' : '') + '>' + v + '</output></span>' +
+                '<input type="range" min="' + min + '" max="100" value="' + v + '" data-range="adj" data-k="' + a[0] + '" aria-label="' + a[1] + '"></label>'; }).join('') + '</div>' +
+              '<div class="pedit__row pedit__row--c"><button type="button" class="pedit__tb" data-a="enhance">' + svg('wand') + T('Улучшить') + '</button>' +
+              '<button type="button" class="pedit__tb" data-a="adjreset">' + T('Сбросить') + '</button></div>';
           }
           if (st.mode === 'draw') {
             return '<div class="pedit__row"><span class="pedit__tools2">' + [['pen', 'pencil', T('Карандаш')], ['marker', 'marker', T('Маркер')], ['arrow', 'arrow', T('Стрелка')]].map(function (t) {
@@ -273,6 +275,7 @@
           else if (act === 'rotate') { rotate(); rebuild(); ui(); }
           else if (act === 'flip') { flip(); rebuild(); ui(); }
           else if (act === 'reset') { st.rot = 0; st.flip = false; st.aspect = opts.avatar ? 1 : 0; st.aspectKey = 0; st.crop = fit(st.aspect); rebuild(); ui(); }
+          else if (act === 'adjreset') { st.adj = { b: 0, c: 0, s: 0, w: 0, f: 0, v: 0 }; prevAdj = adjust(prevBase); ui(); }
           else if (act === 'enhance') { var on = st.adj.c === 0.18 && st.adj.s === 0.22; st.adj.c = on ? 0 : 0.18; st.adj.s = on ? 0 : 0.22; st.adj.b = on ? 0 : 0.06; prevAdj = adjust(prevBase); ui(); }
           else if (act === 'addtext') {
             var inp = panel.querySelector('.pedit__input'), text = (inp.value || '').trim(); if (!text) { inp.focus(); return; }
@@ -286,8 +289,8 @@
         box.addEventListener('input', function (e) {
           var r = e.target.dataset && e.target.dataset.range; if (!r) return;
           if (r === 'size') { st.size = parseFloat(e.target.value); return; }
-          st.adj[st.param] = parseInt(e.target.value, 10) / 100;
-          var out = panel.querySelector('output'); if (out) out.textContent = e.target.value;
+          st.adj[e.target.dataset.k || st.param] = parseInt(e.target.value, 10) / 100;
+          var out = e.target.parentNode.querySelector('output'); if (out) { out.textContent = e.target.value; out.classList.toggle('on', e.target.value !== '0'); }
           repaintAdj();
         });
         box.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.classList.contains('pedit__input')) { e.preventDefault(); panel.querySelector('[data-a=addtext]').click(); } });

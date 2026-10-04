@@ -8,6 +8,19 @@ from django.conf import settings as django_settings
 from .models import ModuleConfig, SiteSettings, Theme
 
 
+def _design(user) -> str:
+    from . import desks
+    return desks.design_of(user)
+
+
+def _other_accounts(request) -> list:
+    """Другие аккаунты на этом устройстве — в меню под именем (нажал — открылся, как в Telegram)."""
+    if not getattr(request, 'user', None) or not request.user.is_authenticated:
+        return []
+    from apps.accounts import multi
+    return multi.others(request)
+
+
 def _asset_version() -> str:
     """Версия статики для ?v= в ссылках: меняется при любой правке CSS/JS — браузер
     не держит старые файлы в кэше. (В проде имена и так с хешем — не мешает.)"""
@@ -131,6 +144,8 @@ def site(request):
         'site_tabs': tabs.site_tabs(user, {m.key for m in modules}, request.path, is_home),
         'side_nav': tabs.side_nav(user, modules, request.path, is_home),
         'unread_chats': _unread_chats(user, modules),
+        'other_accounts': _other_accounts(request),
+        'design': _design(user),
         'is_home': is_home,
         'is_dark': request.COOKIES.get('ilm4_dark') == '1',
         # кнопка Google — только когда ключи заданы (иначе она вела обратно на вход и путала)

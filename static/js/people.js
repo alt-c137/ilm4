@@ -45,6 +45,39 @@
   });
   if (location.hash && document.querySelector('details' + location.hash)) document.querySelector('details' + location.hash).open = true;
 
+  // ссылок много — видны первые, остальные открываются панелью «ещё N» (так делает Instagram)
+  document.addEventListener('click', function (e) {
+    var more = e.target.closest('[data-links-more]'); if (!more) return;
+    var tpl = more.parentNode.querySelector('template[data-links-all]'); if (!tpl) return;
+    var sheet = document.createElement('div'); sheet.className = 'sxs';
+    var panel = document.createElement('div'); panel.className = 'sxs__p';
+    panel.innerHTML = '<div class="sxs__grip"></div><div class="sxs__t"></div><div class="sxs__l"></div>';
+    panel.querySelector('.sxs__t').textContent = _t('Соцсети и ссылки');
+    panel.querySelector('.sxs__l').appendChild(tpl.content.cloneNode(true));
+    sheet.appendChild(panel); document.body.appendChild(sheet);
+    sheet.addEventListener('click', function (ev) {
+      var cp = ev.target.closest('[data-copy]');
+      if (cp && navigator.clipboard) navigator.clipboard.writeText(cp.dataset.copy).then(function () { toast(copied); });
+      if (ev.target === sheet || ev.target.closest('.sxs__i')) sheet.remove();
+    });
+  });
+
+  // настройки со строками (конфиденциальность): изменил — сразу сохранилось, как в Telegram
+  document.querySelectorAll('[data-autosave]').forEach(function (box) {
+    var form = box.closest('form'), timer = 0;
+    if (!form) return;
+    box.addEventListener('change', function () {
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        var fd = new FormData(form); fd.delete('avatar');
+        fetch(form.getAttribute('action') || location.href, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Autosave': '1' } })
+          .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+          .then(function (j) { if (window.tgToast) window.tgToast(j.ok ? _t('Сохранено') : _t('Не удалось сохранить')); })
+          .catch(function () { if (window.tgToast) window.tgToast(_t('Не удалось сохранить')); });
+      }, 250);
+    });
+  });
+
   // фото профиля: выбрал файл — сразу сохранить
   var ava = document.getElementById('id_avatar');
   if (ava) ava.addEventListener('change', function () { if (ava.files.length) ava.form.submit(); });

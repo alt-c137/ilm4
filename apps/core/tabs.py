@@ -50,7 +50,7 @@ def clean_ui(data: dict) -> dict:
         out['tabs_site'] = site
     if app:
         out['tabs_app'] = app
-    if data.get('links_view') in ('auto', 'icons', 'list'):       # как показывать соцсети в профиле
+    if data.get('links_view') in ('auto', 'pills', 'icons', 'list'):       # как показывать соцсети в профиле
         out['links_view'] = data['links_view']
     if data.get('start') in START:                  # с какого раздела открывается ilm4: платформа целиком или, например, только чаты
         out['start'] = data['start']
@@ -62,7 +62,14 @@ START = [k for k in TABS if k not in ('home', 'add', 'services')]
 
 def start_url(user, modules_on: set) -> str:
     """Куда вести с «/», если человек выбрал другой стартовый экран. Пусто — обычная главная."""
-    key = (getattr(user, 'ui', None) or {}).get('start') if getattr(user, 'is_authenticated', False) else None
+    if not getattr(user, 'is_authenticated', False):
+        return ''
+    ui = getattr(user, 'ui', None) or {}
+    if 'start' in ui or 'tabs_site' in ui or 'desk' in ui:       # человек выбирал сам (в том числе «главная»)
+        key = ui.get('start')
+    else:
+        from . import desks
+        key = desks.preset(user)['start']
     if key in START and (not TABS[key][2] or TABS[key][2] in modules_on):
         return TABS[key][1]
     return ''
@@ -70,8 +77,12 @@ def start_url(user, modules_on: set) -> str:
 
 def site_tabs(user, modules_on: set, path: str, is_home: bool) -> list:
     """Кнопки нижней панели сайта для этого человека (выключенные в админке разделы пропускаются)."""
+    from . import desks
     chosen = (getattr(user, 'ui', None) or {}).get('tabs_site') if getattr(user, 'is_authenticated', False) else None
-    keys = [k for k in (chosen or DEFAULT_SITE) if k in TABS and (not TABS[k][2] or TABS[k][2] in modules_on)]
+    chosen = chosen or desks.preset(user)['tabs_site']            # сам не выбирал — кнопки рабочего стола (свой или тот, что задал владелец)
+    keys = [k for k in chosen if k in TABS and (not TABS[k][2] or TABS[k][2] in modules_on)]
+    if len(keys) < 2:
+        keys = [k for k in DEFAULT_SITE if not TABS[k][2] or TABS[k][2] in modules_on]
     out = []
     for k in keys:
         label, url, _module, icon = TABS[k]

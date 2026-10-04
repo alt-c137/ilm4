@@ -14,6 +14,9 @@ def home(request):
     from django.shortcuts import redirect
     if settings.SITE_MODE == 'nikah':
         return redirect('nikah:home')
+    if (request.user.is_authenticated and not (request.user.ui or {}).get('welcomed') and 'home' not in request.GET
+            and getattr(settings, 'WELCOME_SCREEN', True)):
+        return redirect('core:welcome')               # первый вход: выбрать знакомый вид и набор (один раз, можно пропустить)
     if request.user.is_authenticated and 'home' not in request.GET:
         # свой стартовый экран (Настройки → «С чего начинать»): платформа целиком — или сразу чаты, лента, сообщества
         from . import tabs
@@ -66,6 +69,20 @@ def ad_go(request, pk):
     if not url:
         raise Http404
     return redirect(url)
+
+
+def welcome(request):
+    """Первый вход: «какой вид вам привычнее» и «чем будете пользоваться». Показывается один раз; то же — в настройках."""
+    from django.shortcuts import redirect
+
+    from . import desks
+    if not request.user.is_authenticated:
+        return redirect('accounts:login')
+    if request.method == 'POST':                      # «Пропустить» — оставить как есть и больше не спрашивать
+        desks.apply(request.user)
+        return redirect('/')
+    modules_on = set(ModuleConfig.objects.filter(status=ModuleConfig.ON).values_list('key', flat=True))
+    return render(request, 'core/welcome.html', {'look': desks.choices(request.user, modules_on)})
 
 
 def home_widgets(request):
@@ -147,6 +164,11 @@ def settings_view(request):
     from . import tabs
     from .models import ModuleConfig, Theme
     modules_on = set(ModuleConfig.objects.filter(status=ModuleConfig.ON).values_list('key', flat=True))
+    if request.method == 'POST' and request.POST.get('what') == 'look' and request.user.is_authenticated:
+        from . import desks
+        desks.apply(request.user, request.POST.get('design', ''), request.POST.get('desk', ''))
+        back = request.POST.get('next', '')
+        return redirect(back if back in ('/', '/settings/') else '/settings/?s=look')
     if request.method == 'POST' and request.POST.get('what') == 'tabs' and request.user.is_authenticated:
         # нижние кнопки сайта (сколько угодно, свой порядок) и стартовый экран
         picked = tabs.clean_ui({'tabs_site': [k for k in request.POST.getlist('tab') if k], 'start': request.POST.get('start', '')})
@@ -157,6 +179,11 @@ def settings_view(request):
             ui.pop('tabs_site', None)
         if not request.POST.get('reset'):
             ui.update(picked)
+        from . import desks
+        if request.POST.get('reset'):
+            ui.pop('desk', None)
+        else:
+            desks.touched(ui)                                 # подправил кнопки — стол теперь «свой»
         user.ui = ui
         user.save(update_fields=['ui'])
         return redirect('/settings/?s=tabs')
@@ -173,13 +200,15 @@ def settings_view(request):
                 request.user.theme = theme
                 request.user.save(update_fields=['theme'])
         return response
-    mine = ((request.user.ui or {}).get('tabs_site') if request.user.is_authenticated else None) or tabs.DEFAULT_SITE
+    from . import desks
+    mine = ((request.user.ui or {}).get('tabs_site') if request.user.is_authenticated else None) or desks.preset(request.user)['tabs_site']
     choices = tabs.choices(modules_on)
     label = {c['key']: c['label'] for c in choices}
     mine = [k for k in mine if k in label]
     section = request.GET.get('s', '')
     return render(request, 'core/settings.html', {
-        's': section if section in ('chats', 'tabs', 'language', 'currency') else '', 'chat_on': 'chat' in modules_on, 'feed_on': 'feed' in modules_on,
+        's': section if section in ('chats', 'tabs', 'language', 'currency', 'look') else '', 'chat_on': 'chat' in modules_on, 'feed_on': 'feed' in modules_on,
+        'look': desks.choices(request.user, modules_on),
         'all_themes': Theme.objects.all(),
         'tab_mine': [{'key': k, 'label': label[k]} for k in mine],
         'tab_rest': [c for c in choices if c['key'] not in mine],

@@ -18,16 +18,28 @@ def make_thread():
     return alice, bob, thread
 
 
-def test_start_thread_by_email(client):
+def test_start_thread_by_user(client):
     alice = User.objects.create_user('alice', 'alice@x.com', 'x')
-    User.objects.create_user('bob', 'bob@x.com', 'x')
+    bob = User.objects.create_user('bob', 'bob@x.com', 'x')
     client.force_login(alice)
-    response = client.post('/chat/start/', {'email': 'bob@x.com'})
+    response = client.get(f'/chat/start/?user={bob.pk}')
     assert response.status_code == 302
     assert Thread.objects.count() == 1
     # повторный старт — тот же диалог
-    client.post('/chat/start/', {'email': 'bob@x.com'})
+    client.get(f'/chat/start/?user={bob.pk}')
     assert Thread.objects.count() == 1
+
+
+def test_start_thread_not_by_email(client):
+    """По email человека не найти: иначе можно было бы проверять, чей это адрес и есть ли он на сайте."""
+    alice = User.objects.create_user('alice', 'alice@x.com', 'x')
+    User.objects.create_user('bob', 'bob@x.com', 'x')
+    client.force_login(alice)
+    for known in ('bob@x.com', 'nobody@x.com'):
+        response = client.post('/chat/start/', {'email': known})
+        assert response.status_code == 302 and response.url == '/chat/people/'
+        assert client.get(f'/chat/start/?email={known}').url == '/chat/people/'
+    assert Thread.objects.count() == 0
 
 
 def test_message_via_form_and_access(client):

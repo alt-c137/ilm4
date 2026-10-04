@@ -9,7 +9,7 @@
 {% block content %}
 <div class="tp">
   <header class="tp__head">
-    <a class="tp__back" href="{% if thread %}{% url 'chat:thread' thread.pk %}{% else %}javascript:history.back(){% endif %}" aria-label="{% translate 'Назад' %}">{% ico 'back' %}</a>
+    <a class="tp__back" href="{% if thread %}{% url 'chat:thread' thread.pk %}{% else %}{% url 'core:home' %}{% endif %}"{% if not thread %} data-back{% endif %} aria-label="{% translate 'Назад' %}">{% ico 'back' %}</a>
     {% if photos %}<button type="button" class="tp__ava tp__ava--view" data-photos="profile-photos" aria-label="{% translate 'Смотреть фото' %}"><img src="{{ person.avatar.url }}" alt="">{% if photos|length > 1 %}<i class="tp__avan">{{ photos|length }}</i>{% endif %}</button>{{ photos|json_script:"profile-photos" }}
     {% else %}<div class="tp__ava"><span>{{ person.get_display_name|slice:":1"|upper }}</span></div>{% endif %}
     <h1 class="tp__name">{{ person.get_display_name }}{% if person.platform_verified %}<i class="tgver" title="{% translate 'Проверен ilm4' %}">{% ico 'check' %}</i>{% endif %}</h1>

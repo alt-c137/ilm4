@@ -7,6 +7,8 @@ TURNSTILE_SITE_KEY и TURNSTILE_SECRET_KEY в .env. Без ключей капч
 import requests
 from django.conf import settings
 
+from .limits import client_ip
+
 VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
 
 
@@ -24,7 +26,7 @@ def verify(request) -> bool:
     try:
         r = requests.post(VERIFY_URL, timeout=8, data={
             'secret': settings.TURNSTILE_SECRET_KEY, 'response': token,
-            'remoteip': request.META.get('HTTP_X_REAL_IP') or request.META.get('REMOTE_ADDR', '')})
+            'remoteip': client_ip(request)})
         return bool(r.json().get('success'))
     except (requests.RequestException, ValueError):
         return False     # Cloudflare недоступен — лучше попросить повторить, чем пустить бота

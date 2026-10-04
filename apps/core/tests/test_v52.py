@@ -211,7 +211,12 @@ def test_links_view_and_show(client, trio):
     rows = people.links_for(a, a)
     assert [r['show'] for r in rows] == ['@ali.dev', 'ali.dev'] and people.links_view(a, len(rows)) == 'list'
     people.set_links(a, [{'kind': k, 'value': 'ali'} for k in ('instagram', 'telegram', 'github')])
-    assert people.links_view(a, 3) == 'icons'                                   # «авто»: больше двух — значками
+    assert people.links_view(a, 3) == 'pills'                                   # «авто»: больше двух — пилюлями
+    people.set_links(a, [{'kind': k, 'value': 'ali'} for k in ('instagram', 'telegram', 'github', 'youtube', 'tiktok', 'vk')])
+    client.force_login(a)
+    html = client.get(f'/accounts/u/{a.pk}/').content.decode()
+    assert html.count('class="tp__pill tp__soc--') == 4 and 'ещё 2' in html and 'data-links-all' in html   # четыре видны, остальные — за «ещё»
+    people.set_links(a, [{'kind': k, 'value': 'ali'} for k in ('instagram', 'telegram', 'github')])
     people.set_links_view(a, 'list')
     a.refresh_from_db()
     assert people.links_view(a, 3) == 'list'

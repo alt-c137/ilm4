@@ -25,11 +25,14 @@ export type Config = {
 };
 export type Privacy = 'all' | 'close' | 'nobody';
 export type SocialLink = { kind: string; title?: string; value: string; show?: string; url?: string; privacy?: Privacy };
+/** Вид оболочки: как сейчас, как Telegram, Авито, Instagram, X (выбирается в Настройках → «Вид и рабочий стол»). */
+export type Design = 'classic' | 'telegram' | 'avito' | 'insta' | 'x';
 export type User = {
   id: number; name: string; nickname: string; first_name: string; email: string; city: string; phone: string;
   language: string; currency?: string; currency_now?: string; avatar: string; telegram: boolean; verified: boolean; balance: number | null;
   phone_verified?: boolean; needs_phone?: { publish: boolean; nikah: boolean };
-  last_name?: string; ui?: { tabs_app?: string[] };
+  last_name?: string; ui?: { tabs_app?: string[] }; tag?: string;
+  look?: { design: Design; desk: string; tabs: string[]; welcomed: boolean };
   handle?: string; bio?: string; privacy?: { phone: Privacy; seen: Privacy; find_by_phone: boolean; forward?: Privacy; invite?: Privacy; counts?: Privacy; private?: boolean }; links?: SocialLink[]; links_view?: string; links_mode?: string;
   nikah: { id: number; status: string; active: boolean; gender: 'M' | 'F' } | null;
 };
@@ -116,7 +119,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const { data } = await cachedGet<User>('/me/');
       setUserState(data);
       save('user', data);
-      const remote = (data.ui?.tabs_app ?? []).filter((k): k is TabKey => (TAB_KEYS as readonly string[]).includes(k));
+      // кнопки: свои, а если не выбирал — из рабочего стола (в том числе того, что владелец поставил по умолчанию)
+      const remote = (data.ui?.tabs_app ?? data.look?.tabs ?? []).filter((k): k is TabKey => (TAB_KEYS as readonly string[]).includes(k));
       if (remote.length >= 2 && !(await load<TabKey[] | null>('tabs', null))) {
         setTabsState(remote);
         save('tabs', remote);

@@ -15,6 +15,8 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy as _lazy
 
+from apps.core.limits import client_ip  # отсюда же его берут API, «Устройства» и аналитика
+
 from .audit import log_action
 from .forms import LoginForm, ProfileForm, RegisterForm
 
@@ -27,6 +29,11 @@ def register(request):
     form = RegisterForm(request.POST or None)
     if request.method == 'POST' and not captcha.verify(request):
         form.add_error(None, CAPTCHA_ERROR)
+    if request.method == 'POST' and not form.errors:
+        # не больше 5 новых аккаунтов в час с одного адреса (в приложении — тот же предел): против пачек «пустых» аккаунтов
+        from apps.core.limits import hits
+        if hits(f'reg:{client_ip(request)}', 3600) > REG_PER_HOUR:
+            form.add_error(None, _('С этого адреса уже создано несколько аккаунтов. Попробуйте через час.'))
     if request.method == 'POST' and form.is_valid():
         user = form.save()
         auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
@@ -39,15 +46,14 @@ def register(request):
                                                       'tg_link': _tg_link()})
 
 
+REG_PER_HOUR = 5
+
 # Защита от подбора пароля: не больше N неудачных попыток за окно — по логину и по IP
 LOGIN_WINDOW = 15 * 60
 LOGIN_MAX_PER_LOGIN = 8
 LOGIN_MAX_PER_IP = 30
 
 
-def client_ip(request) -> str:
-    """IP посетителя: nginx кладёт его в X-Real-IP (за Cloudflare — из CF-Connecting-IP)."""
-    return (request.META.get('HTTP_X_REAL_IP') or request.META.get('REMOTE_ADDR') or '').strip()
 
 
 def _login_keys(request):
@@ -177,7 +183,7 @@ def accounts_view(request):
         action = request.POST.get('action')
         if action == 'add':
             if len({u for u, _t in pairs} | {request.user.pk}) >= multi.MAX:
-                messages.error(request, _('На одном устройстве — не больше трёх аккаунтов.'))
+                messages.error(request, _('На одном устройстве — не больше {n} аккаунтов.').format(n=multi.MAX))
                 return redirect('accounts:accounts')
             pairs = multi.remember(request.user, pairs)
             logout(request)                                   # сессию освобождаем: дальше — вход во второй аккаунт
@@ -248,6 +254,9 @@ def profile(request):
         form.save()
         from apps.social import services as social
         social.set_private(user, user.is_private)          # открыл профиль — ждавшие заявки становятся подписками
+        if request.headers.get('X-Autosave'):                # переключатель в «Конфиденциальности»: сохраняется сразу, без перезагрузки
+            from django.http import JsonResponse
+            return JsonResponse({'ok': not link_error})
         if not link_error:
             messages.success(request, _('Сохранено.'))
             sec = request.POST.get('s', '')
@@ -317,7 +326,15 @@ def two_factor_setup(request):
                 return redirect('core:settings')
             else:
                 messages.error(request, _('Код неверный — проверьте приложение и время на телефоне.'))
-        return render(request, 'accounts/2fa_setup.html', {'on': True})
+        codes = []
+        if request.method == 'POST' and request.POST.get('action') == 'codes':
+            # новые запасные коды — только по текущему коду из приложения: чужой человек с открытой страницей их не получит
+            if twofa.check(request.user, request.POST.get('code', '')):
+                codes = twofa.new_backup_codes(request.user)
+                log_action(request, 'Выданы запасные коды 2FA', request.user.email)
+            else:
+                messages.error(request, _('Код неверный — проверьте приложение и время на телефоне.'))
+        return render(request, 'accounts/2fa_setup.html', {'on': True, 'codes': codes, 'left': twofa.backup_left(request.user)})
     device = (request.user.totpdevice_set.filter(confirmed=False).first()
               or TOTPDevice.objects.create(user=request.user, name='Основной', confirmed=False))
     if request.method == 'POST':
@@ -654,3 +671,21 @@ def tg_poll(request):
     log_action(request, 'Вход через Telegram-бота (сайт)', f'user#{user.pk}')
     messages.success(request, _('С возвращением, {v1}!').format(v1=user.get_display_name()))
     return JsonResponse({'status': 'ok', 'next': _safe(request, request.POST.get('next', ''), '/')})
+
+
+@login_required
+def handle_check(request):
+    """Проверка имени пользователя «на лету», пока человек печатает (как в Telegram): свободно, занято или что не так."""
+    from django.http import JsonResponse
+
+    from apps.core.limits import hits
+
+    from . import people
+    if hits(f'handle_check:{request.user.pk}', 60) > 90:
+        return JsonResponse({'ok': None, 'text': ''})
+    room = False
+    if request.GET.get('room') is not None:                 # имя группы или канала (при создании — room пустой)
+        from apps.chat.models import Thread
+        room = Thread.objects.filter(pk=request.GET['room']).first() if request.GET['room'].isdigit() else False
+        return JsonResponse(people.handle_state(request.GET.get('v', ''), user=request.user, room=room or False))
+    return JsonResponse(people.handle_state(request.GET.get('v', ''), user=request.user))

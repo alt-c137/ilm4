@@ -17,7 +17,7 @@
   {% endif %}{% endfor %}
 
   {% if others %}
-  <form method="post" class="dev__all" onsubmit="return confirm('{% translate "Завершить все сеансы, кроме этого?" %}')">{% csrf_token %}<input type="hidden" name="others" value="1">
+  <form method="post" class="dev__all" data-confirm="{{ _("Завершить все сеансы, кроме этого?")|force_escape }}">{% csrf_token %}<input type="hidden" name="others" value="1">
     <button type="submit" class="tp__row is-bad">{% ico 'exit' %}<span><b>{% translate "Завершить все другие сеансы" %}</b></span></button></form>
   <h2 class="tp__label">{% translate "Активные сеансы" %}</h2>
   <section class="tp__card">

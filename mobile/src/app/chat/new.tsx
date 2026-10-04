@@ -67,7 +67,7 @@ export default function NewRoom() {
             <Field label={t('Публичное имя')} value={handle} onChangeText={(x) => setHandle(x.toLowerCase())} maxLength={32} autoCapitalize="none"
               autoCorrect={false} placeholder="masjid_nur" />
           ) : <Txt kind="small">{t('Без галочки попасть можно только по вашей ссылке-приглашению.')}</Txt>}
-          {isPublic ? <Txt kind="small">{t('Латинские буквы, цифры и «_», от 4 знаков, первая — буква. Например: masjid_nur или ilm2024. По этому адресу чат находят и делятся им.')}</Txt> : null}
+          {isPublic ? <Txt kind="small">{t('Латинские буквы (a–z), цифры и «_», от 3 знаков. Например: masjid_nur или ilm2024. По этому адресу чат находят и делятся им.')}</Txt> : null}
         </Card>
         {error ? <Txt color={c.bad}>{error}</Txt> : null}
         <Button title={t('Создать')} icon="add" onPress={create} loading={busy} disabled={title.trim().length < 2} />

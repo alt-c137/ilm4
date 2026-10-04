@@ -42,14 +42,12 @@ def pledge_required(view):
         if phone_verify.needed(request.user, 'publish'):      # один номер — один аккаунт (против ботов)
             return phone_verify.redirect_to_verify(request, 'publish')
         if request.method == 'POST':
-            from django.core.cache import cache
-            key = f'publish:{request.user.pk}'
-            if cache.get(key, 0) >= PUBLISH_PER_DAY and not request.user.is_staff:
+            from .limits import hits  # счётчик одной операцией: два запроса разом не обойдут предел
+            if hits(f'publish:{request.user.pk}', 86400) > PUBLISH_PER_DAY and not request.user.is_staff:
                 from django.contrib import messages
                 from django.shortcuts import redirect
                 messages.error(request, _('На сегодня лимит публикаций исчерпан — защита от спама. Завтра можно снова.'))
                 return redirect(request.path)
-            cache.set(key, cache.get(key, 0) + 1, 86400)
             if request.POST.get('pledge') != '1':
                 from django.contrib import messages
                 from django.shortcuts import redirect

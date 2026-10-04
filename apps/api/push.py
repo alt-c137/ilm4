@@ -48,5 +48,6 @@ def send_to_user(user_id: int, body: str, url: str = '', title: str = 'ilm4', si
 @receiver(post_save, sender='core.Notification')
 def notification_push(sender, instance, created, **kwargs):
     if created:
-        transaction.on_commit(lambda: send_to_user(instance.user_id, instance.text, instance.url,
-                                                   silent=instance.silent))
+        # push_text — текст сообщения чата: он уходит только на телефон, в базе его нет (apps/chat/events.py: quiet_note)
+        body = getattr(instance, 'push_text', '') or instance.text
+        transaction.on_commit(lambda: send_to_user(instance.user_id, body, instance.url, silent=instance.silent))

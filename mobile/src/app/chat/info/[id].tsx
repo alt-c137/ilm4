@@ -132,7 +132,7 @@ export default function RoomInfo() {
             {edit.is_public ? (
               <View style={{ gap: 4 }}>
                 <Field label={t('Публичное имя')} value={edit.handle} onChangeText={(x) => setEdit({ ...edit, handle: x.toLowerCase() })} autoCapitalize="none" autoCorrect={false} maxLength={32} placeholder="masjid_nur" />
-                <Txt kind="small">{t('Латинские буквы, цифры и «_», от 4 знаков, первая — буква. Например: masjid_nur или ilm2024. По этому адресу чат находят и делятся им.')}</Txt>
+                <Txt kind="small">{t('Латинские буквы (a–z), цифры и «_», от 3 знаков. Например: masjid_nur или ilm2024. По этому адресу чат находят и делятся им.')}</Txt>
               </View>
             ) : null}
             {!channel ? (

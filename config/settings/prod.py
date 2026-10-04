@@ -14,6 +14,9 @@ if not env('CHAT_MASTER_KEYS', default=''):
                                '(и сразу сделайте резервную копию: chat_keys split)')
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# Настоящий адрес посетителя: перед приложением всегда nginx, он кладёт проверенный адрес в X-Real-IP
+# (nginx/ilm4.conf; за Cloudflare — только с адресов самого Cloudflare). См. apps/core/limits.py: client_ip.
+CLIENT_IP_HEADER = 'HTTP_X_REAL_IP'
 
 # HTTPS-пакет: включается одной переменной SECURE_SSL=True в .env,
 # когда сайт встанет за Cloudflare с сертификатом (до этого — False, по http).

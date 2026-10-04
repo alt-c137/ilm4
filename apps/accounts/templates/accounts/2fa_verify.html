@@ -7,8 +7,9 @@
   <h1>{% translate "Подтверждение входа" %}</h1>
   <p>{% translate "Введите шестизначный код из приложения-аутентификатора." %}</p>
   <form method="post" class="form">{% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
-    <input class="form__code" type="text" name="code" inputmode="numeric" autocomplete="one-time-code"
-           placeholder="000000" maxlength="6" required autofocus>
+    <input class="form__code" type="text" name="code" autocomplete="one-time-code" autocapitalize="none" spellcheck="false"
+           placeholder="000000" maxlength="9" required autofocus>
+    <span class="hint">{% translate "Нет телефона под рукой? Введите один из запасных кодов (вида abcd-efgh)." %}</span>
     <button type="submit" class="btn btn--p">{% translate "Войти" %}</button>
   </form>
   <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit" class="link">{% translate "Выйти из аккаунта" %}</button></form>

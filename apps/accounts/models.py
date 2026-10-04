@@ -101,6 +101,16 @@ class User(AbstractUser):
         # как в Telegram: имя и фамилия; старый «ник» — только если имени нет
         return f'{self.first_name} {self.last_name}'.strip() or self.nickname or self.username
 
+    @property
+    def tag(self) -> str:
+        """Подпись под именем в меню и списках — как в Telegram: @имя, иначе номер, иначе настоящий email.
+        Служебный адрес входа через Telegram (tg…@telegram.ilm4.local) людям не показываем."""
+        if self.handle:
+            return f'@{self.handle}'
+        if self.phone:
+            return self.phone
+        return '' if (self.email or '').endswith('.ilm4.local') else (self.email or '')
+
     def __str__(self):
         return f'{self.get_display_name()} ({self.email})'
 
@@ -178,6 +188,19 @@ class DeviceSession(models.Model):
         ordering = ['-last_seen_at']
         verbose_name = 'сеанс сайта'
         verbose_name_plural = 'сеансы сайта'
+
+
+class BackupCode(models.Model):
+    """Запасной код двухшаговой защиты: одноразовый, на случай потери телефона с приложением-аутентификатором.
+    В базе — только хеш; сами коды человек видит один раз, когда получает их (apps/accounts/twofa.py)."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='backup_codes')
+    code_hash = models.CharField(max_length=64)
+    used_at = models.DateTimeField('использован', null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'запасной код'
+        verbose_name_plural = 'запасные коды'
 
 
 class Persona(models.Model):

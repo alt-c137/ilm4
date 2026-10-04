@@ -16,7 +16,10 @@ from django.utils.translation import gettext as _
 from .models import CloseFriend, SocialLink, User, UserBlock
 from .phones import digits, phone_key
 
-HANDLE = re.compile(r'^[a-z][a-z0-9_]{3,31}$')
+# Имя пользователя (@имя) — правила Telegram: латинские буквы, цифры и «_»; первая — буква; «_» не в конце и не два подряд.
+# Отличие одно: в Telegram минимум 5 знаков (короче — только с аукциона), у нас — от HANDLE_MIN.
+HANDLE_MIN, HANDLE_MAX = 3, 32
+HANDLE = re.compile(rf'^[a-z][a-z0-9_]{{{HANDLE_MIN - 1},{HANDLE_MAX - 1}}}$')
 # имена, которыми мог бы прикинуться мошенник («поддержка», «админ»): обычному человеку недоступны,
 # сотрудникам ilm4 — можно (официальный канал @ilm4 создаёт владелец площадки)
 RESERVED = {'admin', 'ilm4', 'support', 'help', 'official', 'moderator', 'system', 'null', 'api', 'chat', 'channel',
@@ -25,6 +28,7 @@ ONLINE = timedelta(minutes=2)          # «в сети»: приложение �
 TOUCH_EVERY = 45                       # не чаще раза в 45 секунд пишем в базу
 MAX_LINKS = 12
 NEW_CHATS_PER_DAY = 30                 # новых диалогов с незнакомыми в сутки — против рассылок
+NEW_CHATS_NO_PHONE = 5                 # …а без подтверждённого номера — меньше: аккаунт без номера заводится за минуту
 
 
 class PeopleError(Exception):
@@ -35,6 +39,21 @@ class PeopleError(Exception):
 
 # ---------- имя пользователя ----------
 
+def handle_problem(value: str) -> str:
+    """Что не так с написанием имени (пусто — всё в порядке). Сообщения — как подсказки под полем в Telegram."""
+    if not re.fullmatch(r'[a-z0-9_]*', value):
+        return str(_('Можно только латинские буквы, цифры и «_».'))
+    if value[:1].isdigit() or value.startswith('_'):
+        return str(_('Имя должно начинаться с буквы.'))
+    if len(value) < HANDLE_MIN:
+        return str(_('Имя слишком короткое — нужно хотя бы {n} знака.').format(n=HANDLE_MIN))
+    if len(value) > HANDLE_MAX:
+        return str(_('Имя слишком длинное — не больше {n} знаков.').format(n=HANDLE_MAX))
+    if value.endswith('_') or '__' in value:
+        return str(_('Знак «_» не может стоять в конце или два раза подряд.'))
+    return ''
+
+
 def clean_handle(value, user=None, room=None) -> str | None:
     """Проверить @имя. Одно пространство имён у людей, групп и каналов — как в Telegram."""
     from apps.chat.models import Thread
@@ -42,8 +61,9 @@ def clean_handle(value, user=None, room=None) -> str | None:
     value = (value or '').strip().lstrip('@').lower()
     if not value:
         return None
-    if not HANDLE.match(value):
-        raise PeopleError(_('Имя: латинские буквы, цифры и «_», от 4 до 32 знаков, первая — буква. Например: ali_2024'))
+    problem = handle_problem(value)
+    if problem or not HANDLE.match(value):
+        raise PeopleError(problem or _('Можно только латинские буквы, цифры и «_».'))
     if value in RESERVED and not (user is not None and user.is_staff):
         raise PeopleError(_('Это имя зарезервировано за командой ilm4 — выберите другое.'))
     people = User.objects.filter(handle=value)
@@ -55,6 +75,20 @@ def clean_handle(value, user=None, room=None) -> str | None:
     if people.exists() or rooms.exists():
         raise PeopleError(_('Это имя уже занято.'))
     return value
+
+
+def handle_state(value, user=None, room=None) -> dict:
+    """Для проверки «на лету», пока человек печатает: {'ok', 'text'} — «Имя свободно» или что не так."""
+    value = (value or '').strip().lstrip('@').lower()
+    if not value:
+        return {'ok': None, 'text': ''}
+    if room is None and user is not None and value == (user.handle or ''):
+        return {'ok': True, 'text': str(_('Это ваше имя.'))}
+    try:
+        clean_handle(value, user=user, room=room)
+    except PeopleError as exc:
+        return {'ok': False, 'text': exc.message}
+    return {'ok': True, 'text': str(_('Имя @{name} свободно.').format(name=value))}
 
 
 # ---------- «в сети» ----------
@@ -364,7 +398,8 @@ def link_url(kind: str, value: str) -> str:
 
 
 AT_KINDS = {'telegram', 'instagram', 'tiktok', 'x', 'github', 'threads', 'youtube'}      # где принято писать @имя
-LINKS_VIEWS = ('auto', 'icons', 'list')
+LINKS_VIEWS = ('auto', 'pills', 'icons', 'list')
+LINK_PILLS = 4                         # сколько ссылок-пилюль видно сразу; остальные — за «ещё N»
 
 
 def link_show(kind: str, value: str) -> str:
@@ -379,11 +414,12 @@ def link_show(kind: str, value: str) -> str:
 
 
 def links_view(person, count: int) -> str:
-    """Вид ссылок в профиле: 'icons' — значками в ряд, 'list' — строками. Человек выбирает сам; «авто» — значками, если ссылок больше двух."""
+    """Вид ссылок в профиле: 'pills' — пилюли «значок + имя» (первые LINK_PILLS, остальные за «ещё N» — так делает
+    Instagram), 'icons' — одни значки в ряд, 'list' — строками. Человек выбирает сам; «авто» — пилюли, если ссылок больше двух."""
     mode = (getattr(person, 'ui', None) or {}).get('links_view', 'auto')
-    if mode in ('icons', 'list'):
+    if mode in ('pills', 'icons', 'list'):
         return mode
-    return 'icons' if count > 2 else 'list'
+    return 'pills' if count > 2 else 'list'
 
 
 def set_links_view(user, mode: str) -> None:
@@ -563,5 +599,13 @@ def search(viewer, q: str, limit: int = 20) -> list:
 
 def check_new_chat(viewer, other) -> None:
     """Перед первым диалогом с незнакомым: не больше 30 новых диалогов в сутки (сотрудникам — без ограничений)."""
-    if not viewer.is_staff:
-        _hit(f'new_chats:{viewer.pk}', NEW_CHATS_PER_DAY, 86400)
+    if viewer.is_staff:
+        return
+    from . import phone_verify
+    if viewer.phone_verified or not phone_verify.available():
+        return _hit(f'new_chats:{viewer.pk}', NEW_CHATS_PER_DAY, 86400)
+    try:                                               # номер не подтверждён: пачка свежих аккаунтов не станет рассылкой
+        _hit(f'new_chats:{viewer.pk}', NEW_CHATS_NO_PHONE, 86400)
+    except PeopleError:
+        raise PeopleError(_('Без подтверждённого номера можно начать не больше {n} новых диалогов в день. '
+                            'Подтвердите номер в настройках — и ограничение снимется.').format(n=NEW_CHATS_NO_PHONE), 429) from None

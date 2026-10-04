@@ -30,6 +30,7 @@ urlpatterns = [
     path('ad/<int:pk>/', views.ad_go, name='ad_go'),
     path('home/widgets/', views.home_widgets, name='home_widgets'),
     path('settings/', views.settings_view, name='settings'),
+    path('welcome/', views.welcome, name='welcome'),
     path('islam/', TemplateView.as_view(template_name='core/pages/islam.html'), name='shahada'),
     path('salah/', TemplateView.as_view(template_name='core/pages/salah.html'), name='salah'),
 ]

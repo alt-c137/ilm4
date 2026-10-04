@@ -21,6 +21,8 @@ class ApiToken(models.Model):
     created_at = models.DateTimeField('выдан', auto_now_add=True)
     last_used_at = models.DateTimeField('последний раз', null=True, blank=True)
 
+    IDLE_DAYS = 180
+
     class Meta:
         ordering = ['-created_at']
         verbose_name = 'вход в приложении'
@@ -43,6 +45,11 @@ class ApiToken(models.Model):
         if tok is None or not tok.user.is_active:
             return None
         now = timezone.now()
+        # как в Telegram: полгода не заходил с устройства — сеанс на нём завершается сам.
+        # Забытый или украденный старый телефон не остаётся «вечным ключом» от аккаунта.
+        if (now - (tok.last_used_at or tok.created_at)).days >= cls.IDLE_DAYS:
+            tok.delete()
+            return None
         if not tok.last_used_at or (now - tok.last_used_at).total_seconds() > 3600:
             cls.objects.filter(pk=tok.pk).update(last_used_at=now)
         return tok

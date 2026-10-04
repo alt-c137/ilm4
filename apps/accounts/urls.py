@@ -18,6 +18,7 @@ urlpatterns = [
     path('password/reset/complete/', views.password_reset_complete, name='password_reset_complete'),
     path('profile/', views.profile, name='profile'),
     path('photos/', views.photos, name='photos'),
+    path('handle/check/', views.handle_check, name='handle_check'),
     path('u/<int:pk>/', views.public_profile, name='public'),
     path('u/<int:pk>/block/', views.block_toggle, name='block'),
     path('u/<int:pk>/close/', views.close_toggle, name='close'),
